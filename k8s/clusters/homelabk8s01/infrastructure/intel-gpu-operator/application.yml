@@ -12,7 +12,13 @@ spec:
     chart: intel-device-plugins-operator
     targetRevision: 0.31.1
     helm:
-      valuesObject: {}
+      valuesObject:
+        manager:
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 128Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: intel-gpu-operator
