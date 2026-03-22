@@ -38,8 +38,8 @@ spec:
                     custom: true
                     spec:
                       httpGet:
-                        path: /
-                        port: 8888
+                        path: /v1/openvpn/status
+                        port: 9999
                       initialDelaySeconds: 30
                       periodSeconds: 30
                   startup:
@@ -47,8 +47,8 @@ spec:
                     custom: true
                     spec:
                       httpGet:
-                        path: /
-                        port: 8888
+                        path: /v1/openvpn/status
+                        port: 9999
                       failureThreshold: 30
                       periodSeconds: 10
 
