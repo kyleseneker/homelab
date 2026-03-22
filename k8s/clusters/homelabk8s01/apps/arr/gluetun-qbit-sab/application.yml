@@ -66,22 +66,6 @@ spec:
                 env:
                   WEBUI_PORT: "8080"
                 dependsOn: gluetun
-                probes:
-                  liveness:
-                    enabled: true
-                    custom: true
-                    spec:
-                      httpGet:
-                        path: /
-                        port: 8080
-                      initialDelaySeconds: 30
-                  readiness:
-                    enabled: true
-                    custom: true
-                    spec:
-                      httpGet:
-                        path: /
-                        port: 8080
 
               sabnzbd:
                 image:
@@ -91,22 +75,6 @@ spec:
                   - configMapRef:
                       name: arr-env
                 dependsOn: gluetun
-                probes:
-                  liveness:
-                    enabled: true
-                    custom: true
-                    spec:
-                      httpGet:
-                        path: /
-                        port: 8085
-                      initialDelaySeconds: 30
-                  readiness:
-                    enabled: true
-                    custom: true
-                    spec:
-                      httpGet:
-                        path: /
-                        port: 8085
 
         service:
           main:
