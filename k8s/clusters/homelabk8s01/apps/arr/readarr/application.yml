@@ -18,8 +18,8 @@ spec:
             containers:
               main:
                 image:
-                  repository: ghcr.io/hotio/readarr
-                  tag: latest
+                  repository: ghcr.io/linuxserver/readarr
+                  tag: 0.4.18.2805-ls157
                 envFrom:
                   - configMapRef:
                       name: arr-env
