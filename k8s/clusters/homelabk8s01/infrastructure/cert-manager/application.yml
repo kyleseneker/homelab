@@ -1,31 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: intel-gpu-operator
+  name: cert-manager
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: https://intel.github.io/helm-charts
-    chart: intel-device-plugins-operator
-    targetRevision: 0.31.1
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.17.1
     helm:
-      valuesObject: {}
+      valuesObject:
+        crds:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: intel-gpu-operator
+    namespace: cert-manager
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - SkipDryRunOnMissingResource=true
-    retry:
-      limit: 30
-      backoff:
-        duration: 10s
-        maxDuration: 5m
-        factor: 2
