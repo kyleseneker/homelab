@@ -118,6 +118,15 @@
     - kubeadm
     - kubectl
 
+- name: Allow unsafe sysctls for VPN containers
+  ansible.builtin.lineinfile:
+    path: /etc/default/kubelet
+    regexp: '^KUBELET_EXTRA_ARGS='
+    line: 'KUBELET_EXTRA_ARGS=--allowed-unsafe-sysctls=net.ipv4.conf.all.src_valid_mark'
+    create: true
+    mode: "0644"
+  notify: Restart kubelet
+
 - name: Enable kubelet service
   ansible.builtin.systemd:
     name: kubelet
