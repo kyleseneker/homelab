@@ -18,8 +18,8 @@ spec:
             containers:
               main:
                 image:
-                  repository: lscr.io/linuxserver/readarr
-                  tag: amd64-develop
+                  repository: ghcr.io/hotio/readarr
+                  tag: latest
                 envFrom:
                   - configMapRef:
                       name: arr-env
