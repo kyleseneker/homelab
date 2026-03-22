@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: intel-gpu-plugin
+  name: intel-gpu-operator
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -9,12 +9,10 @@ spec:
   project: default
   source:
     repoURL: https://intel.github.io/helm-charts
-    chart: intel-device-plugins-gpu
+    chart: intel-device-plugins-operator
     targetRevision: 0.31.1
     helm:
-      valuesObject:
-        sharedDevNum: 5
-        nodeFeatureRule: false
+      valuesObject: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: intel-gpu-operator
@@ -24,10 +22,3 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - SkipDryRunOnMissingResource=true
-    retry:
-      limit: 30
-      backoff:
-        duration: 10s
-        maxDuration: 5m
-        factor: 2
