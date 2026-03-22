@@ -21,7 +21,7 @@ spec:
                   repository: qmcgaw/gluetun
                   tag: latest
                 env:
-                  VPN_SERVICE_PROVIDER: private_internet_access
+                  VPN_SERVICE_PROVIDER: "private internet access"
                   SERVER_REGIONS: "US East"
                   FIREWALL_VPN_INPUT_PORTS: "6881"
                 envFrom:
