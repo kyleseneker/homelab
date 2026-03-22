@@ -25,7 +25,6 @@ spec:
                   SERVER_REGIONS: "US East"
                   FIREWALL_VPN_INPUT_PORTS: "6881"
                   DOT: "off"
-                  HTTP_CONTROL_SERVER_ADDRESS: ":9999"
                 envFrom:
                   - secretRef:
                       name: vpn-credentials
@@ -38,20 +37,24 @@ spec:
                     enabled: true
                     custom: true
                     spec:
-                      httpGet:
-                        path: /v1/openvpn/status
-                        port: 9999
-                      initialDelaySeconds: 30
-                      periodSeconds: 30
+                      exec:
+                        command:
+                          - /gluetun-entrypoint
+                          - healthcheck
+                      initialDelaySeconds: 60
+                      periodSeconds: 60
+                      timeoutSeconds: 5
+                      failureThreshold: 3
                   startup:
                     enabled: true
                     custom: true
                     spec:
-                      httpGet:
-                        path: /v1/openvpn/status
-                        port: 9999
-                      failureThreshold: 30
-                      periodSeconds: 10
+                      exec:
+                        command:
+                          - /gluetun-entrypoint
+                          - healthcheck
+                      failureThreshold: 60
+                      periodSeconds: 5
 
               qbittorrent:
                 image:
