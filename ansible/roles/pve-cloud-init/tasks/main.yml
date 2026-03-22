@@ -1,0 +1,58 @@
+---
+- name: Check if cloud-init template already exists
+  ansible.builtin.command: qm status {{ cloud_init_template_id }}
+  register: template_check
+  failed_when: false
+  changed_when: false
+
+- name: Download cloud-init image
+  ansible.builtin.get_url:
+    url: "{{ cloud_init_image_url }}"
+    dest: "/tmp/{{ cloud_init_template_name }}.img"
+    mode: "0644"
+  when: template_check.rc != 0
+
+- name: Create VM for cloud-init template
+  ansible.builtin.command: >
+    qm create {{ cloud_init_template_id }}
+    --name {{ cloud_init_template_name }}
+    --memory 2048
+    --cores 2
+    --net0 virtio,bridge=vmbr0
+    --scsihw virtio-scsi-single
+    --agent enabled=1
+  when: template_check.rc != 0
+
+- name: Import disk to VM
+  ansible.builtin.command: >
+    qm set {{ cloud_init_template_id }}
+    --scsi0 {{ cloud_init_storage }}:0,import-from=/tmp/{{ cloud_init_template_name }}.img
+  when: template_check.rc != 0
+
+- name: Add cloud-init drive
+  ansible.builtin.command: >
+    qm set {{ cloud_init_template_id }}
+    --ide2 {{ cloud_init_storage }}:cloudinit
+  when: template_check.rc != 0
+
+- name: Set boot disk
+  ansible.builtin.command: >
+    qm set {{ cloud_init_template_id }}
+    --boot order=scsi0
+  when: template_check.rc != 0
+
+- name: Set serial console for cloud-init
+  ansible.builtin.command: >
+    qm set {{ cloud_init_template_id }}
+    --serial0 socket
+    --vga serial0
+  when: template_check.rc != 0
+
+- name: Convert VM to template
+  ansible.builtin.command: qm template {{ cloud_init_template_id }}
+  when: template_check.rc != 0
+
+- name: Clean up downloaded image
+  ansible.builtin.file:
+    path: "/tmp/{{ cloud_init_template_name }}.img"
+    state: absent

@@ -1,0 +1,9 @@
+---
+pve_extra_packages:
+  - vim
+  - htop
+  - curl
+  - wget
+  - git
+  - lsof
+  - iotop

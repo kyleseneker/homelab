@@ -1,0 +1,25 @@
+---
+pve_terraform_role: "TerraformProv"
+pve_terraform_user: "terraform@pam"
+pve_terraform_token_name: "terraform"
+
+pve_terraform_privileges:
+  - VM.Allocate
+  - VM.Clone
+  - VM.Config.CDROM
+  - VM.Config.CPU
+  - VM.Config.Cloudinit
+  - VM.Config.Disk
+  - VM.Config.HWType
+  - VM.Config.Memory
+  - VM.Config.Network
+  - VM.Config.Options
+  - VM.Audit
+  - VM.PowerMgmt
+  - VM.GuestAgent.Audit
+  - Datastore.AllocateSpace
+  - Datastore.Audit
+  - Sys.Audit
+  - Sys.Modify
+  - SDN.Use
+  - Mapping.Use

@@ -1,0 +1,39 @@
+---
+- name: Check existing PCI resource mappings
+  ansible.builtin.command: pvesh get /cluster/mapping/pci --output-format json
+  register: pci_mappings_list
+  changed_when: false
+  failed_when: false
+
+- name: Get full PCI device info from sysfs
+  ansible.builtin.shell: |
+    set -o pipefail
+    DEV="{{ item.path }}"
+    VENDOR=$(cat /sys/bus/pci/devices/${DEV}/vendor | sed 's/0x//')
+    DEVICE=$(cat /sys/bus/pci/devices/${DEV}/device | sed 's/0x//')
+    SUB_VENDOR=$(cat /sys/bus/pci/devices/${DEV}/subsystem_vendor | sed 's/0x//')
+    SUB_DEVICE=$(cat /sys/bus/pci/devices/${DEV}/subsystem_device | sed 's/0x//')
+    IOMMU=$(basename $(readlink /sys/bus/pci/devices/${DEV}/iommu_group))
+    echo "id=${VENDOR}:${DEVICE},iommugroup=${IOMMU},node={{ inventory_hostname }},path=${DEV},subsystem-id=${SUB_VENDOR}:${SUB_DEVICE}"
+  register: pci_info
+  loop: "{{ pve_pci_mappings }}"
+  changed_when: false
+
+- name: Delete incomplete PCI resource mappings
+  ansible.builtin.command: pvesh delete /cluster/mapping/pci/{{ item.item.name }}
+  loop: "{{ pci_info.results }}"
+  when:
+    - item.item.name in (pci_mappings_list.stdout | default('[]') | from_json | map(attribute='id') | list)
+    - "'subsystem-id' not in (pci_mappings_list.stdout | default('[]') | from_json | selectattr('id', 'eq', item.item.name) | map(attribute='map') | first | first | default(''))"
+  register: deleted_mappings
+
+- name: Create PCI resource mappings
+  ansible.builtin.command: >
+    pvesh create /cluster/mapping/pci
+    --id {{ item.item.name }}
+    --map {{ item.stdout }}
+    {% if item.item.description is defined %}--description "{{ item.item.description }}"{% endif %}
+  loop: "{{ pci_info.results }}"
+  when: >
+    item.item.name not in (pci_mappings_list.stdout | default('[]') | from_json | map(attribute='id') | list)
+    or (deleted_mappings.results | default([]) | selectattr('item.item.name', 'eq', item.item.name) | selectattr('changed', 'eq', true) | list | length > 0)

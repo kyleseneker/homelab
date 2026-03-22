@@ -1,0 +1,91 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arr-jellyfin
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://bjw-s.github.io/helm-charts
+    chart: app-template
+    targetRevision: 3.6.0
+    helm:
+      valuesObject:
+        controllers:
+          main:
+            containers:
+              main:
+                image:
+                  repository: lscr.io/linuxserver/jellyfin
+                  tag: latest
+                envFrom:
+                  - configMapRef:
+                      name: arr-env
+                probes:
+                  liveness:
+                    enabled: true
+                  readiness:
+                    enabled: true
+                  startup:
+                    enabled: true
+                    spec:
+                      failureThreshold: 30
+                      periodSeconds: 10
+                resources:
+                  limits:
+                    gpu.intel.com/i915: 1
+
+        defaultPodOptions:
+          nodeSelector:
+            gpu: intel
+
+        service:
+          main:
+            controller: main
+            type: LoadBalancer
+            ports:
+              http:
+                port: 8096
+
+        ingress:
+          main:
+            enabled: true
+            className: nginx
+            hosts:
+              - host: jellyfin.homelab.local
+                paths:
+                  - path: /
+                    service:
+                      identifier: main
+                      port: http
+
+        persistence:
+          config:
+            type: persistentVolumeClaim
+            storageClass: nfs-client
+            accessMode: ReadWriteOnce
+            size: 5Gi
+            globalMounts:
+              - path: /config
+          media:
+            type: persistentVolumeClaim
+            existingClaim: arr-data
+            globalMounts:
+              - path: /data/media
+                subPath: media
+                readOnly: true
+          dri:
+            type: hostPath
+            hostPath: /dev/dri
+            globalMounts:
+              - path: /dev/dri
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arr
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

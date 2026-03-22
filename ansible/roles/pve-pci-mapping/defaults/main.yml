@@ -1,0 +1,7 @@
+---
+pve_pci_mappings: []
+# Example:
+# pve_pci_mappings:
+#   - name: igpu
+#     path: "0000:00:02.0"
+#     description: "Intel Integrated GPU"

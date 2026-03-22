@@ -1,0 +1,26 @@
+---
+- name: Base setup for all K8s nodes
+  hosts: k8s_cluster
+  become: true
+  roles:
+    - base
+    - k8s-prereqs
+    - nfs
+
+- name: Intel iGPU setup on GPU nodes
+  hosts: gpu
+  become: true
+  roles:
+    - igpu
+
+- name: Initialize Kubernetes control plane
+  hosts: control_plane
+  become: true
+  roles:
+    - k8s-control-plane
+
+- name: Join worker nodes to the cluster
+  hosts: workers
+  become: true
+  roles:
+    - k8s-worker

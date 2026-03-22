@@ -1,0 +1,32 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+terraform.tfvars
+crash.log
+
+# Ansible
+*.retry
+.vault-password
+**/vault.yml
+
+# Secrets
+.env
+*.pem
+*.key
+id_rsa*
+
+# Kubeconfig
+kubeconfig
+*.kubeconfig
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

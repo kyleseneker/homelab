@@ -1,0 +1,55 @@
+---
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - wget
+      - gnupg
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
+      - htop
+      - vim
+      - jq
+      - unzip
+      - lsb-release
+    state: present
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Create media group
+  ansible.builtin.group:
+    name: media
+    gid: "{{ media_gid }}"
+    state: present
+
+- name: Create media user
+  ansible.builtin.user:
+    name: media
+    uid: "{{ media_uid }}"
+    group: media
+    shell: /bin/bash
+    create_home: true
+    state: present
+
+- name: Add media user to sudo group
+  ansible.builtin.user:
+    name: media
+    groups: sudo
+    append: true
+
+- name: Allow media user passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/media
+    line: "media ALL=(ALL) NOPASSWD:ALL"
+    create: true
+    mode: "0440"
+    validate: "visudo -cf %s"

@@ -1,0 +1,25 @@
+---
+- name: Set GRUB cmdline for IOMMU passthrough
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ iommu_grub_cmdline }}"'
+  register: grub_updated
+
+- name: Update GRUB
+  ansible.builtin.command: update-grub
+  when: grub_updated.changed
+
+- name: Ensure VFIO modules are loaded on boot
+  ansible.builtin.lineinfile:
+    path: /etc/modules
+    line: "{{ item }}"
+    create: true
+  loop: "{{ vfio_modules }}"
+  register: modules_updated
+
+- name: Reboot to apply IOMMU and VFIO changes
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    msg: "Rebooting to enable IOMMU and VFIO modules"
+  when: grub_updated.changed or modules_updated.changed

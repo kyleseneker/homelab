@@ -1,0 +1,86 @@
+---
+- name: Check if cluster is already initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_init_check
+
+- name: Initialize the Kubernetes control plane
+  ansible.builtin.command: >
+    kubeadm init
+    --pod-network-cidr={{ pod_network_cidr }}
+    --service-cidr={{ service_cidr }}
+    --apiserver-advertise-address={{ ansible_host }}
+    --kubernetes-version={{ k8s_version }}
+    --skip-phases=addon/kube-proxy
+  register: kubeadm_init
+  changed_when: true
+  when: not kubeadm_init_check.stat.exists
+
+- name: Create .kube directory for media user
+  ansible.builtin.file:
+    path: /home/media/.kube
+    state: directory
+    owner: media
+    group: media
+    mode: "0755"
+
+- name: Copy kubeconfig to media user
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/media/.kube/config
+    remote_src: true
+    owner: media
+    group: media
+    mode: "0600"
+
+- name: Create .kube directory for root
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: "0755"
+
+- name: Copy kubeconfig to root
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    remote_src: true
+    mode: "0600"
+
+- name: Install Cilium CLI
+  ansible.builtin.shell: |
+    CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+    curl -L --fail --remote-name-all \
+      https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz
+    tar xzvf cilium-linux-amd64.tar.gz -C /usr/local/bin
+    rm -f cilium-linux-amd64.tar.gz
+  args:
+    creates: /usr/local/bin/cilium
+
+- name: Install Cilium into the cluster
+  ansible.builtin.command: cilium install --version {{ cilium_version }}
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: cilium_install
+  changed_when: "'Cilium was successfully installed' in cilium_install.stdout"
+  failed_when:
+    - cilium_install.rc != 0
+    - "'already installed' not in cilium_install.stderr"
+
+- name: Wait for Cilium to be ready
+  ansible.builtin.command: cilium status --wait
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  changed_when: false
+  retries: 10
+  delay: 15
+  register: cilium_status
+  until: cilium_status.rc == 0
+
+- name: Generate join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_command_output
+  changed_when: false
+
+- name: Store join command as fact
+  ansible.builtin.set_fact:
+    k8s_join_command: "{{ join_command_output.stdout }}"

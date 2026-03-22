@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arr-recyclarr
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://bjw-s.github.io/helm-charts
+    chart: app-template
+    targetRevision: 3.6.0
+    helm:
+      valuesObject:
+        controllers:
+          main:
+            type: cronjob
+            cronjob:
+              schedule: "0 */6 * * *"
+              successfulJobsHistory: 1
+              failedJobsHistory: 3
+            containers:
+              main:
+                image:
+                  repository: ghcr.io/recyclarr/recyclarr
+                  tag: latest
+                args:
+                  - sync
+                envFrom:
+                  - configMapRef:
+                      name: arr-env
+
+        persistence:
+          config:
+            type: configMap
+            name: recyclarr-config
+            globalMounts:
+              - path: /config/recyclarr.yml
+                subPath: recyclarr.yml
+                readOnly: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arr
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
