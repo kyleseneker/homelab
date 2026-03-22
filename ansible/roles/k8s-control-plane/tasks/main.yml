@@ -65,6 +65,7 @@
   failed_when:
     - cilium_install.rc != 0
     - "'already installed' not in cilium_install.stderr"
+    - "'cannot reuse a name' not in cilium_install.stderr"
 
 - name: Wait for Cilium to be ready
   ansible.builtin.command: cilium status --wait

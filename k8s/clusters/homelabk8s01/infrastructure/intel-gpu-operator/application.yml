@@ -13,12 +13,13 @@ spec:
     targetRevision: 0.31.1
     helm:
       valuesObject:
-        manager:
-          resources:
-            limits:
-              memory: 1Gi
-            requests:
-              memory: 128Mi
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
   destination:
     server: https://kubernetes.default.svc
     namespace: intel-gpu-operator
