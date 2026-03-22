@@ -24,6 +24,7 @@ spec:
                   VPN_SERVICE_PROVIDER: "private internet access"
                   SERVER_REGIONS: "US East"
                   FIREWALL_VPN_INPUT_PORTS: "6881"
+                  DOT: "off"
                 envFrom:
                   - secretRef:
                       name: vpn-credentials
