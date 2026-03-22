@@ -14,8 +14,12 @@ spec:
     helm:
       valuesObject:
         nfs:
-          server: 192.168.10.x
-          path: /data
+          server: 192.168.1.158
+          path: /volume/3378ed38-0d32-49cd-b634-08ab63e14f07/.srv/.unifi-drive/Media/.data
+          mountOptions:
+            - vers=3
+            - hard
+            - intr
         storageClass:
           name: nfs-client
           defaultClass: true
