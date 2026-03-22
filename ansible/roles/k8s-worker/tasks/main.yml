@@ -33,6 +33,9 @@
 
 - name: Label GPU nodes
   ansible.builtin.command: >
-    kubectl label node {{ inventory_hostname }} gpu=intel --overwrite
+    kubectl label node {{ inventory_hostname }}
+    gpu=intel
+    intel.feature.node.kubernetes.io/gpu=true
+    --overwrite
   delegate_to: "{{ groups['control_plane'][0] }}"
   when: "'gpu' in group_names and (gpu_label.stdout | default('')) != 'intel'"
