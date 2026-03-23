@@ -59,6 +59,7 @@ nav:
       - Monitoring: architecture/monitoring.md
       - Secrets: architecture/secrets.md
       - Backups: architecture/backups.md
+      - Auth & SSO: architecture/auth.md
   - Apps:
       - apps/index.md
       - Jellyfin: apps/jellyfin.md
@@ -85,6 +86,9 @@ nav:
       - MinIO: infrastructure/minio.md
       - Velero: infrastructure/velero.md
       - Metrics Server: infrastructure/metrics-server.md
+      - Authentik: infrastructure/authentik.md
+      - Alerting: infrastructure/alerting.md
+      - Renovate: infrastructure/renovate.md
   - Runbooks:
       - Disaster Recovery: runbooks/disaster-recovery.md
       - Upgrading Apps: runbooks/upgrading-apps.md
@@ -94,6 +98,8 @@ nav:
       - Troubleshooting: runbooks/troubleshooting.md
       - Secret Rotation: runbooks/secret-rotation.md
       - Backup & Restore: runbooks/backup-and-restore.md
+      - Adding App to SSO: runbooks/adding-app-to-sso.md
+      - Authentik Emergency Bypass: runbooks/authentik-emergency-bypass.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md
