@@ -36,6 +36,10 @@ Jellyseerr does not require the shared `arr-data` volume because it interacts wi
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 
+### Authentication
+
+Jellyseerr uses **native OIDC** to Authentik rather than the forward-auth proxy used by other arr apps. This is because Jellyseerr has built-in OAuth2 support, so a direct OIDC integration is configured through its Settings UI. The ingress does not carry the `auth-url`/`auth-signin` annotations that other arr apps use.
+
 ## Post-Deploy Setup
 
 1. Open `https://jellyseerr.homelab.local` and start the setup wizard.

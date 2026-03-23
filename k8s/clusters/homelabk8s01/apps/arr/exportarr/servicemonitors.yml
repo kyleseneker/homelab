@@ -1,0 +1,71 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: exportarr-sonarr
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: exportarr
+    app.kubernetes.io/instance: sonarr
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: sonarr
+      app.kubernetes.io/name: arr-exportarr
+  endpoints:
+    - port: metrics
+      interval: 60s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: exportarr-radarr
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: exportarr
+    app.kubernetes.io/instance: radarr
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: radarr
+      app.kubernetes.io/name: arr-exportarr
+  endpoints:
+    - port: metrics
+      interval: 60s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: exportarr-prowlarr
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: exportarr
+    app.kubernetes.io/instance: prowlarr
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: prowlarr
+      app.kubernetes.io/name: arr-exportarr
+  endpoints:
+    - port: metrics
+      interval: 60s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: exportarr-bazarr
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: exportarr
+    app.kubernetes.io/instance: bazarr
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: bazarr
+      app.kubernetes.io/name: arr-exportarr
+  endpoints:
+    - port: metrics
+      interval: 60s
+      path: /metrics

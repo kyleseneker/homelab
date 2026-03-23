@@ -73,10 +73,10 @@ flowchart LR
 |------|-----------|-----------|
 | -3 | MetalLB, cert-manager, Sealed Secrets | Core infrastructure that everything depends on: IP allocation, TLS, and secret decryption |
 | -2 | MetalLB Config, Metrics Server, NFS Provisioner, MinIO, Intel GPU Operator | Configuration and storage primitives needed by higher-level services |
-| -1 | ingress-nginx, kube-prometheus-stack, Loki, Velero, Intel GPU Plugin | Ingress routing, monitoring stack, backup system, and GPU device plugin |
-| 0 | Alloy | Log collector that depends on Loki being available |
-| 1 | All arr apps (Jellyfin, Sonarr, Radarr, Prowlarr, Bazarr, Jellyseerr, qBittorrent/SABnzbd/Gluetun, Recyclarr, Tdarr) | Application workloads requiring ingress, storage, monitoring, and GPU resources |
-| 2 | Homepage | Dashboard that aggregates links to all other services; deployed last |
+| -1 | ingress-nginx, kube-prometheus-stack, Loki, Velero, Intel GPU Plugin, Reloader, Descheduler | Ingress routing, monitoring stack, backup system, GPU device plugin, config reload automation, and pod rebalancing |
+| 0 | Authentik, Alloy | SSO provider and log collector; both depend on wave -1 services (ingress, monitoring) being available |
+| 1 | All arr apps (Jellyfin, Sonarr, Radarr, Prowlarr, Bazarr, Jellyseerr, qBittorrent/SABnzbd/Gluetun, Recyclarr, Tdarr, Exportarr) | Application workloads requiring ingress, storage, monitoring, and GPU resources |
+| 2 | Homepage, Uptime Kuma | Dashboard and status page that aggregate links to all other services; deployed last |
 
 ## Git Push to Cluster State
 

@@ -8,7 +8,7 @@ Renovate automatically tracks dependency versions across the homelab repo and op
 |----------|---------|-------|---------|
 | Helm charts | `argocd` (built-in) | 15 | kube-prometheus-stack, ingress-nginx, app-template |
 | Container images | `regex` (custom) | 11 | linuxserver/sonarr, gethomepage/homepage, gluetun |
-| ArgoCD install URL | `regex` (custom) | 1 | argoproj/argo-cd v2.13.3 in kustomization.yml |
+| ArgoCD install URL | `regex` (custom) | 1 | argoproj/argo-cd v3.3.4 in kustomization.yml |
 | GitHub Actions | `github-actions` (built-in) | 4 | actions/checkout, actions/setup-python |
 
 ### How Each Manager Works
@@ -20,7 +20,7 @@ Renovate automatically tracks dependency versions across the homelab repo and op
 - `repository` + `tag` on separate lines (bjw-s app-template pattern)
 - Inline `image: name:tag` (e.g., Velero init containers)
 
-**ArgoCD install URL regex**: Matches the version in the raw GitHub URL used to install ArgoCD itself (`https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/install.yaml`).
+**ArgoCD install URL regex**: Matches the version in the raw GitHub URL used to install ArgoCD itself (`https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.4/manifests/install.yaml`).
 
 ## Schedule and Behavior
 

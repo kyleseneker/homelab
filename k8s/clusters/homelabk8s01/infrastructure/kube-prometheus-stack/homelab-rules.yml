@@ -70,6 +70,64 @@ spec:
             summary: "Certificate {{ $labels.name }} expiring soon"
             description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in less than 14 days."
 
+        - alert: LokiDown
+          expr: |
+            up{job=~".*loki.*", namespace="monitoring"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Loki is down"
+            description: "Loki has been unreachable for more than 5 minutes. Log ingestion is disrupted."
+
+        - alert: AlloyDown
+          expr: |
+            (kube_daemonset_status_number_available{namespace="monitoring", daemonset=~".*alloy.*"} == 0)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Alloy log collector is down"
+            description: "No Alloy pods are available. Logs are not being collected from cluster nodes."
+
+        - alert: MinIODown
+          expr: |
+            (kube_deployment_spec_replicas{namespace="backups", deployment=~".*minio.*"} > 0)
+            and
+            (kube_deployment_status_replicas_available{namespace="backups", deployment=~".*minio.*"} == 0)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "MinIO is down"
+            description: "MinIO has had no available replicas for more than 5 minutes. Velero backup target is unavailable."
+
+        - alert: PodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total[1h]) > 5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} (namespace {{ $labels.namespace }}) has restarted {{ $value | printf \"%.0f\" }} times in the last hour."
+
+        - alert: IngressHighErrorRate
+          expr: |
+            (
+              sum by(ingress, namespace) (rate(nginx_ingress_controller_requests{status=~"5.."}[5m]))
+              /
+              sum by(ingress, namespace) (rate(nginx_ingress_controller_requests[5m]))
+            ) * 100 > 5
+            and
+            sum by(ingress, namespace) (rate(nginx_ingress_controller_requests[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High 5xx error rate on ingress {{ $labels.ingress }}"
+            description: "Ingress {{ $labels.ingress }} in namespace {{ $labels.namespace }} has a 5xx error rate of {{ $value | printf \"%.1f\" }}% over the last 5 minutes."
+
     - name: homelab-backup-health
       rules:
         - alert: VeleroBackupFailed

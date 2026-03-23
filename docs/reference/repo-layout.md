@@ -43,7 +43,8 @@ homelab/
 │   │   ├── argocd/                   # ArgoCD installation
 │   │   │   ├── kustomization.yml     # Kustomize overlay
 │   │   │   ├── namespace.yml         # argocd namespace
-│   │   │   └── ingress.yml           # ArgoCD ingress
+│   │   │   ├── ingress.yml           # ArgoCD ingress
+│   │   │   └── custom-ca.yml         # Homelab CA trust for OIDC
 │   │   └── root-app.yml              # Root app-of-apps
 │   ├── components/
 │   │   └── metallb-config/           # MetalLB IP pool + L2 ad
@@ -64,9 +65,14 @@ homelab/
 │       │   ├── loki/
 │       │   ├── alloy/
 │       │   ├── minio/
-│       │   └── velero/
+│       │   ├── velero/
+│       │   ├── authentik/
+│       │   ├── reloader/
+│       │   ├── descheduler/
+│       │   └── network-policies/
 │       └── apps/                     # User-facing applications
 │           ├── homepage/
+│           ├── uptime-kuma/
 │           └── arr/
 │               ├── namespace.yml
 │               ├── shared-data-pv.yml
@@ -78,7 +84,8 @@ homelab/
 │               ├── jellyseerr/
 │               ├── gluetun-qbit-sab/
 │               ├── recyclarr/
-│               └── tdarr/
+│               ├── tdarr/
+│               └── exportarr/
 ├── .editorconfig                     # Editor settings
 ├── .gitignore                        # Git ignore rules
 └── README.md                         # Project overview
