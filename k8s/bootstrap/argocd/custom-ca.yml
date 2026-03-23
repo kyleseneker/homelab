@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: custom-ca-certs
+  namespace: argocd
+data:
+  homelab-ca.crt: |
+    -----BEGIN CERTIFICATE-----
+    MIIBazCCARGgAwIBAgIRALyMeg226ts99ISJtNG/fZcwCgYIKoZIzj0EAwIwFTET
+    MBEGA1UEAxMKaG9tZWxhYi1jYTAeFw0yNjAzMjMwMjIwNDBaFw0yNjA2MjEwMjIw
+    NDBaMBUxEzARBgNVBAMTCmhvbWVsYWItY2EwWTATBgcqhkjOPQIBBggqhkjOPQMB
+    BwNCAASxqe5xTbr7w7p5f2ZqxnHcpFDOyzNZxE0uKiVisIQwKSWo6PxFyaWuWtDA
+    tBRNcp9X62aliynpWaxK9uAT+uh8o0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYDVR0T
+    AQH/BAUwAwEB/zAdBgNVHQ4EFgQUmooQo4b5b4VxoJVfdMlhY6Mh1SEwCgYIKoZI
+    zj0EAwIDSAAwRQIhAOEwKNFypWxLL2revv0PTjkgIAPk+rLJOZIpiIZVYRUzAiBu
+    PWdms+0ne7J/1CaKP3RQUjRYFsUQhlQoW9TgkbpIxw==
+    -----END CERTIFICATE-----

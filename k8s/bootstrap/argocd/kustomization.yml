@@ -7,6 +7,7 @@ resources:
   - namespace.yml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v2.14.21/manifests/install.yaml
   - ingress.yml
+  - custom-ca.yml
 
 patches:
   - target:
@@ -28,6 +29,7 @@ patches:
       metadata:
         name: argocd-cm
       data:
+        url: https://argocd.homelab.local
         resource.exclusions: |
           - apiGroups:
             - cilium.io
@@ -70,25 +72,27 @@ patches:
         policy.csv: |
           g, authentik Admins, role:admin
   - target:
-      kind: ConfigMap
-      name: argocd-tls-certs-cm
+      kind: Deployment
+      name: argocd-server
     patch: |
-      apiVersion: v1
-      kind: ConfigMap
+      apiVersion: apps/v1
+      kind: Deployment
       metadata:
-        name: argocd-tls-certs-cm
-      data:
-        auth.homelab.local: |
-          -----BEGIN CERTIFICATE-----
-          MIIBazCCARGgAwIBAgIRALyMeg226ts99ISJtNG/fZcwCgYIKoZIzj0EAwIwFTET
-          MBEGA1UEAxMKaG9tZWxhYi1jYTAeFw0yNjAzMjMwMjIwNDBaFw0yNjA2MjEwMjIw
-          NDBaMBUxEzARBgNVBAMTCmhvbWVsYWItY2EwWTATBgcqhkjOPQIBBggqhkjOPQMB
-          BwNCAASxqe5xTbr7w7p5f2ZqxnHcpFDOyzNZxE0uKiVisIQwKSWo6PxFyaWuWtDA
-          tBRNcp9X62aliynpWaxK9uAT+uh8o0IwQDAOBgNVHQ8BAf8EBAMCAqQwDwYDVR0T
-          AQH/BAUwAwEB/zAdBgNVHQ4EFgQUmooQo4b5b4VxoJVfdMlhY6Mh1SEwCgYIKoZI
-          zj0EAwIDSAAwRQIhAOEwKNFypWxLL2revv0PTjkgIAPk+rLJOZIpiIZVYRUzAiBu
-          PWdms+0ne7J/1CaKP3RQUjRYFsUQhlQoW9TgkbpIxw==
-          -----END CERTIFICATE-----
+        name: argocd-server
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-server
+                volumeMounts:
+                  - name: custom-ca
+                    mountPath: /etc/ssl/certs/homelab-ca.crt
+                    subPath: homelab-ca.crt
+                    readOnly: true
+            volumes:
+              - name: custom-ca
+                configMap:
+                  name: custom-ca-certs
   - target:
       kind: Secret
       name: argocd-secret
