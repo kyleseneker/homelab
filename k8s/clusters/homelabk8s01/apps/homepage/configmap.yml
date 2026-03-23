@@ -16,18 +16,39 @@ data:
         columns: 2
       Downloads:
         style: row
-        columns: 2
+        columns: 3
       Management:
+        style: row
+        columns: 4
+      Observability:
         style: row
         columns: 4
       Infrastructure:
         style: row
-        columns: 3
+        columns: 4
 
   widgets.yaml: |
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: homelabk8s01
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
     - search:
         provider: google
         target: _blank
+    - datetime:
+        text_size: xl
+        format:
+          dateStyle: short
+          timeStyle: short
+          hourCycle: h12
 
   bookmarks.yaml: |
     []
@@ -62,6 +83,14 @@ data:
               url: http://arr-vpn-downloads.arr.svc.cluster.local:8080
               username: admin
               password: "{{HOMEPAGE_VAR_QBIT_PASSWORD}}"
+        - SABnzbd:
+            icon: sabnzbd.svg
+            href: https://sabnzbd.homelab.local
+            description: Usenet client
+            widget:
+              type: sabnzbd
+              url: http://arr-vpn-downloads.arr.svc.cluster.local:8085
+              key: "{{HOMEPAGE_VAR_SABNZBD_KEY}}"
         - Sonarr:
             icon: sonarr.svg
             href: https://sonarr.homelab.local
@@ -105,6 +134,20 @@ data:
         - Recyclarr:
             icon: recyclarr.svg
             description: Quality profiles
+    - Observability:
+        - Grafana:
+            icon: grafana.svg
+            href: https://grafana.homelab.local
+            description: Dashboards
+        - Prometheus:
+            icon: prometheus.svg
+            description: Metrics
+        - Alertmanager:
+            icon: alertmanager.svg
+            description: Alert routing
+        - Loki:
+            icon: loki.svg
+            description: Log aggregation
     - Infrastructure:
         - ArgoCD:
             icon: argocd.svg
@@ -117,3 +160,7 @@ data:
         - Gluetun:
             icon: gluetun.svg
             description: VPN sidecar
+        - Homepage:
+            icon: homepage.svg
+            href: https://home.homelab.local
+            description: Dashboard
