@@ -94,6 +94,18 @@ spec:
             limits:
               memory: 64Mi
 
+        kubeProxy:
+          enabled: false
+
+        kubeEtcd:
+          enabled: false
+
+        kubeControllerManager:
+          enabled: false
+
+        kubeScheduler:
+          enabled: false
+
         kubeStateMetrics:
           enabled: true
         kube-state-metrics:
