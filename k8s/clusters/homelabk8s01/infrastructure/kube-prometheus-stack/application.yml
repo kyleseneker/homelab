@@ -41,6 +41,12 @@ spec:
 
         grafana:
           adminPassword: admin
+          initChownData:
+            enabled: false
+          securityContext:
+            runAsUser: 472
+            runAsGroup: 472
+            fsGroup: 472
           persistence:
             enabled: true
             storageClassName: nfs-client
