@@ -69,3 +69,13 @@ patches:
       data:
         policy.csv: |
           g, authentik Admins, role:admin
+  - target:
+      kind: Secret
+      name: argocd-secret
+    patch: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: argocd-secret
+        annotations:
+          sealedsecrets.bitnami.com/managed: "true"
