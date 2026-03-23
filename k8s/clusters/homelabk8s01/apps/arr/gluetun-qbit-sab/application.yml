@@ -68,7 +68,7 @@ spec:
               qbittorrent:
                 image:
                   repository: lscr.io/linuxserver/qbittorrent
-                  tag: 5.1.4
+                  tag: 20.04.1
                 envFrom:
                   - configMapRef:
                       name: arr-env
