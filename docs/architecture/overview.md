@@ -56,6 +56,9 @@ flowchart LR
 | Loki | Log aggregation (single-binary mode) | `monitoring` |
 | Velero | Cluster and volume backup/restore | `backups` |
 | Alloy | DaemonSet log collector | `monitoring` |
+| Authentik | SSO provider (forward-auth + OIDC) | `auth` |
+| Reloader | Automatic pod restarts on ConfigMap/Secret changes | `kube-system` |
+| Descheduler | Pod rebalancing across nodes (CronJob) | `kube-system` |
 | Jellyfin | Media server | `arr` |
 | Sonarr | TV series management | `arr` |
 | Radarr | Movie management | `arr` |
@@ -65,7 +68,9 @@ flowchart LR
 | qBittorrent + SABnzbd | Download clients (via Gluetun VPN sidecar) | `arr` |
 | Recyclarr | Quality profile sync (CronJob) | `arr` |
 | Tdarr | Media transcoding | `arr` |
+| Exportarr | Prometheus exporter for *arr app metrics | `arr` |
 | Homepage | Dashboard | `arr` |
+| Uptime Kuma | Synthetic monitoring and status page | `monitoring` |
 
 ## Naming Conventions
 

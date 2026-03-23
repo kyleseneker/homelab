@@ -20,6 +20,8 @@ These are the ingress hostnames exposed by ingress-nginx. All require DNS entrie
 | Grafana | `https://grafana.homelab.local` |
 | Prometheus | `https://prometheus.homelab.local` |
 | Alertmanager | `https://alertmanager.homelab.local` |
+| Uptime Kuma | `https://status.homelab.local` |
+| Authentik | `https://auth.homelab.local` |
 
 ### Internal URLs (Kubernetes Service DNS)
 
@@ -38,3 +40,9 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | Tdarr | `http://arr-tdarr.arr.svc.cluster.local:8265` |
 | Loki | `http://loki.monitoring.svc.cluster.local:3100` |
 | MinIO | `http://minio.backups.svc.cluster.local:9000` |
+| Exportarr (Sonarr) | `http://arr-exportarr-sonarr.arr.svc.cluster.local:9707` |
+| Exportarr (Radarr) | `http://arr-exportarr-radarr.arr.svc.cluster.local:9708` |
+| Exportarr (Prowlarr) | `http://arr-exportarr-prowlarr.arr.svc.cluster.local:9709` |
+| Exportarr (Bazarr) | `http://arr-exportarr-bazarr.arr.svc.cluster.local:9710` |
+| Uptime Kuma | `http://uptime-kuma.monitoring.svc.cluster.local:3001` |
+| Authentik | `http://authentik-server.auth.svc.cluster.local` |

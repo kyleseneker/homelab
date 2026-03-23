@@ -85,9 +85,15 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | SABnzbd | `sabnzbd.homelab.local` |
 | Tdarr | `tdarr.homelab.local` |
 | Homepage | `home.homelab.local` |
+| Uptime Kuma | `status.homelab.local` |
+| Authentik | `auth.homelab.local` |
 | Grafana | `grafana.homelab.local` |
 | Prometheus | `prometheus.homelab.local` |
 | Alertmanager | `alertmanager.homelab.local` |
+
+## Network Policies
+
+CiliumNetworkPolicies enforce namespace-level ingress isolation. Each application namespace has a default-deny rule for external traffic, with explicit allow rules for ingress-nginx, intra-namespace communication, and Prometheus scraping. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
 
 ## VPN Sidecar Architecture
 

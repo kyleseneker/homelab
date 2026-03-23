@@ -58,8 +58,10 @@ flowchart LR
 | Networking | MetalLB, ingress-nginx, cert-manager |
 | Storage | NFS dynamic provisioning |
 | Auth | Authentik SSO (forward-auth + OIDC) |
-| Monitoring | Prometheus, Grafana, Loki, Alertmanager |
+| Monitoring | Prometheus, Grafana, Loki, Alertmanager, Exportarr, Uptime Kuma |
 | Backups | Velero, MinIO |
+| Automation | Reloader, Descheduler, Renovate |
+| Network Security | CiliumNetworkPolicies (namespace isolation) |
 | Hardware | Intel iGPU passthrough |
 
 ## Quick Start
@@ -79,7 +81,7 @@ See the [full quick start guide](docs/getting-started/quick-start.md) for config
 |---------|-------------|
 | [Getting Started](docs/getting-started/quick-start.md) | Prerequisites, deployment walkthrough, configuration reference |
 | [Architecture](docs/architecture/overview.md) | System design, GitOps flow, networking, storage, monitoring |
-| [Apps](docs/apps/index.md) | Per-app details for the \*arr stack, Jellyfin, and Homepage |
+| [Apps](docs/apps/index.md) | Per-app details for the \*arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
 | [Infrastructure](docs/infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](docs/runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
 | [Reference](docs/reference/commands.md) | Makefile commands, service URLs, repo layout |

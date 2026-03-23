@@ -37,6 +37,8 @@ flowchart LR
 | kube-state-metrics | Kubernetes object state metrics | Deployment | None |
 | Loki | Log aggregation and querying | StatefulSet (single-binary) | 10Gi PVC (`nfs-client`), 168h retention |
 | Alloy | Pod log collection and shipping | DaemonSet | None (streams to Loki) |
+| Exportarr | Prometheus metrics exporter for *arr apps | Multi-Deployment (one per target) | None |
+| Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`nfs-client`) |
 
 ## Metrics Pipeline
 
@@ -56,6 +58,7 @@ Prometheus scrapes metrics from:
 - **Node Exporter** -- CPU, memory, disk, network, and other host-level metrics from every node
 - **kube-state-metrics** -- Kubernetes object states (pod status, deployment replicas, node conditions)
 - **Kubelet metrics** -- Container resource usage and pod lifecycle events
+- **Exportarr** -- *arr application metrics (queue depth, library size, missing episodes) via ServiceMonitors
 - **Application metrics** -- Any pods with Prometheus scrape annotations
 
 ### Alertmanager
@@ -182,4 +185,12 @@ flowchart TD
     prom -->|"metrics queries"| grafana
     loki -->|"log queries"| grafana
     prom -->|"alerting rules"| am
+
+    subgraph arr["arr Namespace"]
+        exportarr["Exportarr\n(ServiceMonitors)"]
+        arrApps["Sonarr, Radarr,\nProwlarr, Bazarr"]
+    end
+
+    arrApps -->|"API"| exportarr
+    exportarr -->|"arr metrics"| prom
 ```

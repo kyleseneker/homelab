@@ -55,7 +55,7 @@ flowchart LR
 |---------|-----------------|
 | [Getting Started](getting-started/quick-start.md) | Prerequisites, deployment walkthrough, configuration reference |
 | [Architecture](architecture/overview.md) | System design, GitOps flow, networking, storage, monitoring |
-| [Apps](apps/index.md) | Per-app details for the *arr stack, Jellyfin, and Homepage |
+| [Apps](apps/index.md) | Per-app details for the *arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
 | [Infrastructure](infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
 | [Reference](reference/commands.md) | Makefile commands, service URLs, repo layout |
