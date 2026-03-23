@@ -82,6 +82,11 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
+              nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+              nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+              nginx.org/websocket-services: arr-tdarr
             hosts:
               - host: tdarr.homelab.local
                 paths:
@@ -89,6 +94,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - tdarr.homelab.local
+                secretName: tdarr-tls
 
         persistence:
           config:
