@@ -69,7 +69,7 @@ pve-ssh: ## SSH into Proxmox host
 # Kubernetes cluster  (override with CLUSTER=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-dashboard k8s-kubeconfig k8s-ssh-cp
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-secrets k8s-dashboard k8s-kubeconfig k8s-ssh-cp
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -93,6 +93,10 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	@echo "Waiting for ArgoCD to be ready..."
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
 	kubectl apply -f k8s/bootstrap/root-app.yml
+
+k8s-secrets: ## Apply VPN and Recyclarr secrets to the cluster
+	kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
+	kubectl apply -f recyclarr-secret.yml
 
 k8s-dashboard: ## Port-forward ArgoCD UI to localhost:8080
 	@echo "ArgoCD admin password:"
