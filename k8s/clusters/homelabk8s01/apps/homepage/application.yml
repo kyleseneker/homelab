@@ -17,6 +17,8 @@ spec:
       valuesObject:
         controllers:
           main:
+            serviceAccount:
+              identifier: homepage
             containers:
               main:
                 image:
@@ -43,8 +45,7 @@ spec:
                     enabled: true
 
         serviceAccount:
-          create: true
-          name: homepage
+          homepage: {}
 
         service:
           main:
