@@ -22,6 +22,8 @@ spec:
                 image:
                   repository: ghcr.io/gethomepage/homepage
                   tag: v1.11.0
+                env:
+                  HOMEPAGE_ALLOWED_HOSTS: "home.homelab.local"
                 envFrom:
                   - secretRef:
                       name: homepage-secrets
