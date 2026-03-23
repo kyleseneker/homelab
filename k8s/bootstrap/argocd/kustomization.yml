@@ -42,3 +42,9 @@ patches:
         resource.customizations.ignoreDifferences.batch_CronJob: |
           jqPathExpressions:
             - .spec.jobTemplate.spec.template.spec.hostUsers
+        resource.customizations.ignoreDifferences.deviceplugin.intel.com_GpuDevicePlugin: |
+          jqPathExpressions:
+            - .spec
+        resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
+          jqPathExpressions:
+            - .spec.conversion
