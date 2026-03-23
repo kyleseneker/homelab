@@ -21,7 +21,7 @@ spec:
               main:
                 image:
                   repository: fallenbagel/jellyseerr
-                  tag: v3.1.0
+                  tag: 2.7.3
                 envFrom:
                   - configMapRef:
                       name: arr-env
