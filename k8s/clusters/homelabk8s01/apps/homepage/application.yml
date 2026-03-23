@@ -98,3 +98,4 @@ spec:
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+      - ServerSideDiff=true
