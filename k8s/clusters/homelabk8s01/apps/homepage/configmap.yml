@@ -53,13 +53,13 @@ data:
   bookmarks.yaml: |
     - Resources:
         - Documentation:
-            icon: si-mkdocs
-            href: https://kyleseneker.github.io/homelab/
-            description: Homelab docs
+            - icon: si-mkdocs
+              href: https://kyleseneker.github.io/homelab/
+              description: Homelab docs
         - GitHub:
-            icon: si-github
-            href: https://github.com/kyleseneker/homelab
-            description: Source repo
+            - icon: si-github
+              href: https://github.com/kyleseneker/homelab
+              description: Source repo
 
   services.yaml: |
     - Media:
