@@ -172,6 +172,10 @@ data:
         - Gluetun:
             icon: gluetun.svg
             description: VPN sidecar
+        - Authentik:
+            icon: authentik.png
+            href: https://auth.homelab.local
+            description: SSO / Identity
         - Homepage:
             icon: homepage.png
             href: https://home.homelab.local

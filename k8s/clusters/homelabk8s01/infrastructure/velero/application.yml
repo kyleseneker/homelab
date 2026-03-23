@@ -57,6 +57,7 @@ spec:
               includedNamespaces:
                 - arr
                 - monitoring
+                - auth
               defaultVolumesToFsBackup: true
               ttl: 168h0m0s
               storageLocation: default

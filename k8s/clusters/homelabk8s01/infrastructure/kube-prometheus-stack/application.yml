@@ -55,6 +55,20 @@ spec:
             existingSecret: grafana-admin
             userKey: admin-user
             passwordKey: admin-password
+          envFromSecret: grafana-oidc-secret
+          grafana.ini:
+            server:
+              root_url: https://grafana.homelab.local
+            auth.generic_oauth:
+              enabled: true
+              name: Authentik
+              client_id: grafana
+              client_secret: ${GRAFANA_OIDC_CLIENT_SECRET}
+              scopes: openid email profile
+              auth_url: https://auth.homelab.local/application/o/authorize/
+              token_url: http://authentik-server.auth.svc.cluster.local/application/o/token/
+              api_url: http://authentik-server.auth.svc.cluster.local/application/o/userinfo/
+              role_attribute_path: "contains(groups, 'admin') && 'Admin' || 'Viewer'"
           initChownData:
             enabled: false
           securityContext:

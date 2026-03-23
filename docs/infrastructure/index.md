@@ -20,6 +20,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Velero | backups | -1 | velero | 12.0.0 |
 | Intel GPU Plugin | intel-gpu-operator | -1 | intel-device-plugins-gpu | 0.31.1 |
 | Alloy | monitoring | 0 | alloy | 1.6.2 |
+| Authentik | auth | 0 | authentik | 2026.2.1 |
 
 ## Sync Wave Ordering
 

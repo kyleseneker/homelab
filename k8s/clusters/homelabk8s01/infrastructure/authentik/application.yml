@@ -1,0 +1,98 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: authentik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.goauthentik.io
+    chart: authentik
+    targetRevision: 2026.2.1
+    helm:
+      valuesObject:
+        global:
+          envFrom:
+            - secretRef:
+                name: authentik-credentials
+
+        server:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
+            hosts:
+              - auth.homelab.local
+            tls:
+              - hosts:
+                  - auth.homelab.local
+                secretName: authentik-tls
+
+        worker:
+          replicas: 1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+
+        postgresql:
+          enabled: true
+          auth:
+            existingSecret: authentik-credentials
+            secretKeys:
+              adminPasswordKey: postgresql-password
+              userPasswordKey: postgresql-password
+          primary:
+            persistence:
+              enabled: true
+              storageClass: nfs-client
+              size: 5Gi
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
+
+        redis:
+          enabled: true
+          architecture: standalone
+          auth:
+            enabled: false
+          master:
+            persistence:
+              enabled: true
+              storageClass: nfs-client
+              size: 1Gi
+            resources:
+              requests:
+                cpu: 25m
+                memory: 32Mi
+              limits:
+                memory: 128Mi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: auth
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ServerSideDiff=true
