@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 9am on saturday"],
+  "labels": ["renovate"],
+  "argocd": {
+    "fileMatch": ["k8s/.+\\.yml$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Container images in bjw-s app-template (repository + tag)",
+      "fileMatch": ["k8s/.+\\.yml$"],
+      "matchStrings": [
+        "repository:\\s+(?<depName>\\S+)\\n\\s+tag:\\s+(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Inline container image references (image: name:tag)",
+      "fileMatch": ["k8s/.+\\.yml$"],
+      "matchStrings": [
+        "image: (?<depName>[^:\\s]+):(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "ArgoCD install manifest version",
+      "fileMatch": ["k8s/bootstrap/.+\\.yml$"],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/(?<depName>[^/]+/[^/]+)/(?<currentValue>[^/]+)/manifests/"
+      ],
+      "datasourceTemplate": "github-releases"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group app-template chart updates",
+      "matchDatasources": ["helm"],
+      "matchPackageNames": ["app-template"],
+      "groupName": "app-template chart"
+    },
+    {
+      "description": "Group linuxserver container images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["/^lscr\\.io\\/linuxserver\\//"],
+      "groupName": "linuxserver images"
+    },
+    {
+      "description": "Group Grafana stack charts",
+      "matchDatasources": ["helm"],
+      "matchPackageNames": ["loki", "alloy"],
+      "groupName": "grafana stack"
+    },
+    {
+      "description": "Group Intel GPU charts",
+      "matchDatasources": ["helm"],
+      "matchPackageNames": ["intel-device-plugins-gpu", "intel-device-plugins-operator"],
+      "groupName": "intel gpu"
+    }
+  ]
+}
