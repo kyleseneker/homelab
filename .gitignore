@@ -25,6 +25,9 @@ sealed-secrets-key-backup.yml
 kubeconfig
 *.kubeconfig
 
+# MkDocs
+site/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -51,7 +51,15 @@ data:
           hourCycle: h12
 
   bookmarks.yaml: |
-    []
+    - Resources:
+        - Documentation:
+            icon: mdi-book-open-page-variant
+            href: https://github.com/kyleseneker/homelab/tree/main/docs
+            description: Homelab docs
+        - GitHub:
+            icon: mdi-github
+            href: https://github.com/kyleseneker/homelab
+            description: Source repo
 
   services.yaml: |
     - Media:

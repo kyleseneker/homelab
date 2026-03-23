@@ -1,0 +1,98 @@
+site_name: Homelab
+site_description: Infrastructure-as-code for a self-hosted Kubernetes homelab
+site_url: ""
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: blue grey
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: blue grey
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Prerequisites: getting-started/prerequisites.md
+      - Quick Start: getting-started/quick-start.md
+      - Configuration: getting-started/configuration.md
+      - Trust the CA: getting-started/trust-ca.md
+  - Architecture:
+      - Overview: architecture/overview.md
+      - GitOps: architecture/gitops.md
+      - Networking: architecture/networking.md
+      - Storage: architecture/storage.md
+      - Monitoring: architecture/monitoring.md
+      - Secrets: architecture/secrets.md
+      - Backups: architecture/backups.md
+  - Apps:
+      - apps/index.md
+      - Jellyfin: apps/jellyfin.md
+      - Sonarr: apps/sonarr.md
+      - Radarr: apps/radarr.md
+      - Prowlarr: apps/prowlarr.md
+      - Bazarr: apps/bazarr.md
+      - Jellyseerr: apps/jellyseerr.md
+      - Downloads: apps/downloads.md
+      - Recyclarr: apps/recyclarr.md
+      - Tdarr: apps/tdarr.md
+      - Homepage: apps/homepage.md
+  - Infrastructure:
+      - infrastructure/index.md
+      - cert-manager: infrastructure/cert-manager.md
+      - ingress-nginx: infrastructure/ingress-nginx.md
+      - MetalLB: infrastructure/metallb.md
+      - Sealed Secrets: infrastructure/sealed-secrets.md
+      - NFS Provisioner: infrastructure/nfs-provisioner.md
+      - Intel GPU: infrastructure/intel-gpu.md
+      - kube-prometheus-stack: infrastructure/kube-prometheus-stack.md
+      - Loki: infrastructure/loki.md
+      - Alloy: infrastructure/alloy.md
+      - MinIO: infrastructure/minio.md
+      - Velero: infrastructure/velero.md
+      - Metrics Server: infrastructure/metrics-server.md
+  - Runbooks:
+      - Disaster Recovery: runbooks/disaster-recovery.md
+      - Upgrading Apps: runbooks/upgrading-apps.md
+      - Upgrading Kubernetes: runbooks/upgrading-kubernetes.md
+      - Adding an App: runbooks/adding-an-app.md
+      - Adding Infrastructure: runbooks/adding-infrastructure.md
+      - Troubleshooting: runbooks/troubleshooting.md
+      - Secret Rotation: runbooks/secret-rotation.md
+      - Backup & Restore: runbooks/backup-and-restore.md
+  - Reference:
+      - Commands: reference/commands.md
+      - Service URLs: reference/service-urls.md
+      - Repo Layout: reference/repo-layout.md

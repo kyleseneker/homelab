@@ -13,10 +13,20 @@ export ANSIBLE_CONFIG := $(ANSIBLE_DIR)/ansible.cfg
 
 CP_IP := $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
 
-.PHONY: help
+.PHONY: help docs docs-serve
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+# ---------------------------------------------------------------------------
+# Documentation
+# ---------------------------------------------------------------------------
+
+docs: ## Build documentation site
+	pip install -q -r docs-requirements.txt && mkdocs build
+
+docs-serve: ## Serve documentation site locally
+	pip install -q -r docs-requirements.txt && mkdocs serve
 
 # ---------------------------------------------------------------------------
 # Setup
