@@ -166,6 +166,7 @@ Examples: `make PVE_HOST=homelabpve02 pve-configure`, `make CLUSTER=homelabk8s02
 - **NFS provisioner**: Dynamic PVs from Unifi NAS
 - **VPN sidecar**: Gluetun + download clients in one Pod (shared network namespace)
 - **iGPU passthrough**: Jellyfin/Tdarr hardware transcoding via PCI passthrough
+- **Prometheus + Grafana + Loki**: Full cluster monitoring, dashboards, and log aggregation
 
 ## Adding a New Proxmox Host
 
@@ -337,6 +338,29 @@ rm homepage-secret.yml
 kubectl rollout restart deployment/homepage -n arr
 ```
 
+### 11. Monitoring & Observability
+
+The cluster deploys a full monitoring stack automatically via ArgoCD:
+
+| Component | Purpose |
+|-----------|---------|
+| Metrics Server | `kubectl top nodes` / `kubectl top pods` |
+| Prometheus | Cluster and app metrics, alerting rules |
+| Grafana | Dashboards and log exploration |
+| Loki | Log aggregation (single-binary mode) |
+| Alloy | DaemonSet log collector shipping to Loki |
+| Alertmanager | Alert routing (ready for future rules) |
+| Node Exporter | Host-level metrics from every node |
+| Kube State Metrics | Kubernetes object metrics |
+
+**Grafana** is available at `https://grafana.homelab.local`.
+
+- Default login: `admin` / `admin` (change on first login)
+- Pre-built dashboards for cluster, node, pod, and namespace health are included
+- Loki is pre-configured as a data source -- use **Explore** to search logs by namespace, pod, or container
+
+Add a DNS entry for `grafana.homelab.local` pointing to the ingress LoadBalancer IP (same as other `*.homelab.local` entries).
+
 ### Trust the Homelab CA (one-time per machine)
 
 To avoid self-signed certificate warnings in your browser:
@@ -397,6 +421,11 @@ homelab/
 │   └── clusters/<cluster>/
 │       ├── config/env.yml
 │       ├── infrastructure/
+│       │   ├── metrics-server/
+│       │   ├── kube-prometheus-stack/
+│       │   ├── loki/
+│       │   ├── alloy/
+│       │   └── ...
 │       └── apps/
 ├── .editorconfig
 ├── .gitignore
