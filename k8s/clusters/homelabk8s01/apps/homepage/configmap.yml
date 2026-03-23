@@ -65,6 +65,7 @@ data:
               key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
               enableBlocks: true
               enableNowPlaying: true
+              fields: ["movies", "series", "episodes"]
         - Jellyseerr:
             icon: jellyseerr.svg
             href: https://jellyseerr.homelab.local
