@@ -35,6 +35,7 @@ spec:
                 region: minio
                 s3ForcePathStyle: "true"
                 s3Url: http://minio.backups.svc.cluster.local:9000
+          volumeSnapshotLocation: []
           defaultVolumesToFsBackup: true
 
         credentials:
