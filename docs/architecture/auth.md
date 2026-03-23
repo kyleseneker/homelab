@@ -60,7 +60,7 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 
 | Group | Grafana Role | ArgoCD Role | Forward-Auth |
 |-------|-------------|-------------|--------------|
-| `admin` | Admin | `role:admin` | Full access |
+| `authentik Admins` | Admin | `role:admin` | Full access |
 | (default) | Viewer | Read-only | Full access |
 
 ## Resilience

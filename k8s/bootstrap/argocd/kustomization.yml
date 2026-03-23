@@ -68,4 +68,4 @@ patches:
         name: argocd-rbac-cm
       data:
         policy.csv: |
-          g, admin, role:admin
+          g, authentik Admins, role:admin

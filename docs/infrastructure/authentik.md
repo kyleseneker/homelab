@@ -99,8 +99,8 @@ Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` 
     ```
 
 10. Create **OAuth2/OpenID Provider** for Jellyseerr (client ID: `jellyseerr`, redirect URI per Jellyseerr settings). Configure in Jellyseerr's Settings > Authentication.
-11. Create an `admin` group in Directory > Groups (maps to Grafana Admin and ArgoCD `role:admin`).
-12. Create user accounts in Directory > Users and assign to groups.
+11. The built-in `authentik Admins` group maps to Grafana Admin and ArgoCD `role:admin`. Ensure your user is a member.
+12. Create additional user accounts in Directory > Users as needed.
 
 ## Backups
 
