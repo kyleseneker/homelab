@@ -58,9 +58,13 @@ spec:
               userPasswordKey: postgresql-password
           primary:
             podSecurityContext:
+              enabled: true
               fsGroup: 988
             containerSecurityContext:
+              enabled: true
               runAsUser: 977
+              runAsGroup: 988
+              runAsNonRoot: true
             persistence:
               enabled: true
               storageClass: nfs-client
