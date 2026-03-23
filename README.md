@@ -230,9 +230,9 @@ Open `https://qbit.homelab.local`, log in as `admin` with that password. Go to *
 
 Open `https://sabnzbd.homelab.local`. Complete the first-time wizard to set language and add your Usenet provider (server address, port, username, password, SSL, connections). If the wizard doesn't appear, go to **Config > Servers**.
 
-### 3. Sonarr / Radarr / Lidarr
+### 3. Sonarr / Radarr
 
-For each app (`https://sonarr.homelab.local`, `https://radarr.homelab.local`, `https://lidarr.homelab.local`):
+For each app (`https://sonarr.homelab.local`, `https://radarr.homelab.local`):
 
 **Authentication:** Settings > General > Authentication > Forms. Set a username and password.
 
@@ -242,7 +242,6 @@ For each app (`https://sonarr.homelab.local`, `https://radarr.homelab.local`, `h
 |-----|-------------|
 | Sonarr | `/data/media/tv` |
 | Radarr | `/data/media/movies` |
-| Lidarr | `/data/media/music` |
 
 **Download clients** (Settings > Download Clients > Add):
 
@@ -251,7 +250,7 @@ For each app (`https://sonarr.homelab.local`, `https://radarr.homelab.local`, `h
 | Host | `arr-vpn-downloads.arr.svc.cluster.local` | `arr-vpn-downloads.arr.svc.cluster.local` |
 | Port | `8080` | `8085` |
 | Auth | admin + your password | API key from SABnzbd Config > General |
-| Category | `tv` / `movies` / `music` (per app) | `tv` / `movies` / `music` (per app) |
+| Category | `tv` / `movies` (per app) | `tv` / `movies` (per app) |
 
 **Note the API key** from Settings > General -- you'll need it for Prowlarr and Recyclarr.
 
@@ -269,7 +268,6 @@ Open `https://prowlarr.homelab.local`. Prowlarr is a centralized indexer manager
 |-----|-----------------|----------------|
 | Sonarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` | `http://arr-sonarr.arr.svc.cluster.local:8989` |
 | Radarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` | `http://arr-radarr.arr.svc.cluster.local:7878` |
-| Lidarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` | `http://arr-lidarr.arr.svc.cluster.local:8686` |
 
 After saving, click **Sync App Indexers** and verify indexers appear in each *arr app under Settings > Indexers.
 
@@ -287,7 +285,7 @@ rm recyclarr-secret.yml
 To trigger a sync immediately instead of waiting for the next 6-hour CronJob run:
 
 ```bash
-kubectl create job --from=cronjob/arr-recyclarr-main -n arr recyclarr-manual
+kubectl create job --from=cronjob/arr-recyclarr -n arr recyclarr-manual
 kubectl logs -n arr -l job-name=recyclarr-manual -f
 ```
 
@@ -335,7 +333,6 @@ Reference for app-to-app connections (Kubernetes service DNS):
 |---------|-----|
 | Sonarr | `http://arr-sonarr.arr.svc.cluster.local:8989` |
 | Radarr | `http://arr-radarr.arr.svc.cluster.local:7878` |
-| Lidarr | `http://arr-lidarr.arr.svc.cluster.local:8686` |
 | Prowlarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` |
 | Bazarr | `http://arr-bazarr.arr.svc.cluster.local:6767` |
 | Jellyfin | `http://arr-jellyfin.arr.svc.cluster.local:8096` |
