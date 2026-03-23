@@ -87,7 +87,7 @@ spec:
             globalMounts:
               - path: /data/media
                 subPath: media
-                readOnly: true
+                readOnly: false
           dri:
             type: hostPath
             hostPath: /dev/dri
