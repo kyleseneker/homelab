@@ -1,0 +1,98 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homepage
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://bjw-s-labs.github.io/helm-charts
+    chart: app-template
+    targetRevision: 3.6.0
+    helm:
+      valuesObject:
+        controllers:
+          main:
+            containers:
+              main:
+                image:
+                  repository: ghcr.io/gethomepage/homepage
+                  tag: v1.11.0
+                envFrom:
+                  - secretRef:
+                      name: homepage-secrets
+                      optional: true
+                resources:
+                  requests:
+                    cpu: 25m
+                    memory: 64Mi
+                  limits:
+                    memory: 256Mi
+                probes:
+                  liveness:
+                    enabled: true
+                  readiness:
+                    enabled: true
+                  startup:
+                    enabled: true
+
+        serviceAccount:
+          create: true
+          name: homepage
+
+        service:
+          main:
+            controller: main
+            ports:
+              http:
+                port: 3000
+
+        ingress:
+          main:
+            enabled: true
+            className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
+            hosts:
+              - host: home.homelab.local
+                paths:
+                  - path: /
+                    service:
+                      identifier: main
+                      port: http
+            tls:
+              - hosts:
+                  - home.homelab.local
+                secretName: homepage-tls
+
+        persistence:
+          config:
+            type: configMap
+            name: homepage-config
+            globalMounts:
+              - path: /app/config/services.yaml
+                subPath: services.yaml
+                readOnly: true
+              - path: /app/config/settings.yaml
+                subPath: settings.yaml
+                readOnly: true
+              - path: /app/config/widgets.yaml
+                subPath: widgets.yaml
+                readOnly: true
+              - path: /app/config/bookmarks.yaml
+                subPath: bookmarks.yaml
+                readOnly: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arr
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

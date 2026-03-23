@@ -94,9 +94,10 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
 	kubectl apply -f k8s/bootstrap/root-app.yml
 
-k8s-secrets: ## Apply VPN and Recyclarr secrets to the cluster
+k8s-secrets: ## Apply VPN, Recyclarr, and Homepage secrets to the cluster
 	kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
 	kubectl apply -f recyclarr-secret.yml
+	kubectl apply -f homepage-secret.yml
 
 k8s-dashboard: ## Port-forward ArgoCD UI to localhost:8080
 	@echo "ArgoCD admin password:"

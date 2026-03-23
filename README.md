@@ -325,6 +325,31 @@ Open `https://tdarr.homelab.local`.
 - Transcode settings: Choose target codec (H.265/HEVC recommended for space savings)
 - The Intel iGPU is already available for hardware transcoding
 
+### 10. Homepage Dashboard
+
+The dashboard is available at `https://home.homelab.local`. To enable service widgets, create the API key secret:
+
+```bash
+cp k8s/clusters/homelabk8s01/apps/homepage/homepage-secret.example homepage-secret.yml
+# Edit homepage-secret.yml with API keys from each service (Settings > General)
+kubectl apply -f homepage-secret.yml
+rm homepage-secret.yml
+kubectl rollout restart deployment/homepage -n arr
+```
+
+### Trust the Homelab CA (one-time per machine)
+
+To avoid self-signed certificate warnings in your browser:
+
+```bash
+export KUBECONFIG=$(pwd)/kubeconfig
+kubectl get secret homelab-ca-secret -n cert-manager -o jsonpath='{.data.tls\.crt}' | base64 -d > homelab-ca.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain homelab-ca.crt
+rm homelab-ca.crt
+```
+
+Restart your browser after running this. All `https://*.homelab.local` sites will show valid certificates.
+
 ### Internal Service URLs
 
 Reference for app-to-app connections (Kubernetes service DNS):

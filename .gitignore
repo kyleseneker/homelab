@@ -18,6 +18,7 @@ crash.log
 id_rsa*
 vpn-secret.yml
 recyclarr-secret.yml
+homepage-secret.yml
 
 # Kubeconfig
 kubeconfig

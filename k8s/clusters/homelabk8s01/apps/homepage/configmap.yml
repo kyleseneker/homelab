@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+  namespace: arr
+data:
+  settings.yaml: |
+    title: Homelab
+    favicon: https://jellyfin.homelab.local/web/favicon.ico
+    theme: dark
+    color: slate
+    headerStyle: clean
+    layout:
+      Media:
+        style: row
+        columns: 2
+      Downloads:
+        style: row
+        columns: 2
+      Management:
+        style: row
+        columns: 4
+      Infrastructure:
+        style: row
+        columns: 3
+
+  widgets.yaml: |
+    - search:
+        provider: google
+        target: _blank
+
+  bookmarks.yaml: |
+    []
+
+  services.yaml: |
+    - Media:
+        - Jellyfin:
+            icon: jellyfin.svg
+            href: https://jellyfin.homelab.local
+            description: Media server
+            widget:
+              type: jellyfin
+              url: http://arr-jellyfin.arr.svc.cluster.local:8096
+              key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
+              enableBlocks: true
+              enableNowPlaying: true
+        - Jellyseerr:
+            icon: jellyseerr.svg
+            href: https://jellyseerr.homelab.local
+            description: Media requests
+            widget:
+              type: jellyseerr
+              url: http://arr-jellyseerr.arr.svc.cluster.local:5055
+              key: "{{HOMEPAGE_VAR_JELLYSEERR_KEY}}"
+    - Downloads:
+        - qBittorrent:
+            icon: qbittorrent.svg
+            href: https://qbit.homelab.local
+            description: Torrent client
+            widget:
+              type: qbittorrent
+              url: http://arr-vpn-downloads.arr.svc.cluster.local:8080
+              username: admin
+              password: "{{HOMEPAGE_VAR_QBIT_PASSWORD}}"
+        - Sonarr:
+            icon: sonarr.svg
+            href: https://sonarr.homelab.local
+            description: TV shows
+            widget:
+              type: sonarr
+              url: http://arr-sonarr.arr.svc.cluster.local:8989
+              key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
+        - Radarr:
+            icon: radarr.svg
+            href: https://radarr.homelab.local
+            description: Movies
+            widget:
+              type: radarr
+              url: http://arr-radarr.arr.svc.cluster.local:7878
+              key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
+    - Management:
+        - Prowlarr:
+            icon: prowlarr.svg
+            href: https://prowlarr.homelab.local
+            description: Indexer manager
+            widget:
+              type: prowlarr
+              url: http://arr-prowlarr.arr.svc.cluster.local:9696
+              key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+        - Bazarr:
+            icon: bazarr.svg
+            href: https://bazarr.homelab.local
+            description: Subtitles
+            widget:
+              type: bazarr
+              url: http://arr-bazarr.arr.svc.cluster.local:6767
+              key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
+        - Tdarr:
+            icon: tdarr.svg
+            href: http://tdarr.homelab.local
+            description: Transcoding
+            widget:
+              type: tdarr
+              url: http://arr-tdarr.arr.svc.cluster.local:8265
+        - Recyclarr:
+            icon: recyclarr.svg
+            description: Quality profiles
+    - Infrastructure:
+        - ArgoCD:
+            icon: argocd.svg
+            href: https://argocd.homelab.local
+            description: GitOps
+        - Proxmox:
+            icon: proxmox.svg
+            href: https://proxmox.homelab.local
+            description: Hypervisor
+        - Gluetun:
+            icon: gluetun.svg
+            description: VPN sidecar
