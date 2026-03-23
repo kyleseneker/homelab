@@ -48,6 +48,30 @@ spec:
           limits:
             memory: 512Mi
 
+        schedules:
+          daily-stateful:
+            disabled: false
+            schedule: "0 3 * * *"
+            template:
+              includedNamespaces:
+                - arr
+                - monitoring
+              defaultVolumesToFsBackup: true
+              ttl: 168h0m0s
+              storageLocation: default
+          weekly-full-cluster:
+            disabled: false
+            schedule: "0 4 * * 0"
+            template:
+              includedNamespaces:
+                - "*"
+              excludedNamespaces:
+                - kube-system
+                - kube-public
+              defaultVolumesToFsBackup: true
+              ttl: 720h0m0s
+              storageLocation: default
+
         deployNodeAgent: true
         nodeAgent:
           resources:
