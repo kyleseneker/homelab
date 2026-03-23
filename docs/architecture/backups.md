@@ -22,10 +22,10 @@ flowchart LR
 
 | Component | Namespace | Purpose |
 |-----------|-----------|---------|
-| Velero | `velero` | Backup orchestration, scheduling, and restore |
+| Velero | `backups` | Backup orchestration, scheduling, and restore |
 | MinIO | `backups` | S3-compatible object storage backend |
-| Velero AWS Plugin | `velero` | S3 API compatibility layer for MinIO |
-| Kopia (File System Backup) | `velero` | PVC data backup via file system copy |
+| Velero AWS Plugin | `backups` | S3 API compatibility layer for MinIO |
+| Kopia (File System Backup) | `backups` | PVC data backup via file system copy |
 
 ## MinIO Configuration
 
@@ -45,7 +45,7 @@ Velero uses the AWS plugin to communicate with MinIO over the S3 API. File syste
 
 | Setting | Value |
 |---------|-------|
-| Namespace | `velero` |
+| Namespace | `backups` |
 | Plugin | `velero-plugin-for-aws` |
 | Backup Storage | MinIO (S3-compatible) |
 | Volume Backup Method | File System Backup (Kopia) |

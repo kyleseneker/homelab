@@ -40,38 +40,32 @@ flowchart LR
 ## Component Inventory
 
 | Component | Role | Namespace |
-|---|---|---|
+|------|------|-----------|
 | Cilium | Container Network Interface (CNI) | `kube-system` |
 | ArgoCD | GitOps continuous delivery | `argocd` |
 | MetalLB | Bare-metal LoadBalancer IP allocation | `metallb-system` |
 | ingress-nginx | Ingress controller (DaemonSet mode) | `ingress-nginx` |
 | cert-manager | TLS certificate management (self-signed CA) | `cert-manager` |
 | Sealed Secrets | Encrypted secret management | `kube-system` |
-| NFS Subdir External Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |
-| Velero | Cluster and volume backup/restore | `velero` |
-| MinIO | S3-compatible object storage for backups | `backups` |
-| Intel GPU Operator | Intel GPU device driver management | `gpu-operator` |
-| Intel GPU Plugin | Intel iGPU device plugin for workloads | `gpu-operator` |
-| Prometheus | Metrics collection and alerting (15d retention) | `monitoring` |
-| Grafana | Metrics and log visualization | `monitoring` |
-| Alertmanager | Alert routing and notification | `monitoring` |
-| Node Exporter | Host-level metrics exporter | `monitoring` |
-| kube-state-metrics | Kubernetes object state metrics | `monitoring` |
-| Loki | Log aggregation (single-binary mode) | `monitoring` |
-| Alloy | DaemonSet log collector | `monitoring` |
+| NFS Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |
 | Metrics Server | Kubernetes resource metrics API | `kube-system` |
+| MinIO | S3-compatible object storage for backups | `backups` |
+| Intel GPU Operator | Intel GPU device driver management | `intel-gpu-operator` |
+| Intel GPU Plugin | Intel iGPU device plugin for workloads | `intel-gpu-operator` |
+| kube-prometheus-stack | Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics | `monitoring` |
+| Loki | Log aggregation (single-binary mode) | `monitoring` |
+| Velero | Cluster and volume backup/restore | `backups` |
+| Alloy | DaemonSet log collector | `monitoring` |
 | Jellyfin | Media server | `arr` |
 | Sonarr | TV series management | `arr` |
 | Radarr | Movie management | `arr` |
 | Prowlarr | Indexer management | `arr` |
 | Bazarr | Subtitle management | `arr` |
 | Jellyseerr | Media request management | `arr` |
-| qBittorrent | Torrent client (via Gluetun VPN) | `arr` |
-| SABnzbd | Usenet client (via Gluetun VPN) | `arr` |
-| Gluetun | VPN sidecar container | `arr` |
+| qBittorrent + SABnzbd | Download clients (via Gluetun VPN sidecar) | `arr` |
 | Recyclarr | Quality profile sync (CronJob) | `arr` |
 | Tdarr | Media transcoding | `arr` |
-| Homepage | Dashboard | `homepage` |
+| Homepage | Dashboard | `arr` |
 
 ## Naming Conventions
 

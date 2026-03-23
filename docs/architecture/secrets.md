@@ -80,10 +80,10 @@ The following sealed secrets are managed in the repository:
 |------------|-----------|---------|---------|
 | `vpn-credentials` | `arr` | PIA VPN username and password | Gluetun |
 | `recyclarr-secrets` | `arr` | API keys for Sonarr and Radarr | Recyclarr |
-| `homepage-secrets` | `homepage` | API keys and service credentials | Homepage |
+| `homepage-secrets` | `arr` | API keys and service credentials | Homepage |
 | `grafana-admin` | `monitoring` | Grafana admin username and password | Grafana |
 | `minio-credentials` | `backups` | MinIO root user and password | MinIO |
-| `velero-cloud-credentials` | `velero` | S3 access credentials for Velero | Velero |
+| `velero-cloud-credentials` | `backups` | S3 access credentials for Velero | Velero |
 
 ## Disaster Recovery
 

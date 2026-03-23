@@ -48,7 +48,7 @@ TLS certificates are issued by a self-signed CA chain managed entirely within th
 ```mermaid
 flowchart TD
     selfSignedIssuer["ClusterIssuer:\nselfsigned-issuer"] -->|"issues"| caCert["Certificate:\nhomelab-ca"]
-    caCert -->|"stored in"| caSecret["Secret:\nhomelab-ca-tls"]
+    caCert -->|"stored in"| caSecret["Secret:\nhomelab-ca-secret"]
     caSecret -->|"referenced by"| caIssuer["ClusterIssuer:\nhomelab-ca-issuer"]
     caIssuer -->|"issues certs for"| ingressTLS["Ingress TLS Secrets"]
 ```
@@ -59,13 +59,13 @@ flowchart TD
 |----------|------|---------|
 | `selfsigned-issuer` | ClusterIssuer | Bootstrap issuer that signs the CA certificate |
 | `homelab-ca` | Certificate | The root CA certificate, signed by the self-signed issuer |
-| `homelab-ca-tls` | Secret | Stores the CA key pair, referenced by the CA issuer |
+| `homelab-ca-secret` | Secret | Stores the CA key pair, referenced by the CA issuer |
 | `homelab-ca-issuer` | ClusterIssuer | Issues TLS certificates for Ingress resources using the CA |
 
 When an Ingress resource includes a `cert-manager.io/cluster-issuer: homelab-ca-issuer` annotation, cert-manager automatically provisions a TLS certificate signed by the homelab CA and stores it in the referenced Secret.
 
 !!! tip "Trusting the CA"
-    To avoid browser warnings, import the `homelab-ca` certificate into your operating system or browser trust store. The CA certificate can be extracted from the `homelab-ca-tls` Secret in the `cert-manager` namespace.
+    To avoid browser warnings, import the `homelab-ca` certificate into your operating system or browser trust store. The CA certificate can be extracted from the `homelab-ca-secret` Secret in the `cert-manager` namespace.
 
 ## DNS
 
@@ -81,10 +81,10 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | Prowlarr | `prowlarr.homelab.local` |
 | Bazarr | `bazarr.homelab.local` |
 | Jellyseerr | `jellyseerr.homelab.local` |
-| qBittorrent | `qbittorrent.homelab.local` |
+| qBittorrent | `qbit.homelab.local` |
 | SABnzbd | `sabnzbd.homelab.local` |
 | Tdarr | `tdarr.homelab.local` |
-| Homepage | `homepage.homelab.local` |
+| Homepage | `home.homelab.local` |
 | Grafana | `grafana.homelab.local` |
 | Prometheus | `prometheus.homelab.local` |
 | Alertmanager | `alertmanager.homelab.local` |
