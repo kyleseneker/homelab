@@ -141,13 +141,16 @@ data:
             description: Dashboards
         - Prometheus:
             icon: prometheus.svg
+            href: https://prometheus.homelab.local
             description: Metrics
         - Alertmanager:
             icon: alertmanager.svg
+            href: https://alertmanager.homelab.local
             description: Alert routing
         - Loki:
             icon: loki.svg
-            description: Log aggregation
+            href: https://grafana.homelab.local/explore
+            description: Logs (via Grafana)
     - Infrastructure:
         - ArgoCD:
             icon: argocd.svg
