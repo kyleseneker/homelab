@@ -25,6 +25,7 @@ spec:
                 env:
                   TZ: America/Chicago
                   UPTIME_KUMA_DB_TYPE: sqlite
+                  NODE_TLS_REJECT_UNAUTHORIZED: "0"
                 resources:
                   requests:
                     cpu: 25m
