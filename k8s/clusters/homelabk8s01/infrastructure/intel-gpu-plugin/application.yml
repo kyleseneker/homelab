@@ -17,6 +17,11 @@ spec:
       valuesObject:
         sharedDevNum: 5
         nodeFeatureRule: false
+  ignoreDifferences:
+    - group: deviceplugin.intel.com
+      kind: GpuDevicePlugin
+      jqPathExpressions:
+        - .spec
   destination:
     server: https://kubernetes.default.svc
     namespace: intel-gpu-operator
