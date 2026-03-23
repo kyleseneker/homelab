@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-jellyseerr
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,10 +21,16 @@ spec:
               main:
                 image:
                   repository: fallenbagel/jellyseerr
-                  tag: latest
+                  tag: v3.1.0
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 256Mi
+                  limits:
+                    memory: 512Mi
                 probes:
                   liveness:
                     enabled: true
@@ -42,6 +50,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: jellyseerr.homelab.local
                 paths:
@@ -49,6 +59,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - jellyseerr.homelab.local
+                secretName: jellyseerr-tls
 
         persistence:
           config:

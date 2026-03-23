@@ -3,7 +3,6 @@
 *.tfstate
 *.tfstate.backup
 *.tfstate.*.backup
-.terraform.lock.hcl
 terraform.tfvars
 crash.log
 
@@ -17,6 +16,8 @@ crash.log
 *.pem
 *.key
 id_rsa*
+vpn-secret.yml
+recyclarr-secret.yml
 
 # Kubeconfig
 kubeconfig

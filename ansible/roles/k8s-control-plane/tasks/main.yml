@@ -48,13 +48,16 @@
 
 - name: Install Cilium CLI
   ansible.builtin.shell: |
+    set -euo pipefail
     CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
     curl -L --fail --remote-name-all \
-      https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz
+      https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}
+    sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
     tar xzvf cilium-linux-amd64.tar.gz -C /usr/local/bin
-    rm -f cilium-linux-amd64.tar.gz
+    rm -f cilium-linux-amd64.tar.gz cilium-linux-amd64.tar.gz.sha256sum
   args:
     creates: /usr/local/bin/cilium
+    executable: /bin/bash
 
 - name: Install Cilium into the cluster
   ansible.builtin.command: cilium install --version {{ cilium_version }}
@@ -81,7 +84,9 @@
   ansible.builtin.command: kubeadm token create --print-join-command
   register: join_command_output
   changed_when: false
+  no_log: true
 
 - name: Store join command as fact
   ansible.builtin.set_fact:
     k8s_join_command: "{{ join_command_output.stdout }}"
+  no_log: true

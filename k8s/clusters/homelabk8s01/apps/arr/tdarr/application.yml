@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-tdarr
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,7 +21,7 @@ spec:
               main:
                 image:
                   repository: ghcr.io/haveagitgat/tdarr
-                  tag: latest
+                  tag: 2.64.01
                 envFrom:
                   - configMapRef:
                       name: arr-env
@@ -30,6 +32,13 @@ spec:
                   internalNode: "true"
                   inContainer: "true"
                   ffmpegVersion: "6"
+                resources:
+                  requests:
+                    cpu: 200m
+                    memory: 512Mi
+                  limits:
+                    memory: 4Gi
+                    gpu.intel.com/i915: 1
                 probes:
                   liveness:
                     enabled: true
@@ -73,6 +82,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: tdarr.homelab.local
                 paths:
@@ -80,6 +91,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - tdarr.homelab.local
+                secretName: tdarr-tls
 
         persistence:
           config:

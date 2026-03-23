@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-lidarr
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,10 +21,16 @@ spec:
               main:
                 image:
                   repository: lscr.io/linuxserver/lidarr
-                  tag: latest
+                  tag: 3.1.0
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    memory: 512Mi
                 probes:
                   liveness:
                     enabled: true
@@ -42,6 +50,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: lidarr.homelab.local
                 paths:
@@ -49,6 +59,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - lidarr.homelab.local
+                secretName: lidarr-tls
 
         persistence:
           config:

@@ -58,11 +58,21 @@
     pveum user token add {{ pve_terraform_user }} {{ pve_terraform_token_name }}
     -privsep 0 --output-format json
   register: token_result
+  no_log: true
   when: pve_terraform_token_name not in (token_list.stdout | from_json | map(attribute='tokenid') | map('split', '!') | map('last'))
 
-- name: Display API token
+- name: Save API token to file
+  ansible.builtin.copy:
+    dest: /root/.terraform-api-token
+    content: |
+      proxmox_api_token = "{{ pve_terraform_user }}!{{ pve_terraform_token_name }}={{ (token_result.stdout | from_json).value }}"
+    mode: "0600"
+  no_log: true
+  when: token_result is not skipped
+
+- name: Display API token location
   ansible.builtin.debug:
     msg: >-
-      Terraform API token created. Add this to your terraform.tfvars:
-      proxmox_api_token = "{{ pve_terraform_user }}!{{ pve_terraform_token_name }}={{ (token_result.stdout | from_json).value }}"
+      Terraform API token created and saved to /root/.terraform-api-token on the PVE host.
+      Copy the value to your terraform.tfvars file.
   when: token_result is not skipped

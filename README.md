@@ -39,22 +39,26 @@ cp terraform/hosts/homelabk8s01/terraform.tfvars.example terraform/hosts/homelab
 
 # 5. Configure Ansible
 # Edit ansible/inventory/homelabk8s01/hosts.yml -- node IPs must match terraform.tfvars
-# Edit ansible/group_vars/all/vars.yml -- timezone, nas_ip, media_uid, media_gid
+# Edit ansible/inventory/homelabk8s01/group_vars/all.yml -- nas_ip, nas_export_path, nfs_mount_path
+# Edit ansible/group_vars/all/vars.yml -- timezone, media_uid, media_gid
 
 # 6. Configure K8s manifests
 # Edit the files listed in the Configuration section below
 
-# 7. Create VPN secret
+# 7. Create secrets
 cp k8s/clusters/homelabk8s01/apps/arr/vpn-secret.example k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
-# Edit with real PIA credentials
+# Edit vpn-secret.yml with real PIA credentials
+cp k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.example k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.yml
+# Edit recyclarr-secret.yml with Sonarr/Radarr API keys (after initial setup)
 
 # 8. Deploy everything
 make k8s-deploy
 
-# 9. Apply VPN secret
+# 9. Apply secrets
 make k8s-kubeconfig
 export KUBECONFIG=$(pwd)/kubeconfig
 kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
+kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.yml
 
 # 10. Open ArgoCD dashboard
 make k8s-dashboard
@@ -101,7 +105,6 @@ nodes = {
 | Variable | Description |
 |----------|-------------|
 | `timezone` | TZ database timezone |
-| `nas_ip` | NAS / NFS server IP |
 | `media_uid` | UID for media containers |
 | `media_gid` | GID for media containers |
 
@@ -111,6 +114,7 @@ nodes = {
 |------|-------------|
 | `ansible/inventory/homelabpve01/hosts.yml` | Proxmox host IP |
 | `ansible/inventory/homelabk8s01/hosts.yml` | K8s node IPs (must match terraform.tfvars) |
+| `ansible/inventory/homelabk8s01/group_vars/all.yml` | NAS IP, NFS export path, mount path |
 
 ### K8s manifests
 

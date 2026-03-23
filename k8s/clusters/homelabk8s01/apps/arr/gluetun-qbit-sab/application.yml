@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-vpn-downloads
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,7 +21,7 @@ spec:
               gluetun:
                 image:
                   repository: qmcgaw/gluetun
-                  tag: latest
+                  tag: v3.41.1
                 env:
                   VPN_SERVICE_PROVIDER: "private internet access"
                   SERVER_REGIONS: "US East"
@@ -28,6 +30,12 @@ spec:
                 envFrom:
                   - secretRef:
                       name: vpn-credentials
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 128Mi
+                  limits:
+                    memory: 256Mi
                 securityContext:
                   capabilities:
                     add:
@@ -59,21 +67,33 @@ spec:
               qbittorrent:
                 image:
                   repository: lscr.io/linuxserver/qbittorrent
-                  tag: latest
+                  tag: 5.1.4
                 envFrom:
                   - configMapRef:
                       name: arr-env
                 env:
                   WEBUI_PORT: "8080"
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    memory: 1Gi
                 dependsOn: gluetun
 
               sabnzbd:
                 image:
                   repository: lscr.io/linuxserver/sabnzbd
-                  tag: latest
+                  tag: 4.5.5
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    memory: 1Gi
                 dependsOn: gluetun
 
         service:
@@ -89,6 +109,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: qbit.homelab.local
                 paths:
@@ -102,6 +124,11 @@ spec:
                     service:
                       identifier: main
                       port: sabnzbd-http
+            tls:
+              - hosts:
+                  - qbit.homelab.local
+                  - sabnzbd.homelab.local
+                secretName: vpn-downloads-tls
 
         persistence:
           gluetun-config:

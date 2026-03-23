@@ -1,4 +1,7 @@
 ---
+ansible_user: media
+ansible_become: true
+
 k8s_version: "1.31.4"
 k8s_version_minor: "1.31"
 pod_network_cidr: "10.244.0.0/16"
@@ -6,12 +9,5 @@ service_cidr: "10.96.0.0/12"
 cilium_version: "1.16.5"
 
 timezone: America/Chicago
-nas_ip: "192.168.10.x"
 media_uid: 1000
 media_gid: 1000
-
-nas_export_path: "/data"
-nfs_mount_path: "/data"
-
-ansible_user: media
-ansible_become: true

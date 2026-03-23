@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-sonarr
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,10 +21,16 @@ spec:
               main:
                 image:
                   repository: lscr.io/linuxserver/sonarr
-                  tag: latest
+                  tag: 4.0.17
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                  limits:
+                    memory: 512Mi
                 probes:
                   liveness:
                     enabled: true
@@ -42,6 +50,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: sonarr.homelab.local
                 paths:
@@ -49,6 +59,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - sonarr.homelab.local
+                secretName: sonarr-tls
 
         persistence:
           config:

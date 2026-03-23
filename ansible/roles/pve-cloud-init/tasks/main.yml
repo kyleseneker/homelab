@@ -10,6 +10,8 @@
     url: "{{ cloud_init_image_url }}"
     dest: "/tmp/{{ cloud_init_template_name }}.img"
     mode: "0644"
+    checksum: "sha256:{{ cloud_init_image_checksum }}"
+    timeout: 300
   when: template_check.rc != 0
 
 - name: Create VM for cloud-init template

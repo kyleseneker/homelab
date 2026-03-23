@@ -41,14 +41,21 @@
     - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
     - { key: net.ipv4.ip_forward, value: "1" }
 
-- name: Add Docker apt key (for containerd)
-  ansible.builtin.apt_key:
+- name: Ensure keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
 
 - name: Add Docker apt repository (for containerd)
   ansible.builtin.apt_repository:
-    repo: "deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
 
 - name: Install containerd
@@ -90,14 +97,15 @@
 - name: Flush handlers to restart containerd now
   ansible.builtin.meta: flush_handlers
 
-- name: Add Kubernetes apt key
-  ansible.builtin.apt_key:
+- name: Add Kubernetes GPG key
+  ansible.builtin.get_url:
     url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version_minor }}/deb/Release.key"
-    state: present
+    dest: "/etc/apt/keyrings/kubernetes-v{{ k8s_version_minor }}.asc"
+    mode: "0644"
 
 - name: Add Kubernetes apt repository
   ansible.builtin.apt_repository:
-    repo: "deb https://pkgs.k8s.io/core:/stable:/v{{ k8s_version_minor }}/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_version_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version_minor }}/deb/ /"
     state: present
 
 - name: Install kubeadm, kubelet, kubectl

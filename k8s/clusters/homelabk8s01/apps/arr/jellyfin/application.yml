@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-jellyfin
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,7 +21,7 @@ spec:
               main:
                 image:
                   repository: lscr.io/linuxserver/jellyfin
-                  tag: latest
+                  tag: 10.11.6
                 envFrom:
                   - configMapRef:
                       name: arr-env
@@ -34,7 +36,11 @@ spec:
                       failureThreshold: 30
                       periodSeconds: 10
                 resources:
+                  requests:
+                    cpu: 200m
+                    memory: 512Mi
                   limits:
+                    memory: 4Gi
                     gpu.intel.com/i915: 1
 
         defaultPodOptions:
@@ -53,6 +59,8 @@ spec:
           main:
             enabled: true
             className: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: homelab-ca-issuer
             hosts:
               - host: jellyfin.homelab.local
                 paths:
@@ -60,6 +68,10 @@ spec:
                     service:
                       identifier: main
                       port: http
+            tls:
+              - hosts:
+                  - jellyfin.homelab.local
+                secretName: jellyfin-tls
 
         persistence:
           config:

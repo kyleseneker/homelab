@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: arr-recyclarr
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -24,9 +26,15 @@ spec:
               main:
                 image:
                   repository: ghcr.io/recyclarr/recyclarr
-                  tag: latest
+                  tag: 8.5.0
                 args:
                   - sync
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    memory: 128Mi
                 envFrom:
                   - configMapRef:
                       name: arr-env
@@ -38,6 +46,13 @@ spec:
             globalMounts:
               - path: /config/recyclarr.yml
                 subPath: recyclarr.yml
+                readOnly: true
+          secrets:
+            type: secret
+            name: recyclarr-secrets
+            globalMounts:
+              - path: /config/secrets.yml
+                subPath: secrets.yml
                 readOnly: true
 
   destination:
