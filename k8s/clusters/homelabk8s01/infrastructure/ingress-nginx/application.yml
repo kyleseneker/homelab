@@ -20,6 +20,8 @@ spec:
           service:
             type: LoadBalancer
           allowSnippetAnnotations: true
+          config:
+            annotations-risk-level: Critical
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-nginx
