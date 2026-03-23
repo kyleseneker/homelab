@@ -9,7 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: sonarr
+      app.kubernetes.io/service: arr-exportarr-sonarr
       app.kubernetes.io/name: arr-exportarr
   endpoints:
     - port: metrics
@@ -27,7 +27,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: radarr
+      app.kubernetes.io/service: arr-exportarr-radarr
       app.kubernetes.io/name: arr-exportarr
   endpoints:
     - port: metrics
@@ -45,7 +45,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: prowlarr
+      app.kubernetes.io/service: arr-exportarr-prowlarr
       app.kubernetes.io/name: arr-exportarr
   endpoints:
     - port: metrics
@@ -63,7 +63,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/component: bazarr
+      app.kubernetes.io/service: arr-exportarr-bazarr
       app.kubernetes.io/name: arr-exportarr
   endpoints:
     - port: metrics
