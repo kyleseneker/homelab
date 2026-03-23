@@ -61,7 +61,7 @@ For non-standard version patterns, add a new entry to `customManagers` in `renov
 
 ## Configuration
 
-The full configuration lives in [`renovate.json`](../../renovate.json) at the repo root.
+The full configuration lives in `renovate.json` at the repo root.
 
 ## Upstream Documentation
 
