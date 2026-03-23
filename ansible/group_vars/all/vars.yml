@@ -9,5 +9,5 @@ service_cidr: "10.96.0.0/12"
 cilium_version: "1.16.5"
 
 timezone: America/Chicago
-media_uid: 1000
-media_gid: 1000
+media_uid: 977
+media_gid: 988
