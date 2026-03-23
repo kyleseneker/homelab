@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: auth-proxy-headers
-  namespace: arr
-data:
-  Host: "auth.homelab.local"
