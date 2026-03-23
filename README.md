@@ -51,7 +51,16 @@ flowchart LR
     K8s --- ArgoCD
 ```
 
-**kubeadm** + **Cilium** CNI -- **ArgoCD** GitOps -- **MetalLB** + **ingress-nginx** -- **NFS** dynamic provisioning -- **Sealed Secrets** -- **Velero** + **MinIO** backups -- **Prometheus** + **Grafana** + **Loki** monitoring -- **Intel iGPU** passthrough
+| Category | Components |
+|----------|------------|
+| Cluster | kubeadm, Cilium CNI |
+| GitOps | ArgoCD, Sealed Secrets, Renovate |
+| Networking | MetalLB, ingress-nginx, cert-manager |
+| Storage | NFS dynamic provisioning |
+| Auth | Authentik SSO (forward-auth + OIDC) |
+| Monitoring | Prometheus, Grafana, Loki, Alertmanager |
+| Backups | Velero, MinIO |
+| Hardware | Intel iGPU passthrough |
 
 ## Quick Start
 
