@@ -29,11 +29,11 @@ flowchart TB
 
 ### Forward Auth (Domain-Level)
 
-For apps without native SSO support, nginx-ingress performs an `auth_request` subrequest to Authentik's embedded outpost before proxying to the backend. A single domain-level proxy provider covers all `*.homelab.local` subdomains, so adding a new app behind SSO only requires four ingress annotations.
+For apps without native SSO support, nginx-ingress performs an `auth_request` subrequest to Authentik's embedded outpost before proxying to the backend. A single domain-level proxy provider covers all `*.homelab.local` subdomains, so adding a new app behind SSO only requires adding ingress annotations.
 
-The `auth-url` annotation uses Authentik's internal Kubernetes service URL (`http://authentik-server.auth.svc.cluster.local/...`) to avoid TLS trust issues with the homelab CA. The `auth-signin` URL uses the external hostname for browser redirects.
+The `auth-url` annotation points to the embedded outpost's internal service (`ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000`). The `auth-snippet` annotation sets `X-Forwarded-Host` so the outpost can identify the original domain. The `auth-signin` URL uses the external hostname for browser redirects.
 
-The outpost cookie domain is set to `.homelab.local`, enabling a single authentication session across all subdomains.
+The outpost cookie domain is set to `homelab.local`, enabling a single authentication session across all subdomains.
 
 **Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent/SABnzbd, Homepage
 

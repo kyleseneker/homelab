@@ -46,8 +46,10 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik as a
 - Redis in standalone mode with `nfs-client` persistence (1Gi)
 - Ingress at `auth.homelab.local` with TLS via `homelab-ca-issuer`
 - Outpost cookie domain: `.homelab.local` (enables cross-subdomain SSO sessions)
-- Forward-auth `auth-url` uses internal service URL (`http://authentik-server.auth.svc.cluster.local/...`) to avoid TLS trust issues
+- Forward-auth `auth-url` uses the embedded outpost's internal service URL (`http://ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000/...`)
 - `auth-signin` uses external URL (`https://auth.homelab.local/...`) for browser redirects
+- `auth-snippet` sets `X-Forwarded-Host` so the outpost knows the original domain
+- ingress-nginx requires `allowSnippetAnnotations: true` and `annotations-risk-level: Critical`
 
 ## Secrets
 
@@ -70,12 +72,12 @@ Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` 
 1. Navigate to `https://auth.homelab.local/if/flow/initial-setup/` and set the `akadmin` password.
 2. Log in to the admin interface at `https://auth.homelab.local/if/admin/`.
 3. Create a **Kubernetes Service-Connection** in System > Outpost Integrations (name: `local-cluster`, leave kubeconfig empty).
-4. Edit the **authentik Embedded Outpost** -- set integration to `local-cluster`, set `authentik_host` to `http://authentik-server.auth.svc.cluster.local`.
+4. Edit the **authentik Embedded Outpost** -- set integration to `local-cluster`. In Advanced settings, set `authentik_host` to `https://auth.homelab.local` and `authentik_host_browser` to `https://auth.homelab.local`.
 5. Create a **Proxy Provider** (Applications > Providers):
     - Name: `homelab-forward-auth`
     - Mode: **Forward auth (domain level)**
     - External host: `https://auth.homelab.local`
-    - Cookie domain: `.homelab.local`
+    - Cookie domain: `homelab.local`
 6. Create an **Application** (name: `Homelab Forward Auth`, provider: `homelab-forward-auth`).
 7. Edit the embedded outpost, add the `Homelab Forward Auth` application.
 8. Create **OAuth2/OpenID Provider** for Grafana (client ID: `grafana`, redirect URI: `https://grafana.homelab.local/login/generic_oauth`). Seal the client secret:
