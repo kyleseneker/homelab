@@ -96,8 +96,8 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 
 k8s-seal: ## Seal a plaintext secret with kubeseal (usage: make k8s-seal FILE=path/to/secret.yml)
 	@if [ -z "$(FILE)" ]; then echo "Usage: make k8s-seal FILE=path/to/secret.yml"; exit 1; fi
-	@SEALED="$$(dirname $(FILE))/$$(basename $(FILE) .yml)-sealed-secret.yml"; \
-	kubeseal --format yaml < $(FILE) > "$$SEALED" && \
+	@SEALED="$$(dirname $(FILE))/$$(basename $(FILE) -secret.yml)-sealed-secret.yml"; \
+	kubeseal --controller-name sealed-secrets --controller-namespace kube-system --format yaml < $(FILE) > "$$SEALED" && \
 	echo "Sealed secret written to $$SEALED" && \
 	echo "You can now commit $$SEALED and delete $(FILE)"
 
