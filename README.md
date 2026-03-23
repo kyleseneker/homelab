@@ -45,20 +45,30 @@ cp terraform/hosts/homelabk8s01/terraform.tfvars.example terraform/hosts/homelab
 # 6. Configure K8s manifests
 # Edit the files listed in the Configuration section below
 
-# 7. Create secrets
-cp k8s/clusters/homelabk8s01/apps/arr/vpn-secret.example k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
-# Edit vpn-secret.yml with real PIA credentials
-cp k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.example k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.yml
-# Edit recyclarr-secret.yml with Sonarr/Radarr API keys (after initial setup)
-
-# 8. Deploy everything
+# 7. Deploy everything
 make k8s-deploy
 
-# 9. Apply secrets
+# 8. Get kubeconfig and seal secrets
 make k8s-kubeconfig
 export KUBECONFIG=$(pwd)/kubeconfig
-kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
-kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.yml
+
+# Wait for Sealed Secrets controller to be ready
+kubectl -n kube-system wait --for=condition=available deployment -l app.kubernetes.io/name=sealed-secrets --timeout=300s
+
+# Seal VPN credentials
+cp k8s/clusters/homelabk8s01/apps/arr/vpn-secret.example vpn-secret.yml
+# Edit vpn-secret.yml with real PIA credentials
+make k8s-seal FILE=vpn-secret.yml
+# Move the sealed secret to the right location and commit it
+mv vpn-sealed-secret.yml k8s/clusters/homelabk8s01/apps/arr/
+rm vpn-secret.yml
+
+# Repeat for other secrets (recyclarr, homepage, grafana, minio, velero)
+# See each *.example file for instructions
+
+# 9. Back up the Sealed Secrets controller key (CRITICAL)
+make k8s-backup-sealed-key
+# Store sealed-secrets-key-backup.yml somewhere safe, then delete it
 
 # 10. Open ArgoCD at https://argocd.homelab.local
 #     Get the initial admin password:
@@ -134,24 +144,28 @@ nodes = {
 `k8s-*` targets accept `CLUSTER=<name>` (default: `homelabk8s01`).
 
 ```
-make help             Show all commands
-make deps             Install Ansible Galaxy collections
-make vault-create     Create an empty vault.yml
-make vault-edit       Edit encrypted vault.yml
-make vault-encrypt    Encrypt vault.yml
-make vault-decrypt    Decrypt vault.yml
-make pve-configure    Configure Proxmox host
-make pve-ssh          SSH into Proxmox host
-make k8s-init         Initialize Terraform
-make k8s-plan         Preview VM changes
-make k8s-infra        Provision VMs on Proxmox
-make k8s-configure    Bootstrap K8s cluster via Ansible
-make k8s-deploy       Full deploy (VMs + cluster + ArgoCD)
-make k8s-destroy      Tear down all VMs
-make k8s-bootstrap    Install ArgoCD + root app (one-time)
-make k8s-secrets      Apply VPN and Recyclarr secrets
-make k8s-kubeconfig   Copy kubeconfig locally
-make k8s-ssh-cp       SSH into control plane
+make help                 Show all commands
+make deps                 Install Ansible Galaxy collections
+make vault-create         Create an empty vault.yml
+make vault-edit           Edit encrypted vault.yml
+make vault-encrypt        Encrypt vault.yml
+make vault-decrypt        Decrypt vault.yml
+make pve-configure        Configure Proxmox host
+make pve-ssh              SSH into Proxmox host
+make k8s-init             Initialize Terraform
+make k8s-plan             Preview VM changes
+make k8s-infra            Provision VMs on Proxmox
+make k8s-configure        Bootstrap K8s cluster via Ansible
+make k8s-deploy           Full deploy (VMs + cluster + ArgoCD)
+make k8s-destroy          Tear down all VMs
+make k8s-bootstrap        Install ArgoCD + root app (one-time)
+make k8s-seal             Seal a plaintext secret (FILE=path/to/secret.yml)
+make k8s-backup-sealed-key  Back up Sealed Secrets controller key
+make k8s-backup           Trigger on-demand Velero backup
+make k8s-backup-status    Show backup and schedule status
+make k8s-restore          List available backups for restore
+make k8s-kubeconfig       Copy kubeconfig locally
+make k8s-ssh-cp           SSH into control plane
 ```
 
 Examples: `make PVE_HOST=homelabpve02 pve-configure`, `make CLUSTER=homelabk8s02 k8s-deploy`
@@ -167,6 +181,8 @@ Examples: `make PVE_HOST=homelabpve02 pve-configure`, `make CLUSTER=homelabk8s02
 - **VPN sidecar**: Gluetun + download clients in one Pod (shared network namespace)
 - **iGPU passthrough**: Jellyfin/Tdarr hardware transcoding via PCI passthrough
 - **Prometheus + Grafana + Loki**: Full cluster monitoring, dashboards, and log aggregation
+- **Sealed Secrets**: GitOps-compatible secret management -- encrypted secrets committed to Git
+- **Velero + MinIO**: Kubernetes backup and restore with S3-compatible storage on UniFi NAS
 
 ## Adding a New Proxmox Host
 
@@ -203,7 +219,7 @@ Create on the Unifi NAS under the NFS share:
 1. **Proxmox VE**: Installed on the host with SSH access as root
 2. **Unifi NAS**: NFS enabled, `/data` share created
 3. **PIA**: VPN username and password
-4. **Local machine**: Terraform, Ansible, kubectl, SSH key pair
+4. **Local machine**: Terraform, Ansible, kubectl, kubeseal, velero CLI, SSH key pair
 
 Everything else (repos, IOMMU, cloud-init template, API token) is automated by `make pve-configure`.
 
@@ -279,8 +295,10 @@ Quality profiles and custom formats are already defined in `k8s/clusters/homelab
 ```bash
 cp k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.example recyclarr-secret.yml
 # Edit recyclarr-secret.yml -- paste API keys from Sonarr and Radarr (Settings > General)
-make k8s-secrets
+make k8s-seal FILE=recyclarr-secret.yml
+mv recyclarr-sealed-secret.yml k8s/clusters/homelabk8s01/apps/arr/
 rm recyclarr-secret.yml
+# Commit the sealed secret -- ArgoCD will sync it automatically
 ```
 
 To trigger a sync immediately instead of waiting for the next 6-hour CronJob run:
@@ -333,9 +351,10 @@ The dashboard is available at `https://home.homelab.local`. To enable service wi
 ```bash
 cp k8s/clusters/homelabk8s01/apps/homepage/homepage-secret.example homepage-secret.yml
 # Edit homepage-secret.yml with API keys from each service (Settings > General)
-kubectl apply -f homepage-secret.yml
+make k8s-seal FILE=homepage-secret.yml
+mv homepage-sealed-secret.yml k8s/clusters/homelabk8s01/apps/homepage/
 rm homepage-secret.yml
-kubectl rollout restart deployment/homepage -n arr
+# Commit the sealed secret -- ArgoCD will sync it and restart the deployment automatically
 ```
 
 ### 11. Monitoring & Observability
@@ -355,11 +374,60 @@ The cluster deploys a full monitoring stack automatically via ArgoCD:
 
 **Grafana** is available at `https://grafana.homelab.local`.
 
-- Default login: `admin` / `admin` (change on first login)
+- Login with the credentials from your `grafana-admin` sealed secret
 - Pre-built dashboards for cluster, node, pod, and namespace health are included
 - Loki is pre-configured as a data source -- use **Explore** to search logs by namespace, pod, or container
 
 Add a DNS entry for `grafana.homelab.local` pointing to the ingress LoadBalancer IP (same as other `*.homelab.local` entries).
+
+### 12. Sealed Secrets
+
+All Kubernetes secrets are managed via [Sealed Secrets](https://github.com/bitnami-labs/sealed-secrets). Plaintext secrets are encrypted locally with `kubeseal` and committed to Git as `SealedSecret` resources. The controller in-cluster decrypts them into real `Secret` objects.
+
+**Workflow for any secret:**
+
+```bash
+# 1. Copy the example template
+cp path/to/some-secret.example some-secret.yml
+
+# 2. Edit with real values
+# Edit some-secret.yml
+
+# 3. Seal it
+make k8s-seal FILE=some-secret.yml
+
+# 4. Move the sealed secret to the right directory and commit
+mv some-sealed-secret.yml path/to/
+rm some-secret.yml
+git add path/to/some-sealed-secret.yml && git commit
+```
+
+**Controller key backup:** The Sealed Secrets controller's private key must be backed up for disaster recovery. Without it, existing SealedSecrets cannot be decrypted on a new cluster. Run `make k8s-backup-sealed-key` and store the output file safely (password manager, encrypted USB).
+
+### 13. Backups
+
+Cluster backups use [Velero](https://velero.io/) with a MinIO S3 gateway backed by the UniFi NAS.
+
+| Schedule | Scope | Retention |
+|----------|-------|-----------|
+| Daily 3:00 AM | `arr` + `monitoring` namespaces (stateful data) | 7 days |
+| Weekly Sunday 4:00 AM | All namespaces (except `kube-system`, `kube-public`) | 30 days |
+
+Both K8s resources and PVC data are backed up. PVC data uses Velero's file system backup (Kopia).
+
+```bash
+# Trigger a manual backup
+make k8s-backup
+
+# Check backup status
+make k8s-backup-status
+
+# List backups available for restore
+make k8s-restore
+
+# Restore a specific backup
+velero restore create --from-backup <backup-name>
+```
 
 ### Trust the Homelab CA (one-time per machine)
 
@@ -421,10 +489,13 @@ homelab/
 │   └── clusters/<cluster>/
 │       ├── config/env.yml
 │       ├── infrastructure/
+│       │   ├── sealed-secrets/
 │       │   ├── metrics-server/
 │       │   ├── kube-prometheus-stack/
 │       │   ├── loki/
 │       │   ├── alloy/
+│       │   ├── minio/
+│       │   ├── velero/
 │       │   └── ...
 │       └── apps/
 ├── .editorconfig

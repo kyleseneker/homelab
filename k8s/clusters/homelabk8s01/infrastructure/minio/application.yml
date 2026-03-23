@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.min.io/
+    chart: minio
+    targetRevision: 5.4.0
+    helm:
+      valuesObject:
+        mode: standalone
+        existingSecret: minio-credentials
+        persistence:
+          enabled: true
+          storageClass: nfs-client
+          size: 50Gi
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        buckets:
+          - name: velero
+            policy: none
+            purge: false
+        consoleIngress:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backups
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

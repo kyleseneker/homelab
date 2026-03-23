@@ -1,0 +1,31 @@
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-stateful
+  namespace: backups
+spec:
+  schedule: "0 3 * * *"
+  template:
+    includedNamespaces:
+      - arr
+      - monitoring
+    defaultVolumesToFsBackup: true
+    ttl: 168h0m0s
+    storageLocation: default
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: weekly-full-cluster
+  namespace: backups
+spec:
+  schedule: "0 4 * * 0"
+  template:
+    includedNamespaces:
+      - "*"
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+    defaultVolumesToFsBackup: true
+    ttl: 720h0m0s
+    storageLocation: default

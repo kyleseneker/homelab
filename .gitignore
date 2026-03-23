@@ -16,9 +16,10 @@ crash.log
 *.pem
 *.key
 id_rsa*
-vpn-secret.yml
-recyclarr-secret.yml
-homepage-secret.yml
+*-secret.yml
+!*-secret.example
+!*-sealed-secret.yml
+sealed-secrets-key-backup.yml
 
 # Kubeconfig
 kubeconfig

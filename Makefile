@@ -69,7 +69,7 @@ pve-ssh: ## SSH into Proxmox host
 # Kubernetes cluster  (override with CLUSTER=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-secrets k8s-kubeconfig k8s-ssh-cp
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-seal k8s-backup-sealed-key k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -94,10 +94,36 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
 	kubectl apply -f k8s/bootstrap/root-app.yml
 
-k8s-secrets: ## Apply VPN, Recyclarr, and Homepage secrets to the cluster
-	kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
-	kubectl apply -f recyclarr-secret.yml
-	kubectl apply -f homepage-secret.yml
+k8s-seal: ## Seal a plaintext secret with kubeseal (usage: make k8s-seal FILE=path/to/secret.yml)
+	@if [ -z "$(FILE)" ]; then echo "Usage: make k8s-seal FILE=path/to/secret.yml"; exit 1; fi
+	@SEALED="$$(dirname $(FILE))/$$(basename $(FILE) .yml)-sealed-secret.yml"; \
+	kubeseal --format yaml < $(FILE) > "$$SEALED" && \
+	echo "Sealed secret written to $$SEALED" && \
+	echo "You can now commit $$SEALED and delete $(FILE)"
+
+k8s-backup-sealed-key: ## Back up Sealed Secrets controller private key (CRITICAL for DR)
+	@echo "Backing up Sealed Secrets controller key..."
+	kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-key-backup.yml
+	@echo "Key saved to sealed-secrets-key-backup.yml"
+	@echo "Store this file somewhere safe (password manager, encrypted USB)."
+	@echo "DO NOT commit this file to git."
+
+k8s-backup: ## Trigger an on-demand Velero backup of all namespaces
+	velero backup create manual-$$(date +%Y%m%d-%H%M%S) \
+		--default-volumes-to-fs-backup \
+		--exclude-namespaces kube-system,kube-public
+	@echo "Backup started. Run 'make k8s-backup-status' to check progress."
+
+k8s-backup-status: ## Show Velero backup status
+	velero backup get
+	@echo ""
+	velero schedule get
+
+k8s-restore: ## List available Velero backups for restore
+	@echo "Available backups:"
+	@velero backup get
+	@echo ""
+	@echo "To restore, run: velero restore create --from-backup <backup-name>"
 
 k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 	scp media@$(CP_IP):~/.kube/config ./kubeconfig
