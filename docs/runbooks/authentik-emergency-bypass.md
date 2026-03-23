@@ -24,7 +24,7 @@ kubectl annotate ingress <ingress-name> -n arr \
   nginx.ingress.kubernetes.io/auth-response-headers- \
   nginx.ingress.kubernetes.io/auth-snippet-
 
-# Remove forward-auth from all arr ingresses at once (includes Homepage)
+# Remove forward-auth from all arr ingresses at once
 for ing in $(kubectl get ingress -n arr -o name); do
   kubectl annotate "$ing" -n arr \
     nginx.ingress.kubernetes.io/auth-url- \
