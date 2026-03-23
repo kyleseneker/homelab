@@ -42,6 +42,11 @@ spec:
           useSecret: true
           existingSecret: velero-cloud-credentials
 
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: true
+
         resources:
           requests:
             cpu: 100m

@@ -32,6 +32,9 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 ### Alertmanager
 
 - **Ingress**: `alertmanager.homelab.local`
+- **Notifications**: Slack `#alerts` channel via Incoming Webhook (see [alerting.md](alerting.md))
+- **Secrets**: Webhook URL mounted from `alertmanager-slack-webhook` sealed secret
+- **Custom rules**: Homelab-specific `PrometheusRule` in `homelab-rules.yml` (app health, infra, backups, node health)
 
 ### Node Exporter
 

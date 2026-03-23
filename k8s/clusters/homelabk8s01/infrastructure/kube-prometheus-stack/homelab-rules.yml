@@ -1,0 +1,130 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: homelab-rules
+  namespace: monitoring
+spec:
+  groups:
+    - name: homelab-app-health
+      rules:
+        - alert: ArrAppDown
+          expr: |
+            (kube_deployment_spec_replicas{namespace="arr"} > 0)
+            and
+            (kube_deployment_status_replicas_available{namespace="arr"} == 0)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.deployment }} has no available replicas"
+            description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has been down for more than 5 minutes."
+
+        - alert: GluetunVPNDown
+          expr: kube_pod_container_status_ready{namespace="arr", container="gluetun"} == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Gluetun VPN sidecar is not ready"
+            description: "The Gluetun VPN container has been unready for more than 10 minutes. Download clients may have no network connectivity."
+
+    - name: homelab-infra-health
+      rules:
+        - alert: AuthentikDown
+          expr: |
+            (kube_deployment_spec_replicas{namespace="auth", deployment=~".*authentik-server.*"} > 0)
+            and
+            (kube_deployment_status_replicas_available{namespace="auth", deployment=~".*authentik-server.*"} == 0)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Authentik SSO server is down"
+            description: "Authentik server has had no available replicas for more than 5 minutes. SSO authentication is unavailable."
+
+        - alert: IngressNginxDown
+          expr: kube_daemonset_status_number_available{namespace="ingress-nginx"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Ingress NGINX controller is down"
+            description: "No ingress-nginx controller pods are available. All ingress traffic is disrupted."
+
+        - alert: NFSStorageLow
+          expr: |
+            (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVC {{ $labels.persistentvolumeclaim }} usage above 85%"
+            description: "PersistentVolumeClaim {{ $labels.persistentvolumeclaim }} in namespace {{ $labels.namespace }} is {{ $value | printf \"%.1f\" }}% full."
+
+        - alert: CertificateExpiringSoon
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 24 * 3600
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} expiring soon"
+            description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in less than 14 days."
+
+    - name: homelab-backup-health
+      rules:
+        - alert: VeleroBackupFailed
+          expr: increase(velero_backup_failure_total[24h]) > 0
+          labels:
+            severity: critical
+          annotations:
+            summary: "Velero backup failed"
+            description: "A Velero backup has failed in the last 24 hours. Check velero logs for details."
+
+        - alert: VeleroBackupMissing
+          expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 25 * 3600
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "No successful backup for schedule {{ $labels.schedule }}"
+            description: "Velero schedule {{ $labels.schedule }} has not completed a successful backup in over 25 hours."
+
+        - alert: VeleroBackupPartialFailure
+          expr: increase(velero_backup_partial_failure_total[24h]) > 0
+          labels:
+            severity: warning
+          annotations:
+            summary: "Velero backup partially failed"
+            description: "A Velero backup completed with partial failures in the last 24 hours."
+
+    - name: homelab-node-health
+      rules:
+        - alert: HighNodeCPU
+          expr: |
+            100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage on {{ $labels.instance }}"
+            description: "Node {{ $labels.instance }} CPU usage has been above 85% for more than 15 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+        - alert: HighNodeMemory
+          expr: |
+            (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage on {{ $labels.instance }}"
+            description: "Node {{ $labels.instance }} memory usage has been above 90% for more than 15 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+        - alert: NodeDiskPressure
+          expr: |
+            (1 - node_filesystem_avail_bytes{mountpoint="/", fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/", fstype!="tmpfs"}) * 100 > 90
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Root filesystem almost full on {{ $labels.instance }}"
+            description: "Node {{ $labels.instance }} root filesystem is above 90% full (current: {{ $value | printf \"%.1f\" }}%)."
