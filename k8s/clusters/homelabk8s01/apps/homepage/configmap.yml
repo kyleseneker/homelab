@@ -54,7 +54,7 @@ data:
     - Resources:
         - Documentation:
             icon: mdi-book-open-page-variant
-            href: https://github.com/kyleseneker/homelab/tree/main/docs
+            href: https://kyleseneker.github.io/homelab/
             description: Homelab docs
         - GitHub:
             icon: mdi-github

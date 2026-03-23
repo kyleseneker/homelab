@@ -2,7 +2,7 @@
 
 Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
 
-**[Read the full documentation](docs/index.md)** -- run `make docs-serve` to browse locally.
+**[Read the full documentation](https://kyleseneker.github.io/homelab/)** -- or run `make docs-serve` to browse locally.
 
 ## At a Glance
 
