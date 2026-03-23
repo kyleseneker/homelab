@@ -7,20 +7,23 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Component | Namespace | Sync Wave | Helm Chart | Version |
 |-----------|-----------|-----------|------------|---------|
 | Sealed Secrets | kube-system | -3 | sealed-secrets | 2.18.4 |
-| cert-manager | cert-manager | -3 | cert-manager | v1.17.1 |
-| MetalLB | metallb-system | -3 | metallb | 0.14.9 |
+| cert-manager | cert-manager | -3 | cert-manager | v1.20.0 |
+| MetalLB | metallb-system | -3 | metallb | 0.15.3 |
 | MetalLB Config | metallb-system | -2 | (plain manifests) | - |
 | Metrics Server | kube-system | -2 | metrics-server | 3.13.0 |
 | NFS Provisioner | nfs-provisioner | -2 | nfs-subdir-external-provisioner | 4.0.18 |
 | MinIO | backups | -2 | minio | 5.4.0 |
-| Intel GPU Operator | intel-gpu-operator | -2 | intel-device-plugins-operator | 0.31.1 |
-| ingress-nginx | ingress-nginx | -1 | ingress-nginx | 4.12.0 |
-| kube-prometheus-stack | monitoring | -1 | kube-prometheus-stack | 82.10.5 |
+| Intel GPU Operator | intel-gpu-operator | -2 | intel-device-plugins-operator | 0.35.0 |
+| ingress-nginx | ingress-nginx | -1 | ingress-nginx | 4.15.1 |
+| kube-prometheus-stack | monitoring | -1 | kube-prometheus-stack | 82.13.6 |
 | Loki | monitoring | -1 | loki | 6.55.0 |
 | Velero | backups | -1 | velero | 12.0.0 |
-| Intel GPU Plugin | intel-gpu-operator | -1 | intel-device-plugins-gpu | 0.31.1 |
+| Intel GPU Plugin | intel-gpu-operator | -1 | intel-device-plugins-gpu | 0.35.0 |
+| Reloader | kube-system | -1 | reloader | 2.2.9 |
+| Descheduler | kube-system | -1 | descheduler | 0.35.1 |
 | Alloy | monitoring | 0 | alloy | 1.6.2 |
 | Authentik | auth | 0 | authentik | 2026.2.1 |
+| Network Policies | (multiple) | -- | (plain manifests) | - |
 
 ## Sync Wave Ordering
 

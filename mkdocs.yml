@@ -71,7 +71,9 @@ nav:
       - Downloads: apps/downloads.md
       - Recyclarr: apps/recyclarr.md
       - Tdarr: apps/tdarr.md
+      - Exportarr: apps/exportarr.md
       - Homepage: apps/homepage.md
+      - Uptime Kuma: apps/uptime-kuma.md
   - Infrastructure:
       - infrastructure/index.md
       - cert-manager: infrastructure/cert-manager.md
@@ -87,6 +89,9 @@ nav:
       - Velero: infrastructure/velero.md
       - Metrics Server: infrastructure/metrics-server.md
       - Authentik: infrastructure/authentik.md
+      - Reloader: infrastructure/reloader.md
+      - Descheduler: infrastructure/descheduler.md
+      - Network Policies: infrastructure/network-policies.md
       - Alerting: infrastructure/alerting.md
       - Renovate: infrastructure/renovate.md
   - Runbooks:

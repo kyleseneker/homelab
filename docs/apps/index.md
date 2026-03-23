@@ -1,6 +1,6 @@
 # Applications
 
-The homelab runs an automated media management stack commonly referred to as the *arr stack. All applications are deployed into the `arr` namespace on Kubernetes via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v3.6.0). Ingress is provided by nginx with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
+The homelab runs an automated media management stack commonly referred to as the *arr stack. All applications are deployed into the `arr` namespace on Kubernetes via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2). Ingress is provided by nginx with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
 
 ## Shared Configuration
 
@@ -46,10 +46,12 @@ flowchart LR
 | [Bazarr](bazarr.md) | `bazarr.homelab.local` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr:1.5.6` |
 | [Jellyseerr](jellyseerr.md) | `jellyseerr.homelab.local` | Media request management | `fallenbagel/jellyseerr:2.7.3` |
 | [Downloads](downloads.md) | `qbit.homelab.local`, `sabnzbd.homelab.local` | VPN-routed download clients (qBittorrent + SABnzbd) | `qmcgaw/gluetun:v3.41.1`, `lscr.io/linuxserver/qbittorrent:5.1.4`, `lscr.io/linuxserver/sabnzbd:4.5.5` |
-| [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.0` |
-| [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.64.01` |
+| [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.1` |
+| [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.65.01` |
+| [Exportarr](exportarr.md) | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr:v2.3.0` |
 | [Homepage](homepage.md) | `home.homelab.local` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage:v1.11.0` |
+| [Uptime Kuma](uptime-kuma.md) | `status.homelab.local` | Synthetic monitoring and status page | `louislam/uptime-kuma:2.2.1` |
 
 ## ArgoCD Sync Waves
 
-All *arr applications deploy at sync wave **1**. Homepage deploys at sync wave **2** so that service endpoints are available before the dashboard attempts to query them.
+All *arr applications deploy at sync wave **1**. Homepage and Uptime Kuma deploy at sync wave **2** so that service endpoints are available before they attempt to query them.
