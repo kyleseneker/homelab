@@ -126,7 +126,7 @@ data:
               url: http://arr-bazarr.arr.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
         - Tdarr:
-            icon: tdarr.svg
+            icon: tdarr.png
             href: http://tdarr.homelab.local
             description: Transcoding
             widget:
@@ -154,7 +154,7 @@ data:
             description: Logs (via Grafana)
     - Infrastructure:
         - ArgoCD:
-            icon: argocd.svg
+            icon: argo-cd.svg
             href: https://argocd.homelab.local
             description: GitOps
         - Proxmox:
@@ -165,6 +165,6 @@ data:
             icon: gluetun.svg
             description: VPN sidecar
         - Homepage:
-            icon: homepage.svg
+            icon: homepage.png
             href: https://home.homelab.local
             description: Dashboard
