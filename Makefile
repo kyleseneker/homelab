@@ -69,7 +69,7 @@ pve-ssh: ## SSH into Proxmox host
 # Kubernetes cluster  (override with CLUSTER=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-secrets k8s-dashboard k8s-kubeconfig k8s-ssh-cp
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-secrets k8s-kubeconfig k8s-ssh-cp
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -98,11 +98,6 @@ k8s-secrets: ## Apply VPN, Recyclarr, and Homepage secrets to the cluster
 	kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
 	kubectl apply -f recyclarr-secret.yml
 	kubectl apply -f homepage-secret.yml
-
-k8s-dashboard: ## Port-forward ArgoCD UI to localhost:8080
-	@echo "ArgoCD admin password:"
-	@kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
-	kubectl port-forward svc/argocd-server -n argocd 8080:443
 
 k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 	scp media@$(CP_IP):~/.kube/config ./kubeconfig

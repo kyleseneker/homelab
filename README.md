@@ -60,8 +60,9 @@ export KUBECONFIG=$(pwd)/kubeconfig
 kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/vpn-secret.yml
 kubectl apply -f k8s/clusters/homelabk8s01/apps/arr/recyclarr-secret.yml
 
-# 10. Open ArgoCD dashboard
-make k8s-dashboard
+# 10. Open ArgoCD at https://argocd.homelab.local
+#     Get the initial admin password:
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
 ## Configuration
@@ -149,7 +150,6 @@ make k8s-deploy       Full deploy (VMs + cluster + ArgoCD)
 make k8s-destroy      Tear down all VMs
 make k8s-bootstrap    Install ArgoCD + root app (one-time)
 make k8s-secrets      Apply VPN and Recyclarr secrets
-make k8s-dashboard    Port-forward ArgoCD UI
 make k8s-kubeconfig   Copy kubeconfig locally
 make k8s-ssh-cp       SSH into control plane
 ```
