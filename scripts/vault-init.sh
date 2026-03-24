@@ -46,7 +46,8 @@ fi
 # -----------------------------------------------------------------------
 # 2. Check initialization status and initialize if needed
 # -----------------------------------------------------------------------
-INIT_STATUS=$(vault status -format=json 2>/dev/null | jq -r '.initialized' 2>/dev/null || echo "false")
+VAULT_INIT_JSON=$(vault status -format=json 2>/dev/null || true)
+INIT_STATUS=$(echo "$VAULT_INIT_JSON" | jq -r '.initialized' 2>/dev/null || echo "false")
 
 if [[ "$INIT_STATUS" == "false" ]]; then
   info "Initializing Vault (1 key share, 1 key threshold)..."
@@ -74,9 +75,11 @@ fi
 # -----------------------------------------------------------------------
 # 3. Unseal if needed
 # -----------------------------------------------------------------------
-SEAL_STATUS=$(vault status -format=json 2>/dev/null | jq -r '.sealed' 2>/dev/null || echo "true")
+# vault status exits 2 when sealed, 0 when unsealed; capture output separately
+VAULT_STATUS_JSON=$(vault status -format=json 2>/dev/null || true)
+SEAL_STATUS=$(echo "$VAULT_STATUS_JSON" | jq -r '.sealed' 2>/dev/null || echo "true")
 
-if [[ "$SEAL_STATUS" == "true" ]]; then
+if [[ "$SEAL_STATUS" != "false" ]]; then
   if [[ -f "$INIT_OUTPUT_FILE" ]]; then
     UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' "$INIT_OUTPUT_FILE")
   else
