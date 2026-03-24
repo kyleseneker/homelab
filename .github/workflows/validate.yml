@@ -20,4 +20,5 @@ jobs:
             -var "proxmox_api_token_id=ci@pam!ci" \
             -var "proxmox_api_token_secret=00000000-0000-0000-0000-000000000000" \
             -var "proxmox_node=ci" \
+            -var "iso_checksum=none" \
             .
