@@ -210,3 +210,41 @@ kubectl describe clusterissuer homelab-ca-issuer
 
 !!! note
     Self-signed CA warnings are expected unless you have [trusted the homelab CA](../getting-started/trust-ca.md) on your machine.
+
+
+## Vault Issues
+
+### Vault Pod Fails to Start (`CreateContainerConfigError`)
+
+The `vault-aws-kms` Secret is missing from the `vault` namespace. Vault requires this Secret to decrypt the master key via AWS KMS before it can start.
+
+Create it before the pod starts:
+
+```bash
+kubectl create namespace vault  # if it doesn't exist yet
+kubectl create secret generic vault-aws-kms \
+  --namespace vault \
+  --from-literal=AWS_ACCESS_KEY_ID="<access_key_id>" \
+  --from-literal=AWS_SECRET_ACCESS_KEY="<secret_access_key>" \
+  --from-literal=AWS_REGION="us-east-1" \
+  --from-literal=VAULT_AWSKMS_SEAL_KEY_ID="<kms_key_id>"
+```
+
+### Vault Starts but Remains Sealed
+
+Vault is running but KMS connectivity is failing. Check the logs:
+
+```bash
+kubectl -n vault logs vault-0
+```
+
+Look for `failed to unseal` or `AccessDeniedException`. Verify the IAM policy attached to the Vault user allows `kms:Decrypt`, `kms:Encrypt`, and `kms:DescribeKey` on the key, and that the credentials in `vault-aws-kms` are correct.
+
+### ESO Shows `SecretSyncError`
+
+If Vault is unsealed but ExternalSecrets are failing to sync, the ESO Kubernetes auth token may have expired. Force a resync:
+
+```bash
+kubectl annotate externalsecret <name> -n <namespace> \
+  force-sync=$(date +%s) --overwrite
+```

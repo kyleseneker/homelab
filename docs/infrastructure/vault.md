@@ -41,13 +41,13 @@ This runs `scripts/vault-init.sh`, which:
 Store the root token in a password manager.
 
 !!! warning "Bootstrap dependency"
-    The `vault-aws-kms` Kubernetes Secret must exist in the `vault` namespace before the Vault pod starts. See the [KMS migration runbook](../runbooks/vault-kms-migration.md) for setup instructions.
+    The `vault-aws-kms` Kubernetes Secret must exist in the `vault` namespace before the Vault pod starts. See the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild) for the bootstrap procedure.
 
 ## Unsealing
 
 Vault auto-unseals via AWS KMS on every pod restart. No manual intervention is required.
 
-The KMS key and IAM credentials are provisioned with Terraform (`make aws-apply`) and stored as a manually-created Kubernetes Secret (`vault-aws-kms` in the `vault` namespace). This Secret is never committed to Git and must be recreated after a full cluster rebuild — see the [KMS migration runbook](../runbooks/vault-kms-migration.md).
+The KMS key and IAM credentials are provisioned with Terraform (`make aws-apply`) and stored as a manually-created Kubernetes Secret (`vault-aws-kms` in the `vault` namespace). This Secret is never committed to Git and must be recreated after a full cluster rebuild — see the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild).
 
 ## Vault Path Structure
 

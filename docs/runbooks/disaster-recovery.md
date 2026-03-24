@@ -16,7 +16,7 @@ Before a disaster occurs, ensure the following are available **outside the clust
 - This Git repository (the single source of truth for all cluster state)
 
 !!! warning "Critical"
-    Vault uses AWS KMS for auto-unseal. After a rebuild, the `vault-aws-kms` Kubernetes Secret must be recreated **before** the Vault pod starts. See the [Vault KMS migration runbook](vault-kms-migration.md#part-5-disaster-recovery-bootstrap) for the bootstrap procedure. Store the AWS credentials and KMS key ID in your password manager.
+    Vault uses AWS KMS for auto-unseal. The `vault-aws-kms` Kubernetes Secret must be recreated **before** the Vault pod starts (step 3 below). Store the AWS credentials and KMS key ID in your password manager.
 
 ### Procedure
 

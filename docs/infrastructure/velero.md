@@ -52,7 +52,7 @@ Velero depends on MinIO (wave -2) for its backup storage location and deploys at
 4. Both resource manifests and volume data are stored in MinIO, which persists to NFS.
 
 !!! warning "Restore Prerequisites"
-    After a full cluster rebuild, MinIO and Vault must be restored before Velero can access its backup data. Vault uses AWS KMS auto-unseal, so the `vault-aws-kms` Kubernetes Secret (containing AWS credentials and KMS key ID) must be recreated before the Vault pod starts. See the [Vault KMS migration runbook](../runbooks/vault-kms-migration.md) for the bootstrap procedure.
+    After a full cluster rebuild, MinIO and Vault must be restored before Velero can access its backup data. Vault uses AWS KMS auto-unseal, so the `vault-aws-kms` Kubernetes Secret (containing AWS credentials and KMS key ID) must be recreated before the Vault pod starts. See the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild) for the bootstrap procedure.
 
 ## Upstream Documentation
 

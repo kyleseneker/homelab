@@ -127,7 +127,7 @@ The AWS credentials used for auto-unseal are stored in the `vault-aws-kms` Kuber
 
 When rebuilding the cluster from scratch:
 
-1. **Before** running `make k8s-bootstrap`, create the `vault-aws-kms` Secret in the `vault` namespace with the AWS credentials and KMS key ID. See the [Vault KMS migration runbook](../runbooks/vault-kms-migration.md#part-5-disaster-recovery-bootstrap) for the exact procedure.
+1. **Before** running `make k8s-bootstrap`, create the `vault-aws-kms` Secret in the `vault` namespace with the AWS credentials and KMS key ID. See the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild) for the exact procedure.
 2. Deploy Vault and ESO via ArgoCD (automatic from Git) -- Vault will auto-unseal via KMS.
 3. Restore Vault data from Velero backup, or re-initialize with `make vault-init`.
 4. If re-initializing, re-populate all secrets from their original sources.
