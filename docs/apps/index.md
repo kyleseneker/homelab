@@ -32,6 +32,7 @@ flowchart LR
     Bazarr -->|"subtitles"| Media
     Recyclarr -->|"quality profiles"| Sonarr
     Recyclarr -->|"quality profiles"| Radarr
+    FlareSolverr -->|"solve captchas"| Prowlarr
     Jellyfin --> Jellyseerr
 ```
 
@@ -49,6 +50,7 @@ flowchart LR
 | [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.1` |
 | [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.65.01` |
 | [Exportarr](exportarr.md) | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr:v2.3.0` |
+| [FlareSolverr](flaresolverr.md) | -- | Captcha-solving proxy for Prowlarr indexers | `ghcr.io/flaresolverr/flaresolverr:v3.4.6` |
 | [Homepage](homepage.md) | `home.homelab.local` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage:v1.11.0` |
 | [Uptime Kuma](uptime-kuma.md) | `status.homelab.local` | Synthetic monitoring and status page | `louislam/uptime-kuma:2.2.1` |
 

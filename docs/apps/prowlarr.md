@@ -47,6 +47,10 @@ Prowlarr does not require the shared `arr-data` volume because it does not inter
     - **Sonarr**: `http://arr-sonarr.arr.svc.cluster.local:8989` + Sonarr API key
     - **Radarr**: `http://arr-radarr.arr.svc.cluster.local:7878` + Radarr API key
 4. Enable **Sync App Indexers** so that indexers added to Prowlarr are automatically pushed to connected apps.
+5. Add FlareSolverr as an indexer proxy (Settings > Indexers > + > FlareSolverr):
+    - **Host**: `http://arr-flaresolverr.arr.svc.cluster.local:8191`
+    - **Tag**: `flaresolverr`
+    - Assign the `flaresolverr` tag to any indexer that requires Cloudflare solving.
 
 ## Dependencies
 
@@ -54,6 +58,7 @@ Prowlarr does not require the shared `arr-data` volume because it does not inter
 |------------|---------|
 | Sonarr | Receives synced indexers for TV searches |
 | Radarr | Receives synced indexers for movie searches |
+| FlareSolverr | Solves Cloudflare captchas for protected indexers |
 
 ## Upstream
 

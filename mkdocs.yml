@@ -72,6 +72,7 @@ nav:
       - Recyclarr: apps/recyclarr.md
       - Tdarr: apps/tdarr.md
       - Exportarr: apps/exportarr.md
+      - FlareSolverr: apps/flaresolverr.md
       - Homepage: apps/homepage.md
       - Uptime Kuma: apps/uptime-kuma.md
   - Infrastructure:

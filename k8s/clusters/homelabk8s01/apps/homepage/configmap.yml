@@ -143,6 +143,9 @@ data:
         - Recyclarr:
             icon: recyclarr.svg
             description: Quality profiles
+        - FlareSolverr:
+            icon: flaresolverr.svg
+            description: Captcha solving proxy
     - Observability:
         - Grafana:
             icon: grafana.svg
