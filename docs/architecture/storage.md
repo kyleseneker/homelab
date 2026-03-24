@@ -7,7 +7,7 @@ This document covers the storage architecture, including the NFS dynamic provisi
 ```mermaid
 flowchart TD
     subgraph nas["Unifi NAS"]
-        nfsExport["/data NFS Export"]
+        nfsExport["Media NFS Export\n(shared-data-pv.yml)"]
         configExport["Config NFS Exports"]
     end
 
@@ -21,9 +21,9 @@ flowchart TD
         end
 
         subgraph dynamicVols["Dynamic Config Volumes"]
-            sonarrPVC["PVC: sonarr-config"]
-            radarrPVC["PVC: radarr-config"]
-            prowlarrPVC["PVC: prowlarr-config"]
+            sonarrPVC["PVC: arr-sonarr-config"]
+            radarrPVC["PVC: arr-radarr-config"]
+            prowlarrPVC["PVC: arr-prowlarr-config"]
             otherPVC["PVC: ..."]
         end
 
@@ -58,14 +58,14 @@ The NFS Subdir External Provisioner dynamically creates PersistentVolumes backed
 | Reclaim Policy | Retain |
 | Sync Wave | -2 |
 
-The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `sonarr-config` in the `arr` namespace creates the NFS subdirectory `arr-sonarr-config`.
+The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-sonarr-config` in the `arr` namespace creates the NFS subdirectory `arr-arr-sonarr-config`.
 
 !!! info "Default StorageClass"
     `nfs-client` serves as the default StorageClass for the cluster. Any PVC that does not specify a `storageClassName` will be provisioned by this provisioner.
 
 ## Shared Media Volume (arr-data)
 
-All media applications share a single 10Ti PersistentVolume backed by the `/data` export on the Unifi NAS. This shared volume enables applications to access media files without copying data between volumes.
+All media applications share a single 10Ti PersistentVolume backed by a dedicated NFS export on the Unifi NAS. This shared volume enables applications to access media files without copying data between volumes.
 
 ### Volume Specification
 
@@ -74,8 +74,8 @@ All media applications share a single 10Ti PersistentVolume backed by the `/data
 | PV Name | `arr-data` |
 | Capacity | 10Ti |
 | Access Mode | ReadWriteMany |
-| NFS Path | `/data` |
-| NFS Server | Unifi NAS |
+| NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/arr/shared-data-pv.yml`) |
+| NFS Server | Unifi NAS (`192.168.1.158`) |
 | PVC Name | `arr-data` |
 | PVC Namespace | `arr` |
 
@@ -119,13 +119,13 @@ Each application also has its own dynamically provisioned PVC for configuration 
 
 | Application | PVC Name | Typical Size |
 |------------|----------|-------------|
-| Jellyfin | `jellyfin-config` | 10Gi - 50Gi |
-| Sonarr | `sonarr-config` | 1Gi - 5Gi |
-| Radarr | `radarr-config` | 1Gi - 5Gi |
-| Prowlarr | `prowlarr-config` | 1Gi |
-| Bazarr | `bazarr-config` | 1Gi |
-| Jellyseerr | `jellyseerr-config` | 1Gi |
-| Tdarr | `tdarr-config` | 1Gi |
+| Jellyfin | `arr-jellyfin-config` | 10Gi - 50Gi |
+| Sonarr | `arr-sonarr-config` | 1Gi - 5Gi |
+| Radarr | `arr-radarr-config` | 1Gi - 5Gi |
+| Prowlarr | `arr-prowlarr-config` | 1Gi |
+| Bazarr | `arr-bazarr-config` | 1Gi |
+| Jellyseerr | `arr-jellyseerr-config` | 1Gi |
+| Tdarr | `arr-tdarr-config` | 1Gi |
 
 ## Infrastructure Storage
 

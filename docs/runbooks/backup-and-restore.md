@@ -8,7 +8,7 @@ Velero runs two automated backup schedules:
 
 | Schedule | Scope | Retention | Time |
 |----------|-------|-----------|------|
-| `daily-stateful` | `arr` + `monitoring` namespaces | 7 days | 3:00 AM daily |
+| `daily-stateful` | `arr`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily |
 | `weekly-full-cluster` | All namespaces (excluding `kube-system`, `kube-public`) | 30 days | 4:00 AM Sunday |
 
 Both schedules back up Kubernetes resources and PVC data using file-system-level backup via Kopia.

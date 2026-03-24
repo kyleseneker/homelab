@@ -89,6 +89,7 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | Grafana | `grafana.homelab.local` |
 | Prometheus | `prometheus.homelab.local` |
 | Alertmanager | `alertmanager.homelab.local` |
+| Vault | `vault.homelab.local` |
 
 ## Network Policies
 
@@ -115,7 +116,7 @@ flowchart TD
     gluetun -->|"all egress via\nVPN tunnel"| vpnTunnel
     vpnTunnel --> internet
     localNet -->|"port 8080 (qBit)"| gluetun
-    internet -->|"port 6881\n(VPN input)"| gluetun
+    internet -->|"dynamic port\n(PIA port forwarding)"| gluetun
 ```
 
 ### Gluetun Configuration
@@ -123,9 +124,10 @@ flowchart TD
 | Setting | Value |
 |---------|-------|
 | VPN Provider | Private Internet Access (PIA) |
+| Server Region | CA Montreal |
 | Capability | `NET_ADMIN` (required for VPN tunnel creation) |
 | Firewall - qBittorrent | Port 8080 |
-| VPN Input Port | 6881 (for incoming torrent connections) |
+| Port Forwarding | `VPN_PORT_FORWARDING=on` (PIA assigns port dynamically) |
 | Credentials | ExternalSecret (`vpn-credentials`, synced from Vault) |
 
 Gluetun creates the VPN tunnel interface and configures iptables firewall rules. The `NET_ADMIN` capability is required for tunnel and firewall management. Because the containers share a network namespace, qBittorrent automatically uses the VPN tunnel for all outbound connections.

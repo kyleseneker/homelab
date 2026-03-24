@@ -62,7 +62,7 @@ Two complementary backup schedules provide both granular recovery for stateful a
 ```mermaid
 flowchart TD
     subgraph daily["Daily Backup (3:00 AM)"]
-        dailyTarget["Namespaces: arr, monitoring"]
+        dailyTarget["Namespaces: arr, monitoring, auth"]
         dailyRetention["Retention: 7 days"]
         dailyData["Includes: Resources + PVC Data"]
     end
@@ -81,7 +81,7 @@ flowchart TD
 
 | Schedule | Frequency | Time | Namespaces | Retention | Includes PVC Data |
 |----------|-----------|------|-----------|-----------|-------------------|
-| Daily Stateful | Every day | 3:00 AM | `arr`, `monitoring` | 7 days | Yes |
+| Daily Stateful | Every day | 3:00 AM | `arr`, `monitoring`, `auth` | 7 days | Yes |
 | Weekly Full | Every Sunday | 4:00 AM | All (except `kube-system`, `kube-public`) | 30 days | Yes |
 
 The daily backup targets the namespaces with the most frequently changing state -- media application databases and monitoring data. The weekly backup captures everything for full disaster recovery.

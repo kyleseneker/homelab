@@ -32,7 +32,7 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 
 | Schedule | Cron | Scope | TTL |
 |----------|------|-------|-----|
-| `daily-stateful` | 3:00 AM daily | `arr` + `monitoring` namespaces | 7 days |
+| `daily-stateful` | 3:00 AM daily | `arr`, `monitoring`, `auth` namespaces | 7 days |
 | `weekly-full-cluster` | 4:00 AM Sunday | All namespaces except `kube-system`, `kube-public` | 30 days |
 
 ### Resources
@@ -52,7 +52,7 @@ Velero depends on MinIO (wave -2) for its backup storage location and deploys at
 4. Both resource manifests and volume data are stored in MinIO, which persists to NFS.
 
 !!! warning "Restore Prerequisites"
-    After a full cluster rebuild, MinIO and Vault must be restored before Velero can access its backup data. Ensure the Vault unseal key is stored outside the cluster (e.g., in a password manager).
+    After a full cluster rebuild, MinIO and Vault must be restored before Velero can access its backup data. Vault uses AWS KMS auto-unseal, so the `vault-aws-kms` Kubernetes Secret (containing AWS credentials and KMS key ID) must be recreated before the Vault pod starts. See the [Vault KMS migration runbook](../runbooks/vault-kms-migration.md) for the bootstrap procedure.
 
 ## Upstream Documentation
 

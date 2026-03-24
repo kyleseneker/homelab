@@ -56,7 +56,6 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | Command | Description |
 |---------|-------------|
 | `make vault-init` | Initialize Vault and configure ESO integration (one-time) |
-| `make vault-unseal` | Unseal Vault after a pod restart |
 | `make vault-put-secret` | Write a secret to Vault (`SECRET_PATH=... KEY=... VAL=...`) |
 | `make vault-status` | Show Vault seal status |
 

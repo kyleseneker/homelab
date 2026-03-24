@@ -8,7 +8,7 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 |-------|-------|
 | Chart | `kube-prometheus-stack` |
 | Repository | <https://prometheus-community.github.io/helm-charts> |
-| Version | 82.10.5 |
+| Version | 82.13.6 |
 | Namespace | `monitoring` (CreateNamespace=true, ServerSideApply=true) |
 | Sync Wave | -1 |
 

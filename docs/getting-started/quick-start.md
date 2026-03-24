@@ -109,12 +109,12 @@ Wait for Vault and ESO to be deployed by ArgoCD, then initialize Vault:
 # Wait for Vault pod to be running
 kubectl -n vault wait --for=condition=ready pod/vault-0 --timeout=300s
 
-# Initialize Vault (one-time setup: unseal, enable KV v2, configure K8s auth)
+# Initialize Vault (one-time setup: enable KV v2, configure K8s auth)
 make vault-init
 ```
 
-!!! warning "Save the Unseal Key and Root Token"
-    The init script prints an unseal key and root token. Store both in your password manager immediately. The unseal key is required after every Vault pod restart.
+!!! warning "Save the Root Token"
+    The init script prints a root token. Store it in your password manager immediately. Vault is configured with AWS KMS auto-unseal, so **no manual unsealing is required** after pod restarts. However, losing the root token means you cannot administer Vault without a recovery process.
 
 ## 10. Populate Secrets in Vault
 

@@ -26,8 +26,8 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 
 | | CPU | Memory |
 |---|-----|--------|
-| Requests | 100m | 256Mi |
-| Limits | -- | 512Mi |
+| Requests | 250m | 512Mi |
+| Limits | -- | 1Gi |
 
 ## Key Configuration
 

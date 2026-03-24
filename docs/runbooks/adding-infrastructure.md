@@ -39,21 +39,33 @@ Use this procedure to add a worker node to an existing Kubernetes cluster.
 
 ### 1. Update Terraform Configuration
 
-Add a new entry to the `nodes` list in `terraform/hosts/<cluster>/terraform.tfvars`:
+Add a new entry to the `nodes` map in `terraform/hosts/<cluster>/terraform.tfvars`:
 
 ```hcl
-nodes = [
+nodes = {
   # ... existing nodes ...
-  {
-    name     = "<cluster>-node-<n>"
-    role     = "worker"
-    cores    = 4
-    memory   = 8192
-    disk     = "32G"
-    ip       = "<ip-address>"
-    pci      = []
+  <cluster>-node-<n> = {
+    role   = "worker"
+    ip     = "<ip-address>/24"
+    vm_id  = <unique-vm-id>
+    cores  = 4
+    memory = 8192
   }
-]
+}
+```
+
+For a GPU node, also add `tags` and `pci_mappings`:
+
+```hcl
+  <cluster>-node-<n> = {
+    role         = "worker"
+    ip           = "<ip-address>/24"
+    vm_id        = <unique-vm-id>
+    cores        = 4
+    memory       = 8192
+    tags         = ["gpu"]
+    pci_mappings = ["igpu"]
+  }
 ```
 
 ### 2. Update Ansible Inventory

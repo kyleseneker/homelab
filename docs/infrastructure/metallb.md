@@ -8,7 +8,7 @@ MetalLB provides a bare-metal LoadBalancer implementation for the cluster, allow
 |-------|-------|
 | Chart | `metallb` |
 | Repository | <https://metallb.github.io/metallb> |
-| Version | 0.14.9 |
+| Version | 0.15.3 |
 | Namespace | `metallb-system` (CreateNamespace=true, ServerSideApply=true) |
 | Sync Wave | -3 |
 

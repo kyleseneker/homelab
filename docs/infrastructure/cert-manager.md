@@ -8,13 +8,13 @@ cert-manager automates the issuance and renewal of TLS certificates within the c
 |-------|-------|
 | Chart | `cert-manager` |
 | Repository | <https://charts.jetstack.io> |
-| Version | v1.17.1 |
+| Version | v1.20.0 |
 | Namespace | `cert-manager` (CreateNamespace=true) |
 | Sync Wave | -3 |
 
 ## Key Configuration
 
-- **CRDs**: Installed via the Helm chart (`installCRDs: true`).
+- **CRDs**: Installed via the Helm chart (`crds.enabled: true`).
 - **Cluster Issuer Chain**: A three-stage chain bootstraps a private CA for the cluster:
     1. **selfsigned-issuer** -- a `ClusterIssuer` of type `SelfSigned`, used only to sign the root CA certificate.
     2. **homelab-ca** -- a `Certificate` resource marked `isCA: true`, using ECDSA P-256. Signed by `selfsigned-issuer` and stored in the secret `homelab-ca-secret`.

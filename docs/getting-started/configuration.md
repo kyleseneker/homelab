@@ -61,18 +61,18 @@ nodes = {
     memory = 24576
   }
   homelabk8s01-node-3 = {
-    role        = "worker"
-    ip          = "192.168.10.52/24"
-    vm_id       = 202
-    cores       = 4
-    memory      = 24576
-    tags        = ["gpu"]
-    pci_devices = [{ id = "0000:00:02.0" }]
+    role         = "worker"
+    ip           = "192.168.10.52/24"
+    vm_id        = 202
+    cores        = 4
+    memory       = 24576
+    tags         = ["gpu"]
+    pci_mappings = ["igpu"]
   }
 }
 ```
 
-The `tags` and `pci_devices` fields are used to pass an Intel iGPU through to a worker node for hardware transcoding in Jellyfin and Tdarr.
+The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a worker node for hardware transcoding in Jellyfin and Tdarr. The `pci_mappings` value references a Proxmox PCI device mapping created by the `pve-configure` playbook.
 
 ## Ansible
 

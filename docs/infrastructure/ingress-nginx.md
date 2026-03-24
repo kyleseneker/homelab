@@ -8,7 +8,7 @@ ingress-nginx is the cluster's ingress controller, providing hostname-based HTTP
 |-------|-------|
 | Chart | `ingress-nginx` |
 | Repository | <https://kubernetes.github.io/ingress-nginx> |
-| Version | 4.12.0 |
+| Version | 4.15.1 |
 | Namespace | `ingress-nginx` (CreateNamespace=true, ServerSideApply=true) |
 | Sync Wave | -1 |
 

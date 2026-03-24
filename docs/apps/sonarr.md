@@ -26,8 +26,8 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 
 | | CPU | Memory |
 |---|-----|--------|
-| Requests | 100m | 256Mi |
-| Limits | -- | 512Mi |
+| Requests | 250m | 512Mi |
+| Limits | -- | 1Gi |
 
 ## Key Configuration
 

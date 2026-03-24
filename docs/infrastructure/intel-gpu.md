@@ -8,7 +8,7 @@ The Intel GPU stack enables iGPU passthrough for hardware-accelerated video tran
 |-------|-------|
 | Charts | `intel-device-plugins-operator`, `intel-device-plugins-gpu` |
 | Repository | <https://intel.github.io/helm-charts> |
-| Version | 0.31.1 (both) |
+| Version | 0.35.0 (both) |
 | Namespace | `intel-gpu-operator` (CreateNamespace=true) |
 | Sync Waves | Operator: -2, Plugin: -1 |
 
@@ -50,7 +50,7 @@ volumes:
 ```
 
 !!! note "PCI Passthrough"
-    The physical iGPU is passed through to the Kubernetes node VMs at the Terraform/Proxmox layer via `pci_devices` and `pci_mappings` configuration. The Intel GPU plugin only handles the in-cluster device advertisement.
+    The physical iGPU is passed through to the Kubernetes node VMs at the Terraform/Proxmox layer via the `pci_mappings` field in `terraform.tfvars`, which references a Proxmox PCI device mapping. The Intel GPU plugin only handles the in-cluster device advertisement.
 
 ## Upstream Documentation
 

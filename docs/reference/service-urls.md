@@ -21,6 +21,7 @@ These are the ingress hostnames exposed by ingress-nginx. All require DNS entrie
 | Alertmanager | `https://alertmanager.homelab.local` |
 | Uptime Kuma | `https://status.homelab.local` |
 | Authentik | `https://auth.homelab.local` |
+| Vault | `https://vault.homelab.local` |
 
 ## Internal URLs (Kubernetes Service DNS)
 

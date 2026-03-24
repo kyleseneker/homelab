@@ -37,7 +37,7 @@ Related dependencies are grouped into single PRs to reduce noise:
 
 | Group | Packages |
 |-------|----------|
-| app-template chart | All 10 apps using the bjw-s app-template Helm chart |
+| app-template chart | All 14 apps using the bjw-s app-template Helm chart |
 | linuxserver images | All `lscr.io/linuxserver/*` container images |
 | grafana stack | Loki + Alloy Helm charts |
 | intel gpu | GPU device plugin + operator Helm charts |

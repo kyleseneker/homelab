@@ -10,12 +10,13 @@ Use this procedure when the entire Kubernetes cluster is lost and must be rebuil
 
 Before a disaster occurs, ensure the following are available **outside the cluster**:
 
-- Vault unseal key and root token (stored in password manager after `make vault-init`)
+- Vault root token (stored in password manager after `make vault-init`)
+- AWS credentials and KMS key ID for Vault auto-unseal (the `vault-aws-kms` Secret must be recreated after a rebuild)
 - Velero backups stored on MinIO (running on the NAS or otherwise accessible)
 - This Git repository (the single source of truth for all cluster state)
 
 !!! warning "Critical"
-    If you do not have the Vault unseal key, Vault cannot be unsealed after a rebuild. Store the unseal key and root token in your password manager.
+    Vault uses AWS KMS for auto-unseal. After a rebuild, the `vault-aws-kms` Kubernetes Secret must be recreated **before** the Vault pod starts. See the [Vault KMS migration runbook](vault-kms-migration.md#part-5-disaster-recovery-bootstrap) for the bootstrap procedure. Store the AWS credentials and KMS key ID in your password manager.
 
 ### Procedure
 
@@ -34,16 +35,22 @@ Before a disaster occurs, ensure the following are available **outside the clust
     export KUBECONFIG=$(pwd)/kubeconfig
     ```
 
-3. Wait for Vault to become available:
+3. Before ArgoCD deploys Vault, create the `vault-aws-kms` Secret so Vault can auto-unseal:
+
+    ```bash
+    kubectl create namespace vault
+    kubectl create secret generic vault-aws-kms \
+      --namespace vault \
+      --from-literal=AWS_ACCESS_KEY_ID="<access_key_id>" \
+      --from-literal=AWS_SECRET_ACCESS_KEY="<secret_access_key>" \
+      --from-literal=AWS_REGION="us-east-1" \
+      --from-literal=VAULT_AWSKMS_SEAL_KEY_ID="<kms_key_id>"
+    ```
+
+4. Wait for Vault to become available (it will auto-unseal via KMS):
 
     ```bash
     kubectl -n vault wait --for=condition=ready pod/vault-0 --timeout=300s
-    ```
-
-4. Unseal Vault with the stored unseal key:
-
-    ```bash
-    make vault-unseal
     ```
 
 5. Verify ESO is syncing secrets:
@@ -95,31 +102,51 @@ Recovery depends entirely on the NAS hardware and its RAID/backup configuration.
 !!! tip
     If the NAS will be down for an extended period, you can delete the hanging pods to prevent them from consuming cluster resources. They will be recreated (and hang again) only if their controllers attempt rescheduling.
 
-## Vault Unseal Key Loss
+## Vault KMS Credential Loss
 
-If the Vault unseal key is lost:
+Vault uses AWS KMS auto-unseal. If the AWS credentials or KMS key ID (stored in the `vault-aws-kms` Secret) are lost, Vault cannot auto-unseal.
 
-- You cannot unseal Vault; encrypted secrets in Vault may be unrecoverable without backups.
-- You must re-initialize Vault and repopulate secrets from `.example` files, application UIs, and other authoritative sources.
+- If the KMS key still exists in AWS but credentials are lost: recreate the IAM user and generate new access keys, then recreate the `vault-aws-kms` Secret and restart the Vault pod.
+- If the KMS key itself is deleted or scheduled for deletion: contact AWS support. A key scheduled for deletion has a minimum 7-day waiting period and can be cancelled during that window.
+- If both the KMS key and a Velero backup of Vault data are lost: you must re-initialize Vault and repopulate all secrets.
 
-### Recovery Procedure
+### Recovery Procedure (credentials lost, KMS key intact)
+
+1. Generate new AWS access keys for the Vault IAM user.
+2. Recreate the `vault-aws-kms` Secret:
+
+    ```bash
+    kubectl delete secret vault-aws-kms -n vault
+    kubectl create secret generic vault-aws-kms \
+      --namespace vault \
+      --from-literal=AWS_ACCESS_KEY_ID="<new_access_key_id>" \
+      --from-literal=AWS_SECRET_ACCESS_KEY="<new_secret_access_key>" \
+      --from-literal=AWS_REGION="us-east-1" \
+      --from-literal=VAULT_AWSKMS_SEAL_KEY_ID="<kms_key_id>"
+    ```
+
+3. Restart the Vault pod: `kubectl -n vault delete pod vault-0`
+4. Vault auto-unseals via KMS. Verify: `vault status`
+
+### Recovery Procedure (full Vault data loss)
 
 1. Locate all `.example` files in the repository -- these contain the secret structure with placeholder values.
-2. Re-initialize Vault and save the new credentials:
+2. Recreate the `vault-aws-kms` Secret (see above).
+3. Re-initialize Vault:
 
     ```bash
     make vault-init
     ```
 
-    Save the unseal key and root token from the output to your password manager.
+    Save the root token from the output to your password manager.
 
-3. For each secret, write values to Vault:
+4. For each secret, write values to Vault:
 
     ```bash
     vault kv put homelab/<path> key1=value1 key2=value2
     ```
 
-4. ESO syncs the new secrets from Vault automatically.
+5. ESO syncs the new secrets from Vault automatically.
 
 ## What Is NOT Backed Up
 

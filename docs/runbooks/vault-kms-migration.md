@@ -124,14 +124,17 @@ vault status   # Seal Type: awskms
 
 ### Step 4 — Remove `disabled = "true"` from the seal stanza
 
-Edit [k8s/clusters/homelabk8s01/infrastructure/vault/application.yml](../../k8s/clusters/homelabk8s01/infrastructure/vault/application.yml) and remove the `disabled = "true"` line from the `seal "awskms"` block:
+Edit [k8s/clusters/homelabk8s01/infrastructure/vault/application.yml](../../k8s/clusters/homelabk8s01/infrastructure/vault/application.yml) and remove the `disabled = "true"` line from the `seal "awskms"` block. The final config has the region and KMS key ID hardcoded (the AWS credentials are injected via `extraSecretEnvironmentVars` from the `vault-aws-kms` Secret):
 
 ```hcl
 seal "awskms" {
-  region     = env("AWS_REGION")
-  kms_key_id = env("VAULT_AWSKMS_SEAL_KEY_ID")
+  region     = "us-east-1"
+  kms_key_id = "<your-kms-key-id>"
 }
 ```
+
+!!! note
+    The region and KMS key ID are hardcoded in the Vault config. The AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`) are sourced from the `vault-aws-kms` Kubernetes Secret via `extraSecretEnvironmentVars` in the Vault Helm values.
 
 Commit and push:
 

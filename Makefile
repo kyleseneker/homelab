@@ -99,7 +99,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-unseal vault-put-secret vault-status aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -156,10 +156,6 @@ VAULT_NS ?= vault
 
 vault-init: ## Initialize Vault and configure ESO integration (one-time)
 	./scripts/vault-init.sh
-
-vault-unseal: ## [DEPRECATED] Vault now auto-unseals via AWS KMS — see docs/runbooks/vault-kms-migration.md
-	@echo "Vault is configured for AWS KMS auto-unseal. Manual unsealing is no longer required."
-	@echo "If you are in the pre-migration window, see docs/runbooks/vault-kms-migration.md"
 
 vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
 	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \

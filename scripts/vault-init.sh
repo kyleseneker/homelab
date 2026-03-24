@@ -97,7 +97,7 @@ if [[ "$SEAL_STATUS" != "false" ]]; then
       error "Vault did not auto-unseal within 60 seconds. Check the vault-aws-kms Secret and KMS connectivity."
     fi
   else
-    error "Vault is sealed. If you are in the pre-migration window, run 'make vault-unseal'. After KMS migration, this should not occur — check the vault-aws-kms Secret and KMS configuration."
+    error "Vault is sealed. This should not occur with KMS auto-unseal — check the vault-aws-kms Secret and KMS connectivity."
   fi
 else
   info "Vault is already unsealed."

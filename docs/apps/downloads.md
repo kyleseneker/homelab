@@ -53,7 +53,7 @@ flowchart TB
         end
     end
 
-    vpn["PIA VPN\n(US East)"] <-->|"WireGuard/OpenVPN"| gluetun
+    vpn["PIA VPN\n(CA Montreal)"] <-->|"WireGuard/OpenVPN"| gluetun
     qbit -->|"traffic via tunnel"| gluetun
     ingress["nginx ingress"] -->|"qbit.homelab.local"| netns
 ```
@@ -63,8 +63,8 @@ flowchart TB
 ### Gluetun
 
 - `VPN_SERVICE_PROVIDER`: `private internet access`
-- `SERVER_REGIONS`: `US East`
-- `FIREWALL_VPN_INPUT_PORTS`: `6881` (torrent listening port)
+- `SERVER_REGIONS`: `CA Montreal`
+- `VPN_PORT_FORWARDING`: `on` (PIA assigns the torrent listening port dynamically)
 - `FIREWALL_INPUT_PORTS`: `8080` (allows ingress to reach the qBittorrent UI)
 - `DOT`: `off`
 - Requires `NET_ADMIN` capability for VPN tunnel creation.

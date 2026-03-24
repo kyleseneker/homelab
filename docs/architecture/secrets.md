@@ -119,19 +119,16 @@ Vault data is stored on a PVC backed by NFS. Velero backs up all PVCs on schedul
 
 ### Vault Unsealing
 
-After a Vault pod restart, manual unsealing is required:
+Vault is configured with AWS KMS auto-unseal. On every pod restart, Vault contacts AWS KMS to decrypt the master key automatically -- no manual intervention is required.
 
-```bash
-make vault-unseal
-```
-
-Store the unseal key and root token securely in a password manager.
+The AWS credentials used for auto-unseal are stored in the `vault-aws-kms` Kubernetes Secret in the `vault` namespace. This Secret is **never committed to Git** and must be recreated manually after a full cluster rebuild.
 
 ### Cluster Rebuild
 
 When rebuilding the cluster from scratch:
 
-1. Deploy Vault and ESO via ArgoCD (automatic from Git)
-2. Restore Vault data from Velero backup, or re-initialize with `make vault-init`
-3. If re-initializing, re-populate all secrets from their original sources
-4. ESO automatically creates all K8s Secrets once Vault is available
+1. **Before** running `make k8s-bootstrap`, create the `vault-aws-kms` Secret in the `vault` namespace with the AWS credentials and KMS key ID. See the [Vault KMS migration runbook](../runbooks/vault-kms-migration.md#part-5-disaster-recovery-bootstrap) for the exact procedure.
+2. Deploy Vault and ESO via ArgoCD (automatic from Git) -- Vault will auto-unseal via KMS.
+3. Restore Vault data from Velero backup, or re-initialize with `make vault-init`.
+4. If re-initializing, re-populate all secrets from their original sources.
+5. ESO automatically creates all K8s Secrets once Vault is available.
