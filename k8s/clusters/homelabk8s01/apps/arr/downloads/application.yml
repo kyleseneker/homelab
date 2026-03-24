@@ -24,7 +24,7 @@ spec:
                   tag: v3.41.1
                 env:
                   VPN_SERVICE_PROVIDER: "private internet access"
-                  SERVER_REGIONS: "US East"
+                  SERVER_REGIONS: "CA Montreal"
                   VPN_PORT_FORWARDING: "on"
                   FIREWALL_INPUT_PORTS: "8080"
                   DOT: "off"
