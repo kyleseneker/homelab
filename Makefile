@@ -99,7 +99,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-unseal vault-put-secret vault-status
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-unseal vault-put-secret vault-status aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -157,13 +157,9 @@ VAULT_NS ?= vault
 vault-init: ## Initialize Vault and configure ESO integration (one-time)
 	./scripts/vault-init.sh
 
-vault-unseal: ## Unseal Vault after a pod restart
-	@echo "Port-forwarding to Vault..."
-	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
-	@sleep 2
-	@echo -n "Enter unseal key: " && read -r key && \
-		VAULT_ADDR=http://127.0.0.1:8200 vault operator unseal "$$key"
-	@kill %% 2>/dev/null || true
+vault-unseal: ## [DEPRECATED] Vault now auto-unseals via AWS KMS — see docs/runbooks/vault-kms-migration.md
+	@echo "Vault is configured for AWS KMS auto-unseal. Manual unsealing is no longer required."
+	@echo "If you are in the pre-migration window, see docs/runbooks/vault-kms-migration.md"
 
 vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
 	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \
@@ -178,3 +174,18 @@ vault-status: ## Show Vault seal status
 	@sleep 2
 	@VAULT_ADDR=http://127.0.0.1:8200 vault status
 	@kill %% 2>/dev/null || true
+
+# ---------------------------------------------------------------------------
+# AWS  (KMS key + IAM user for Vault auto-unseal)
+# ---------------------------------------------------------------------------
+
+AWS_TF_DIR := terraform/aws
+
+aws-init: ## Initialize Terraform for AWS resources
+	cd $(AWS_TF_DIR) && terraform init
+
+aws-plan: ## Preview AWS resource changes
+	cd $(AWS_TF_DIR) && terraform plan
+
+aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
+	cd $(AWS_TF_DIR) && terraform apply

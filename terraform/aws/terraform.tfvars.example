@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and adjust values as needed.
+# terraform.tfvars is gitignored and must never be committed.
+
+aws_region  = "us-east-1"
+environment = "homelab"
+key_alias   = "vault-unseal"

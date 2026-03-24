@@ -16,6 +16,7 @@ HashiCorp Vault provides centralized secrets storage for the cluster. All applic
 
 - **Mode**: Standalone (single replica, file storage)
 - **Storage**: File backend on NFS-backed PVC (1Gi)
+- **Seal**: AWS KMS auto-unseal (key: `alias/vault-unseal-homelab`)
 - **UI**: Enabled at `vault.homelab.local`
 - **Injector**: Disabled (using External Secrets Operator instead)
 - **Resources**:
@@ -32,21 +33,21 @@ make vault-init
 
 This runs `scripts/vault-init.sh`, which:
 
-1. Initializes Vault with a single unseal key
-2. Unseals the vault
-3. Enables the `homelab` KV v2 secrets engine
-4. Enables Kubernetes auth method
-5. Creates an ESO read policy and role
+1. Waits for Vault to auto-unseal via AWS KMS
+2. Enables the `homelab` KV v2 secrets engine
+3. Enables Kubernetes auth method
+4. Creates an ESO read policy and role
 
-Store the unseal key and root token in a password manager.
+Store the root token in a password manager.
+
+!!! warning "Bootstrap dependency"
+    The `vault-aws-kms` Kubernetes Secret must exist in the `vault` namespace before the Vault pod starts. See the [KMS migration runbook](../runbooks/vault-kms-migration.md) for setup instructions.
 
 ## Unsealing
 
-Vault must be unsealed after every pod restart:
+Vault auto-unseals via AWS KMS on every pod restart. No manual intervention is required.
 
-```bash
-make vault-unseal
-```
+The KMS key and IAM credentials are provisioned with Terraform (`make aws-apply`) and stored as a manually-created Kubernetes Secret (`vault-aws-kms` in the `vault` namespace). This Secret is never committed to Git and must be recreated after a full cluster rebuild — see the [KMS migration runbook](../runbooks/vault-kms-migration.md).
 
 ## Vault Path Structure
 

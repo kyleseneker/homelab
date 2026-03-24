@@ -18,6 +18,19 @@ spec:
         injector:
           enabled: false
         server:
+          extraSecretEnvironmentVars:
+            - envName: AWS_ACCESS_KEY_ID
+              secretName: vault-aws-kms
+              secretKey: AWS_ACCESS_KEY_ID
+            - envName: AWS_SECRET_ACCESS_KEY
+              secretName: vault-aws-kms
+              secretKey: AWS_SECRET_ACCESS_KEY
+            - envName: AWS_REGION
+              secretName: vault-aws-kms
+              secretKey: AWS_REGION
+            - envName: VAULT_AWSKMS_SEAL_KEY_ID
+              secretName: vault-aws-kms
+              secretKey: VAULT_AWSKMS_SEAL_KEY_ID
           standalone:
             enabled: true
             config: |
@@ -31,6 +44,12 @@ spec:
 
               storage "file" {
                 path = "/vault/data"
+              }
+
+              seal "awskms" {
+                region     = env("AWS_REGION")
+                kms_key_id = env("VAULT_AWSKMS_SEAL_KEY_ID")
+                disabled   = "true"
               }
           dataStorage:
             enabled: true

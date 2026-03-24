@@ -73,21 +73,32 @@ else
 fi
 
 # -----------------------------------------------------------------------
-# 3. Unseal if needed
+# 3. Wait for Vault to be unsealed (auto-unseal via AWS KMS)
 # -----------------------------------------------------------------------
-# vault status exits 2 when sealed, 0 when unsealed; capture output separately
+# vault status exits 2 when sealed; capture output separately
 VAULT_STATUS_JSON=$(vault status -format=json 2>/dev/null || true)
+SEAL_TYPE=$(echo "$VAULT_STATUS_JSON" | jq -r '.seal_type' 2>/dev/null || echo "unknown")
 SEAL_STATUS=$(echo "$VAULT_STATUS_JSON" | jq -r '.sealed' 2>/dev/null || echo "true")
 
 if [[ "$SEAL_STATUS" != "false" ]]; then
-  if [[ -f "$INIT_OUTPUT_FILE" ]]; then
-    UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' "$INIT_OUTPUT_FILE")
+  if [[ "$SEAL_TYPE" == "awskms" ]]; then
+    info "Vault is configured for AWS KMS auto-unseal. Waiting for auto-unseal to complete..."
+    for i in $(seq 1 12); do
+      sleep 5
+      VAULT_STATUS_JSON=$(vault status -format=json 2>/dev/null || true)
+      SEAL_STATUS=$(echo "$VAULT_STATUS_JSON" | jq -r '.sealed' 2>/dev/null || echo "true")
+      if [[ "$SEAL_STATUS" == "false" ]]; then
+        info "Vault is unsealed."
+        break
+      fi
+      warn "Still sealed (attempt ${i}/12)..."
+    done
+    if [[ "$SEAL_STATUS" != "false" ]]; then
+      error "Vault did not auto-unseal within 60 seconds. Check the vault-aws-kms Secret and KMS connectivity."
+    fi
   else
-    echo -n "Enter unseal key: "
-    read -r UNSEAL_KEY
+    error "Vault is sealed. If you are in the pre-migration window, run 'make vault-unseal'. After KMS migration, this should not occur — check the vault-aws-kms Secret and KMS configuration."
   fi
-  info "Unsealing Vault..."
-  vault operator unseal "$UNSEAL_KEY"
 else
   info "Vault is already unsealed."
 fi
@@ -167,7 +178,8 @@ echo ""
 info "Vault initialization complete."
 info ""
 info "Next steps:"
-info "  1. Store unseal key and root token in your password manager"
-info "  2. Delete ${INIT_OUTPUT_FILE} if it exists"
-info "  3. Populate secrets with: vault kv put ${VAULT_KV_PATH}/<path> key=value"
-info "  4. Verify ClusterSecretStore: kubectl get clustersecretstore vault-backend"
+info "  1. Store the root token in your password manager"
+info "  2. Delete ${INIT_OUTPUT_FILE} if it exists (DO NOT commit it)"
+info "  3. If Vault is still using Shamir sealing, store the unseal key and follow the KMS migration runbook: docs/runbooks/vault-kms-migration.md"
+info "  4. Populate secrets with: vault kv put ${VAULT_KV_PATH}/<path> key=value"
+info "  5. Verify ClusterSecretStore: kubectl get clustersecretstore vault-backend"
