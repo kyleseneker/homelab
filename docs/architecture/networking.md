@@ -82,7 +82,6 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | Bazarr | `bazarr.homelab.local` |
 | Jellyseerr | `jellyseerr.homelab.local` |
 | qBittorrent | `qbit.homelab.local` |
-| SABnzbd | `sabnzbd.homelab.local` |
 | Tdarr | `tdarr.homelab.local` |
 | Homepage | `home.homelab.local` |
 | Uptime Kuma | `status.homelab.local` |
@@ -97,16 +96,14 @@ CiliumNetworkPolicies enforce namespace-level ingress isolation. Each applicatio
 
 ## VPN Sidecar Architecture
 
-The download clients (qBittorrent and SABnzbd) run alongside a Gluetun VPN container in a shared pod. All containers in the pod share a single network namespace, meaning all egress traffic from the download clients routes through the VPN tunnel.
+qBittorrent runs alongside a Gluetun VPN container in a shared pod. Both containers share a single network namespace, meaning all egress traffic from qBittorrent routes through the VPN tunnel.
 
 ```mermaid
 flowchart TD
-    subgraph vpnPod["Pod: gluetun-qbit-sab"]
+    subgraph vpnPod["Pod: gluetun-qbit"]
         gluetun["Gluetun Container\n(PIA VPN)"]
         qbit["qBittorrent Container"]
-        sabnzbd["SABnzbd Container"]
         gluetun ---|"shared network\nnamespace"| qbit
-        gluetun ---|"shared network\nnamespace"| sabnzbd
     end
 
     subgraph network["Network Flow"]
@@ -117,7 +114,7 @@ flowchart TD
 
     gluetun -->|"all egress via\nVPN tunnel"| vpnTunnel
     vpnTunnel --> internet
-    localNet -->|"port 8080 (qBit)\nport 8085 (SABnzbd)"| gluetun
+    localNet -->|"port 8080 (qBit)"| gluetun
     internet -->|"port 6881\n(VPN input)"| gluetun
 ```
 
@@ -128,11 +125,10 @@ flowchart TD
 | VPN Provider | Private Internet Access (PIA) |
 | Capability | `NET_ADMIN` (required for VPN tunnel creation) |
 | Firewall - qBittorrent | Port 8080 |
-| Firewall - SABnzbd | Port 8085 |
 | VPN Input Port | 6881 (for incoming torrent connections) |
 | Credentials | Sealed Secret (`vpn-credentials`) |
 
-Gluetun creates the VPN tunnel interface and configures iptables firewall rules. The `NET_ADMIN` capability is required for tunnel and firewall management. Because the containers share a network namespace, qBittorrent and SABnzbd automatically use the VPN tunnel for all outbound connections.
+Gluetun creates the VPN tunnel interface and configures iptables firewall rules. The `NET_ADMIN` capability is required for tunnel and firewall management. Because the containers share a network namespace, qBittorrent automatically uses the VPN tunnel for all outbound connections.
 
 !!! warning "Kill Switch"
     If the VPN tunnel drops, Gluetun's built-in firewall rules prevent any traffic from leaving the pod outside the tunnel. This acts as a kill switch ensuring download traffic is never exposed on the local network.

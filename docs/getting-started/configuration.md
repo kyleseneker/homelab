@@ -77,7 +77,7 @@ The following manifest files contain environment-specific values that must be ed
 | `k8s/components/metallb-config/ip-pool.yml` | LoadBalancer IP range for MetalLB |
 | `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/application.yml` | NAS IP address for the NFS provisioner |
 | `k8s/clusters/homelabk8s01/apps/arr/shared-data-pv.yml` | NAS IP address for the shared media PersistentVolume |
-| `k8s/clusters/homelabk8s01/apps/arr/gluetun-qbit-sab/application.yml` | VPN server region |
+| `k8s/clusters/homelabk8s01/apps/arr/downloads/application.yml` | VPN server region |
 | `k8s/bootstrap/root-app.yml` | Git repository URL for ArgoCD |
 
 !!! tip

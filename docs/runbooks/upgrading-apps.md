@@ -64,7 +64,6 @@ Check upstream releases for available updates:
 | Jellyfin | [Jellyfin Releases](https://github.com/jellyfin/jellyfin/releases) |
 | Jellyseerr | [Jellyseerr Releases](https://github.com/Fallenbagel/jellyseerr/releases) |
 | qBittorrent | [LinuxServer.io Fleet](https://fleet.linuxserver.io/) |
-| SABnzbd | [SABnzbd Releases](https://github.com/sabnzbd/sabnzbd/releases) |
 | Tdarr | [Tdarr Releases](https://github.com/HaveAGitGat/Tdarr/releases) |
 | Homepage | [Homepage Releases](https://github.com/gethomepage/homepage/releases) |
 | Recyclarr | [Recyclarr Releases](https://github.com/recyclarr/recyclarr/releases) |

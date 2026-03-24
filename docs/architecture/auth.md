@@ -35,7 +35,7 @@ The `auth-url` annotation points to the embedded outpost's internal service (`ak
 
 The outpost cookie domain is set to `homelab.local`, enabling a single authentication session across all subdomains.
 
-**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent/SABnzbd, Homepage
+**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage
 
 ### Native OIDC
 

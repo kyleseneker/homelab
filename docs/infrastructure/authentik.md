@@ -27,7 +27,7 @@ User -> nginx-ingress -> auth_request -> Authentik outpost
                       |-> proxy to backend app
 ```
 
-**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent/SABnzbd, Homepage
+**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage
 
 ### Native OIDC
 

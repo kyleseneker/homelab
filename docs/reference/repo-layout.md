@@ -82,7 +82,7 @@ homelab/
 │               ├── prowlarr/
 │               ├── bazarr/
 │               ├── jellyseerr/
-│               ├── gluetun-qbit-sab/
+│               ├── downloads/
 │               ├── recyclarr/
 │               ├── tdarr/
 │               └── exportarr/

@@ -1,6 +1,6 @@
 # Prowlarr
 
-Prowlarr is a centralized indexer manager for the *arr stack. Add torrent trackers and Usenet indexers once in Prowlarr and they automatically sync to Sonarr, Radarr, and any other connected application.
+Prowlarr is a centralized indexer manager for the *arr stack. Add torrent trackers once in Prowlarr and they automatically sync to Sonarr, Radarr, and any other connected application.
 
 ## Details
 
@@ -41,7 +41,6 @@ Prowlarr does not require the shared `arr-data` volume because it does not inter
 1. Open `https://prowlarr.homelab.local` and set authentication (Settings > General).
 2. Add indexers (Indexers > Add Indexer):
     - Add torrent trackers (public or private).
-    - Add Usenet indexers (NZBgeek, etc.).
 3. Connect to Sonarr and Radarr (Settings > Apps > Add Application):
     - **Prowlarr Server**: `http://arr-prowlarr.arr.svc.cluster.local:9696`
     - **Sonarr**: `http://arr-sonarr.arr.svc.cluster.local:8989` + Sonarr API key

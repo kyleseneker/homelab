@@ -41,7 +41,6 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 2. Add root folder: `/data/media/tv` (Settings > Media Management > Root Folders).
 3. Add download clients (Settings > Download Clients):
     - **qBittorrent** -- host: `arr-vpn-downloads.arr.svc.cluster.local`, port: `8080`, category: `tv`
-    - **SABnzbd** -- host: `arr-vpn-downloads.arr.svc.cluster.local`, port: `8085`, category: `tv`
 4. Note the API key from Settings > General -- it is required by Prowlarr, Recyclarr, Bazarr, Jellyseerr, and Homepage.
 
 ## Dependencies
@@ -49,7 +48,7 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 | Dependency | Purpose |
 |------------|---------|
 | Prowlarr | Syncs indexers to Sonarr automatically |
-| qBittorrent / SABnzbd | Download clients for torrent and Usenet |
+| qBittorrent | Torrent download client |
 | Recyclarr | Pushes quality profiles and custom formats |
 | Bazarr | Fetches subtitles for downloaded episodes |
 | Jellyseerr | Sends TV show requests to Sonarr |

@@ -170,7 +170,7 @@ dig <app-name>.homelab.local
 
 ### VPN Not Connecting
 
-The Gluetun VPN container fails to establish a connection, blocking qBittorrent and SABnzbd.
+The Gluetun VPN container fails to establish a connection, blocking qBittorrent.
 
 ```bash
 kubectl logs -n arr -l app.kubernetes.io/instance=arr-vpn-downloads -c gluetun

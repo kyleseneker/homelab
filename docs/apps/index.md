@@ -24,7 +24,7 @@ flowchart LR
     Prowlarr -->|"sync indexers"| Radarr
     Jellyseerr -->|"requests"| Sonarr
     Jellyseerr -->|"requests"| Radarr
-    Sonarr -->|"send to download"| Downloads["qBittorrent / SABnzbd"]
+    Sonarr -->|"send to download"| Downloads["qBittorrent"]
     Radarr -->|"send to download"| Downloads
     Downloads -->|"completed archives"| Unpackerr
     Unpackerr -->|"extracted files"| Media["/data/media"]
@@ -48,7 +48,7 @@ flowchart LR
 | [Prowlarr](prowlarr.md) | `prowlarr.homelab.local` | Centralized indexer manager | `lscr.io/linuxserver/prowlarr:2.3.0` |
 | [Bazarr](bazarr.md) | `bazarr.homelab.local` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr:1.5.6` |
 | [Jellyseerr](jellyseerr.md) | `jellyseerr.homelab.local` | Media request management | `fallenbagel/jellyseerr:2.7.3` |
-| [Downloads](downloads.md) | `qbit.homelab.local`, `sabnzbd.homelab.local` | VPN-routed download clients (qBittorrent + SABnzbd) | `qmcgaw/gluetun:v3.41.1`, `lscr.io/linuxserver/qbittorrent:5.1.4`, `lscr.io/linuxserver/sabnzbd:4.5.5` |
+| [Downloads](downloads.md) | `qbit.homelab.local` | VPN-routed torrent client (qBittorrent) | `qmcgaw/gluetun:v3.41.1`, `lscr.io/linuxserver/qbittorrent:5.1.4` |
 | [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.1` |
 | [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.65.01` |
 | [Unpackerr](unpackerr.md) | -- | Automatic extraction of compressed downloads | `ghcr.io/unpackerr/unpackerr:v0.15.2` |

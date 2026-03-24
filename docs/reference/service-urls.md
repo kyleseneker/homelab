@@ -16,7 +16,6 @@ These are the ingress hostnames exposed by ingress-nginx. All require DNS entrie
 | Bazarr | `https://bazarr.homelab.local` |
 | Tdarr | `https://tdarr.homelab.local` |
 | qBittorrent | `https://qbit.homelab.local` |
-| SABnzbd | `https://sabnzbd.homelab.local` |
 | Grafana | `https://grafana.homelab.local` |
 | Prometheus | `https://prometheus.homelab.local` |
 | Alertmanager | `https://alertmanager.homelab.local` |
@@ -36,7 +35,6 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | Jellyfin | `http://arr-jellyfin.arr.svc.cluster.local:8096` |
 | Jellyseerr | `http://arr-jellyseerr.arr.svc.cluster.local:5055` |
 | qBittorrent | `http://arr-vpn-downloads.arr.svc.cluster.local:8080` |
-| SABnzbd | `http://arr-vpn-downloads.arr.svc.cluster.local:8085` |
 | Tdarr | `http://arr-tdarr.arr.svc.cluster.local:8265` |
 | Loki | `http://loki.monitoring.svc.cluster.local:3100` |
 | MinIO | `http://minio.backups.svc.cluster.local:9000` |

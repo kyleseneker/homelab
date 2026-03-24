@@ -1,6 +1,6 @@
-# Downloads (Gluetun + qBittorrent + SABnzbd)
+# Downloads (Gluetun + qBittorrent)
 
-This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) with two download clients (qBittorrent for torrents, SABnzbd for Usenet). All containers share a single network namespace, so all download traffic is routed through the Private Internet Access (PIA) VPN tunnel.
+This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) with a torrent download client (qBittorrent). Both containers share a single network namespace, so all download traffic is routed through the Private Internet Access (PIA) VPN tunnel.
 
 ## Details
 
@@ -17,14 +17,12 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 |-----------|-------|------|------|
 | `gluetun` | `qmcgaw/gluetun:v3.41.1` | -- | VPN sidecar (PIA) |
 | `qbittorrent` | `lscr.io/linuxserver/qbittorrent:5.1.4` | 8080 | Torrent client |
-| `sabnzbd` | `lscr.io/linuxserver/sabnzbd:4.5.5` | 8085 | Usenet client |
 
 ### Ingress
 
 | Host | Port | Service |
 |------|------|---------|
 | `qbit.homelab.local` | 8080 | qBittorrent web UI |
-| `sabnzbd.homelab.local` | 8085 | SABnzbd web UI |
 
 ### Storage
 
@@ -32,7 +30,6 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 |--------|------|------|------------|-------|
 | `gluetun-config` | PVC (`nfs-client`) | 256Mi | `/gluetun` | All containers |
 | `qbit-config` | PVC (`nfs-client`) | 1Gi | `/config` | qBittorrent only |
-| `sab-config` | PVC (`nfs-client`) | 1Gi | `/config` | SABnzbd only |
 | `data` | PVC (existing `arr-data`) | -- | `/data` | All containers |
 
 ### Resources
@@ -41,11 +38,10 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 |-----------|-------------|----------------|--------------|
 | `gluetun` | 50m | 128Mi | 256Mi |
 | `qbittorrent` | 100m | 256Mi | 1Gi |
-| `sabnzbd` | 100m | 256Mi | 1Gi |
 
 ## Pod Architecture
 
-The three containers share a network namespace. Gluetun establishes the VPN tunnel and acts as the network gateway for qBittorrent and SABnzbd. Both download clients depend on Gluetun and will not start until it is healthy.
+The two containers share a network namespace. Gluetun establishes the VPN tunnel and acts as the network gateway for qBittorrent. qBittorrent depends on Gluetun and will not start until it is healthy.
 
 ```mermaid
 flowchart TB
@@ -54,14 +50,12 @@ flowchart TB
         subgraph netns["Shared Network Namespace"]
             gluetun["Gluetun\n(VPN tunnel)"]
             qbit["qBittorrent\n:8080"]
-            sab["SABnzbd\n:8085"]
         end
     end
 
     vpn["PIA VPN\n(US East)"] <-->|"WireGuard/OpenVPN"| gluetun
     qbit -->|"traffic via tunnel"| gluetun
-    sab -->|"traffic via tunnel"| gluetun
-    ingress["nginx ingress"] -->|"qbit.homelab.local\nsabnzbd.homelab.local"| netns
+    ingress["nginx ingress"] -->|"qbit.homelab.local"| netns
 ```
 
 ## Key Configuration
@@ -71,7 +65,7 @@ flowchart TB
 - `VPN_SERVICE_PROVIDER`: `private internet access`
 - `SERVER_REGIONS`: `US East`
 - `FIREWALL_VPN_INPUT_PORTS`: `6881` (torrent listening port)
-- `FIREWALL_INPUT_PORTS`: `8080,8085` (allows ingress to reach the download UIs)
+- `FIREWALL_INPUT_PORTS`: `8080` (allows ingress to reach the qBittorrent UI)
 - `DOT`: `off`
 - Requires `NET_ADMIN` capability for VPN tunnel creation.
 - VPN credentials are injected from SealedSecret `vpn-credentials`.
@@ -81,11 +75,6 @@ flowchart TB
 ### qBittorrent
 
 - `WEBUI_PORT`: `8080`
-- Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID).
-- Depends on `gluetun` -- will not start until Gluetun is ready.
-
-### SABnzbd
-
 - Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID).
 - Depends on `gluetun` -- will not start until Gluetun is ready.
 
@@ -113,25 +102,15 @@ This sysctl is required for the VPN routing to function correctly.
 
 2. Log in at `https://qbit.homelab.local` with username `admin` and the temporary password.
 3. Change the admin password immediately (Settings > Web UI > Authentication).
-4. Configure default save path to `/data/downloads/torrents`.
+4. Configure default save path to `/data/torrents`.
 5. Create categories `tv` and `movies` with appropriate save paths.
-
-### SABnzbd
-
-1. Open `https://sabnzbd.homelab.local` and complete the first-time wizard.
-2. Configure your Usenet provider:
-    - Server hostname, port, SSL settings
-    - Username and password
-    - Number of connections
-3. Set default download folder to `/data/downloads/usenet`.
-4. Create categories `tv` and `movies` with appropriate save paths.
 
 ## Dependencies
 
 | Dependency | Purpose |
 |------------|---------|
-| Sonarr | Sends TV download requests to qBittorrent/SABnzbd |
-| Radarr | Sends movie download requests to qBittorrent/SABnzbd |
+| Sonarr | Sends TV download requests to qBittorrent |
+| Radarr | Sends movie download requests to qBittorrent |
 | Unpackerr | Monitors completed downloads and extracts compressed archives |
 | VPN credentials | SealedSecret `vpn-credentials` must exist in the `arr` namespace |
 
@@ -139,4 +118,3 @@ This sysctl is required for the VPN routing to function correctly.
 
 - Gluetun: [https://github.com/qdm12/gluetun](https://github.com/qdm12/gluetun)
 - qBittorrent: [https://www.qbittorrent.org](https://www.qbittorrent.org)
-- SABnzbd: [https://sabnzbd.org](https://sabnzbd.org)

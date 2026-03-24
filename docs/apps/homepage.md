@@ -40,7 +40,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 | Group | Services |
 |-------|----------|
 | Media | Jellyfin, Jellyseerr |
-| Downloads | qBittorrent, SABnzbd, Sonarr, Radarr |
+| Downloads | qBittorrent, Sonarr, Radarr |
 | Management | Prowlarr, Bazarr, Tdarr, Recyclarr |
 | Observability | Grafana, Prometheus, Alertmanager, Loki |
 | Infrastructure | ArgoCD, Proxmox, Gluetun, Homepage |
@@ -66,7 +66,6 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
       --from-literal=HOMEPAGE_VAR_RADARR_KEY=<key> \
       --from-literal=HOMEPAGE_VAR_PROWLARR_KEY=<key> \
       --from-literal=HOMEPAGE_VAR_QBIT_PASSWORD=<password> \
-      --from-literal=HOMEPAGE_VAR_SABNZBD_KEY=<key> \
       --dry-run=client -o yaml | kubeseal -o yaml > homepage-sealedsecret.yml
     ```
 

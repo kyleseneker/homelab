@@ -95,11 +95,6 @@ The NAS follows the recommended media server folder structure, keeping downloads
     tv/
     music/
     books/
-  usenet/
-    movies/
-    tv/
-    music/
-    books/
   media/
     movies/
     tv/
@@ -112,9 +107,8 @@ The NAS follows the recommended media server folder structure, keeping downloads
 | Application | Mount Path | NAS Subdirectory Used |
 |------------|-----------|----------------------|
 | qBittorrent | `/data/torrents` | Torrent download destination |
-| SABnzbd | `/data/usenet` | Usenet download destination |
-| Sonarr | `/data` | Manages `/data/media/tv`, imports from `/data/{torrents,usenet}/tv` |
-| Radarr | `/data` | Manages `/data/media/movies`, imports from `/data/{torrents,usenet}/movies` |
+| Sonarr | `/data` | Manages `/data/media/tv`, imports from `/data/torrents/tv` |
+| Radarr | `/data` | Manages `/data/media/movies`, imports from `/data/torrents/movies` |
 | Bazarr | `/data/media` | Reads media directories for subtitle matching |
 | Jellyfin | `/data/media` | Serves content from media library |
 | Tdarr | `/data/media` | Transcodes media files in-place |

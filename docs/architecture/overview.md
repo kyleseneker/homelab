@@ -65,7 +65,7 @@ flowchart LR
 | Prowlarr | Indexer management | `arr` |
 | Bazarr | Subtitle management | `arr` |
 | Jellyseerr | Media request management | `arr` |
-| qBittorrent + SABnzbd | Download clients (via Gluetun VPN sidecar) | `arr` |
+| qBittorrent | Torrent client (via Gluetun VPN sidecar) | `arr` |
 | Recyclarr | Quality profile sync (CronJob) | `arr` |
 | Tdarr | Media transcoding | `arr` |
 | Exportarr | Prometheus exporter for *arr app metrics | `arr` |

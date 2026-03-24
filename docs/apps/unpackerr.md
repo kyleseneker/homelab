@@ -32,7 +32,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 
 - Timezone injected from ConfigMap `arr-env`.
 - All configuration is via environment variables -- no config file needed.
-- Connects to Sonarr, Radarr, qBittorrent, and SABnzbd via in-cluster service DNS.
+- Connects to Sonarr, Radarr, and qBittorrent via in-cluster service DNS.
 - API keys and passwords are injected from SealedSecret `unpackerr-secrets`.
 - Prometheus metrics exposed on port 5656 when `UN_WEBSERVER_METRICS` is `true`.
 - Liveness, readiness, and startup probes are enabled.
@@ -66,7 +66,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
     kubectl logs -n arr -l app.kubernetes.io/instance=arr-unpackerr
     ```
 
-    Look for messages confirming connections to Sonarr, Radarr, qBittorrent, and SABnzbd.
+    Look for messages confirming connections to Sonarr, Radarr, and qBittorrent.
 
 ## Dependencies
 
