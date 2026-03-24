@@ -21,7 +21,7 @@ variable "target_node" {
 variable "clone_template_id" {
   type        = number
   default     = 9000
-  description = "VM template ID to clone from"
+  description = "VM template ID to clone"
 }
 
 variable "ssh_public_key" {

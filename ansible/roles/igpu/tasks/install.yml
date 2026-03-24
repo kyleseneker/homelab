@@ -1,0 +1,35 @@
+---
+- name: Install kernel extra modules for i915
+  ansible.builtin.apt:
+    name:
+      - "linux-modules-extra-{{ ansible_kernel }}"
+    state: present
+  register: kernel_modules_install
+
+- name: Load i915 module
+  community.general.modprobe:
+    name: i915
+    state: present
+
+- name: Persist i915 module across reboots
+  ansible.builtin.lineinfile:
+    path: /etc/modules-load.d/igpu.conf
+    line: i915
+    create: true
+    mode: "0644"
+
+- name: Install Intel GPU user-space drivers
+  ansible.builtin.apt:
+    name:
+      - intel-media-va-driver-non-free
+      - vainfo
+    state: present
+
+- name: Create udev rule for persistent /dev/dri permissions
+  ansible.builtin.copy:
+    dest: /etc/udev/rules.d/99-intel-gpu.rules
+    content: |
+      KERNEL=="card[0-9]*", SUBSYSTEM=="drm", MODE="0666"
+      KERNEL=="renderD*", SUBSYSTEM=="drm", MODE="0666"
+    mode: "0644"
+  notify: Reload udev rules

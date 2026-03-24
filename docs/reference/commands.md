@@ -19,6 +19,14 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make vault-encrypt` | Encrypt vault.yml |
 | `make vault-decrypt` | Decrypt vault.yml (for manual editing) |
 
+## Packer
+
+| Command | Description |
+|---------|-------------|
+| `make packer-init` | Initialize Packer plugins |
+| `make packer-validate` | Validate Packer template |
+| `make packer-build` | Build K8s node VM template on Proxmox |
+
 ## Proxmox
 
 | Command | Description |

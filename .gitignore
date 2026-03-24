@@ -6,6 +6,10 @@
 terraform.tfvars
 crash.log
 
+# Packer
+*.auto.pkrvars.hcl
+packer_cache/
+
 # Ansible
 *.retry
 .vault-password

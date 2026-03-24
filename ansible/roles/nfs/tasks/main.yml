@@ -1,14 +1,6 @@
 ---
-- name: Install NFS client packages
-  ansible.builtin.apt:
-    name:
-      - nfs-common
-    state: present
+- name: Install NFS packages
+  import_tasks: install.yml
 
-- name: Mount NAS via NFS
-  ansible.posix.mount:
-    path: "{{ nfs_mount_path }}"
-    src: "{{ nas_ip }}:{{ nas_export_path }}"
-    fstype: nfs
-    opts: "vers=3,hard,intr"
-    state: mounted
+- name: Mount NFS shares
+  import_tasks: mount.yml

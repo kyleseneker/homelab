@@ -1,0 +1,21 @@
+---
+- name: Verify iGPU render device exists
+  ansible.builtin.stat:
+    path: /dev/dri/renderD128
+  register: igpu_device
+
+- name: Fail if iGPU device not found
+  ansible.builtin.fail:
+    msg: >
+      /dev/dri/renderD128 not found. Ensure iGPU PCI passthrough is configured
+      in Proxmox and the VM has been rebooted.
+  when: not igpu_device.stat.exists
+
+- name: Set permissions on /dev/dri devices
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0666"
+  loop:
+    - /dev/dri/card0
+    - /dev/dri/renderD128
+  when: igpu_device.stat.exists

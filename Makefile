@@ -5,6 +5,7 @@ CLUSTER  ?= homelabk8s01
 PVE_HOST ?= homelabpve01
 
 TF_DIR       := terraform/hosts/$(CLUSTER)
+PACKER_DIR   := packer/k8s-node
 ANSIBLE_DIR  := ansible
 INVENTORY    := $(ANSIBLE_DIR)/inventory/$(CLUSTER)/hosts.yml
 K8S_PLAYBOOK := $(ANSIBLE_DIR)/playbooks/k8s-cluster.yml
@@ -60,6 +61,21 @@ vault-encrypt: ## Encrypt vault.yml
 
 vault-decrypt: ## Decrypt vault.yml (for manual editing)
 	cd $(ANSIBLE_DIR) && ansible-vault decrypt $(VAULT_ARGS) group_vars/all/vault.yml
+
+# ---------------------------------------------------------------------------
+# Packer  (VM template)
+# ---------------------------------------------------------------------------
+
+.PHONY: packer-init packer-validate packer-build
+
+packer-init: ## Initialize Packer plugins
+	cd $(PACKER_DIR) && packer init .
+
+packer-validate: ## Validate Packer template
+	cd $(PACKER_DIR) && packer validate .
+
+packer-build: ## Build K8s node VM template on Proxmox
+	cd $(PACKER_DIR) && packer build .
 
 # ---------------------------------------------------------------------------
 # Proxmox host  (override with PVE_HOST=<name>)

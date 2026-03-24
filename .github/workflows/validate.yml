@@ -1,0 +1,16 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  packer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-packer@main
+      - run: packer fmt -check -recursive packer/
+      - working-directory: packer/k8s-node
+        run: packer init . && packer validate .

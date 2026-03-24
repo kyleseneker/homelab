@@ -2,6 +2,36 @@
 
 This page documents every file you need to edit before deploying the homelab. Values like IP addresses, credentials, and resource allocations are specific to your environment and must be configured manually.
 
+## Packer
+
+**File:** `packer/k8s-node/k8s-node.auto.pkrvars.hcl`
+
+Copy the example file to get started:
+
+```bash
+cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.auto.pkrvars.hcl
+```
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `proxmox_url` | Proxmox API URL | *(required)* |
+| `proxmox_api_token_id` | Proxmox API token ID | *(required)* |
+| `proxmox_api_token_secret` | Proxmox API token secret | *(required)* |
+| `proxmox_node` | Proxmox node to build the template on | *(required)* |
+| `template_id` | VM ID for the resulting template | `9000` |
+| `iso_url` | Ubuntu 24.04 server ISO URL | Ubuntu 24.04.2 LTS |
+| `iso_checksum` | ISO checksum (file URL for automatic verification) | Ubuntu SHA256SUMS |
+| `iso_storage_pool` | Proxmox storage pool for the ISO | `local` |
+| `disk_storage_pool` | Proxmox storage pool for the VM disk | `local-lvm` |
+| `k8s_version` | Kubernetes version to install (e.g. `1.31.4`) | `1.31.4` |
+| `k8s_version_minor` | Kubernetes minor version for apt repo (e.g. `1.31`) | `1.31` |
+| `timezone` | Timezone for the template | `America/Chicago` |
+| `media_uid` | UID for the media user | `977` |
+| `media_gid` | GID for the media group | `988` |
+
+!!! note
+    The `proxmox_api_token_id` and `proxmox_api_token_secret` are the same credentials used by Terraform. The `template_id` must match the `clone_template_id` variable in `terraform/hosts/<cluster>/variables.tf`.
+
 ## Terraform
 
 **File:** `terraform/hosts/homelabk8s01/terraform.tfvars`

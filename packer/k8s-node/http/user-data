@@ -1,0 +1,25 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  identity:
+    hostname: k8s-node-template
+    username: media
+    # mkpasswd --method=SHA-512 --rounds=4096 "packer"
+    # Overridden by cloud-init on clone -- only used during Packer build
+    password: "$6$rounds=4096$saltsalt$ZpiWnz4eiOpVbgfzMUB.VGnqFmQp7haJP8P7xmOGKYeCWxvyJmZFl4D5EJ0hzh1sMkGOXmyJH3cXZjRXdKqj1"
+  ssh:
+    install-server: true
+    allow-pw: true
+  storage:
+    layout:
+      name: direct
+  packages:
+    - qemu-guest-agent
+    - cloud-init
+  late-commands:
+    - "echo 'media ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/media"
+    - "chmod 440 /target/etc/sudoers.d/media"
+    - "systemctl enable qemu-guest-agent --root=/target"

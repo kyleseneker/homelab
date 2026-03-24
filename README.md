@@ -1,6 +1,6 @@
 # Homelab
 
-Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
+Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Packer builds VM templates, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
 
 **[Read the full documentation](https://kyleseneker.github.io/homelab/)** -- or run `make docs-serve` to browse locally.
 
@@ -20,12 +20,14 @@ Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Terrafo
 flowchart LR
     subgraph iac [Infrastructure as Code]
         Ansible1["Ansible"]
+        Packer["Packer"]
         Terraform["Terraform"]
         Ansible2["Ansible"]
     end
 
     subgraph platform [Platform]
         Proxmox["Proxmox VE"]
+        Template["VM Template"]
         VMs["Ubuntu VMs"]
         K8s["Kubernetes"]
     end
@@ -41,8 +43,10 @@ flowchart LR
     end
 
     Ansible1 -->|"configure host"| Proxmox
-    Terraform -->|"provision VMs"| VMs
-    Proxmox --- VMs
+    Packer -->|"build template"| Template
+    Proxmox --- Template
+    Terraform -->|"clone & provision"| VMs
+    Template --- VMs
     Ansible2 -->|"bootstrap cluster"| K8s
     VMs --- K8s
     Git -->|"source of truth"| ArgoCD
@@ -53,6 +57,7 @@ flowchart LR
 
 | Category | Components |
 |----------|------------|
+| VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
 | GitOps | ArgoCD, Sealed Secrets, Renovate |
 | Networking | MetalLB, ingress-nginx, cert-manager |
@@ -69,6 +74,7 @@ flowchart LR
 ```bash
 make deps              # install Ansible Galaxy collections
 make pve-configure     # configure Proxmox host
+make packer-build      # build K8s node VM template
 make k8s-deploy        # provision VMs + bootstrap K8s + install ArgoCD
 make k8s-kubeconfig    # copy kubeconfig locally
 ```

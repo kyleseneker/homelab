@@ -12,30 +12,37 @@ flowchart LR
         ansible1["Ansible"] --> proxmox["Proxmox VE"]
     end
 
-    subgraph stage2["Stage 2: Virtual Machines"]
+    subgraph stage2["Stage 2: VM Template"]
+        packer["Packer"] --> template["K8s Node Template"]
+    end
+
+    subgraph stage3["Stage 3: Virtual Machines"]
         terraform["Terraform"] --> vms["VM Instances"]
     end
 
-    subgraph stage3["Stage 3: Kubernetes"]
+    subgraph stage4["Stage 4: Kubernetes"]
         ansible2["Ansible"] --> kubeadm["kubeadm Cluster"]
     end
 
-    subgraph stage4["Stage 4: Workloads"]
+    subgraph stage5["Stage 5: Workloads"]
         argocd["ArgoCD"] --> apps["Applications"]
     end
 
     stage1 --> stage2
     stage2 --> stage3
     stage3 --> stage4
+    stage4 --> stage5
 ```
 
 **Stage 1 -- Hypervisor Provisioning:** Ansible configures the Proxmox VE hypervisor nodes, managing host-level settings, storage pools, and network bridges.
 
-**Stage 2 -- VM Provisioning:** Terraform provisions virtual machines on Proxmox, defining compute resources, disk layouts, and cloud-init configuration for each Kubernetes node.
+**Stage 2 -- VM Template:** Packer builds a K8s-ready Ubuntu 24.04 VM template on Proxmox using the `proxmox-iso` builder with Ubuntu autoinstall. The template is provisioned with Ansible roles (`base`, `k8s-prereqs`, `nfs`, `igpu`) so every node cloned from it already has the container runtime, kubeadm, NFS client, and iGPU drivers installed.
 
-**Stage 3 -- Kubernetes Bootstrap:** Ansible installs and configures the kubeadm-based Kubernetes cluster, handling container runtime setup, control plane initialization, worker node joins, and CNI (Cilium) deployment.
+**Stage 3 -- VM Provisioning:** Terraform clones the Packer-built template to provision VMs, assigning per-node compute resources, IP addresses, and PCI device passthrough via cloud-init.
 
-**Stage 4 -- Workload Deployment:** ArgoCD manages all cluster workloads declaratively via GitOps. An app-of-apps pattern with directory recursion deploys infrastructure components and applications in the correct order using sync waves.
+**Stage 4 -- Kubernetes Bootstrap:** Ansible bootstraps the kubeadm-based Kubernetes cluster, handling NFS mounts, iGPU device verification, control plane initialization, worker node joins, and CNI (Cilium) deployment. Roles already baked into the template are conditionally skipped.
+
+**Stage 5 -- Workload Deployment:** ArgoCD manages all cluster workloads declaratively via GitOps. An app-of-apps pattern with directory recursion deploys infrastructure components and applications in the correct order using sync waves.
 
 ## Component Inventory
 
@@ -88,6 +95,8 @@ The repository is organized by tool and cluster:
 
 ```
 homelab/
+  packer/            # VM template builds
+    k8s-node/        # K8s node template (Ubuntu 24.04 + autoinstall)
   ansible/           # Playbooks for Proxmox and K8s provisioning
   terraform/         # VM provisioning on Proxmox
   k8s/

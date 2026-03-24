@@ -1,6 +1,6 @@
 # Homelab
 
-Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures Proxmox hosts, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
+Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures Proxmox hosts, Packer builds VM templates, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
 
 ## At a Glance
 
@@ -18,12 +18,14 @@ Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures 
 flowchart LR
     subgraph iac [Infrastructure as Code]
         Ansible1["Ansible"]
+        Packer["Packer"]
         Terraform["Terraform"]
         Ansible2["Ansible"]
     end
 
     subgraph platform [Platform]
         Proxmox["Proxmox VE"]
+        Template["VM Template"]
         VMs["Ubuntu VMs"]
         K8s["Kubernetes"]
     end
@@ -39,8 +41,10 @@ flowchart LR
     end
 
     Ansible1 -->|"configure host"| Proxmox
-    Terraform -->|"provision VMs"| VMs
-    Proxmox --- VMs
+    Packer -->|"build template"| Template
+    Proxmox --- Template
+    Terraform -->|"clone & provision"| VMs
+    Template --- VMs
     Ansible2 -->|"bootstrap cluster"| K8s
     VMs --- K8s
     Git -->|"source of truth"| ArgoCD

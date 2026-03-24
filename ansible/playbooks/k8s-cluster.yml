@@ -3,8 +3,10 @@
   hosts: k8s_cluster
   become: true
   roles:
-    - base
-    - k8s-prereqs
+    - role: base
+      when: not (packer_template | default(true))
+    - role: k8s-prereqs
+      when: not (packer_template | default(true))
     - nfs
 
 - name: Intel iGPU setup on GPU nodes

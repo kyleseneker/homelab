@@ -29,7 +29,29 @@ This Ansible playbook prepares the Proxmox host by enabling IOMMU, creating a cl
 !!! warning
     Save the API token printed at the end of this step. You will need it for the Terraform configuration in the next step.
 
-## 4. Configure Terraform
+## 4. Build the K8s Node VM Template
+
+Configure Packer variables:
+
+```bash
+cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.auto.pkrvars.hcl
+```
+
+Edit `packer/k8s-node/k8s-node.auto.pkrvars.hcl` with your Proxmox API credentials, node name, ISO URL, and storage pools. See the [Configuration](configuration.md#packer) page for details.
+
+Build the template:
+
+```bash
+make packer-init
+make packer-build
+```
+
+This creates a K8s-ready VM template on Proxmox with Ubuntu 24.04, containerd, kubeadm, NFS client, and iGPU drivers pre-installed. Terraform will clone this template in the next step.
+
+!!! note
+    The template build takes roughly 10--15 minutes. The Packer build boots the ISO, runs Ubuntu autoinstall, then provisions the VM with Ansible roles before converting it to a template.
+
+## 5. Configure Terraform
 
 ```bash
 cp terraform/hosts/homelabk8s01/terraform.tfvars.example terraform/hosts/homelabk8s01/terraform.tfvars
@@ -44,7 +66,7 @@ Edit `terraform/hosts/homelabk8s01/terraform.tfvars` and fill in:
 
 See the [Configuration](configuration.md#terraform) page for a full reference.
 
-## 5. Configure Ansible
+## 6. Configure Ansible
 
 Edit the following files:
 
@@ -56,11 +78,11 @@ Edit the following files:
 
 See the [Configuration](configuration.md#ansible) page for details.
 
-## 6. Configure Kubernetes Manifests
+## 7. Configure Kubernetes Manifests
 
 Several K8s manifest files contain values specific to your environment (IP addresses, Git repo URL, timezone). See the [Configuration](configuration.md#kubernetes-manifests) page for the full list of files to edit.
 
-## 7. Deploy Everything
+## 8. Deploy Everything
 
 ```bash
 make k8s-deploy
@@ -72,7 +94,7 @@ This single command will:
 2. Bootstrap Kubernetes with kubeadm and Cilium via Ansible
 3. Install ArgoCD and the root application
 
-## 8. Get Kubeconfig and Seal Secrets
+## 9. Get Kubeconfig and Seal Secrets
 
 Retrieve the kubeconfig from the cluster:
 
@@ -113,7 +135,7 @@ Each example file contains placeholder values -- copy it, fill in real values, s
 !!! tip
     The `make k8s-seal` target accepts a `FILE` argument pointing to any plaintext Secret YAML. The sealed output is written to the same directory with a `sealed-` prefix.
 
-## 9. Back Up the Sealed Secrets Controller Key
+## 10. Back Up the Sealed Secrets Controller Key
 
 !!! warning "Critical"
     If the Sealed Secrets controller key is lost, you will not be able to unseal any of your encrypted secrets after a cluster rebuild. Back up this key immediately and store it somewhere safe outside the cluster.
@@ -124,7 +146,7 @@ make k8s-backup-sealed-key
 
 Store the resulting backup file in a secure location (password manager, encrypted USB drive, etc.).
 
-## 10. Access ArgoCD
+## 11. Access ArgoCD
 
 Open [https://argocd.homelab.local](https://argocd.homelab.local) in your browser.
 

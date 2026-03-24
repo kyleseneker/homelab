@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: true
+  roles:
+    - base
+    - k8s-prereqs
+  tasks:
+    - name: Install NFS client
+      ansible.builtin.include_role:
+        name: nfs
+        tasks_from: install
+
+    - name: Install iGPU drivers
+      ansible.builtin.include_role:
+        name: igpu
+        tasks_from: install

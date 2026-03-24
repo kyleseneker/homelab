@@ -8,6 +8,15 @@ homelab/
 ├── mkdocs.yml                       # Documentation site config
 ├── docs-requirements.txt            # MkDocs dependencies
 ├── docs/                            # Documentation source
+├── packer/
+│   └── k8s-node/                    # K8s node VM template
+│       ├── k8s-node.pkr.hcl         # Packer build config (proxmox-iso)
+│       ├── variables.pkr.hcl        # Variable definitions
+│       ├── k8s-node.auto.pkrvars.hcl.example  # Example variables
+│       ├── playbook.yml             # Ansible provisioner playbook
+│       └── http/                    # Ubuntu autoinstall config
+│           ├── user-data
+│           └── meta-data
 ├── terraform/
 │   ├── modules/proxmox-vm/          # Reusable VM module
 │   └── hosts/<cluster>/             # Per-cluster Terraform config
