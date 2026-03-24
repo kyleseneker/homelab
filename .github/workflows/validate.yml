@@ -13,4 +13,11 @@ jobs:
       - uses: hashicorp/setup-packer@main
       - run: packer fmt -check -recursive packer/
       - working-directory: packer/k8s-node
-        run: packer init . && packer validate .
+        run: |
+          packer init .
+          packer validate \
+            -var "proxmox_url=https://localhost:8006/api2/json" \
+            -var "proxmox_api_token_id=ci@pam!ci" \
+            -var "proxmox_api_token_secret=00000000-0000-0000-0000-000000000000" \
+            -var "proxmox_node=ci" \
+            .
