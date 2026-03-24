@@ -40,21 +40,17 @@ Each exporter runs as a separate Deployment (one app-template controller per tar
 ## Post-Deploy Setup
 
 1. Obtain API keys from each target app (Settings > General in each *arr app UI).
-2. Create the plaintext secret from the example:
+2. Write the API keys to Vault:
 
     ```bash
-    cp k8s/clusters/homelabk8s01/apps/arr/exportarr/exportarr-secret.example \
-       k8s/clusters/homelabk8s01/apps/arr/exportarr/exportarr-secret.yml
+    vault kv put homelab/apps/exportarr \
+      sonarr-api-key=your_key \
+      radarr-api-key=your_key \
+      prowlarr-api-key=your_key \
+      bazarr-api-key=your_key
     ```
 
-3. Fill in the API keys and seal:
-
-    ```bash
-    make k8s-seal FILE=k8s/clusters/homelabk8s01/apps/arr/exportarr/exportarr-secret.yml
-    rm k8s/clusters/homelabk8s01/apps/arr/exportarr/exportarr-secret.yml
-    ```
-
-4. Verify targets appear in Prometheus: `https://prometheus.homelab.local/targets`
+3. Verify targets appear in Prometheus: `https://prometheus.homelab.local/targets`
 
 ## Dependencies
 

@@ -8,7 +8,7 @@ A full walkthrough to go from a bare Proxmox host to a running Kubernetes cluste
 make deps
 ```
 
-This installs the required Ansible Galaxy collections. All other tools (Terraform, Ansible, kubectl, kubeseal, Velero CLI) must be installed manually -- see [Prerequisites](../getting-started/prerequisites.md).
+This installs the required Ansible Galaxy collections. All other tools (Terraform, Ansible, kubectl, vault CLI, Velero CLI) must be installed manually -- see [Prerequisites](../getting-started/prerequisites.md).
 
 ## 2. Configure Proxmox Host Inventory
 
@@ -94,7 +94,7 @@ This single command will:
 2. Bootstrap Kubernetes with kubeadm and Cilium via Ansible
 3. Install ArgoCD and the root application
 
-## 9. Get Kubeconfig and Seal Secrets
+## 9. Get Kubeconfig and Initialize Vault
 
 Retrieve the kubeconfig from the cluster:
 
@@ -103,48 +103,49 @@ make k8s-kubeconfig
 export KUBECONFIG=$(pwd)/kubeconfig
 ```
 
-Wait for the Sealed Secrets controller to become available:
+Wait for Vault and ESO to be deployed by ArgoCD, then initialize Vault:
 
 ```bash
-kubectl -n kube-system wait --for=condition=available deployment \
-  -l app.kubernetes.io/name=sealed-secrets --timeout=300s
+# Wait for Vault pod to be running
+kubectl -n vault wait --for=condition=ready pod/vault-0 --timeout=300s
+
+# Initialize Vault (one-time setup: unseal, enable KV v2, configure K8s auth)
+make vault-init
 ```
 
-### Seal VPN Credentials
+!!! warning "Save the Unseal Key and Root Token"
+    The init script prints an unseal key and root token. Store both in your password manager immediately. The unseal key is required after every Vault pod restart.
+
+## 10. Populate Secrets in Vault
+
+Write each secret to Vault. Each `*-external-secret.yml` manifest documents the Vault path and required keys:
 
 ```bash
-cp k8s/clusters/homelabk8s01/apps/arr/vpn-secret.example vpn-secret.yml
-# Edit vpn-secret.yml with your real PIA credentials
-make k8s-seal FILE=vpn-secret.yml
-mv vpn-sealed-secret.yml k8s/clusters/homelabk8s01/apps/arr/
-rm vpn-secret.yml
+# Port-forward to Vault
+kubectl port-forward -n vault svc/vault 8200:8200 &
+export VAULT_ADDR=http://127.0.0.1:8200
+vault login  # enter root token
+
+# VPN credentials
+vault kv put homelab/apps/vpn \
+  OPENVPN_USER=your_pia_username \
+  OPENVPN_PASSWORD=your_pia_password
+
+# MinIO credentials
+vault kv put homelab/infrastructure/minio \
+  rootUser=minioadmin \
+  rootPassword=your_minio_password
+
+# Repeat for all secrets -- see *-external-secret.yml manifests for the full list
 ```
 
-### Seal Remaining Secrets
-
-Repeat the same process for each application that requires secrets. Look for `*.example` files in the repository:
-
-- Recyclarr API key
-- Homepage widget credentials
-- Grafana admin password
-- MinIO credentials
-- Velero backup credentials
-
-Each example file contains placeholder values -- copy it, fill in real values, seal it with `make k8s-seal`, move the sealed output into place, and delete the plaintext file.
-
-!!! tip
-    The `make k8s-seal` target accepts a `FILE` argument pointing to any plaintext Secret YAML. The sealed output is written to the same directory with a `sealed-` prefix.
-
-## 10. Back Up the Sealed Secrets Controller Key
-
-!!! warning "Critical"
-    If the Sealed Secrets controller key is lost, you will not be able to unseal any of your encrypted secrets after a cluster rebuild. Back up this key immediately and store it somewhere safe outside the cluster.
+ESO syncs secrets from Vault to Kubernetes automatically. Verify the sync status:
 
 ```bash
-make k8s-backup-sealed-key
+kubectl get externalsecret --all-namespaces
 ```
 
-Store the resulting backup file in a secure location (password manager, encrypted USB drive, etc.).
+All ExternalSecrets should show `SecretSynced` status.
 
 ## 11. Access ArgoCD
 

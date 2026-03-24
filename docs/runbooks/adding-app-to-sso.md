@@ -42,12 +42,10 @@ For apps that support OAuth2/OIDC natively (e.g., Grafana, ArgoCD, Jellyseerr).
    - Scopes: `openid`, `email`, `profile`
 3. Create a matching **Application** linked to the provider
 
-### 2. Create and Seal the Secret
+### 2. Store the Client Secret in Vault
 
-1. Create a secret example file with the client secret key
-2. Fill in the client secret from step 1
-3. Seal with `make k8s-seal`
-4. Commit the sealed secret, delete plaintext
+1. Write the client secret to Vault: `vault kv put homelab/infrastructure/<app>-oidc <key>=<client_secret>`
+2. Create an ExternalSecret manifest referencing the Vault path and commit it
 
 ### 3. Configure the App
 

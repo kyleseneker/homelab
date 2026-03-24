@@ -21,9 +21,8 @@ packer_cache/
 *.key
 id_rsa*
 *-secret.yml
-!*-secret.example
-!*-sealed-secret.yml
-sealed-secrets-key-backup.yml
+!*-external-secret.yml
+vault-init-keys.json
 
 # Kubeconfig
 kubeconfig

@@ -6,7 +6,8 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 
 | Component | Namespace | Sync Wave | Helm Chart | Version |
 |-----------|-----------|-----------|------------|---------|
-| Sealed Secrets | kube-system | -3 | sealed-secrets | 2.18.4 |
+| Vault | vault | -3 | vault | 0.32.0 |
+| External Secrets | external-secrets | -3 | external-secrets | 2.2.0 |
 | cert-manager | cert-manager | -3 | cert-manager | v1.20.0 |
 | MetalLB | metallb-system | -3 | metallb | 0.15.3 |
 | MetalLB Config | metallb-system | -2 | (plain manifests) | - |
@@ -29,7 +30,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 
 ArgoCD sync waves control the order in which components are deployed. Components with lower (more negative) sync wave values are deployed first, ensuring that dependencies are fully available before the services that rely on them.
 
-- **Wave -3**: Core primitives that almost everything else depends on -- secret management, certificate issuance, and bare-metal load balancing.
+- **Wave -3**: Core primitives that almost everything else depends on -- secrets backend (Vault), secret syncing (ESO), certificate issuance, and bare-metal load balancing.
 - **Wave -2**: Storage, metrics, GPU operators, and MetalLB configuration. These require the wave -3 foundations (e.g., MetalLB must be running before its address pool config is applied).
 - **Wave -1**: Higher-level services that consume storage, certificates, and load balancers -- ingress routing, the full monitoring stack, backup infrastructure, and GPU device plugins.
 - **Wave 0**: Components that depend on wave -1 services. For example, Alloy ships logs to Loki, so it must not start until Loki is ready.

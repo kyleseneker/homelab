@@ -126,7 +126,7 @@ flowchart TD
 | Capability | `NET_ADMIN` (required for VPN tunnel creation) |
 | Firewall - qBittorrent | Port 8080 |
 | VPN Input Port | 6881 (for incoming torrent connections) |
-| Credentials | Sealed Secret (`vpn-credentials`) |
+| Credentials | ExternalSecret (`vpn-credentials`, synced from Vault) |
 
 Gluetun creates the VPN tunnel interface and configures iptables firewall rules. The `NET_ADMIN` capability is required for tunnel and firewall management. Because the containers share a network namespace, qBittorrent automatically uses the VPN tunnel for all outbound connections.
 

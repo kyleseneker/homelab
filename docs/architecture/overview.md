@@ -53,7 +53,8 @@ flowchart LR
 | MetalLB | Bare-metal LoadBalancer IP allocation | `metallb-system` |
 | ingress-nginx | Ingress controller (DaemonSet mode) | `ingress-nginx` |
 | cert-manager | TLS certificate management (self-signed CA) | `cert-manager` |
-| Sealed Secrets | Encrypted secret management | `kube-system` |
+| Vault | Centralized secrets backend (KV v2) | `vault` |
+| External Secrets Operator | Syncs Vault secrets into K8s Secrets | `external-secrets` |
 | NFS Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |
 | Metrics Server | Kubernetes resource metrics API | `kube-system` |
 | MinIO | S3-compatible object storage for backups | `backups` |

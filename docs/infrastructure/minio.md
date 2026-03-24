@@ -15,7 +15,7 @@ MinIO provides S3-compatible object storage within the cluster, serving as the b
 ## Key Configuration
 
 - **Mode**: `standalone` (single-node, single-drive)
-- **Credentials**: Sourced from the sealed secret `minio-credentials` (keys: `rootUser`, `rootPassword`)
+- **Credentials**: Sourced from the ExternalSecret `minio-credentials` (synced from Vault, keys: `rootUser`, `rootPassword`)
 - **Storage**: 50Gi PVC using the `nfs-client` StorageClass
 - **Pre-created buckets**:
     - `velero` (policy: `none`, purge: `false`)

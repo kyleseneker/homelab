@@ -66,13 +66,12 @@ Radarr also receives:
 
 ## Post-Deploy Setup
 
-1. Create the `recyclarr-secrets` Secret containing Sonarr and Radarr API keys. If using SealedSecrets:
+1. Store Sonarr and Radarr API keys in Vault:
 
     ```bash
-    kubectl create secret generic recyclarr-secrets \
-      --namespace arr \
-      --from-file=secrets.yml=secrets.yml \
-      --dry-run=client -o yaml | kubeseal -o yaml > recyclarr-sealedsecret.yml
+    vault kv put homelab/apps/recyclarr \
+      secrets.yml="sonarr_api_key: your_key\nradarr_api_key: your_key"
+    # ESO syncs it to K8s automatically via recyclarr-external-secret.yml
     ```
 
     The `secrets.yml` file should follow the Recyclarr secrets format with keys for each instance.

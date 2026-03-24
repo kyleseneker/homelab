@@ -1,6 +1,6 @@
 # Reloader
 
-Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments, StatefulSets, and DaemonSets, and triggers rolling restarts when they change. This eliminates the need to manually restart pods after updating sealed secrets or config values.
+Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments, StatefulSets, and DaemonSets, and triggers rolling restarts when they change. This eliminates the need to manually restart pods after updating secrets or config values.
 
 ## Details
 
@@ -21,7 +21,7 @@ Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments
 
 ## How It Works
 
-When a ConfigMap or Secret changes, Reloader detects the update and triggers a rolling restart of any workload that references it. This is particularly useful with Sealed Secrets -- when a sealed secret is re-encrypted and pushed via Git, ArgoCD syncs the new SealedSecret, the controller decrypts it, and Reloader automatically restarts the affected pods to pick up the new values.
+When a ConfigMap or Secret changes, Reloader detects the update and triggers a rolling restart of any workload that references it. This is particularly useful with External Secrets Operator -- when a secret is rotated in Vault, ESO syncs the updated value to the K8s Secret, and Reloader automatically restarts the affected pods to pick up the new values.
 
 No per-workload annotations are required when `watchGlobally` is enabled. Reloader tracks all resource references automatically.
 

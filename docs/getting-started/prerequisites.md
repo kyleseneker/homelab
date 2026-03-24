@@ -34,7 +34,7 @@ Install the following tools on the machine you will run deployments from:
 | [Terraform](https://developer.hashicorp.com/terraform/install) | Provision VMs on Proxmox |
 | [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/) | Configure Proxmox hosts and bootstrap Kubernetes |
 | [kubectl](https://kubernetes.io/docs/tasks/tools/) | Interact with the Kubernetes cluster |
-| [kubeseal](https://github.com/bitnami-labs/sealed-secrets#kubeseal) | Encrypt secrets for Sealed Secrets controller |
+| [Vault CLI](https://developer.hashicorp.com/vault/install) | Manage secrets in HashiCorp Vault |
 | [Velero CLI](https://velero.io/docs/main/basic-install/) | Manage cluster backups |
 | SSH key pair | Used by Terraform and Ansible to access VMs |
 

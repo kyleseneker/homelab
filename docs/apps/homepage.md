@@ -56,17 +56,16 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 
 ## Post-Deploy Setup
 
-1. Create the `homepage-secrets` Secret containing API keys for each service widget. The secret keys should be named with the `HOMEPAGE_VAR_` prefix:
+1. Store API keys for each service widget in Vault. The keys should be named with the `HOMEPAGE_VAR_` prefix:
 
     ```bash
-    kubectl create secret generic homepage-secrets \
-      --namespace arr \
-      --from-literal=HOMEPAGE_VAR_JELLYFIN_KEY=<key> \
-      --from-literal=HOMEPAGE_VAR_SONARR_KEY=<key> \
-      --from-literal=HOMEPAGE_VAR_RADARR_KEY=<key> \
-      --from-literal=HOMEPAGE_VAR_PROWLARR_KEY=<key> \
-      --from-literal=HOMEPAGE_VAR_QBIT_PASSWORD=<password> \
-      --dry-run=client -o yaml | kubeseal -o yaml > homepage-sealedsecret.yml
+    vault kv put homelab/apps/homepage \
+      HOMEPAGE_VAR_JELLYFIN_KEY=your_key \
+      HOMEPAGE_VAR_SONARR_KEY=your_key \
+      HOMEPAGE_VAR_RADARR_KEY=your_key \
+      HOMEPAGE_VAR_PROWLARR_KEY=your_key \
+      HOMEPAGE_VAR_QBIT_PASSWORD=your_password
+    # ESO syncs it to K8s automatically via homepage-external-secret.yml
     ```
 
 2. Open `https://home.homelab.local` and verify all service widgets display correctly.

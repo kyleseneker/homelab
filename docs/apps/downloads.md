@@ -68,7 +68,7 @@ flowchart TB
 - `FIREWALL_INPUT_PORTS`: `8080` (allows ingress to reach the qBittorrent UI)
 - `DOT`: `off`
 - Requires `NET_ADMIN` capability for VPN tunnel creation.
-- VPN credentials are injected from SealedSecret `vpn-credentials`.
+- VPN credentials are injected from ExternalSecret `vpn-credentials` (synced from Vault).
 - Liveness probe runs `/gluetun-entrypoint healthcheck` every 60 seconds (initial delay 60s).
 - Startup probe allows up to 60 failures at 5-second intervals (5 minutes).
 
@@ -112,7 +112,7 @@ This sysctl is required for the VPN routing to function correctly.
 | Sonarr | Sends TV download requests to qBittorrent |
 | Radarr | Sends movie download requests to qBittorrent |
 | Unpackerr | Monitors completed downloads and extracts compressed archives |
-| VPN credentials | SealedSecret `vpn-credentials` must exist in the `arr` namespace |
+| VPN credentials | ExternalSecret `vpn-credentials` must exist in the `arr` namespace (synced from Vault) |
 
 ## Upstream
 

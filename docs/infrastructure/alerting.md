@@ -21,16 +21,14 @@ Alertmanager sends notifications to a single `#alerts` channel via an Incoming W
 
 1. Create a Slack App at <https://api.slack.com/apps>
 2. Enable **Incoming Webhooks** and add one to your `#alerts` channel
-3. Seal the webhook URL:
+3. Write the webhook URL to Vault:
 
 ```bash
-cp alertmanager-slack-secret.example alertmanager-slack-secret.yml
-# Edit with real webhook URL
-make k8s-seal FILE=k8s/clusters/homelabk8s01/infrastructure/kube-prometheus-stack/alertmanager-slack-secret.yml
-rm alertmanager-slack-secret.yml
+vault kv put homelab/infrastructure/alertmanager-slack \
+  url=https://hooks.slack.com/services/T.../B.../xxx
 ```
 
-The sealed secret creates `alertmanager-slack-webhook` in the `monitoring` namespace. Alertmanager mounts it via `alertmanagerSpec.secrets` and reads the URL from `/etc/alertmanager/secrets/alertmanager-slack-webhook/url`.
+The ExternalSecret syncs `alertmanager-slack-webhook` from Vault into the `monitoring` namespace. Alertmanager mounts it via `alertmanagerSpec.secrets` and reads the URL from `/etc/alertmanager/secrets/alertmanager-slack-webhook/url`.
 
 ### Routing
 

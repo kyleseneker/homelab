@@ -61,7 +61,8 @@ homelab/
 │       ├── config/
 │       │   └── env.yml               # Shared env ConfigMap
 │       ├── infrastructure/           # Platform components
-│       │   ├── sealed-secrets/
+│       │   ├── vault/
+│       │   ├── external-secrets/
 │       │   ├── cert-manager/
 │       │   ├── metallb/
 │       │   ├── metallb-config/
@@ -104,6 +105,6 @@ homelab/
 
 **Directory recursion over ApplicationSets.** The root ArgoCD Application uses directory recursion to discover child Applications rather than ApplicationSets. Each application is defined as its own `application.yml` with explicit sync wave annotations, giving full per-app control over Helm values, namespace targeting, and deployment ordering. ApplicationSets trade that granularity for templating convenience, which is unnecessary at homelab scale where each application has distinct configuration.
 
-**Separation of infrastructure and apps.** Infrastructure components (Sealed Secrets, cert-manager, MetalLB, ingress-nginx, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
+**Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, MetalLB, ingress-nginx, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
 
-**Sync wave ordering.** ArgoCD sync wave annotations control the deployment sequence within each layer. Infrastructure components are assigned ascending wave numbers so that foundational services (Sealed Secrets, cert-manager) are ready before components that depend on them (ingress-nginx, monitoring). Applications deploy at higher wave numbers, guaranteeing the full platform is in place first. This eliminates race conditions that would otherwise require manual intervention or retry loops.
+**Sync wave ordering.** ArgoCD sync wave annotations control the deployment sequence within each layer. Infrastructure components are assigned ascending wave numbers so that foundational services (Vault, External Secrets, cert-manager) are ready before components that depend on them (ingress-nginx, monitoring). Applications deploy at higher wave numbers, guaranteeing the full platform is in place first. This eliminates race conditions that would otherwise require manual intervention or retry loops.

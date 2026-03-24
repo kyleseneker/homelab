@@ -23,7 +23,7 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 ### Grafana
 
-- **Admin credentials**: Sourced from the sealed secret `grafana-admin` (`admin-user`, `admin-password` keys).
+- **Admin credentials**: Sourced from the ExternalSecret `grafana-admin` (synced from Vault, `admin-user` and `admin-password` keys).
 - **Storage**: 2Gi PVC using `nfs-client`
 - **Ingress**: `grafana.homelab.local`
 - **Security context**: Runs as UID/GID 472
@@ -33,7 +33,7 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 - **Ingress**: `alertmanager.homelab.local`
 - **Notifications**: Slack `#alerts` channel via Incoming Webhook (see [alerting.md](alerting.md))
-- **Secrets**: Webhook URL mounted from `alertmanager-slack-webhook` sealed secret
+- **Secrets**: Webhook URL mounted from `alertmanager-slack-webhook` ExternalSecret (synced from Vault)
 - **Custom rules**: Homelab-specific `PrometheusRule` in `homelab-rules.yml` (app health, infra, backups, node health)
 
 ### Node Exporter

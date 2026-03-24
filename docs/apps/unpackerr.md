@@ -33,7 +33,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 - Timezone injected from ConfigMap `arr-env`.
 - All configuration is via environment variables -- no config file needed.
 - Connects to Sonarr, Radarr, and qBittorrent via in-cluster service DNS.
-- API keys and passwords are injected from SealedSecret `unpackerr-secrets`.
+- API keys and passwords are injected from the `unpackerr-secrets` Secret (synced from Vault via ESO).
 - Prometheus metrics exposed on port 5656 when `UN_WEBSERVER_METRICS` is `true`.
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
@@ -48,17 +48,17 @@ Unpackerr monitors download clients for completed downloads containing compresse
     | `UN_RADARR_0_API_KEY` | Radarr > Settings > General > API Key |
     | `UN_QBIT_0_PASSWORD` | Your qBittorrent admin password |
 
-2. Create and seal the secret:
+2. Store credentials in Vault:
 
     ```bash
-    cp k8s/clusters/homelabk8s01/apps/arr/unpackerr/unpackerr-secret.example unpackerr-secret.yml
-    # Edit unpackerr-secret.yml with real values
-    make k8s-seal FILE=unpackerr-secret.yml
-    mv unpackerr-sealed-secret.yml k8s/clusters/homelabk8s01/apps/arr/unpackerr/
-    rm unpackerr-secret.yml
+    vault kv put homelab/apps/unpackerr \
+      UN_SONARR_0_API_KEY=your_key \
+      UN_RADARR_0_API_KEY=your_key \
+      UN_QBIT_0_PASSWORD=your_password
+    # ESO syncs it to K8s automatically via unpackerr-external-secret.yml
     ```
 
-3. Commit and push the sealed secret.
+3. ESO syncs the secret from Vault automatically.
 
 4. Verify the pod is running and check logs for successful connections:
 
@@ -75,7 +75,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 | Sonarr | Notified after TV episode archives are extracted |
 | Radarr | Notified after movie archives are extracted |
 | qBittorrent | Monitored for completed torrent downloads |
-| `unpackerr-secrets` | SealedSecret with API keys and passwords |
+| `unpackerr-secrets` | Secret with API keys and passwords (synced from Vault) |
 
 ## Upstream
 

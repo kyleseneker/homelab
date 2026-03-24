@@ -36,7 +36,7 @@ MinIO runs in **standalone mode** in the `backups` namespace, providing an S3-co
 | Namespace | `backups` |
 | Mode | Standalone |
 | Storage | 50Gi PVC (`nfs-client`) |
-| Credentials | Sealed Secret (`minio-credentials`) |
+| Credentials | ExternalSecret (`minio-credentials`, synced from Vault) |
 | Sync Wave | -2 |
 
 ## Velero Configuration
@@ -49,7 +49,7 @@ Velero uses the AWS plugin to communicate with MinIO over the S3 API. File syste
 | Plugin | `velero-plugin-for-aws` |
 | Backup Storage | MinIO (S3-compatible) |
 | Volume Backup Method | File System Backup (Kopia) |
-| Credentials | Sealed Secret (`velero-cloud-credentials`) |
+| Credentials | ExternalSecret (`velero-cloud-credentials`, synced from Vault) |
 | Sync Wave | -1 |
 
 !!! info "Why Kopia?"

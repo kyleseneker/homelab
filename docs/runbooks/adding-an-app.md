@@ -131,27 +131,32 @@ Replace the `<placeholder>` values with your application's specifics.
 
 If the application requires secrets (API keys, credentials, etc.):
 
-1. Create a `<name>-secret.example` file with the secret structure and placeholder values:
+1. Create an `ExternalSecret` manifest that references a Vault path:
 
     ```yaml
-    apiVersion: v1
-    kind: Secret
+    apiVersion: external-secrets.io/v1
+    kind: ExternalSecret
     metadata:
       name: <app-name>-secrets
       namespace: arr
-    type: Opaque
-    stringData:
-      API_KEY: "changeme"
+    spec:
+      refreshInterval: 1h
+      secretStoreRef:
+        kind: ClusterSecretStore
+        name: vault-backend
+      target:
+        name: <app-name>-secrets
+      data:
+        - secretKey: API_KEY
+          remoteRef:
+            key: apps/<app-name>
+            property: API_KEY
     ```
 
-2. Copy the example, fill in real values, and seal it:
+2. Write the actual values to Vault:
 
     ```bash
-    cp <name>-secret.example <name>-secret.yml
-    # Edit <name>-secret.yml with real values
-    make k8s-seal FILE=<name>-secret.yml
-    mv <name>-sealed-secret.yml k8s/clusters/homelabk8s01/apps/arr/<app-name>/
-    rm <name>-secret.yml
+    vault kv put homelab/apps/<app-name> API_KEY=your_real_key
     ```
 
 3. Reference the secret in `application.yml` via `envFrom` or `env.valueFrom`.

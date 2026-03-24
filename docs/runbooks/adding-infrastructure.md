@@ -132,6 +132,6 @@ This runs the full provisioning pipeline: Terraform VM creation, Ansible cluster
 After the cluster is running:
 
 1. Retrieve the kubeconfig: `make CLUSTER=<cluster> k8s-kubeconfig`
-2. Seal secrets for the new cluster (the new Sealed Secrets controller generates its own key pair)
-3. Back up the new controller key: `make k8s-backup-sealed-key`
+2. Initialize Vault for the new cluster: `make vault-init`
+3. Populate secrets in Vault for the new cluster's workloads
 4. Verify all applications sync in ArgoCD

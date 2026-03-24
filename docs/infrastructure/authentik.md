@@ -59,15 +59,11 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik as a
 | `grafana-oidc-secret` | `monitoring` | `GRAFANA_OIDC_CLIENT_SECRET` |
 | `argocd-secret` (merge) | `argocd` | `oidc.authentik.clientSecret` |
 
-All managed via Sealed Secrets. See example templates in:
-
-- `infrastructure/authentik/authentik-secret.example`
-- `infrastructure/authentik/argocd-oidc-secret.example`
-- `infrastructure/kube-prometheus-stack/grafana-oidc-secret.example`
+All managed via External Secrets Operator (synced from Vault). See the corresponding `*-external-secret.yml` manifests for the full key structure.
 
 ## Post-Deploy Setup
 
-Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` DNS configured in UniFi gateway, sealed secrets applied.
+Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` DNS configured in UniFi gateway, secrets populated in Vault.
 
 1. Navigate to `https://auth.homelab.local/if/flow/initial-setup/` and set the `akadmin` password.
 2. Log in to the admin interface at `https://auth.homelab.local/if/admin/`.
@@ -80,22 +76,18 @@ Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` 
     - Cookie domain: `homelab.local`
 6. Create an **Application** (name: `Homelab Forward Auth`, provider: `homelab-forward-auth`).
 7. Edit the embedded outpost, add the `Homelab Forward Auth` application.
-8. Create **OAuth2/OpenID Provider** for Grafana (client ID: `grafana`, redirect URI: `https://grafana.homelab.local/login/generic_oauth`). Seal the client secret:
+8. Create **OAuth2/OpenID Provider** for Grafana (client ID: `grafana`, redirect URI: `https://grafana.homelab.local/login/generic_oauth`). Write the client secret to Vault:
 
     ```bash
-    cp infrastructure/kube-prometheus-stack/grafana-oidc-secret.example grafana-oidc-secret.yml
-    # Edit with client secret, then:
-    make k8s-seal FILE=k8s/clusters/homelabk8s01/infrastructure/kube-prometheus-stack/grafana-oidc-secret.yml
+    vault kv put homelab/infrastructure/grafana-oidc \
+      GRAFANA_OIDC_CLIENT_SECRET=your_client_secret
     ```
 
-9. Create **OAuth2/OpenID Provider** for ArgoCD (client ID: `argocd`, redirect URI: `https://argocd.homelab.local/auth/callback`). Seal the client secret:
+9. Create **OAuth2/OpenID Provider** for ArgoCD (client ID: `argocd`, redirect URI: `https://argocd.homelab.local/auth/callback`). Write the client secret to Vault:
 
     ```bash
-    cp infrastructure/authentik/argocd-oidc-secret.example argocd-oidc-secret.yml
-    # Edit with client secret, then:
-    make k8s-seal FILE=k8s/clusters/homelabk8s01/infrastructure/authentik/argocd-oidc-secret.yml
-    # Manually apply since ArgoCD manages itself:
-    kubectl apply -f argocd-oidc-sealed-secret.yml
+    vault kv put homelab/infrastructure/argocd-oidc \
+      oidc.authentik.clientSecret=your_client_secret
     ```
 
 10. Create **OAuth2/OpenID Provider** for Jellyseerr (client ID: `jellyseerr`, redirect URI per Jellyseerr settings). Configure in Jellyseerr's Settings > Authentication.

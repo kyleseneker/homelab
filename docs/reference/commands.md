@@ -45,13 +45,20 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-deploy` | Full deploy: VMs + cluster + ArgoCD |
 | `make k8s-destroy` | Tear down all K8s VMs |
 | `make k8s-bootstrap` | Install ArgoCD and root app-of-apps (one-time) |
-| `make k8s-seal` | Seal a plaintext secret (`FILE=path/to/secret.yml`) |
-| `make k8s-backup-sealed-key` | Back up Sealed Secrets controller private key |
 | `make k8s-backup` | Trigger an on-demand Velero backup |
 | `make k8s-backup-status` | Show Velero backup and schedule status |
 | `make k8s-restore` | List available Velero backups for restore |
 | `make k8s-kubeconfig` | Copy kubeconfig from control plane to local machine |
 | `make k8s-ssh-cp` | SSH into control plane |
+
+## HashiCorp Vault
+
+| Command | Description |
+|---------|-------------|
+| `make vault-init` | Initialize Vault and configure ESO integration (one-time) |
+| `make vault-unseal` | Unseal Vault after a pod restart |
+| `make vault-put-secret` | Write a secret to Vault (`SECRET_PATH=... KEY=... VAL=...`) |
+| `make vault-status` | Show Vault seal status |
 
 ## Examples
 

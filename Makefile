@@ -95,7 +95,11 @@ pve-ssh: ## SSH into Proxmox host
 # Kubernetes cluster  (override with CLUSTER=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-seal k8s-backup-sealed-key k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp
+SECRET_PATH ?=
+KEY ?=
+VAL ?=
+
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-unseal vault-put-secret vault-status
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -120,20 +124,6 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
 	kubectl apply -f k8s/bootstrap/root-app.yml
 
-k8s-seal: ## Seal a plaintext secret with kubeseal (usage: make k8s-seal FILE=path/to/secret.yml)
-	@if [ -z "$(FILE)" ]; then echo "Usage: make k8s-seal FILE=path/to/secret.yml"; exit 1; fi
-	@SEALED="$$(dirname $(FILE))/$$(basename $(FILE) -secret.yml)-sealed-secret.yml"; \
-	kubeseal --controller-name sealed-secrets --controller-namespace kube-system --format yaml < $(FILE) > "$$SEALED" && \
-	echo "Sealed secret written to $$SEALED" && \
-	echo "You can now commit $$SEALED and delete $(FILE)"
-
-k8s-backup-sealed-key: ## Back up Sealed Secrets controller private key (CRITICAL for DR)
-	@echo "Backing up Sealed Secrets controller key..."
-	kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-key-backup.yml
-	@echo "Key saved to sealed-secrets-key-backup.yml"
-	@echo "Store this file somewhere safe (password manager, encrypted USB)."
-	@echo "DO NOT commit this file to git."
-
 k8s-backup: ## Trigger an on-demand Velero backup of all namespaces
 	velero backup create manual-$$(date +%Y%m%d-%H%M%S) \
 		--default-volumes-to-fs-backup \
@@ -157,3 +147,34 @@ k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 
 k8s-ssh-cp: ## SSH into control plane
 	ssh media@$(CP_IP)
+
+# ---------------------------------------------------------------------------
+# HashiCorp Vault  (secrets backend for External Secrets Operator)
+# ---------------------------------------------------------------------------
+
+VAULT_NS ?= vault
+
+vault-init: ## Initialize Vault and configure ESO integration (one-time)
+	./scripts/vault-init.sh
+
+vault-unseal: ## Unseal Vault after a pod restart
+	@echo "Port-forwarding to Vault..."
+	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
+	@sleep 2
+	@echo -n "Enter unseal key: " && read -r key && \
+		VAULT_ADDR=http://127.0.0.1:8200 vault operator unseal "$$key"
+	@kill %% 2>/dev/null || true
+
+vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
+	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \
+		echo "Usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=secret123"; exit 1; fi
+	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
+	@sleep 2
+	@VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
+	@kill %% 2>/dev/null || true
+
+vault-status: ## Show Vault seal status
+	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
+	@sleep 2
+	@VAULT_ADDR=http://127.0.0.1:8200 vault status
+	@kill %% 2>/dev/null || true

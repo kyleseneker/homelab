@@ -81,7 +81,8 @@ nav:
       - cert-manager: infrastructure/cert-manager.md
       - ingress-nginx: infrastructure/ingress-nginx.md
       - MetalLB: infrastructure/metallb.md
-      - Sealed Secrets: infrastructure/sealed-secrets.md
+      - Vault: infrastructure/vault.md
+      - External Secrets: infrastructure/external-secrets.md
       - NFS Provisioner: infrastructure/nfs-provisioner.md
       - Intel GPU: infrastructure/intel-gpu.md
       - kube-prometheus-stack: infrastructure/kube-prometheus-stack.md

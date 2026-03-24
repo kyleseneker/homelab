@@ -1,115 +1,74 @@
 # Secret Rotation
 
-This runbook covers procedures for rotating application secrets and managing the Sealed Secrets controller key lifecycle.
+This runbook covers procedures for rotating application secrets using Vault and External Secrets Operator.
 
 ## Standard Secret Rotation
 
 Use this procedure to rotate any application secret (API keys, credentials, passwords).
 
-1. Copy the original `.example` file:
+1. Connect to Vault:
 
     ```bash
-    cp path/to/<name>-secret.example <name>-secret.yml
+    kubectl port-forward -n vault svc/vault 8200:8200
+    export VAULT_ADDR=http://127.0.0.1:8200
+    vault login  # enter root token
     ```
 
-2. Edit `<name>-secret.yml` with the new values.
-
-3. Seal the updated secret:
+2. Update the secret in Vault:
 
     ```bash
-    make k8s-seal FILE=<name>-secret.yml
+    vault kv put homelab/<path> key1=new_value key2=new_value
     ```
 
-4. Move the sealed secret into the correct directory, overwriting the existing sealed secret:
+    For example, to rotate the MinIO password:
 
     ```bash
-    mv <name>-sealed-secret.yml path/to/<name>-sealed-secret.yml
+    vault kv put homelab/infrastructure/minio \
+      rootUser=minioadmin \
+      rootPassword=new_secure_password
     ```
 
-5. Delete the plaintext file:
+3. Wait for ESO to sync (default: 1 hour), or force an immediate sync:
 
     ```bash
-    rm <name>-secret.yml
+    kubectl annotate externalsecret -n <namespace> <name> \
+      force-sync=$(date +%s) --overwrite
     ```
 
-6. Commit and push:
+4. Verify the secret was updated:
 
     ```bash
-    git add path/to/<name>-sealed-secret.yml
-    git commit -m "rotate <name> secret"
-    git push
+    kubectl get externalsecret -n <namespace> <name>
+    # STATUS should show "SecretSynced"
     ```
 
-ArgoCD syncs the new SealedSecret, the Sealed Secrets controller decrypts it, and Kubernetes updates the Secret resource. Pods referencing the secret will pick up the new values on their next restart.
+Pods referencing the secret will pick up the new values on their next restart. The Reloader controller automatically restarts pods when their referenced secrets change.
 
 !!! tip
-    Some applications cache secrets at startup and require a pod restart to pick up rotated values. Restart the affected deployment after the sealed secret syncs:
+    To update a single key without overwriting the entire secret, use `vault kv patch`:
 
     ```bash
-    kubectl rollout restart deployment -n <namespace> <deployment-name>
+    vault kv patch homelab/infrastructure/minio rootPassword=new_password
     ```
-
-## Sealed Secrets Controller Key Rotation
-
-The Sealed Secrets controller automatically generates a new signing key every 30 days. Old keys are retained so that existing SealedSecrets can still be decrypted.
-
-### Forced Key Rotation
-
-To force an immediate key rotation:
-
-1. Back up the current key:
-
-    ```bash
-    make k8s-backup-sealed-key
-    ```
-
-2. Delete the current key secret (the controller regenerates a new one on restart):
-
-    ```bash
-    kubectl -n kube-system delete secret -l sealedsecrets.bitnami.com/sealed-secrets-key
-    kubectl -n kube-system rollout restart deployment sealed-secrets
-    ```
-
-3. Back up the newly generated key:
-
-    ```bash
-    make k8s-backup-sealed-key
-    ```
-
-!!! warning "Re-sealing Required"
-    After deleting the old key, all existing SealedSecrets must be re-sealed with the new key. SealedSecrets encrypted with the deleted key **cannot** be decrypted unless the old key is restored.
-
-    To avoid re-sealing, keep the old key backup available and restore it alongside the new key if needed.
-
-### Re-sealing All Secrets
-
-If the old key was deleted and not retained, re-seal every secret from its `.example` file:
-
-```bash
-for example in $(find k8s/ -name '*-secret.example'); do
-  name=$(basename "$example" .example)
-  cp "$example" "${name}.yml"
-  echo "Edit ${name}.yml with real values, then press Enter"
-  read
-  make k8s-seal FILE="${name}.yml"
-  dir=$(dirname "$example")
-  mv "${name%%-secret}-sealed-secret.yml" "$dir/"
-  rm "${name}.yml"
-done
-```
 
 ## Secret Inventory
 
-All secrets managed in this cluster, their namespaces, and the location of their example files:
+All secrets managed in this cluster, their Vault paths, and target namespaces:
 
-| Secret | Namespace | Example File |
-|--------|-----------|--------------|
-| `vpn-credentials` | `arr` | `apps/arr/vpn-secret.example` |
-| `recyclarr-secrets` | `arr` | `apps/arr/recyclarr-secret.example` |
-| `homepage-secrets` | `arr` | `apps/homepage/homepage-secret.example` |
-| `grafana-admin` | `monitoring` | `infrastructure/kube-prometheus-stack/grafana-secret.example` |
-| `minio-credentials` | `backups` | `infrastructure/minio/minio-secret.example` |
-| `velero-cloud-credentials` | `backups` | `infrastructure/velero/velero-secret.example` |
+| Secret | Namespace | Vault Path |
+|--------|-----------|------------|
+| `vpn-credentials` | `arr` | `homelab/apps/vpn` |
+| `recyclarr-secrets` | `arr` | `homelab/apps/recyclarr` |
+| `exportarr-secrets` | `arr` | `homelab/apps/exportarr` |
+| `unpackerr-secrets` | `arr` | `homelab/apps/unpackerr` |
+| `homepage-secrets` | `arr` | `homelab/apps/homepage` |
+| `grafana-admin` | `monitoring` | `homelab/infrastructure/grafana` |
+| `grafana-oidc-secret` | `monitoring` | `homelab/infrastructure/grafana-oidc` |
+| `alertmanager-slack-webhook` | `monitoring` | `homelab/infrastructure/alertmanager-slack` |
+| `minio-credentials` | `backups` | `homelab/infrastructure/minio` |
+| `velero-cloud-credentials` | `backups` | `homelab/infrastructure/velero` |
+| `authentik-credentials` | `auth` | `homelab/infrastructure/authentik` |
+| `argocd-secret` | `argocd` | `homelab/infrastructure/argocd-oidc` |
 
 !!! note
-    All paths in the table above are relative to `k8s/clusters/homelabk8s01/`.
+    All Vault paths are relative to the `homelab` KV v2 mount. The `*-external-secret.yml` manifests in `k8s/clusters/homelabk8s01/` document the specific keys for each secret.

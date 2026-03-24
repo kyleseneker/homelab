@@ -21,7 +21,7 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 - **Bucket**: `velero`
 - **Region**: `minio`
 - **s3ForcePathStyle**: `true`
-- **Credentials**: Sourced from the sealed secret `velero-cloud-credentials`
+- **Credentials**: Sourced from the ExternalSecret `velero-cloud-credentials` (synced from Vault)
 
 ### Volume Backup
 
@@ -52,7 +52,7 @@ Velero depends on MinIO (wave -2) for its backup storage location and deploys at
 4. Both resource manifests and volume data are stored in MinIO, which persists to NFS.
 
 !!! warning "Restore Prerequisites"
-    After a full cluster rebuild, MinIO and the Sealed Secrets controller (with its backed-up key) must be restored before Velero can access its backup data. Ensure the sealed secrets key backup is stored outside the cluster.
+    After a full cluster rebuild, MinIO and Vault must be restored before Velero can access its backup data. Ensure the Vault unseal key is stored outside the cluster (e.g., in a password manager).
 
 ## Upstream Documentation
 

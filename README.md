@@ -59,7 +59,7 @@ flowchart LR
 |----------|------------|
 | VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
-| GitOps | ArgoCD, Sealed Secrets, Renovate |
+| GitOps | ArgoCD, External Secrets Operator, Renovate |
 | Networking | MetalLB, ingress-nginx, cert-manager |
 | Storage | NFS dynamic provisioning |
 | Auth | Authentik SSO (forward-auth + OIDC) |
@@ -79,7 +79,7 @@ make k8s-deploy        # provision VMs + bootstrap K8s + install ArgoCD
 make k8s-kubeconfig    # copy kubeconfig locally
 ```
 
-See the [full quick start guide](docs/getting-started/quick-start.md) for configuration steps and secret sealing.
+See the [full quick start guide](docs/getting-started/quick-start.md) for configuration steps and Vault setup.
 
 ## Documentation
 

@@ -93,13 +93,3 @@ patches:
               - name: custom-ca
                 configMap:
                   name: custom-ca-certs
-  - target:
-      kind: Secret
-      name: argocd-secret
-    patch: |
-      apiVersion: v1
-      kind: Secret
-      metadata:
-        name: argocd-secret
-        annotations:
-          sealedsecrets.bitnami.com/managed: "true"

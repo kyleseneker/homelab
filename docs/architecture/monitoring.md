@@ -145,7 +145,7 @@ Grafana provides a unified interface for exploring both metrics (Prometheus) and
 |---------|-------|
 | Access | `grafana.homelab.local` |
 | Storage | Persistent PVC (`nfs-client`) |
-| Admin Credentials | Sealed Secret (`grafana-admin`) |
+| Admin Credentials | ExternalSecret (`grafana-admin`, synced from Vault) |
 
 ### Pre-Configured Data Sources
 
