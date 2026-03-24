@@ -22,7 +22,7 @@ data:
         columns: 4
       Observability:
         style: row
-        columns: 4
+        columns: 5
       Infrastructure:
         style: row
         columns: 4
@@ -160,6 +160,14 @@ data:
             icon: loki.svg
             href: https://grafana.homelab.local/explore
             description: Logs (via Grafana)
+        - Uptime Kuma:
+            icon: uptime-kuma.svg
+            href: https://status.homelab.local
+            description: Status monitoring
+            widget:
+              type: uptimekuma
+              url: http://uptime-kuma.monitoring.svc.cluster.local:3001
+              slug: default
     - Infrastructure:
         - ArgoCD:
             icon: argo-cd.svg
