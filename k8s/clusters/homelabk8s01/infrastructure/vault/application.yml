@@ -47,7 +47,6 @@ spec:
               }
 
               seal "awskms" {
-                disabled = "true"
               }
           dataStorage:
             enabled: true
