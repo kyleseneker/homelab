@@ -26,7 +26,9 @@ flowchart LR
     Jellyseerr -->|"requests"| Radarr
     Sonarr -->|"send to download"| Downloads["qBittorrent / SABnzbd"]
     Radarr -->|"send to download"| Downloads
-    Downloads -->|"completed files"| Media["/data/media"]
+    Downloads -->|"completed archives"| Unpackerr
+    Unpackerr -->|"extracted files"| Media["/data/media"]
+    Downloads -->|"completed files"| Media
     Media --> Jellyfin
     Media --> Tdarr
     Bazarr -->|"subtitles"| Media
@@ -49,6 +51,7 @@ flowchart LR
 | [Downloads](downloads.md) | `qbit.homelab.local`, `sabnzbd.homelab.local` | VPN-routed download clients (qBittorrent + SABnzbd) | `qmcgaw/gluetun:v3.41.1`, `lscr.io/linuxserver/qbittorrent:5.1.4`, `lscr.io/linuxserver/sabnzbd:4.5.5` |
 | [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.1` |
 | [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.65.01` |
+| [Unpackerr](unpackerr.md) | -- | Automatic extraction of compressed downloads | `ghcr.io/unpackerr/unpackerr:v0.15.2` |
 | [Exportarr](exportarr.md) | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr:v2.3.0` |
 | [FlareSolverr](flaresolverr.md) | -- | Captcha-solving proxy for Prowlarr indexers | `ghcr.io/flaresolverr/flaresolverr:v3.4.6` |
 | [Homepage](homepage.md) | `home.homelab.local` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage:v1.11.0` |

@@ -45,5 +45,6 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | Exportarr (Prowlarr) | `http://arr-exportarr-prowlarr.arr.svc.cluster.local:9709` |
 | Exportarr (Bazarr) | `http://arr-exportarr-bazarr.arr.svc.cluster.local:9710` |
 | FlareSolverr | `http://arr-flaresolverr.arr.svc.cluster.local:8191` |
+| Unpackerr | `http://arr-unpackerr.arr.svc.cluster.local:5656` |
 | Uptime Kuma | `http://uptime-kuma.monitoring.svc.cluster.local:3001` |
 | Authentik | `http://authentik-server.auth.svc.cluster.local` |

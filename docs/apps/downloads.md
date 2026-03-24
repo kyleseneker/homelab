@@ -132,6 +132,7 @@ This sysctl is required for the VPN routing to function correctly.
 |------------|---------|
 | Sonarr | Sends TV download requests to qBittorrent/SABnzbd |
 | Radarr | Sends movie download requests to qBittorrent/SABnzbd |
+| Unpackerr | Monitors completed downloads and extracts compressed archives |
 | VPN credentials | SealedSecret `vpn-credentials` must exist in the `arr` namespace |
 
 ## Upstream

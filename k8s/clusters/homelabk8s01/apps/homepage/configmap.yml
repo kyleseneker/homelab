@@ -146,6 +146,9 @@ data:
         - FlareSolverr:
             icon: flaresolverr.svg
             description: Captcha solving proxy
+        - Unpackerr:
+            icon: unpackerr.svg
+            description: Download extraction
     - Observability:
         - Grafana:
             icon: grafana.svg
