@@ -47,9 +47,7 @@ spec:
               }
 
               seal "awskms" {
-                region     = env("AWS_REGION")
-                kms_key_id = env("VAULT_AWSKMS_SEAL_KEY_ID")
-                disabled   = "true"
+                disabled = "true"
               }
           dataStorage:
             enabled: true
