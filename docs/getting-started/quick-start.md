@@ -8,7 +8,7 @@ A full walkthrough to go from a bare Proxmox host to a running Kubernetes cluste
 make deps
 ```
 
-This installs Terraform, Ansible, kubectl, kubeseal, and the Velero CLI on your local machine.
+This installs the required Ansible Galaxy collections. All other tools (Terraform, Ansible, kubectl, kubeseal, Velero CLI) must be installed manually -- see [Prerequisites](../getting-started/prerequisites.md).
 
 ## 2. Configure Proxmox Host Inventory
 

@@ -1,6 +1,6 @@
 # Service URLs
 
-### External URLs (Browser Access)
+## External URLs (Browser Access)
 
 These are the ingress hostnames exposed by ingress-nginx. All require DNS entries pointing to the MetalLB LoadBalancer IP and trusting the homelab CA certificate.
 
@@ -23,7 +23,7 @@ These are the ingress hostnames exposed by ingress-nginx. All require DNS entrie
 | Uptime Kuma | `https://status.homelab.local` |
 | Authentik | `https://auth.homelab.local` |
 
-### Internal URLs (Kubernetes Service DNS)
+## Internal URLs (Kubernetes Service DNS)
 
 Used for app-to-app communication within the cluster. These follow the standard Kubernetes DNS format `<service>.<namespace>.svc.cluster.local:<port>`.
 

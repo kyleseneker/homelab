@@ -2,14 +2,14 @@
 
 All operational commands are defined as Makefile targets. Proxmox targets (`pve-*`) accept `PVE_HOST=<name>` (default: `homelabpve01`). Kubernetes targets (`k8s-*`) accept `CLUSTER=<name>` (default: `homelabk8s01`).
 
-### Documentation
+## Documentation
 
 | Command | Description |
 |---------|-------------|
 | `make docs` | Build documentation site |
 | `make docs-serve` | Serve documentation site locally |
 
-### Setup
+## Setup
 
 | Command | Description |
 |---------|-------------|
@@ -19,14 +19,14 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make vault-encrypt` | Encrypt vault.yml |
 | `make vault-decrypt` | Decrypt vault.yml (for manual editing) |
 
-### Proxmox
+## Proxmox
 
 | Command | Description |
 |---------|-------------|
 | `make pve-configure` | Configure Proxmox host (repos, IOMMU, cloud-init, API token) |
 | `make pve-ssh` | SSH into Proxmox host |
 
-### Kubernetes
+## Kubernetes
 
 | Command | Description |
 |---------|-------------|
@@ -45,7 +45,7 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-kubeconfig` | Copy kubeconfig from control plane to local machine |
 | `make k8s-ssh-cp` | SSH into control plane |
 
-### Examples
+## Examples
 
 Override the default host or cluster by passing variables to `make`:
 

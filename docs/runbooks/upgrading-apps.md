@@ -46,7 +46,7 @@ When a new version of the bjw-s app-template chart (or any other Helm chart) is 
       source:
         repoURL: https://bjw-s-labs.github.io/helm-charts
         chart: app-template
-        targetRevision: 3.7.0  # was 3.6.0
+        targetRevision: 4.7.0
     ```
 
 3. Commit and push.

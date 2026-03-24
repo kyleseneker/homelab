@@ -38,7 +38,7 @@ Install the following tools on the machine you will run deployments from:
 | SSH key pair | Used by Terraform and Ansible to access VMs |
 
 !!! tip
-    Run `make deps` to install most of these dependencies automatically. See the [Quick Start](quick-start.md) for details.
+    Run `make deps` to install the required Ansible Galaxy collections. All other tools listed above must be installed manually.
 
 ## What You Do NOT Need to Set Up Manually
 

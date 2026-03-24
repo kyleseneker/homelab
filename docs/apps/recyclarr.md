@@ -6,7 +6,7 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v3.6.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/recyclarr/recyclarr:8.5.0` |
 | Controller type | CronJob |
 | Schedule | `0 */6 * * *` (every 6 hours) |

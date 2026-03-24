@@ -12,7 +12,7 @@ Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Terrafo
 
 | Cluster | Nodes | Purpose |
 |---------|-------|---------|
-| homelabk8s01 | 1 control plane + 2 workers | \*arr media stack, Jellyfin |
+| homelabk8s01 | 1 control plane + 2 workers | *arr media stack, Jellyfin |
 
 ## Architecture
 
@@ -81,7 +81,7 @@ See the [full quick start guide](docs/getting-started/quick-start.md) for config
 |---------|-------------|
 | [Getting Started](docs/getting-started/quick-start.md) | Prerequisites, deployment walkthrough, configuration reference |
 | [Architecture](docs/architecture/overview.md) | System design, GitOps flow, networking, storage, monitoring |
-| [Apps](docs/apps/index.md) | Per-app details for the \*arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
+| [Apps](docs/apps/index.md) | Per-app details for the *arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
 | [Infrastructure](docs/infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](docs/runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
 | [Reference](docs/reference/commands.md) | Makefile commands, service URLs, repo layout |

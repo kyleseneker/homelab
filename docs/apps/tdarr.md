@@ -6,7 +6,7 @@ Tdarr is an automated media transcoding application. It scans media libraries an
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v3.6.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/haveagitgat/tdarr:2.64.01` |
 | Ports | 8265 (web UI), 8266 (server) |
 | Ingress | `tdarr.homelab.local` |

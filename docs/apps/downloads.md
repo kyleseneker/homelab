@@ -6,7 +6,7 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v3.6.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-vpn-downloads` |
 | Sync wave | 1 |

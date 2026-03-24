@@ -6,7 +6,7 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v3.6.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `lscr.io/linuxserver/sonarr:4.0.17` |
 | Port | 8989 |
 | Ingress | `sonarr.homelab.local` |
