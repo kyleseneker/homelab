@@ -48,6 +48,7 @@ spec:
 
               seal "awskms" {
               }
+
           dataStorage:
             enabled: true
             size: 1Gi
