@@ -19,17 +19,6 @@ spec:
           enabled: true
 
         prometheus:
-          ingress:
-            enabled: true
-            ingressClassName: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - prometheus.homelab.local
-            tls:
-              - hosts:
-                  - prometheus.homelab.local
-                secretName: prometheus-tls
           prometheusSpec:
             retention: 15d
             resources:
@@ -95,30 +84,7 @@ spec:
               url: http://loki.monitoring.svc.cluster.local:3100
               access: proxy
               isDefault: false
-          ingress:
-            enabled: true
-            ingressClassName: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - grafana.homelab.local
-            tls:
-              - hosts:
-                  - grafana.homelab.local
-                secretName: grafana-tls
-
         alertmanager:
-          ingress:
-            enabled: true
-            ingressClassName: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - alertmanager.homelab.local
-            tls:
-              - hosts:
-                  - alertmanager.homelab.local
-                secretName: alertmanager-tls
           alertmanagerSpec:
             secrets:
               - alertmanager-slack-webhook

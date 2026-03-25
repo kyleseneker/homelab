@@ -55,23 +55,26 @@ spec:
               http:
                 port: 8096
 
-        ingress:
+        route:
           main:
             enabled: true
-            className: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - host: jellyfin.homelab.local
-                paths:
-                  - path: /
-                    service:
-                      identifier: main
-                      port: http
-            tls:
-              - hosts:
-                  - jellyfin.homelab.local
-                secretName: jellyfin-tls
+            kind: HTTPRoute
+            parentRefs:
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: homelab-gateway
+                namespace: default
+                sectionName: https
+            hostnames:
+              - jellyfin.homelab.local
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+                backendRefs:
+                  - name: arr-jellyfin
+                    port: 8096
 
         persistence:
           config:
