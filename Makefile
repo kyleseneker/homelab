@@ -165,13 +165,14 @@ vault-init: ## Initialize Vault and configure ESO integration (one-time)
 vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
 	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \
 		echo "Usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=secret123"; exit 1; fi
-	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
+	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
 	@sleep 2
-	@VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
+	@VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/$(SECRET_PATH) $(KEY)="$(VAL)" 2>/dev/null \
+		|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
 	@kill %% 2>/dev/null || true
 
 vault-status: ## Show Vault seal status
-	@kubectl port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
+	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
 	@sleep 2
 	@VAULT_ADDR=http://127.0.0.1:8200 vault status
 	@kill %% 2>/dev/null || true
