@@ -12,7 +12,8 @@ K8S_PLAYBOOK := $(ANSIBLE_DIR)/playbooks/k8s-cluster.yml
 
 export ANSIBLE_CONFIG := $(ANSIBLE_DIR)/ansible.cfg
 
-CP_IP := $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
+CP_IP      := $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
+CILIUM_VER := $(shell grep k8s_control_plane_cilium_version $(ANSIBLE_DIR)/group_vars/all/vars.yml | awk -F'"' '{print $$2}')
 
 .PHONY: help docs docs-serve
 
@@ -99,7 +100,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	cd $(TF_DIR) && terraform init
@@ -144,6 +145,10 @@ k8s-restore: ## List available Velero backups for restore
 k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 	scp media@$(CP_IP):~/.kube/config ./kubeconfig
 	@echo "Run: export KUBECONFIG=$$(pwd)/kubeconfig"
+
+cilium-upgrade: ## Upgrade Cilium and enable Gateway API on existing cluster
+	cilium upgrade --version $(CILIUM_VER) --set gatewayAPI.enabled=true
+	cilium status --wait
 
 k8s-ssh-cp: ## SSH into control plane
 	ssh media@$(CP_IP)

@@ -60,7 +60,7 @@
     executable: /bin/bash
 
 - name: Install Cilium into the cluster
-  ansible.builtin.command: cilium install --version {{ k8s_control_plane_cilium_version }}
+  ansible.builtin.command: cilium install --version {{ k8s_control_plane_cilium_version }} --set gatewayAPI.enabled=true
   environment:
     KUBECONFIG: /etc/kubernetes/admin.conf
   register: k8s_control_plane_cilium_install
