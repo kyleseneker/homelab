@@ -79,6 +79,9 @@ spec:
                   capabilities:
                     drop:
                       - ALL
+                    add:
+                      - SETUID
+                      - SETGID
                 resources:
                   requests:
                     cpu: 100m

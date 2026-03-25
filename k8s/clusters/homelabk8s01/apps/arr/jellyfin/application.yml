@@ -30,6 +30,9 @@ spec:
                   capabilities:
                     drop:
                       - ALL
+                    add:
+                      - SETUID
+                      - SETGID
                 probes:
                   liveness:
                     enabled: true
