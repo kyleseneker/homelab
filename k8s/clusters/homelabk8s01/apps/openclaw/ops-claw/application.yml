@@ -37,13 +37,14 @@ spec:
                 args:
                   - |
                     set -e
-                    apk add --no-cache curl git yamllint
+                    apk add --no-cache curl
+                    # kubectl — static binary
                     curl -fsSL "https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl" \
                       -o /tools/kubectl && chmod +x /tools/kubectl
+                    # kubeconform — static Go binary
                     curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
                       | tar xz -C /tools kubeconform
-                    cp "$(which git)" /tools/git
-                    cp "$(which yamllint)" /tools/yamllint
+                    # git is included in the OpenClaw base image (Pi agent dependency)
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:

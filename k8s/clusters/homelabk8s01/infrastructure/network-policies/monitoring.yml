@@ -113,7 +113,7 @@ metadata:
   name: monitoring-egress-alertmanager
   namespace: monitoring
 spec:
-  description: "Allow Alertmanager to send notifications to Slack"
+  description: "Allow Alertmanager to send notifications to Slack and OpenClaw"
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: alertmanager
@@ -123,6 +123,13 @@ spec:
       toPorts:
         - ports:
             - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+      toPorts:
+        - ports:
+            - port: "18789"
               protocol: TCP
 ---
 apiVersion: cilium.io/v2
