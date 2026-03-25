@@ -7,9 +7,6 @@ metadata:
     cert-manager.io/cluster-issuer: homelab-ca-issuer
 spec:
   gatewayClassName: cilium
-  addresses:
-    - type: IPAddress
-      value: "192.168.10.200"
   listeners:
     - name: https
       protocol: HTTPS
