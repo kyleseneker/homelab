@@ -12,14 +12,15 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-ingress-nginx
+  name: monitoring-allow-gateway
   namespace: monitoring
 spec:
   endpointSelector: {}
   ingress:
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: ingress-nginx
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: cilium-envoy
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
