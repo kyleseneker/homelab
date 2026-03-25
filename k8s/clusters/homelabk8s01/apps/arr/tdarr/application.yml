@@ -113,6 +113,10 @@ spec:
             existingClaim: arr-tdarr-config
             globalMounts:
               - path: /app/server
+          configs:
+            type: emptyDir
+            globalMounts:
+              - path: /app/configs
           temp:
             type: emptyDir
             sizeLimit: 20Gi
