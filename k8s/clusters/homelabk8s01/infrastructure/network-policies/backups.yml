@@ -33,26 +33,14 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
-# Egress policies
+# Egress: implicit deny model
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: backups-default-deny-egress
+  name: backups-egress
   namespace: backups
 spec:
-  description: "Deny egress to external networks by default"
-  endpointSelector: {}
-  egressDeny:
-    - toEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: backups-allow-egress-dns
-  namespace: backups
-spec:
-  description: "Allow DNS resolution via kube-dns"
+  description: "Default egress rules for all backups pods"
   endpointSelector: {}
   egress:
     - toEndpoints:
@@ -65,43 +53,11 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: backups-allow-egress-internal
-  namespace: backups
-spec:
-  description: "Allow egress within the backups namespace (Velero to MinIO)"
-  endpointSelector: {}
-  egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: backups
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: backups-allow-egress-velero-api
-  namespace: backups
-spec:
-  description: "Allow Velero to reach the Kubernetes API server for backup operations"
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: velero
-  egress:
     - toEntities:
         - kube-apiserver
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: backups-allow-egress-nfs
-  namespace: backups
-spec:
-  description: "Allow egress to NFS server for persistent storage"
-  endpointSelector: {}
-  egress:
     - toCIDR:
         - 192.168.1.158/32
       toPorts:

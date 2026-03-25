@@ -44,26 +44,15 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
-# Egress policies
+# Egress: implicit deny model. Any endpoint with an egress rule denies all
+# other egress by default in Cilium, so we don't need egressDeny.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: arr-default-deny-egress
+  name: arr-egress
   namespace: arr
 spec:
-  description: "Deny egress to external networks by default"
-  endpointSelector: {}
-  egressDeny:
-    - toEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: arr-allow-egress-dns
-  namespace: arr
-spec:
-  description: "Allow DNS resolution via kube-dns"
+  description: "Default egress rules for all arr pods"
   endpointSelector: {}
   egress:
     - toEndpoints:
@@ -76,62 +65,32 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: arr-allow-egress-internal
-  namespace: arr
-spec:
-  description: "Allow egress within the arr namespace (inter-app communication)"
-  endpointSelector: {}
-  egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: arr
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: arr-allow-egress-https
-  namespace: arr
-spec:
-  description: "Allow arr apps to reach external APIs over HTTPS (indexers, metadata, etc.)"
-  endpointSelector: {}
-  egress:
     - toEntities:
         - world
       toPorts:
         - ports:
             - port: "443"
               protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: arr-allow-egress-vpn
-  namespace: arr
-spec:
-  description: "Allow Gluetun VPN sidecar to establish VPN tunnels to the internet"
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: arr-vpn-downloads
-  egress:
-    - toEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: arr-allow-egress-nfs
-  namespace: arr
-spec:
-  description: "Allow egress to NFS server for persistent storage and media"
-  endpointSelector: {}
-  egress:
     - toCIDR:
         - 192.168.1.158/32
       toPorts:
         - ports:
             - port: "2049"
               protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: arr-egress-vpn
+  namespace: arr
+spec:
+  description: "Allow Gluetun VPN sidecar full internet access for VPN tunnels"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: arr-vpn-downloads
+  egress:
+    - toEntities:
+        - world

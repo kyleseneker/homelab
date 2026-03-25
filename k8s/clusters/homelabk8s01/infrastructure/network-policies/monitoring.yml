@@ -46,26 +46,14 @@ spec:
     - fromEntities:
         - cluster
 ---
-# Egress policies
+# Egress: implicit deny model
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-default-deny-egress
+  name: monitoring-egress
   namespace: monitoring
 spec:
-  description: "Deny egress to external networks by default"
-  endpointSelector: {}
-  egressDeny:
-    - toEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: monitoring-allow-egress-dns
-  namespace: monitoring
-spec:
-  description: "Allow DNS resolution via kube-dns"
+  description: "Default egress rules for all monitoring pods"
   endpointSelector: {}
   egress:
     - toEndpoints:
@@ -78,24 +66,22 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: monitoring-allow-egress-internal
-  namespace: monitoring
-spec:
-  description: "Allow egress within the monitoring namespace"
-  endpointSelector: {}
-  egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
+    - toEntities:
+        - kube-apiserver
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-egress-prometheus-scrape
+  name: monitoring-egress-prometheus
   namespace: monitoring
 spec:
   description: "Allow Prometheus to scrape metrics from all cluster endpoints"
@@ -109,7 +95,7 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-egress-grafana-auth
+  name: monitoring-egress-grafana
   namespace: monitoring
 spec:
   description: "Allow Grafana to reach Authentik for OIDC authentication"
@@ -124,7 +110,7 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-egress-alertmanager-slack
+  name: monitoring-egress-alertmanager
   namespace: monitoring
 spec:
   description: "Allow Alertmanager to send notifications to Slack"
@@ -142,35 +128,7 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-egress-nfs
-  namespace: monitoring
-spec:
-  description: "Allow egress to NFS server for persistent storage"
-  endpointSelector: {}
-  egress:
-    - toCIDR:
-        - 192.168.1.158/32
-      toPorts:
-        - ports:
-            - port: "2049"
-              protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: monitoring-allow-egress-kube-api
-  namespace: monitoring
-spec:
-  description: "Allow kube-state-metrics and operators to reach the Kubernetes API server"
-  endpointSelector: {}
-  egress:
-    - toEntities:
-        - kube-apiserver
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: monitoring-allow-egress-uptime-kuma
+  name: monitoring-egress-uptime-kuma
   namespace: monitoring
 spec:
   description: "Allow Uptime Kuma to health-check services across the cluster"

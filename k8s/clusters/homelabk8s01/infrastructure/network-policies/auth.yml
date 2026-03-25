@@ -44,26 +44,26 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
-# Egress policies
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: auth-default-deny-egress
+  name: auth-allow-cluster
   namespace: auth
 spec:
-  description: "Deny egress to external networks by default"
+  description: "Allow cluster traffic to Authentik (OIDC from Grafana, etc.)"
   endpointSelector: {}
-  egressDeny:
-    - toEntities:
-        - world
+  ingress:
+    - fromEntities:
+        - cluster
 ---
+# Egress: implicit deny model
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: auth-allow-egress-dns
+  name: auth-egress
   namespace: auth
 spec:
-  description: "Allow DNS resolution via kube-dns"
+  description: "Default egress rules for all auth pods"
   endpointSelector: {}
   egress:
     - toEndpoints:
@@ -76,29 +76,9 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: auth-allow-egress-internal
-  namespace: auth
-spec:
-  description: "Allow egress within the auth namespace (server to PostgreSQL/Redis)"
-  endpointSelector: {}
-  egress:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: auth
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: auth-allow-egress-nfs
-  namespace: auth
-spec:
-  description: "Allow egress to NFS server for persistent storage"
-  endpointSelector: {}
-  egress:
     - toCIDR:
         - 192.168.1.158/32
       toPorts:
