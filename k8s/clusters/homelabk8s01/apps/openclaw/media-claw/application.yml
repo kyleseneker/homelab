@@ -1,0 +1,142 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openclaw-media
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://bjw-s-labs.github.io/helm-charts
+    chart: app-template
+    targetRevision: 4.6.2
+    helm:
+      valuesObject:
+        defaultPodOptions:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+
+        controllers:
+          main:
+            serviceAccount:
+              identifier: openclaw-media
+            containers:
+              main:
+                image:
+                  repository: ghcr.io/openclaw/openclaw
+                  tag: "0.8.2"
+                env:
+                  TZ: America/Chicago
+                  OPENCLAW_CONFIG: /config/config.json5
+                envFrom:
+                  - secretRef:
+                      name: openclaw-media-secrets
+                      optional: true
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 512Mi
+                  limits:
+                    memory: 1Gi
+                probes:
+                  liveness:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      periodSeconds: 30
+                  readiness:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      periodSeconds: 10
+                  startup:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      failureThreshold: 30
+                      periodSeconds: 5
+
+        serviceAccount:
+          openclaw-media: {}
+
+        service:
+          main:
+            controller: main
+            ports:
+              http:
+                port: 18789
+
+        route:
+          main:
+            enabled: true
+            kind: HTTPRoute
+            parentRefs:
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: homelab-gateway
+                namespace: default
+                sectionName: https
+            hostnames:
+              - media.openclaw.homelab.local
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+                backendRefs:
+                  - name: openclaw-media
+                    port: 18789
+
+        persistence:
+          data:
+            type: persistentVolumeClaim
+            storageClass: nfs-client
+            accessMode: ReadWriteOnce
+            size: 2Gi
+            globalMounts:
+              - path: /data
+          config:
+            type: configMap
+            name: openclaw-media-config
+            globalMounts:
+              - path: /config/config.json5
+                subPath: config.json5
+                readOnly: true
+          skills:
+            type: configMap
+            name: openclaw-media-skills
+            globalMounts:
+              - path: /skills/media/SKILL.md
+                subPath: media-SKILL.md
+                readOnly: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openclaw
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - ServerSideDiff=true

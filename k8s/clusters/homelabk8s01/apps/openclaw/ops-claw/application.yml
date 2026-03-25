@@ -1,0 +1,178 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: openclaw-ops
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://bjw-s-labs.github.io/helm-charts
+    chart: app-template
+    targetRevision: 4.6.2
+    helm:
+      valuesObject:
+        defaultPodOptions:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+
+        controllers:
+          main:
+            serviceAccount:
+              identifier: openclaw-ops
+            initContainers:
+              tooling:
+                image:
+                  repository: alpine
+                  tag: "3.21"
+                command: ["/bin/sh", "-c"]
+                args:
+                  - |
+                    set -e
+                    apk add --no-cache curl git yamllint
+                    curl -fsSL "https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl" \
+                      -o /tools/kubectl && chmod +x /tools/kubectl
+                    curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
+                      | tar xz -C /tools kubeconform
+                    ln -sf "$(which git)" /tools/git
+                    ln -sf "$(which yamllint)" /tools/yamllint
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+                  limits:
+                    memory: 256Mi
+            containers:
+              main:
+                image:
+                  repository: ghcr.io/openclaw/openclaw
+                  tag: "0.8.2"
+                env:
+                  TZ: America/Chicago
+                  OPENCLAW_CONFIG: /config/config.json5
+                envFrom:
+                  - secretRef:
+                      name: openclaw-ops-secrets
+                      optional: true
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
+                resources:
+                  requests:
+                    cpu: 200m
+                    memory: 1Gi
+                  limits:
+                    memory: 2Gi
+                probes:
+                  liveness:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      periodSeconds: 30
+                  readiness:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      periodSeconds: 10
+                  startup:
+                    enabled: true
+                    custom: true
+                    spec:
+                      httpGet:
+                        path: /healthz
+                        port: 18789
+                      failureThreshold: 30
+                      periodSeconds: 5
+
+        serviceAccount:
+          openclaw-ops: {}
+
+        service:
+          main:
+            controller: main
+            ports:
+              http:
+                port: 18789
+
+        route:
+          main:
+            enabled: true
+            kind: HTTPRoute
+            parentRefs:
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: homelab-gateway
+                namespace: default
+                sectionName: https
+            hostnames:
+              - ops.openclaw.homelab.local
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+                backendRefs:
+                  - name: openclaw-ops
+                    port: 18789
+
+        persistence:
+          data:
+            type: persistentVolumeClaim
+            storageClass: nfs-client
+            accessMode: ReadWriteOnce
+            size: 10Gi
+            globalMounts:
+              - path: /data
+          config:
+            type: configMap
+            name: openclaw-ops-config
+            globalMounts:
+              - path: /config/config.json5
+                subPath: config.json5
+                readOnly: true
+          skills:
+            type: configMap
+            name: openclaw-ops-skills
+            globalMounts:
+              - path: /skills/ops/SKILL.md
+                subPath: ops-SKILL.md
+                readOnly: true
+          tools:
+            type: emptyDir
+            advancedMounts:
+              main:
+                tooling:
+                  - path: /tools
+                main:
+                  - path: /usr/local/bin/tools
+                    readOnly: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openclaw
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - ServerSideDiff=true

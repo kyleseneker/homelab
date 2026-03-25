@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openclaw-ops
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/instance: ops
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/service: openclaw-ops
+      app.kubernetes.io/name: openclaw-ops
+  endpoints:
+    - port: http
+      interval: 60s
+      path: /metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: openclaw-media
+  namespace: openclaw
+  labels:
+    app.kubernetes.io/name: openclaw
+    app.kubernetes.io/instance: media
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/service: openclaw-media
+      app.kubernetes.io/name: openclaw-media
+  endpoints:
+    - port: http
+      interval: 60s
+      path: /metrics

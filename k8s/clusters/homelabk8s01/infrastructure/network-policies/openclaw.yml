@@ -1,0 +1,134 @@
+# Shared: default deny from world
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-default-deny
+  namespace: openclaw
+spec:
+  endpointSelector: {}
+  ingressDeny:
+    - fromEntities:
+        - world
+---
+# Shared: allow gateway ingress (web UI)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-allow-gateway
+  namespace: openclaw
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - ingress
+---
+# Shared: allow monitoring scrape
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-allow-monitoring
+  namespace: openclaw
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+---
+# Ops Claw: Alertmanager webhook ingress
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-ops-alertmanager-ingress
+  namespace: openclaw
+spec:
+  description: "Allow Alertmanager webhooks to Ops Claw"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw-ops
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
+---
+# Ops Claw egress: K8s API, monitoring, GitHub, Slack, Anthropic
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-ops-egress
+  namespace: openclaw
+spec:
+  description: "Ops Claw: full operational egress"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw-ops
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+            - port: "9093"
+              protocol: TCP
+            - port: "3100"
+              protocol: TCP
+---
+# Media Claw egress: arr namespace + Slack/Anthropic APIs only
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-media-egress
+  namespace: openclaw
+spec:
+  description: "Media Claw: arr services + external APIs only"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw-media
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: arr

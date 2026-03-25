@@ -1,0 +1,63 @@
+# Ingress policies
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vault-default-deny
+  namespace: vault
+spec:
+  endpointSelector: {}
+  ingressDeny:
+    - fromEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vault-allow-ingress
+  namespace: vault
+spec:
+  description: "Allow cluster, API server, and ESO traffic to Vault"
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+        - kube-apiserver
+        - host
+---
+# Egress: implicit deny model
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vault-egress
+  namespace: vault
+spec:
+  description: "Default egress rules for all vault pods"
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: vault
+    - toEntities:
+        - kube-apiserver
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP

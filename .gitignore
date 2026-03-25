@@ -14,6 +14,7 @@ packer_cache/
 *.retry
 .vault-password
 **/vault.yml
+!k8s/**/vault.yml
 
 # Secrets
 .env
