@@ -63,4 +63,3 @@ flowchart LR
 | [Infrastructure](infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
 | [Reference](reference/commands.md) | Makefile commands, service URLs, repo layout |
-
