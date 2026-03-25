@@ -8,6 +8,6 @@ pod_network_cidr: "10.244.0.0/16"
 service_cidr: "10.96.0.0/12"
 cilium_version: "1.16.5"
 
-timezone: America/Chicago
-media_uid: 977
-media_gid: 988
+base_timezone: America/Chicago
+base_media_uid: 977
+base_media_gid: 988

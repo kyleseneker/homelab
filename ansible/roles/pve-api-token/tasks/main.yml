@@ -8,6 +8,7 @@
   ansible.builtin.command: >
     pveum role add {{ pve_terraform_role }}
     -privs "{{ pve_terraform_privileges | join(',') }}"
+  changed_when: true
   when: pve_terraform_role not in (role_list.stdout | from_json | map(attribute='roleid'))
 
 - name: Get current role privileges
@@ -23,6 +24,7 @@
   vars:
     current_privs: "{{ (role_detail.stdout | from_json | selectattr('roleid', 'eq', pve_terraform_role) | first).privs | default('') }}"
     desired_privs: "{{ pve_terraform_privileges | sort | join(',') }}"
+  changed_when: true
   when:
     - pve_terraform_role in (role_list.stdout | from_json | map(attribute='roleid'))
     - current_privs.split(',') | sort | join(',') != desired_privs
@@ -34,6 +36,7 @@
 
 - name: Create Terraform user
   ansible.builtin.command: pveum user add {{ pve_terraform_user }}
+  changed_when: true
   when: pve_terraform_user not in (user_list.stdout | from_json | map(attribute='userid'))
 
 - name: Check current ACL for Terraform user
@@ -46,6 +49,7 @@
     pveum aclmod / -user {{ pve_terraform_user }} -role {{ pve_terraform_role }}
   vars:
     matching_acls: "{{ acl_list.stdout | from_json | selectattr('ugid', 'eq', pve_terraform_user) | selectattr('roleid', 'eq', pve_terraform_role) | selectattr('path', 'eq', '/') | list }}"
+  changed_when: true
   when: matching_acls | length == 0
 
 - name: Check if API token exists
@@ -58,6 +62,7 @@
     pveum user token add {{ pve_terraform_user }} {{ pve_terraform_token_name }}
     -privsep 0 --output-format json
   register: token_result
+  changed_when: true
   no_log: true
   when: pve_terraform_token_name not in (token_list.stdout | from_json | map(attribute='tokenid') | map('split', '!') | map('last'))
 

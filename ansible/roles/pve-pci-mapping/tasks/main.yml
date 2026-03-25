@@ -22,6 +22,7 @@
 - name: Delete incomplete PCI resource mappings
   ansible.builtin.command: pvesh delete /cluster/mapping/pci/{{ item.item.name }}
   loop: "{{ pci_info.results }}"
+  changed_when: true
   when:
     - item.item.name in (pci_mappings_list.stdout | default('[]') | from_json | map(attribute='id') | list)
     - "'subsystem-id' not in (pci_mappings_list.stdout | default('[]') | from_json | selectattr('id', 'eq', item.item.name) | map(attribute='map') | first | first | default(''))"
@@ -34,6 +35,7 @@
     --map {{ item.stdout }}
     {% if item.item.description is defined %}--description "{{ item.item.description }}"{% endif %}
   loop: "{{ pci_info.results }}"
+  changed_when: true
   when: >
     item.item.name not in (pci_mappings_list.stdout | default('[]') | from_json | map(attribute='id') | list)
     or (deleted_mappings.results | default([]) | selectattr('item.item.name', 'eq', item.item.name) | selectattr('changed', 'eq', true) | list | length > 0)

@@ -1,4 +1,4 @@
 ---
-timezone: America/Chicago
-media_uid: 1000
-media_gid: 1000
+base_timezone: America/Chicago
+base_media_uid: 1000
+base_media_gid: 1000

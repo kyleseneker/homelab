@@ -23,18 +23,18 @@
 
 - name: Set timezone
   community.general.timezone:
-    name: "{{ timezone }}"
+    name: "{{ base_timezone }}"
 
 - name: Create media group
   ansible.builtin.group:
     name: media
-    gid: "{{ media_gid }}"
+    gid: "{{ base_media_gid }}"
     state: present
 
 - name: Create media user
   ansible.builtin.user:
     name: media
-    uid: "{{ media_uid }}"
+    uid: "{{ base_media_uid }}"
     group: media
     shell: /bin/bash
     create_home: true

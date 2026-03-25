@@ -79,9 +79,9 @@ build {
     extra_arguments = [
       "--extra-vars", "k8s_version=${var.k8s_version}",
       "--extra-vars", "k8s_version_minor=${var.k8s_version_minor}",
-      "--extra-vars", "timezone=${var.timezone}",
-      "--extra-vars", "media_uid=${var.media_uid}",
-      "--extra-vars", "media_gid=${var.media_gid}",
+      "--extra-vars", "base_timezone=${var.timezone}",
+      "--extra-vars", "base_media_uid=${var.media_uid}",
+      "--extra-vars", "base_media_gid=${var.media_gid}",
     ]
   }
 }

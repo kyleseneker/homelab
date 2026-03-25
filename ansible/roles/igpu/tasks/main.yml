@@ -1,6 +1,6 @@
 ---
 - name: Install iGPU drivers
-  import_tasks: install.yml
+  ansible.builtin.import_tasks: install.yml
 
 - name: Verify iGPU device
-  import_tasks: verify.yml
+  ansible.builtin.import_tasks: verify.yml

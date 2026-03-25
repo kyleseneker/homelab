@@ -23,24 +23,28 @@
     --net0 virtio,bridge=vmbr0
     --scsihw virtio-scsi-single
     --agent enabled=1
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Import disk to VM
   ansible.builtin.command: >
     qm set {{ cloud_init_template_id }}
     --scsi0 {{ cloud_init_storage }}:0,import-from=/tmp/{{ cloud_init_template_name }}.img
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Add cloud-init drive
   ansible.builtin.command: >
     qm set {{ cloud_init_template_id }}
     --ide2 {{ cloud_init_storage }}:cloudinit
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Set boot disk
   ansible.builtin.command: >
     qm set {{ cloud_init_template_id }}
     --boot order=scsi0
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Set serial console for cloud-init
@@ -48,10 +52,12 @@
     qm set {{ cloud_init_template_id }}
     --serial0 socket
     --vga serial0
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Convert VM to template
   ansible.builtin.command: qm template {{ cloud_init_template_id }}
+  changed_when: true
   when: template_check.rc != 0
 
 - name: Clean up downloaded image

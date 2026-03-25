@@ -1,6 +1,6 @@
 ---
 - name: Install NFS packages
-  import_tasks: install.yml
+  ansible.builtin.import_tasks: install.yml
 
 - name: Mount NFS shares
-  import_tasks: mount.yml
+  ansible.builtin.import_tasks: mount.yml

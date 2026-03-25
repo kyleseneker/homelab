@@ -2,7 +2,7 @@
 - name: Mount NAS via NFS
   ansible.posix.mount:
     path: "{{ nfs_mount_path }}"
-    src: "{{ nas_ip }}:{{ nas_export_path }}"
+    src: "{{ nas_ip }}:{{ nfs_nas_export_path }}"
     fstype: nfs
     opts: "vers=3,hard,intr"
     state: mounted

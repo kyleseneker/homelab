@@ -39,4 +39,5 @@
     intel.feature.node.kubernetes.io/gpu=true
     --overwrite
   delegate_to: "{{ groups['control_plane'][0] }}"
+  changed_when: true
   when: "'gpu' in group_names and (gpu_label.stdout | default('')) != 'intel'"

@@ -8,6 +8,7 @@
 
 - name: Update GRUB
   ansible.builtin.command: update-grub
+  changed_when: true
   when: grub_updated.changed
 
 - name: Ensure VFIO modules are loaded on boot
@@ -15,6 +16,7 @@
     path: /etc/modules
     line: "{{ item }}"
     create: true
+    mode: "0644"
   loop: "{{ vfio_modules }}"
   register: modules_updated
 
