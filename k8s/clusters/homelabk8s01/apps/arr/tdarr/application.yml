@@ -40,6 +40,9 @@ spec:
                     add:
                       - SETUID
                       - SETGID
+                      - CHOWN
+                      - DAC_OVERRIDE
+                      - FOWNER
                 resources:
                   requests:
                     cpu: 200m
@@ -113,10 +116,6 @@ spec:
             existingClaim: arr-tdarr-config
             globalMounts:
               - path: /app/server
-          configs:
-            type: emptyDir
-            globalMounts:
-              - path: /app/configs
           temp:
             type: emptyDir
             sizeLimit: 20Gi
