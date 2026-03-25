@@ -2,8 +2,8 @@
 - name: Configure Proxmox VE host
   hosts: all
   roles:
-    - pve-repos
-    - pve-iommu
-    - pve-cloud-init
-    - pve-pci-mapping
-    - pve-api-token
+    - pve_repos
+    - pve_iommu
+    - pve_cloud_init
+    - pve_pci_mapping
+    - pve_api_token

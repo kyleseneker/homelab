@@ -3,7 +3,7 @@
   become: true
   roles:
     - base
-    - k8s-prereqs
+    - k8s_prereqs
   tasks:
     - name: Install NFS client
       ansible.builtin.include_role:

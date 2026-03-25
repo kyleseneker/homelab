@@ -36,15 +36,15 @@ homelab/
 │   ├── roles/
 │   │   ├── base/                     # Common node setup
 │   │   ├── igpu/                     # Intel iGPU driver setup
-│   │   ├── k8s-control-plane/        # kubeadm init + Cilium
-│   │   ├── k8s-prereqs/              # Container runtime, kubeadm
-│   │   ├── k8s-worker/               # kubeadm join
+│   │   ├── k8s_control_plane/        # kubeadm init + Cilium
+│   │   ├── k8s_prereqs/              # Container runtime, kubeadm
+│   │   ├── k8s_worker/               # kubeadm join
 │   │   ├── nfs/                      # NFS client setup
-│   │   ├── pve-api-token/            # Proxmox API token
-│   │   ├── pve-cloud-init/           # Cloud-init template
-│   │   ├── pve-iommu/                # IOMMU/VFIO setup
-│   │   ├── pve-pci-mapping/          # PCI device mapping
-│   │   └── pve-repos/                # Proxmox repo config
+│   │   ├── pve_api_token/            # Proxmox API token
+│   │   ├── pve_cloud_init/           # Cloud-init template
+│   │   ├── pve_iommu/                # IOMMU/VFIO setup
+│   │   ├── pve_pci_mapping/          # PCI device mapping
+│   │   └── pve_repos/                # Proxmox repo config
 │   └── group_vars/all/
 │       └── vars.yml                  # Global variables
 ├── k8s/

@@ -5,7 +5,7 @@
   roles:
     - role: base
       when: not (packer_template | default(true))
-    - role: k8s-prereqs
+    - role: k8s_prereqs
       when: not (packer_template | default(true))
     - nfs
 
@@ -19,10 +19,10 @@
   hosts: control_plane
   become: true
   roles:
-    - k8s-control-plane
+    - k8s_control_plane
 
 - name: Join worker nodes to the cluster
   hosts: workers
   become: true
   roles:
-    - k8s-worker
+    - k8s_worker

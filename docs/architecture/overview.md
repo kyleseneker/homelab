@@ -36,7 +36,7 @@ flowchart LR
 
 **Stage 1 -- Hypervisor Provisioning:** Ansible configures the Proxmox VE hypervisor nodes, managing host-level settings, storage pools, and network bridges.
 
-**Stage 2 -- VM Template:** Packer builds a K8s-ready Ubuntu 24.04 VM template on Proxmox using the `proxmox-iso` builder with Ubuntu autoinstall. The template is provisioned with Ansible roles (`base`, `k8s-prereqs`, `nfs`, `igpu`) so every node cloned from it already has the container runtime, kubeadm, NFS client, and iGPU drivers installed.
+**Stage 2 -- VM Template:** Packer builds a K8s-ready Ubuntu 24.04 VM template on Proxmox using the `proxmox-iso` builder with Ubuntu autoinstall. The template is provisioned with Ansible roles (`base`, `k8s_prereqs`, `nfs`, `igpu`) so every node cloned from it already has the container runtime, kubeadm, NFS client, and iGPU drivers installed.
 
 **Stage 3 -- VM Provisioning:** Terraform clones the Packer-built template to provision VMs, assigning per-node compute resources, IP addresses, and PCI device passthrough via cloud-init.
 
