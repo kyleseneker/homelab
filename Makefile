@@ -146,8 +146,8 @@ k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 	scp media@$(CP_IP):~/.kube/config ./kubeconfig
 	@echo "Run: export KUBECONFIG=$$(pwd)/kubeconfig"
 
-cilium-upgrade: ## Upgrade Cilium and enable Gateway API on existing cluster
-	cilium upgrade --version $(CILIUM_VER) --set gatewayAPI.enabled=true
+cilium-upgrade: ## Upgrade Cilium and enable Gateway API + L2 announcements on existing cluster
+	cilium upgrade --version $(CILIUM_VER) --set gatewayAPI.enabled=true --set kubeProxyReplacement=true --set l2announcements.enabled=true --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443
 	cilium status --wait
 
 k8s-ssh-cp: ## SSH into control plane
