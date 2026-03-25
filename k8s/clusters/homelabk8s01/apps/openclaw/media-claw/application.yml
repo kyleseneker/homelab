@@ -32,7 +32,7 @@ spec:
               main:
                 image:
                   repository: ghcr.io/openclaw/openclaw
-                  tag: "0.8.2"
+                  tag: "2026.3.7"
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5

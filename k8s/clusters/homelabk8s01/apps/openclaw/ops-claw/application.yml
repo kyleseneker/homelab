@@ -46,6 +46,8 @@ spec:
                       | tar xz -C /tools kubeconform
                     # git is included in the OpenClaw base image (Pi agent dependency)
                 securityContext:
+                  runAsUser: 0
+                  runAsNonRoot: false
                   allowPrivilegeEscalation: false
                   capabilities:
                     drop:
@@ -60,7 +62,7 @@ spec:
               main:
                 image:
                   repository: ghcr.io/openclaw/openclaw
-                  tag: "0.8.2"
+                  tag: "2026.3.7"
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
