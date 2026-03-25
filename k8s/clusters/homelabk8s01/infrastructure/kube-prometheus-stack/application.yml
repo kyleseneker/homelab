@@ -52,6 +52,9 @@ spec:
             ruleSelectorNilUsesHelmValues: false
 
         grafana:
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
           admin:
             existingSecret: grafana-admin
             userKey: admin-user
@@ -190,9 +193,16 @@ spec:
         kubeScheduler:
           enabled: false
 
+        prometheusOperator:
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
+
         kubeStateMetrics:
           enabled: true
         kube-state-metrics:
+          podDisruptionBudget:
+            maxUnavailable: 1
           resources:
             requests:
               cpu: 50m

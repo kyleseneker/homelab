@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: intel-device-plugins-operator
+  namespace: intel-gpu-operator
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager

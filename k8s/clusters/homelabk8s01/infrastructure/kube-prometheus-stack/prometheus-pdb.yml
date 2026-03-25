@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prometheus
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      operator.prometheus.io/name: kube-prometheus-stack-prometheus

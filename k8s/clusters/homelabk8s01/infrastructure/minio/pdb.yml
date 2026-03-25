@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: minio
+  namespace: backups
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: minio

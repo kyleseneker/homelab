@@ -16,6 +16,9 @@ spec:
     helm:
       valuesObject:
         installCRDs: true
+        podDisruptionBudget:
+          enabled: true
+          maxUnavailable: 1
         resources:
           requests:
             cpu: 25m
@@ -23,6 +26,9 @@ spec:
           limits:
             memory: 128Mi
         webhook:
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
           resources:
             requests:
               cpu: 10m
@@ -30,6 +36,9 @@ spec:
             limits:
               memory: 64Mi
         certController:
+          podDisruptionBudget:
+            enabled: true
+            maxUnavailable: 1
           resources:
             requests:
               cpu: 10m
