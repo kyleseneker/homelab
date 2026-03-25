@@ -17,6 +17,8 @@ spec:
       valuesObject:
         crds:
           enabled: true
+        config:
+          enableGatewayAPI: true
         podDisruptionBudget:
           enabled: true
           maxUnavailable: 1
