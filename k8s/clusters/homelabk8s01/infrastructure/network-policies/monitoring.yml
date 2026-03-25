@@ -158,6 +158,18 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: monitoring-allow-egress-kube-api
+  namespace: monitoring
+spec:
+  description: "Allow kube-state-metrics and operators to reach the Kubernetes API server"
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: monitoring-allow-egress-uptime-kuma
   namespace: monitoring
 spec:
