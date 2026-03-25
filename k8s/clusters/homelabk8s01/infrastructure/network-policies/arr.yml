@@ -93,6 +93,22 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: arr-allow-egress-https
+  namespace: arr
+spec:
+  description: "Allow arr apps to reach external APIs over HTTPS (indexers, metadata, etc.)"
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: arr-allow-egress-vpn
   namespace: arr
 spec:
