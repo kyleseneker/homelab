@@ -56,25 +56,22 @@ spec:
                     enabled: true
                     custom: true
                     spec:
-                      httpGet:
-                        path: /healthz
-                        port: 18789
+                      exec:
+                        command: ["curl", "-sf", "http://127.0.0.1:18789/healthz"]
                       periodSeconds: 30
                   readiness:
                     enabled: true
                     custom: true
                     spec:
-                      httpGet:
-                        path: /healthz
-                        port: 18789
+                      exec:
+                        command: ["curl", "-sf", "http://127.0.0.1:18789/healthz"]
                       periodSeconds: 10
                   startup:
                     enabled: true
                     custom: true
                     spec:
-                      httpGet:
-                        path: /healthz
-                        port: 18789
+                      exec:
+                        command: ["curl", "-sf", "http://127.0.0.1:18789/healthz"]
                       failureThreshold: 30
                       periodSeconds: 5
 
