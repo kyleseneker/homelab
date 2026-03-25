@@ -3,13 +3,13 @@
   ansible.builtin.lineinfile:
     path: /etc/default/grub
     regexp: '^GRUB_CMDLINE_LINUX_DEFAULT='
-    line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ iommu_grub_cmdline }}"'
-  register: grub_updated
+    line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ pve_iommu_grub_cmdline }}"'
+  register: pve_iommu_grub_updated
 
 - name: Update GRUB # noqa: no-handler
   ansible.builtin.command: update-grub
   changed_when: true
-  when: grub_updated.changed
+  when: pve_iommu_grub_updated.changed
 
 - name: Ensure VFIO modules are loaded on boot
   ansible.builtin.lineinfile:
@@ -17,11 +17,11 @@
     line: "{{ item }}"
     create: true
     mode: "0644"
-  loop: "{{ vfio_modules }}"
-  register: modules_updated
+  loop: "{{ pve_iommu_vfio_modules }}"
+  register: pve_iommu_modules_updated
 
 - name: Reboot to apply IOMMU and VFIO changes
   ansible.builtin.reboot:
     reboot_timeout: 300
     msg: "Rebooting to enable IOMMU and VFIO modules"
-  when: grub_updated.changed or modules_updated.changed
+  when: pve_iommu_grub_updated.changed or pve_iommu_modules_updated.changed

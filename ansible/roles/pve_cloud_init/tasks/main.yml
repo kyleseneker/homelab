@@ -1,66 +1,66 @@
 ---
 - name: Check if cloud-init template already exists
-  ansible.builtin.command: qm status {{ cloud_init_template_id }}
-  register: template_check
+  ansible.builtin.command: qm status {{ pve_cloud_init_template_id }}
+  register: pve_cloud_init_template_check
   failed_when: false
   changed_when: false
 
 - name: Download cloud-init image
   ansible.builtin.get_url:
-    url: "{{ cloud_init_image_url }}"
-    dest: "/tmp/{{ cloud_init_template_name }}.img"
+    url: "{{ pve_cloud_init_image_url }}"
+    dest: "/tmp/{{ pve_cloud_init_template_name }}.img"
     mode: "0644"
-    checksum: "sha256:{{ cloud_init_image_checksum }}"
+    checksum: "sha256:{{ pve_cloud_init_image_checksum }}"
     timeout: 300
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Create VM for cloud-init template
   ansible.builtin.command: >
-    qm create {{ cloud_init_template_id }}
-    --name {{ cloud_init_template_name }}
+    qm create {{ pve_cloud_init_template_id }}
+    --name {{ pve_cloud_init_template_name }}
     --memory 2048
     --cores 2
     --net0 virtio,bridge=vmbr0
     --scsihw virtio-scsi-single
     --agent enabled=1
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Import disk to VM
   ansible.builtin.command: >
-    qm set {{ cloud_init_template_id }}
-    --scsi0 {{ cloud_init_storage }}:0,import-from=/tmp/{{ cloud_init_template_name }}.img
+    qm set {{ pve_cloud_init_template_id }}
+    --scsi0 {{ pve_cloud_init_storage }}:0,import-from=/tmp/{{ pve_cloud_init_template_name }}.img
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Add cloud-init drive
   ansible.builtin.command: >
-    qm set {{ cloud_init_template_id }}
-    --ide2 {{ cloud_init_storage }}:cloudinit
+    qm set {{ pve_cloud_init_template_id }}
+    --ide2 {{ pve_cloud_init_storage }}:cloudinit
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Set boot disk
   ansible.builtin.command: >
-    qm set {{ cloud_init_template_id }}
+    qm set {{ pve_cloud_init_template_id }}
     --boot order=scsi0
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Set serial console for cloud-init
   ansible.builtin.command: >
-    qm set {{ cloud_init_template_id }}
+    qm set {{ pve_cloud_init_template_id }}
     --serial0 socket
     --vga serial0
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Convert VM to template
-  ansible.builtin.command: qm template {{ cloud_init_template_id }}
+  ansible.builtin.command: qm template {{ pve_cloud_init_template_id }}
   changed_when: true
-  when: template_check.rc != 0
+  when: pve_cloud_init_template_check.rc != 0
 
 - name: Clean up downloaded image
   ansible.builtin.file:
-    path: "/tmp/{{ cloud_init_template_name }}.img"
+    path: "/tmp/{{ pve_cloud_init_template_name }}.img"
     state: absent

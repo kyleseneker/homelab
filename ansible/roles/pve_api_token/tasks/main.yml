@@ -1,83 +1,83 @@
 ---
 - name: Check if Terraform role exists
   ansible.builtin.command: pveum role list --output-format json
-  register: role_list
+  register: pve_api_token_role_list
   changed_when: false
 
 - name: Create Terraform role
   ansible.builtin.command: >
-    pveum role add {{ pve_terraform_role }}
-    -privs "{{ pve_terraform_privileges | join(',') }}"
+    pveum role add {{ pve_api_token_terraform_role }}
+    -privs "{{ pve_api_token_terraform_privileges | join(',') }}"
   changed_when: true
-  when: pve_terraform_role not in (role_list.stdout | from_json | map(attribute='roleid'))
+  when: pve_api_token_terraform_role not in (pve_api_token_role_list.stdout | from_json | map(attribute='roleid'))
 
 - name: Get current role privileges
   ansible.builtin.command: pveum role list --output-format json
-  register: role_detail
+  register: pve_api_token_role_detail
   changed_when: false
-  when: pve_terraform_role in (role_list.stdout | from_json | map(attribute='roleid'))
+  when: pve_api_token_terraform_role in (pve_api_token_role_list.stdout | from_json | map(attribute='roleid'))
 
 - name: Update Terraform role privileges
   ansible.builtin.command: >
-    pveum role modify {{ pve_terraform_role }}
-    -privs "{{ pve_terraform_privileges | join(',') }}"
+    pveum role modify {{ pve_api_token_terraform_role }}
+    -privs "{{ pve_api_token_terraform_privileges | join(',') }}"
   vars:
-    current_privs: "{{ (role_detail.stdout | from_json | selectattr('roleid', 'eq', pve_terraform_role) | first).privs | default('') }}"
-    desired_privs: "{{ pve_terraform_privileges | sort | join(',') }}"
+    current_privs: "{{ (pve_api_token_role_detail.stdout | from_json | selectattr('roleid', 'eq', pve_api_token_terraform_role) | first).privs | default('') }}"
+    desired_privs: "{{ pve_api_token_terraform_privileges | sort | join(',') }}"
   changed_when: true
   when:
-    - pve_terraform_role in (role_list.stdout | from_json | map(attribute='roleid'))
+    - pve_api_token_terraform_role in (pve_api_token_role_list.stdout | from_json | map(attribute='roleid'))
     - current_privs.split(',') | sort | join(',') != desired_privs
 
 - name: Check if Terraform user exists
   ansible.builtin.command: pveum user list --output-format json
-  register: user_list
+  register: pve_api_token_user_list
   changed_when: false
 
 - name: Create Terraform user
-  ansible.builtin.command: pveum user add {{ pve_terraform_user }}
+  ansible.builtin.command: pveum user add {{ pve_api_token_terraform_user }}
   changed_when: true
-  when: pve_terraform_user not in (user_list.stdout | from_json | map(attribute='userid'))
+  when: pve_api_token_terraform_user not in (pve_api_token_user_list.stdout | from_json | map(attribute='userid'))
 
 - name: Check current ACL for Terraform user
   ansible.builtin.command: pveum acl list --output-format json
-  register: acl_list
+  register: pve_api_token_acl_list
   changed_when: false
 
 - name: Assign role to Terraform user
   ansible.builtin.command: >
-    pveum aclmod / -user {{ pve_terraform_user }} -role {{ pve_terraform_role }}
+    pveum aclmod / -user {{ pve_api_token_terraform_user }} -role {{ pve_api_token_terraform_role }}
   vars:
-    matching_acls: "{{ acl_list.stdout | from_json | selectattr('ugid', 'eq', pve_terraform_user) | selectattr('roleid', 'eq', pve_terraform_role) | selectattr('path', 'eq', '/') | list }}"
+    matching_acls: "{{ pve_api_token_acl_list.stdout | from_json | selectattr('ugid', 'eq', pve_api_token_terraform_user) | selectattr('roleid', 'eq', pve_api_token_terraform_role) | selectattr('path', 'eq', '/') | list }}"
   changed_when: true
   when: matching_acls | length == 0
 
 - name: Check if API token exists
-  ansible.builtin.command: pveum user token list {{ pve_terraform_user }} --output-format json
-  register: token_list
+  ansible.builtin.command: pveum user token list {{ pve_api_token_terraform_user }} --output-format json
+  register: pve_api_token_token_list
   changed_when: false
 
 - name: Create API token
   ansible.builtin.command: >
-    pveum user token add {{ pve_terraform_user }} {{ pve_terraform_token_name }}
+    pveum user token add {{ pve_api_token_terraform_user }} {{ pve_api_token_terraform_token_name }}
     -privsep 0 --output-format json
-  register: token_result
+  register: pve_api_token_token_result
   changed_when: true
   no_log: true
-  when: pve_terraform_token_name not in (token_list.stdout | from_json | map(attribute='tokenid') | map('split', '!') | map('last'))
+  when: pve_api_token_terraform_token_name not in (pve_api_token_token_list.stdout | from_json | map(attribute='tokenid') | map('split', '!') | map('last'))
 
 - name: Save API token to file
   ansible.builtin.copy:
     dest: /root/.terraform-api-token
     content: |
-      proxmox_api_token = "{{ pve_terraform_user }}!{{ pve_terraform_token_name }}={{ (token_result.stdout | from_json).value }}"
+      proxmox_api_token = "{{ pve_api_token_terraform_user }}!{{ pve_api_token_terraform_token_name }}={{ (pve_api_token_token_result.stdout | from_json).value }}"
     mode: "0600"
   no_log: true
-  when: token_result is not skipped
+  when: pve_api_token_token_result is not skipped
 
 - name: Display API token location
   ansible.builtin.debug:
     msg: >-
       Terraform API token created and saved to /root/.terraform-api-token on the PVE host.
       Copy the value to your terraform.tfvars file.
-  when: token_result is not skipped
+  when: pve_api_token_token_result is not skipped

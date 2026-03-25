@@ -23,5 +23,5 @@
 
 - name: Install common utilities
   ansible.builtin.apt:
-    name: "{{ pve_extra_packages }}"
+    name: "{{ pve_repos_extra_packages }}"
     state: present

@@ -1,13 +1,13 @@
 ---
 - name: Check if swap is active
   ansible.builtin.command: swapon --show --noheadings
-  register: swap_status
+  register: k8s_prereqs_swap_status
   changed_when: false
 
 - name: Disable swap
   ansible.builtin.command: swapoff -a
   changed_when: true
-  when: swap_status.stdout | length > 0
+  when: k8s_prereqs_swap_status.stdout | length > 0
 
 - name: Remove swap from fstab
   ansible.builtin.lineinfile:
@@ -73,14 +73,14 @@
 
 - name: Check if containerd config has CRI disabled
   ansible.builtin.command: grep -q 'disabled_plugins.*cri' /etc/containerd/config.toml
-  register: cri_disabled
+  register: k8s_prereqs_cri_disabled
   changed_when: false
   failed_when: false
 
 - name: Generate proper containerd config
   ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   changed_when: true
-  when: cri_disabled.rc == 0
+  when: k8s_prereqs_cri_disabled.rc == 0
   notify: Restart containerd
 
 - name: Enable SystemdCgroup in containerd
@@ -101,21 +101,21 @@
 
 - name: Add Kubernetes GPG key
   ansible.builtin.get_url:
-    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_version_minor }}/deb/Release.key"
-    dest: "/etc/apt/keyrings/kubernetes-v{{ k8s_version_minor }}.asc"
+    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_prereqs_version_minor }}/deb/Release.key"
+    dest: "/etc/apt/keyrings/kubernetes-v{{ k8s_prereqs_version_minor }}.asc"
     mode: "0644"
 
 - name: Add Kubernetes apt repository
   ansible.builtin.apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_version_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_version_minor }}/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_prereqs_version_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_prereqs_version_minor }}/deb/ /"
     state: present
 
 - name: Install kubeadm, kubelet, kubectl
   ansible.builtin.apt:
     name:
-      - "kubelet={{ k8s_version }}*"
-      - "kubeadm={{ k8s_version }}*"
-      - "kubectl={{ k8s_version }}*"
+      - "kubelet={{ k8s_prereqs_version }}*"
+      - "kubeadm={{ k8s_prereqs_version }}*"
+      - "kubectl={{ k8s_prereqs_version }}*"
     state: present
     update_cache: true
 

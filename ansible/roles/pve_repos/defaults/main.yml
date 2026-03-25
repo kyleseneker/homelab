@@ -1,5 +1,5 @@
 ---
-pve_extra_packages:
+pve_repos_extra_packages:
   - vim
   - htop
   - curl

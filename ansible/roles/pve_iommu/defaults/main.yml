@@ -1,7 +1,7 @@
 ---
-iommu_grub_cmdline: "quiet intel_iommu=on iommu=pt"
+pve_iommu_grub_cmdline: "quiet intel_iommu=on iommu=pt"
 
-vfio_modules:
+pve_iommu_vfio_modules:
   - vfio
   - vfio_iommu_type1
   - vfio_pci

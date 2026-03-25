@@ -2,11 +2,13 @@
 ansible_user: media
 ansible_become: true
 
-k8s_version: "1.31.4"
-k8s_version_minor: "1.31"
-pod_network_cidr: "10.244.0.0/16"
-service_cidr: "10.96.0.0/12"
-cilium_version: "1.16.5"
+k8s_control_plane_version: "1.31.4"
+k8s_control_plane_pod_network_cidr: "10.244.0.0/16"
+k8s_control_plane_service_cidr: "10.96.0.0/12"
+k8s_control_plane_cilium_version: "1.16.5"
+
+k8s_prereqs_version: "1.31.4"
+k8s_prereqs_version_minor: "1.31"
 
 base_timezone: America/Chicago
 base_media_uid: 977

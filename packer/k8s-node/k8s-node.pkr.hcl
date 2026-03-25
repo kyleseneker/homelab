@@ -77,8 +77,8 @@ build {
     playbook_file = "playbook.yml"
     roles_path    = "../../ansible/roles"
     extra_arguments = [
-      "--extra-vars", "k8s_version=${var.k8s_version}",
-      "--extra-vars", "k8s_version_minor=${var.k8s_version_minor}",
+      "--extra-vars", "k8s_prereqs_version=${var.k8s_version}",
+      "--extra-vars", "k8s_prereqs_version_minor=${var.k8s_version_minor}",
       "--extra-vars", "base_timezone=${var.timezone}",
       "--extra-vars", "base_media_uid=${var.media_uid}",
       "--extra-vars", "base_media_gid=${var.media_gid}",

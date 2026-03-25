@@ -1,9 +1,9 @@
 ---
-pve_terraform_role: "TerraformProv"
-pve_terraform_user: "terraform@pam"
-pve_terraform_token_name: "terraform"
+pve_api_token_terraform_role: "TerraformProv"
+pve_api_token_terraform_user: "terraform@pam"
+pve_api_token_terraform_token_name: "terraform"
 
-pve_terraform_privileges:
+pve_api_token_terraform_privileges:
   - VM.Allocate
   - VM.Clone
   - VM.Config.CDROM

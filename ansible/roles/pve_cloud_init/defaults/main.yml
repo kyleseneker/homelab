@@ -1,6 +1,6 @@
 ---
-cloud_init_image_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
-cloud_init_image_checksum: "https://cloud-images.ubuntu.com/noble/current/SHA256SUMS"
-cloud_init_template_id: 9000
-cloud_init_template_name: "ubuntu-24.04-cloud"
-cloud_init_storage: "local-lvm"
+pve_cloud_init_image_url: "https://cloud-images.ubuntu.com/noble/current/noble-server-cloudimg-amd64.img"
+pve_cloud_init_image_checksum: "https://cloud-images.ubuntu.com/noble/current/SHA256SUMS"
+pve_cloud_init_template_id: 9000
+pve_cloud_init_template_name: "ubuntu-24.04-cloud"
+pve_cloud_init_storage: "local-lvm"
