@@ -46,23 +46,23 @@ spec:
               http:
                 port: 5055
 
-        ingress:
+        route:
           main:
             enabled: true
-            className: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - host: jellyseerr.homelab.local
-                paths:
-                  - path: /
-                    service:
-                      identifier: main
-                      port: http
-            tls:
-              - hosts:
-                  - jellyseerr.homelab.local
-                secretName: jellyseerr-tls
+            kind: HTTPRoute
+            parentRefs:
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: homelab-gateway
+                namespace: default
+                sectionName: https
+            hostnames:
+              - jellyseerr.homelab.local
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
 
         persistence:
           config:
