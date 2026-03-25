@@ -16,6 +16,8 @@ spec:
     helm:
       valuesObject:
         defaultPodOptions:
+          annotations:
+            reloader.stakater.com/auto: "true"
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -97,7 +99,7 @@ spec:
                 namespace: default
                 sectionName: https
             hostnames:
-              - media.openclaw.homelab.local
+              - openclaw-media.homelab.local
             rules:
               - matches:
                   - path:

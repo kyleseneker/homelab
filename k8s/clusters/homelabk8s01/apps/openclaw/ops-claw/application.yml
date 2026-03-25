@@ -16,6 +16,8 @@ spec:
     helm:
       valuesObject:
         defaultPodOptions:
+          annotations:
+            reloader.stakater.com/auto: "true"
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
@@ -40,8 +42,8 @@ spec:
                       -o /tools/kubectl && chmod +x /tools/kubectl
                     curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
                       | tar xz -C /tools kubeconform
-                    ln -sf "$(which git)" /tools/git
-                    ln -sf "$(which yamllint)" /tools/yamllint
+                    cp "$(which git)" /tools/git
+                    cp "$(which yamllint)" /tools/yamllint
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -61,6 +63,7 @@ spec:
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
+                  PATH: /usr/local/bin/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
                 envFrom:
                   - secretRef:
                       name: openclaw-ops-secrets
@@ -124,7 +127,7 @@ spec:
                 namespace: default
                 sectionName: https
             hostnames:
-              - ops.openclaw.homelab.local
+              - openclaw-ops.homelab.local
             rules:
               - matches:
                   - path:
