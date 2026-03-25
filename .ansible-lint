@@ -1,0 +1,9 @@
+offline: true
+skip_list:
+  - galaxy[no-changelog]
+  - yaml[line-length]
+exclude_paths:
+  - k8s/
+  - terraform/
+  - packer/
+  - docs/

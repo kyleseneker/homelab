@@ -22,3 +22,42 @@ jobs:
             -var "proxmox_node=ci" \
             -var "iso_checksum=none" \
             .
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive terraform/
+      - working-directory: terraform/aws
+        run: |
+          terraform init -backend=false
+          terraform validate
+      - working-directory: terraform/hosts/homelabk8s01
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: pip install yamllint
+      - run: yamllint -c .yamllint.yml k8s/
+      - uses: bmuschko/setup-kubeconform@v1
+      - run: |
+          kubeconform -strict \
+            -kubernetes-version 1.31.4 \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            -skip Kustomization \
+            -summary \
+            k8s/
+
+  ansible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: pip install ansible-core ansible-lint
+      - run: ansible-galaxy collection install -r ansible/requirements.yml
+      - run: ansible-lint ansible/
