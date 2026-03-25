@@ -63,6 +63,9 @@ spec:
                   - path:
                       type: PathPrefix
                       value: /
+                backendRefs:
+                  - name: arr-jellyseerr
+                    port: 5055
 
         persistence:
           config:
