@@ -165,8 +165,10 @@ vault-init: ## Initialize Vault and configure ESO integration (one-time)
 vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
 	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \
 		echo "Usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=secret123"; exit 1; fi
+	@if [ -z "$$VAULT_TOKEN" ]; then echo "Error: VAULT_TOKEN not set. Export your root token first: export VAULT_TOKEN=hvs.xxxxx"; exit 1; fi
+	@lsof -ti:8200 | xargs kill 2>/dev/null || true
 	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
-	@sleep 2
+	@sleep 3
 	@VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/$(SECRET_PATH) $(KEY)="$(VAL)" 2>/dev/null \
 		|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
 	@kill %% 2>/dev/null || true
