@@ -1,6 +1,6 @@
 extends: default
 ignore:
-  - k8s/**/gateway-api/resources/gateway.networking.k8s.io_*.yaml
+  - k8s/components/gateway-api/gateway.networking.k8s.io_*.yaml
 rules:
   line-length: disable
   truthy: disable
