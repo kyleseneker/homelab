@@ -148,7 +148,7 @@ spec:
             accessMode: ReadWriteOnce
             size: 10Gi
             globalMounts:
-              - path: /data
+              - path: /home/node/.openclaw
           config:
             type: configMap
             name: openclaw-ops-config

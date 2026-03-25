@@ -113,7 +113,7 @@ spec:
             accessMode: ReadWriteOnce
             size: 2Gi
             globalMounts:
-              - path: /data
+              - path: /home/node/.openclaw
           config:
             type: configMap
             name: openclaw-media-config
