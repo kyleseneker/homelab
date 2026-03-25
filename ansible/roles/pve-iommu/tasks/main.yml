@@ -6,7 +6,7 @@
     line: 'GRUB_CMDLINE_LINUX_DEFAULT="{{ iommu_grub_cmdline }}"'
   register: grub_updated
 
-- name: Update GRUB
+- name: Update GRUB # noqa: no-handler
   ansible.builtin.command: update-grub
   changed_when: true
   when: grub_updated.changed
