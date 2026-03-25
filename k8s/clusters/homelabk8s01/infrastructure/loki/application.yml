@@ -18,6 +18,17 @@ spec:
         deploymentMode: SingleBinary
 
         loki:
+          podSecurityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            runAsNonRoot: true
+          containerSecurityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
           auth_enabled: false
           commonConfig:
             replication_factor: 1
@@ -71,6 +82,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
       - ServerSideDiff=true

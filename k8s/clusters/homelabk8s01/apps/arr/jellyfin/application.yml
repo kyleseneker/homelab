@@ -25,6 +25,11 @@ spec:
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 probes:
                   liveness:
                     enabled: true

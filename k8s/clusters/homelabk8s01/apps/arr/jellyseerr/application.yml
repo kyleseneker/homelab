@@ -15,6 +15,13 @@ spec:
     targetRevision: 4.6.2
     helm:
       valuesObject:
+        defaultPodOptions:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+
         controllers:
           main:
             containers:
@@ -25,6 +32,11 @@ spec:
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 resources:
                   requests:
                     cpu: 50m

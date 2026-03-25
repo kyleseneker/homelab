@@ -32,6 +32,11 @@ spec:
                   internalNode: "true"
                   inContainer: "true"
                   ffmpegVersion: "6"
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 resources:
                   requests:
                     cpu: 200m

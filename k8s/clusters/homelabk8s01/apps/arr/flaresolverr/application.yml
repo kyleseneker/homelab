@@ -27,6 +27,11 @@ spec:
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 resources:
                   requests:
                     cpu: 100m

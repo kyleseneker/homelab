@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: arr
+  name: vault
   labels:
-    kubernetes.io/metadata.name: arr
+    kubernetes.io/metadata.name: vault
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted

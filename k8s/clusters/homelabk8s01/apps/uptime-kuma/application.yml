@@ -15,6 +15,13 @@ spec:
     targetRevision: 4.6.2
     helm:
       valuesObject:
+        defaultPodOptions:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+
         controllers:
           main:
             containers:
@@ -26,6 +33,11 @@ spec:
                   TZ: America/Chicago
                   UPTIME_KUMA_DB_TYPE: sqlite
                   NODE_TLS_REJECT_UNAUTHORIZED: "0"
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
                 resources:
                   requests:
                     cpu: 25m
@@ -88,6 +100,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
       - ServerSideDiff=true

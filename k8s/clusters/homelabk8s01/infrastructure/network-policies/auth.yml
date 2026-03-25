@@ -43,3 +43,65 @@ spec:
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
+---
+# Egress policies
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-default-deny-egress
+  namespace: auth
+spec:
+  description: "Deny egress to external networks by default"
+  endpointSelector: {}
+  egressDeny:
+    - toEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-allow-egress-dns
+  namespace: auth
+spec:
+  description: "Allow DNS resolution via kube-dns"
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-allow-egress-internal
+  namespace: auth
+spec:
+  description: "Allow egress within the auth namespace (server to PostgreSQL/Redis)"
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: auth-allow-egress-nfs
+  namespace: auth
+spec:
+  description: "Allow egress to NFS server for persistent storage"
+  endpointSelector: {}
+  egress:
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP
