@@ -44,6 +44,19 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: arr-allow-openclaw
+  namespace: arr
+spec:
+  description: "Allow OpenClaw Media Claw to reach arr service APIs"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+---
 # Egress: implicit deny model. Any endpoint with an egress rule denies all
 # other egress by default in Cilium, so we don't need egressDeny.
 apiVersion: cilium.io/v2
