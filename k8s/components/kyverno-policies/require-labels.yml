@@ -19,6 +19,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - metallb-system
+                - cilium-test-*
       validate:
         message: "The label 'app.kubernetes.io/name' is required."
         pattern:

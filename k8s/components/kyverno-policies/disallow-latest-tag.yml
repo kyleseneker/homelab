@@ -10,7 +10,7 @@ metadata:
       Container images must not use the ':latest' tag or omit a tag entirely.
       Images should be pinned to a specific version for reproducibility.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: validate-image-tag
@@ -19,6 +19,15 @@ spec:
           - resources:
               kinds:
                 - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kyverno
+                - argocd
+                - metallb-system
+                - cilium-test-*
       validate:
         message: "Container images must specify a tag and cannot use ':latest'."
         pattern:
