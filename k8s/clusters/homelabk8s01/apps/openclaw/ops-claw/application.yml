@@ -164,6 +164,19 @@ spec:
               - path: /skills/ops/SKILL.md
                 subPath: ops-SKILL.md
                 readOnly: true
+              - path: /skills/security/SKILL.md
+                subPath: security-SKILL.md
+                readOnly: true
+              - path: /skills/maintenance/SKILL.md
+                subPath: maintenance-SKILL.md
+                readOnly: true
+          boot:
+            type: configMap
+            name: openclaw-ops-boot
+            globalMounts:
+              - path: /home/node/BOOT.md
+                subPath: BOOT.md
+                readOnly: true
           tools:
             type: emptyDir
             advancedMounts:

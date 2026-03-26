@@ -135,6 +135,90 @@ data:
       --url ws://openclaw-media.openclaw.svc:18789 \
       --token "$MEDIA_CLAW_TOKEN"
     ```
+  security-SKILL.md: |
+    ---
+    name: security
+    description: >-
+      Proactive security hardening. Audits RBAC, network policies, PSS,
+      container images, and security contexts. All changes via PRs.
+    user-invocable: true
+    ---
+
+    # Security Auditor
+
+    You continuously harden the homelab and report findings. All changes
+    go through GitOps PRs — never modify cluster resources directly.
+
+    ## What to Audit
+
+    - **CiliumNetworkPolicies**: every namespace should have default-deny +
+      explicit allow rules. Minimize egress. Flag any namespace missing policies.
+    - **RBAC**: look for overly broad ClusterRoleBindings. No service account
+      should have more access than it needs.
+    - **Pod Security Standards**: all namespaces should enforce at least
+      `baseline`. Flag any running `privileged` that doesn't need to be.
+    - **Security contexts**: every container should drop ALL capabilities,
+      set allowPrivilegeEscalation=false, runAsNonRoot=true. Only add caps
+      that are explicitly needed (e.g., SETUID/SETGID for linuxserver.io).
+    - **Container images**: flag images older than 90 days. Check for known
+      CVEs if possible.
+    - **TLS/Auth**: every HTTPRoute should use HTTPS. Services exposed via
+      Gateway should have Authentik SSO where appropriate.
+
+    ## Schedule
+
+    - Weekly: full audit, post summary to #ops
+    - On demand: when asked by Kyle or Ops Claw
+
+    ## Constraints
+
+    - NEVER weaken existing security (don't add egress, don't remove caps)
+    - NEVER modify cluster resources directly — all changes via git PRs
+    - Follow the gitops patterns in /skills/ops/SKILL.md
+
+  maintenance-SKILL.md: |
+    ---
+    name: maintenance
+    description: >-
+      Scheduled housekeeping. Cleans up failed pods, orphaned resources,
+      checks backups, audits resource usage, and reports drift.
+    user-invocable: true
+    ---
+
+    # Maintenance
+
+    Scheduled housekeeping tasks that keep the cluster clean and healthy.
+
+    ## Nightly (run every night)
+
+    - Delete failed/evicted pods across all non-protected namespaces
+    - Delete completed jobs older than 24 hours
+    - Check for pods in CrashLoopBackOff — restart if transient, report if persistent
+
+    ## Weekly
+
+    - Audit resource requests vs actual usage (kubectl top vs resource specs)
+    - Propose right-sizing PRs if requests are >2x actual usage
+    - Check for configuration drift: compare git state to cluster state
+    - Verify all ExternalSecrets are syncing (status condition)
+    - Check Velero backup status — alert if last backup >24h old or failed
+    - Check PVC usage — alert if any volume >80% full
+
+    ## Monthly
+
+    - Full security audit (invoke security skill)
+    - Capacity trend report: are nodes running out of resources?
+    - Check for deprecated Kubernetes APIs in manifests
+    - Review and clean up orphaned PVCs not bound to any pod
+
+    ## Reporting
+
+    Post summaries to #ops:
+    ```
+    [Maintenance] Nightly cleanup: deleted 3 failed pods, 2 completed jobs
+    [Maintenance] Weekly audit: all ExternalSecrets syncing, backups healthy
+    [Maintenance] Alert: PVC arr-radarr-config at 82% — consider expanding
+    ```
 ---
 # Media Claw skills — arr stack management
 apiVersion: v1

@@ -129,6 +129,13 @@ spec:
               - path: /skills/media/SKILL.md
                 subPath: media-SKILL.md
                 readOnly: true
+          boot:
+            type: configMap
+            name: openclaw-media-boot
+            globalMounts:
+              - path: /home/node/BOOT.md
+                subPath: BOOT.md
+                readOnly: true
 
   destination:
     server: https://kubernetes.default.svc
