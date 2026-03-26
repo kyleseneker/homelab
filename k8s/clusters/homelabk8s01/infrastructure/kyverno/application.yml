@@ -51,6 +51,9 @@ spec:
               memory: 64Mi
             limits:
               memory: 192Mi
+        crds:
+          annotations:
+            argocd.argoproj.io/sync-options: Replace=true
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
