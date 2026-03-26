@@ -1,5 +1,9 @@
 # Homelab
 
+[![validate](https://github.com/kyleseneker/homelab/actions/workflows/validate.yml/badge.svg)](https://github.com/kyleseneker/homelab/actions/workflows/validate.yml)
+[![docs](https://github.com/kyleseneker/homelab/actions/workflows/docs.yml/badge.svg)](https://github.com/kyleseneker/homelab/actions/workflows/docs.yml)
+[![license](https://img.shields.io/github/license/kyleseneker/homelab)](LICENSE)
+
 Infrastructure-as-code for my homelab. Ansible configures Proxmox hosts, Packer builds VM templates, Terraform provisions VMs, Ansible bootstraps Kubernetes clusters, and ArgoCD manages workloads via GitOps.
 
 **[Read the full documentation](https://kyleseneker.github.io/homelab/)** -- or run `make docs-serve` to browse locally.
