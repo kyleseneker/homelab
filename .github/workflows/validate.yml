@@ -52,6 +52,8 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -skip Kustomization \
             -skip CustomResourceDefinition \
+            -ignore-filename-pattern '.*kustomization\.yml$' \
+            -ignore-filename-pattern '.*slack-app-manifest\.json$' \
             -summary \
             k8s/
 
