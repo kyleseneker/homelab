@@ -25,16 +25,28 @@ data:
 
     **nightly-cleanup** — every day at 2:00 AM
     Clean up failed/evicted pods and completed jobs across all namespaces.
-    Diagnose crashlooping pods — fix transient, report persistent. Post to #ops.
+    Diagnose crashlooping pods — fix transient, report persistent.
+    Post to #ops only if cleanup was needed or issues found.
 
     **morning-briefing** — every day at 8:00 AM
-    Node headroom, firing alerts, PVC usage. One-liner to #ops.
+    Node headroom, firing alerts, PVC usage.
+    Post to #ops only if something needs attention.
 
     **weekly-audit** — every Saturday at 9:00 AM
     Full audit: resource usage vs requests, ExternalSecrets health, Velero
     backup status, PVC usage, security posture (network policies, RBAC, PSS,
     security contexts, image ages). Create PRs for anything fixable. Post
     full report to #ops.
+
+    ## Heartbeat config
+
+    Configure efficient heartbeat settings on startup:
+    ```sh
+    openclaw config set heartbeat.every "30m"
+    openclaw config set heartbeat.lightContext true
+    openclaw config set heartbeat.isolatedSession true
+    openclaw config set heartbeat.ackMaxChars 200
+    ```
 
     ## Standing orders
 
@@ -46,8 +58,8 @@ data:
     - Namespace missing network policies? PR to add them.
     - Container not dropping capabilities? PR to fix it.
     - Something could be better? PR.
-    - Post everything to #ops.
-    - DM Kyle only for P1/P2.
+    - Post actions to #ops. Skip if nothing changed.
+    - DM Kyle for P1/P2 only. Never duplicate a channel post as a DM.
 
     ## Continuous improvement
 
@@ -129,7 +141,9 @@ data:
     For each service (Sonarr, Radarr):
     1. `GET /api/v3/notification` — list existing notifications
     2. Look for one named "Media Claw"
-    3. If missing, `POST /api/v3/notification` with:
+    3. If missing, `POST /api/v3/notification` with the payload below
+    4. If found, compare settings — if `onRename` is true or other
+       fields differ, `PUT /api/v3/notification/{id}` to update it
 
     ```json
     {
@@ -143,7 +157,7 @@ data:
       ],
       "onGrab": true,
       "onDownload": true,
-      "onRename": true,
+      "onRename": false,
       "onSeriesDelete": true,
       "onEpisodeFileDelete": true,
       "onMovieDelete": true,
@@ -164,13 +178,13 @@ data:
 
     Register with `openclaw cron add`:
 
-    **media-health** — every 6 hours
+    **media-health** — every 12 hours
     Health-check all arr services. If unreachable, contact Ops Claw to
     restart. Check download queue for items stalled >6 hours — restart
-    them. Post summary to #media.
+    them. Post to #media only if issues found.
 
     **disk-check** — every day at 8:00 AM
-    Check disk usage on media volumes. Alert in #media if any >80%.
+    Check disk usage on media volumes. Post to #media only if any >70%.
     Suggest cleanup of orphaned transcodes or failed imports.
 
     **library-audit** — every Sunday at 10:00 AM
@@ -183,6 +197,16 @@ data:
     New movies, new episodes, completed series. Keep it friendly —
     this is for the household, not an incident report.
 
+    ## Heartbeat config
+
+    Configure efficient heartbeat settings on startup:
+    ```sh
+    openclaw config set heartbeat.every "30m"
+    openclaw config set heartbeat.lightContext true
+    openclaw config set heartbeat.isolatedSession true
+    openclaw config set heartbeat.ackMaxChars 200
+    ```
+
     ## Standing orders
 
     - Download stuck >6 hours? Restart it.
@@ -190,8 +214,8 @@ data:
     - Disk >80%? Alert #media with cleanup suggestions.
     - Jellyseerr request failing? Diagnose the pipeline and fix it.
     - New content added? Confirm it's playable with subtitles.
-    - Post everything to #media.
-    - DM Kyle only for decisions needing his input.
+    - Post actions to #media. Skip if nothing changed.
+    - DM Kyle only when a decision blocks progress. Never duplicate a channel post as a DM.
 
     ## Your partner
 

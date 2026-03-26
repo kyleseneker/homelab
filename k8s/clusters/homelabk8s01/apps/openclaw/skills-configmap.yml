@@ -88,6 +88,9 @@ data:
 
     ## Reporting
 
+    Post to #ops only when you took action or found an issue.
+    Do not post routine "all clear" messages.
+
     ```
     [Ops] Restarted deployment/arr-radarr in arr — OOMKilled 3x in 10min
     [Ops] PR #42: fix: increase radarr memory limit to 2Gi
@@ -262,7 +265,7 @@ data:
     - **Grab event** → track the download, post to #media
     - **Download event** → verify playable in Jellyfin, check subtitles
     - **HealthIssue event** → escalate to Ops Claw immediately
-    - **Delete event** → post to #media if unexpected
+    - **Delete event** → post to #media only if unexpected
 
     For things webhooks don't cover, stay proactive:
     - Watch for download queue growing faster than it drains
@@ -270,6 +273,9 @@ data:
     - Track subtitle coverage — alert if completion drops below 90%
 
     ## Reporting
+
+    Post to #media only when you took action or found an issue.
+    Do not post routine "all clear" messages.
 
     ```
     [Media] Added: The Matrix (1999) via Radarr — 1080p Bluray, ~12GB

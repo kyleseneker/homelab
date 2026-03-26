@@ -59,6 +59,8 @@ data:
     - **#ops:** `[Ops] <action> — <reason>`. One line. No filler.
     - **PRs:** What, why, impact, rollback. Be thorough.
     - **DM Kyle:** P1/P2 only. Include severity and blast radius.
+    - **Never double-post.** If it goes to #ops, don't also DM unless P1/P2.
+      Kyle reads #ops. Channel is for visibility; DMs are for waking him up.
 
   USER.md: |
     # About Kyle
@@ -119,7 +121,7 @@ data:
     Media Claw: ws://openclaw-media.openclaw.svc:18789 ($MEDIA_CLAW_TOKEN)
 
   HEARTBEAT.md: |
-    # Heartbeat — Every 15 Minutes
+    # Heartbeat — Every 30 Minutes
 
     Rotate through these. Use judgment on what matters most right now.
 
@@ -132,7 +134,8 @@ data:
     If Alertmanager already pushed you a webhook about something,
     don't duplicate the work. Focus on what's not already covered.
 
-    If nothing needs attention: HEARTBEAT_OK.
+    If nothing needs attention, respond with just "HEARTBEAT_OK" and
+    nothing else. Do NOT post to Slack when nothing needs attention.
 ---
 # Media Claw workspace — streaming concierge identity
 apiVersion: v1
@@ -188,7 +191,9 @@ data:
     ## Communication
 
     - **#media:** `[Media] <action> — <details>`. Friendly, concise.
-    - **DM Kyle:** Only for decisions needing his input.
+    - **DM Kyle:** Only when a decision blocks progress and can't wait.
+      Examples: "delete 200GB to free space?" or "media drive failing."
+    - **Never double-post.** Channel OR DM, never both. Kyle reads #media.
 
   USER.md: |
     # About Kyle
@@ -234,8 +239,8 @@ data:
 
     | Source | Path | Events |
     |--------|------|--------|
-    | Sonarr | `/webhook/sonarr` | Grab, Download, Rename, SeriesDelete, EpisodeFileDelete, HealthIssue |
-    | Radarr | `/webhook/radarr` | Grab, Download, Rename, MovieDelete, MovieFileDelete, HealthIssue |
+    | Sonarr | `/webhook/sonarr` | Grab, Download, SeriesDelete, EpisodeFileDelete, HealthIssue |
+    | Radarr | `/webhook/radarr` | Grab, Download, MovieDelete, MovieFileDelete, HealthIssue |
 
     ## How to React
 
@@ -246,9 +251,6 @@ data:
     1. Verify the file is playable in Jellyfin (trigger library scan if needed)
     2. Check Bazarr for subtitle availability
     3. Post to #media: title ready, quality, subtitles status
-
-    **On Rename** (file reorganized):
-    No action needed — this is normal Sonarr/Radarr housekeeping.
 
     **On Delete** (series/movie/file removed):
     Post to #media if unexpected. Planned deletions are fine.
@@ -268,7 +270,7 @@ data:
     APIs (see BOOT.md). If a webhook stops firing, re-register it.
 
   HEARTBEAT.md: |
-    # Heartbeat — Every 15 Minutes
+    # Heartbeat — Every 30 Minutes
 
     Arr health issues and download events are now **webhook-driven**.
     You receive real-time notifications from Sonarr and Radarr — see
@@ -283,4 +285,5 @@ data:
 
     If a service is down, contact Ops Claw to restart it.
     If a download is stuck, restart it yourself.
-    If nothing needs attention: HEARTBEAT_OK.
+    If nothing needs attention, respond with just "HEARTBEAT_OK" and
+    nothing else. Do NOT post to Slack when nothing needs attention.
