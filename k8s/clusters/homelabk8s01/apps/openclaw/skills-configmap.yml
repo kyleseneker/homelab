@@ -126,6 +126,16 @@ data:
     [Ops] PR #42 opened: fix: increase radarr memory limit to 2Gi
     [Ops] Security audit: 2 issues found, PRs created (#43, #44)
     ```
+
+    ## Contacting Media Claw
+
+    When you need media stack help or want to delegate arr-related work:
+    ```sh
+    curl -s -X POST http://openclaw-media.openclaw.svc:18789/hooks/agent \
+      -H "Authorization: Bearer $MEDIA_CLAW_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"message": "your request here"}'
+    ```
 ---
 # Media Claw skills — arr stack management
 apiVersion: v1
@@ -184,7 +194,18 @@ data:
     - NEVER expose API keys in Slack messages
     - NEVER access services outside the `arr` namespace
     - NEVER use kubectl for anything destructive
-    - For infrastructure issues, tell the operator to ask Ops Claw
+    - For infrastructure issues, contact Ops Claw directly via webhook (see below)
+
+    ## Contacting Ops Claw
+
+    When you need infrastructure help (pods down, network issues, etc.),
+    POST to the Ops Claw webhook directly:
+    ```sh
+    curl -s -X POST http://openclaw-ops.openclaw.svc:18789/hooks/agent \
+      -H "Authorization: Bearer $OPS_CLAW_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{"message": "your request here"}'
+    ```
 
     ## Reporting
 

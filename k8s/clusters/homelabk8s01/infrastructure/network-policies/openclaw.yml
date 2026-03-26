@@ -10,6 +10,19 @@ spec:
     - fromEntities:
         - world
 ---
+# Shared: allow internal openclaw traffic (bot-to-bot via webhooks)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-allow-internal
+  namespace: openclaw
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+---
 # Shared: allow gateway ingress (web UI)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
