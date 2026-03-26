@@ -48,7 +48,7 @@ spec:
                         path: /ping
                         port: 7878
                       periodSeconds: 10
-                      timeoutSeconds: 5
+                      timeoutSeconds: 10
                       failureThreshold: 3
                   readiness:
                     enabled: true
@@ -58,7 +58,7 @@ spec:
                         path: /ping
                         port: 7878
                       periodSeconds: 10
-                      timeoutSeconds: 5
+                      timeoutSeconds: 10
                       failureThreshold: 3
                   startup:
                     enabled: true
