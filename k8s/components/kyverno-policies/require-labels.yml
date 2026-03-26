@@ -10,7 +10,7 @@ metadata:
       Pods must have the 'app.kubernetes.io/name' label for consistent
       identification across monitoring, networking, and service discovery.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: require-app-label
@@ -28,6 +28,9 @@ spec:
                 - argocd
                 - metallb-system
                 - cilium-test-*
+                - backups
+                - intel-gpu-operator
+                - nfs-provisioner
       validate:
         message: "The label 'app.kubernetes.io/name' is required."
         pattern:
