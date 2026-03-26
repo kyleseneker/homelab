@@ -118,7 +118,8 @@ data:
       "configContract": "WebhookSettings",
       "fields": [
         {"name": "url", "value": "http://openclaw-media.openclaw.svc.cluster.local:18789/webhook/<service>"},
-        {"name": "method", "value": 1}
+        {"name": "method", "value": 1},
+        {"name": "headers", "value": [{"key": "Authorization", "value": "Bearer $OPENCLAW_HOOKS_TOKEN"}]}
       ],
       "onGrab": true,
       "onDownload": true,
@@ -133,7 +134,8 @@ data:
     ```
 
     Replace `<service>` with `sonarr` or `radarr`. Use the appropriate
-    API key header for each service (see TOOLS.md).
+    API key header for each service (see TOOLS.md). The `$OPENCLAW_HOOKS_TOKEN`
+    env var is available from your secrets — use its value in the header.
 
     If registration fails, log the error and continue — the heartbeat
     will cover monitoring until webhooks are fixed.

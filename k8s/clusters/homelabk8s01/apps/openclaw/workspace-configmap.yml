@@ -257,6 +257,11 @@ data:
     Contact Ops Claw immediately. This means the arr service itself
     detected a problem (indexer down, disk full, import failure, etc).
 
+    ## Authentication
+
+    All webhook requests require a bearer token:
+    `Authorization: Bearer $OPENCLAW_HOOKS_TOKEN`
+
     ## Webhook Registration
 
     Webhooks are registered on boot via the Sonarr/Radarr notification

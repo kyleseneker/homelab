@@ -88,6 +88,7 @@ spec:
           alertmanagerSpec:
             secrets:
               - alertmanager-slack-webhook
+              - alertmanager-openclaw-hooks-token
             resources:
               requests:
                 cpu: 25m
@@ -144,6 +145,9 @@ spec:
                 webhook_configs:
                   - url: http://openclaw-ops.openclaw.svc.cluster.local:18789/webhook/alertmanager
                     send_resolved: true
+                    http_config:
+                      authorization:
+                        credentials_file: /etc/alertmanager/secrets/alertmanager-openclaw-hooks-token/token
 
         nodeExporter:
           enabled: true
