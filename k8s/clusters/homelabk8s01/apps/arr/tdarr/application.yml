@@ -32,6 +32,7 @@ spec:
                   internalNode: "true"
                   inContainer: "true"
                   ffmpegVersion: "6"
+                  nodeName: "InternalNode"
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -118,7 +119,7 @@ spec:
               - path: /app/server
           temp:
             type: emptyDir
-            sizeLimit: 20Gi
+            sizeLimit: 100Gi
             globalMounts:
               - path: /temp
           media:
