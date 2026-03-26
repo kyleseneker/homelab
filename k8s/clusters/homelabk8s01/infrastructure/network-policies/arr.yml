@@ -93,6 +93,13 @@ spec:
         - ports:
             - port: "2049"
               protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

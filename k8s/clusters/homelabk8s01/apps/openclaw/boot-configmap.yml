@@ -94,10 +94,49 @@ data:
     ## First things first
 
     1. Health-check every arr service via their APIs
-    2. Check download queue — anything stuck or stalled?
-    3. Check Tdarr — any transcoding errors?
-    4. Summary to #media
-    5. Verify your cron jobs exist (create if missing)
+    2. Register webhooks in Sonarr and Radarr (see below)
+    3. Check download queue — anything stuck or stalled?
+    4. Check Tdarr — any transcoding errors?
+    5. Summary to #media
+    6. Verify your cron jobs exist (create if missing)
+
+    ## Webhook Registration
+
+    Register webhooks so Sonarr and Radarr push events to you in
+    real-time. This is idempotent — check first, create only if missing.
+
+    **For each service (Sonarr, Radarr):**
+
+    1. `GET /api/v3/notification` — list existing notifications
+    2. Look for one with URL matching your webhook endpoint
+    3. If missing, `POST /api/v3/notification` with:
+
+    ```json
+    {
+      "name": "Media Claw",
+      "implementation": "Webhook",
+      "configContract": "WebhookSettings",
+      "fields": [
+        {"name": "url", "value": "http://openclaw-media.openclaw.svc.cluster.local:18789/webhook/<service>"},
+        {"name": "method", "value": 1}
+      ],
+      "onGrab": true,
+      "onDownload": true,
+      "onRename": true,
+      "onSeriesDelete": true,
+      "onEpisodeFileDelete": true,
+      "onMovieDelete": true,
+      "onMovieFileDelete": true,
+      "onHealthIssue": true,
+      "includeHealthWarnings": true
+    }
+    ```
+
+    Replace `<service>` with `sonarr` or `radarr`. Use the appropriate
+    API key header for each service (see TOOLS.md).
+
+    If registration fails, log the error and continue — the heartbeat
+    will cover monitoring until webhooks are fixed.
 
     ## Cron jobs
 

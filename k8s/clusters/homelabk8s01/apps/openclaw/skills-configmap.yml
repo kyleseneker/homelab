@@ -215,7 +215,8 @@ data:
 
     You manage the media pipeline: requests → indexing → downloads →
     transcoding → subtitles → playback. See TOOLS.md for service URLs.
-    See SOUL.md for decision framework.
+    See SOUL.md for decision framework. See WEBHOOKS.md for real-time
+    event handling.
 
     ## Fulfilling Requests
 
@@ -253,10 +254,17 @@ data:
     - **Missing from Jellyfin:** Trigger a library scan. Check file permissions.
     - **Service unreachable:** Contact Ops Claw to restart the pod.
 
-    ## Proactive Monitoring
+    ## Event-Driven Monitoring
 
-    Don't wait for problems to be reported:
-    - Check if recently added content is actually playable
+    You receive real-time webhooks from Sonarr and Radarr (see WEBHOOKS.md).
+    React immediately to events — don't wait for the heartbeat cycle:
+
+    - **Grab event** → track the download, post to #media
+    - **Download event** → verify playable in Jellyfin, check subtitles
+    - **HealthIssue event** → escalate to Ops Claw immediately
+    - **Delete event** → post to #media if unexpected
+
+    For things webhooks don't cover, stay proactive:
     - Watch for download queue growing faster than it drains
     - Monitor Tdarr error rate — a spike means something changed
     - Track subtitle coverage — alert if completion drops below 90%

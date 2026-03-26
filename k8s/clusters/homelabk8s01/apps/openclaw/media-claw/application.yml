@@ -40,7 +40,7 @@ spec:
                   - |
                     mkdir -p /state/workspace
                     cp /boot/BOOT.md /state/workspace/BOOT.md 2>/dev/null || true
-                    for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md; do
+                    for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md WEBHOOKS.md; do
                       cp /workspace-src/$f /state/workspace/$f 2>/dev/null || true
                     done
                 securityContext:

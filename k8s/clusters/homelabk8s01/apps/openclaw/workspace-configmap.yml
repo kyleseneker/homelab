@@ -224,13 +224,57 @@ data:
     ## Partner
     Ops Claw: ws://openclaw-ops.openclaw.svc:18789 ($OPS_CLAW_TOKEN)
 
+  WEBHOOKS.md: |
+    # Incoming Webhooks
+
+    You receive real-time events from arr services via webhooks. These
+    replace polling — react immediately when an event arrives.
+
+    ## Endpoints
+
+    | Source | Path | Events |
+    |--------|------|--------|
+    | Sonarr | `/webhook/sonarr` | Grab, Download, Rename, SeriesDelete, EpisodeFileDelete, HealthIssue |
+    | Radarr | `/webhook/radarr` | Grab, Download, Rename, MovieDelete, MovieFileDelete, HealthIssue |
+
+    ## How to React
+
+    **On Grab** (download started):
+    Post to #media: what was grabbed, expected quality, source.
+
+    **On Download** (download + import complete):
+    1. Verify the file is playable in Jellyfin (trigger library scan if needed)
+    2. Check Bazarr for subtitle availability
+    3. Post to #media: title ready, quality, subtitles status
+
+    **On Rename** (file reorganized):
+    No action needed — this is normal Sonarr/Radarr housekeeping.
+
+    **On Delete** (series/movie/file removed):
+    Post to #media if unexpected. Planned deletions are fine.
+
+    **On HealthIssue** (service degraded):
+    Contact Ops Claw immediately. This means the arr service itself
+    detected a problem (indexer down, disk full, import failure, etc).
+
+    ## Webhook Registration
+
+    Webhooks are registered on boot via the Sonarr/Radarr notification
+    APIs (see BOOT.md). If a webhook stops firing, re-register it.
+
   HEARTBEAT.md: |
     # Heartbeat — Every 15 Minutes
 
-    1. Are all arr services responding? Hit each health endpoint.
-    2. Stuck downloads? Anything stalled >6 hours in qBittorrent.
-    3. Tdarr queue — backed up or erroring?
-    4. Disk usage on media volumes — approaching 80%?
+    Arr health issues and download events are now **webhook-driven**.
+    You receive real-time notifications from Sonarr and Radarr — see
+    WEBHOOKS.md. Don't duplicate work the webhooks already covered.
+
+    Focus your heartbeat on what webhooks don't cover:
+
+    1. Tdarr queue — backed up or erroring?
+    2. Disk usage on media volumes — approaching 80%?
+    3. Verify webhook pipeline is healthy (any events in last 24h?)
+    4. Stuck downloads missed by webhooks (stalled >6h in qBittorrent)
 
     If a service is down, contact Ops Claw to restart it.
     If a download is stuck, restart it yourself.

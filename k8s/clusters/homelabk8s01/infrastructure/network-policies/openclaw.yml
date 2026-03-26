@@ -68,6 +68,26 @@ spec:
             - port: "18789"
               protocol: TCP
 ---
+# Media Claw: arr service webhook ingress
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: openclaw-media-arr-webhook-ingress
+  namespace: openclaw
+spec:
+  description: "Allow arr service webhooks to Media Claw"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: openclaw-media
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: arr
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
+---
 # Ops Claw egress: K8s API, monitoring, GitHub, Slack, Anthropic
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
