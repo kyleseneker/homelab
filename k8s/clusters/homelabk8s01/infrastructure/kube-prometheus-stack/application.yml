@@ -136,8 +136,8 @@ spec:
                     text: |-
                       {{ range .Alerts }}
                       *Alert:* {{ .Labels.alertname }} - `{{ .Labels.severity }}`
-                      *Namespace:* {{ .Labels.namespace | default "cluster-wide" }}
-                      *Description:* {{ .Annotations.description | default .Annotations.summary | default "No description" }}
+                      *Namespace:* {{ if .Labels.namespace }}{{ .Labels.namespace }}{{ else }}cluster-wide{{ end }}
+                      *Description:* {{ if .Annotations.description }}{{ .Annotations.description }}{{ else if .Annotations.summary }}{{ .Annotations.summary }}{{ else }}No description{{ end }}
                       {{ if .Labels.node }}*Node:* {{ .Labels.node }}{{ end }}
                       {{ end }}
                     color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
