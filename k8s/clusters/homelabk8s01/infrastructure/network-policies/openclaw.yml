@@ -113,6 +113,14 @@ spec:
               protocol: TCP
             - port: "3100"
               protocol: TCP
+    # Media Claw webhook for bot-to-bot communication
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
 ---
 # Media Claw egress: arr namespace + Slack/Anthropic APIs only
 apiVersion: cilium.io/v2
@@ -145,3 +153,11 @@ spec:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: arr
+    # Ops Claw webhook for bot-to-bot communication
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: openclaw
+      toPorts:
+        - ports:
+            - port: "18789"
+              protocol: TCP
