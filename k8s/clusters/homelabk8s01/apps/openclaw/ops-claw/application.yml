@@ -23,6 +23,8 @@ spec:
             runAsGroup: 1000
             fsGroup: 1000
             runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
 
         controllers:
           main:
@@ -37,37 +39,31 @@ spec:
                 args:
                   - |
                     set -e
-                    apk add --no-cache curl
-                    # kubectl — static binary
-                    curl -fsSL "https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl" \
-                      -o /tools/kubectl && chmod +x /tools/kubectl
-                    # kubeconform — static Go binary
-                    curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
+                    # Download kubectl — alpine has wget built in
+                    wget -qO /tools/kubectl \
+                      "https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl"
+                    chmod +x /tools/kubectl
+                    # Download kubeconform
+                    wget -qO- \
+                      "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
                       | tar xz -C /tools kubeconform
-                    # git is included in the OpenClaw base image (Pi agent dependency)
-                    # Copy workspace files into the persistent OpenClaw state dir
+                    # Copy workspace files into persistent state dir
                     mkdir -p /state/workspace
                     cp /boot/BOOT.md /state/workspace/BOOT.md 2>/dev/null || true
                     for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md; do
                       cp /workspace-src/$f /state/workspace/$f 2>/dev/null || true
                     done
                 securityContext:
-                  runAsUser: 0
-                  runAsNonRoot: false
                   allowPrivilegeEscalation: false
                   capabilities:
                     drop:
                       - ALL
-                    add:
-                      - CHOWN
-                      - DAC_OVERRIDE
-                      - FOWNER
                 resources:
                   requests:
                     cpu: 100m
-                    memory: 128Mi
+                    memory: 64Mi
                   limits:
-                    memory: 256Mi
+                    memory: 128Mi
             containers:
               main:
                 image:
@@ -76,12 +72,12 @@ spec:
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
+                  # Internal pod-to-pod WS does not use TLS — this is safe within the cluster network
                   OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: "1"
                   PATH: /usr/local/bin/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
                 envFrom:
                   - secretRef:
                       name: openclaw-ops-secrets
-                      optional: true
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
@@ -153,7 +149,7 @@ spec:
             type: persistentVolumeClaim
             storageClass: nfs-client
             accessMode: ReadWriteOnce
-            size: 10Gi
+            size: 2Gi
             advancedMounts:
               main:
                 tooling:
@@ -177,27 +173,8 @@ spec:
               - path: /skills/security/SKILL.md
                 subPath: security-SKILL.md
                 readOnly: true
-              - path: /skills/maintenance/SKILL.md
-                subPath: maintenance-SKILL.md
-                readOnly: true
-          skills-phase3:
-            type: configMap
-            name: openclaw-ops-skills-phase3
-            globalMounts:
-              - path: /skills/research/SKILL.md
-                subPath: research-SKILL.md
-                readOnly: true
               - path: /skills/dr/SKILL.md
                 subPath: dr-SKILL.md
-                readOnly: true
-              - path: /skills/incident-manager/SKILL.md
-                subPath: incident-SKILL.md
-                readOnly: true
-              - path: /skills/self-improvement/SKILL.md
-                subPath: self-improvement-SKILL.md
-                readOnly: true
-              - path: /skills/docs/SKILL.md
-                subPath: docs-SKILL.md
                 readOnly: true
           workspace-src:
             type: configMap

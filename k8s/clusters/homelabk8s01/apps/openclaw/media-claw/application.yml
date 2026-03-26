@@ -23,6 +23,8 @@ spec:
             runAsGroup: 1000
             fsGroup: 1000
             runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
 
         controllers:
           main:
@@ -60,11 +62,11 @@ spec:
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
+                  # Internal pod-to-pod WS does not use TLS — safe within the cluster network
                   OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: "1"
                 envFrom:
                   - secretRef:
                       name: openclaw-media-secrets
-                      optional: true
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:

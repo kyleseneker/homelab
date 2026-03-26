@@ -80,7 +80,7 @@ subjects:
     name: openclaw-ops
     namespace: openclaw
 ---
-# Media Claw — minimal read-only, scoped to arr namespace by skill
+# Media Claw — read-only, scoped to arr namespace only
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -96,10 +96,12 @@ rules:
     resources: ["deployments"]
     verbs: ["get", "list", "watch"]
 ---
+# RoleBinding scopes Media Claw access to arr namespace only
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: openclaw-media
+  namespace: arr
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
