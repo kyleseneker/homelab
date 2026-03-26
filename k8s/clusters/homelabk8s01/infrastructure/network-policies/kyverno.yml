@@ -1,0 +1,52 @@
+# Ingress policies
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno-default-deny
+  namespace: kyverno
+spec:
+  description: "Deny ingress from outside the cluster"
+  endpointSelector: {}
+  ingressDeny:
+    - fromEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno-allow-ingress
+  namespace: kyverno
+spec:
+  description: "Allow ingress from cluster, API server, and host (for webhook calls)"
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+        - kube-apiserver
+        - host
+---
+# Egress: implicit deny model
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno-egress
+  namespace: kyverno
+spec:
+  description: "Default egress rules for all kyverno pods"
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kyverno
+    - toEntities:
+        - kube-apiserver
