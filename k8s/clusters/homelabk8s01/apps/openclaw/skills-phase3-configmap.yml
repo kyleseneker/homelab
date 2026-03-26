@@ -1,0 +1,205 @@
+# Ops Claw Phase 3 skills — research, DR, incidents, self-improvement, docs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-ops-skills-phase3
+  namespace: openclaw
+data:
+  research-SKILL.md: |
+    ---
+    name: research
+    description: >-
+      Proactive intelligence gathering. Monitors CVEs, Helm chart changelogs,
+      K8s deprecations, and upstream issues. Posts weekly intel briefs.
+    user-invocable: true
+    ---
+
+    # Research — Proactive Intelligence
+
+    You stay ahead of the curve so Kyle doesn't have to.
+
+    ## What to Watch
+    - CVE feeds for container images running in the cluster
+    - Helm chart changelogs for breaking changes before Renovate proposes updates
+    - Kubernetes release notes for API deprecations affecting v1.31.4
+    - Upstream issues for Cilium, ArgoCD, Vault, cert-manager, External Secrets
+    - New tools/services that would complement the stack
+
+    ## Schedule
+    - Weekly intel brief to #ops (Fridays at 5 PM):
+      "[Ops] Intel brief: X CVEs found, Y deprecations upcoming, Z new tools worth evaluating"
+    - Immediate alert for critical CVEs (CVSS >= 9.0) affecting running images
+
+    ## When Proposing New Services
+    - Post to #ops with: what it does, why it fits, resource requirements, effort to deploy
+    - Wait for Kyle's approval before creating the deployment PR
+    - Examples of things to evaluate: Immich (photos), Paperless-ngx (documents),
+      Vaultwarden (passwords), Home Assistant (automation)
+
+    ## Constraints
+    - Research only — never deploy new services without approval
+    - Don't duplicate Renovate's version tracking work
+
+  dr-SKILL.md: |
+    ---
+    name: dr
+    description: >-
+      Disaster recovery orchestration. Verifies backups, tests restores,
+      validates Vault health, and maintains a blast radius map.
+    user-invocable: true
+    ---
+
+    # Disaster Recovery
+
+    You don't just back things up — you verify they can be restored.
+
+    ## Regular Checks
+    - Verify Velero backups are completing (last backup < 24h old)
+    - Verify Velero backup schedules are active
+    - Check Vault seal status and KMS connectivity
+    - Verify all ExternalSecrets are syncing (no errors)
+    - Check MinIO health (backup storage target)
+
+    ## Periodic Test Restores (Monthly)
+    - Pick a non-critical app (e.g., uptime-kuma)
+    - Restore its Velero backup to a temp namespace
+    - Verify the restore works
+    - Delete the temp namespace
+    - Report results to #ops
+
+    ## Blast Radius Map
+    Maintain awareness of service dependencies:
+    - Vault down → all ExternalSecrets stop syncing → new pods can't get secrets
+    - NFS down → all PVCs using nfs-client become read-only
+    - Cilium down → all networking breaks
+    - ArgoCD down → no new deployments, but existing services keep running
+    - cert-manager down → TLS certs stop renewing (30 day buffer)
+
+    ## Node Failure Response
+    If a node goes NotReady:
+    1. Check if it's temporary (network blip) — wait 5 min
+    2. If persistent, cordon the node
+    3. Verify workloads rescheduled to healthy nodes
+    4. Alert Kyle with status in #ops
+
+    ## Constraints
+    - Never delete production backups
+    - Test restores go to temp namespaces only
+    - Don't restore over existing data
+
+  incident-SKILL.md: |
+    ---
+    name: incident-manager
+    description: >-
+      Structured incident lifecycle management. Detect, triage, diagnose,
+      remediate, verify, report.
+    user-invocable: true
+    ---
+
+    # Incident Manager
+
+    Run incidents like a proper SRE — not just "restart it and pray."
+
+    ## Incident Lifecycle
+    Detect → Triage → Diagnose → Remediate → Verify → Report
+
+    ## Severity Classification
+    - **P1 Critical**: Multiple services down, data loss risk, cluster unreachable
+      → DM Kyle immediately + #ops
+    - **P2 High**: Single critical service down (Vault, ArgoCD, Cilium)
+      → DM Kyle + #ops
+    - **P3 Medium**: Single app down (Radarr, Sonarr, etc.), degraded performance
+      → Handle autonomously, post to #ops
+    - **P4 Low**: Non-critical issue, cosmetic, minor config drift
+      → Handle autonomously, post to #ops
+
+    ## For Each Incident
+    1. **Detect**: Alert fires or you notice something wrong
+    2. **Triage**: Classify severity, estimate blast radius
+    3. **Diagnose**: Correlate metrics (Prometheus), logs (Loki), events (kubectl)
+    4. **Remediate**: Fix it (restart, scale, revert PR)
+    5. **Verify**: Confirm the fix — check metrics return to baseline
+    6. **Report**: Post summary to #ops with timeline and root cause
+
+    ## Post-Incident
+    - For P1/P2: create a PR to prevent recurrence (add alerting rule,
+      increase resources, add redundancy)
+    - For recurring P3s: investigate root cause and fix permanently via PR
+
+    ## Constraints
+    - P1/P2 always escalate to Kyle immediately
+    - P3/P4 handle autonomously
+    - Always post what you did and why
+
+  self-improvement-SKILL.md: |
+    ---
+    name: self-improvement
+    description: >-
+      Learning feedback loop. Tracks PR outcomes, remediation success,
+      and adapts behavior based on Kyle's decisions.
+    user-invocable: true
+    ---
+
+    # Self-Improvement
+
+    You get smarter over time by learning from outcomes.
+
+    ## What to Track
+    - PRs you created: were they merged, rejected, or modified?
+    - Auto-remediations: did they actually fix the issue?
+    - Kyle's corrections in Slack: what did he tell you to stop/start doing?
+
+    ## How to Learn
+    - If a PR is rejected, note why and avoid the pattern
+    - If a PR is modified before merge, study the changes
+    - If a remediation didn't fix the issue, note what actually worked
+    - If Kyle says "don't do X", remember it permanently
+
+    ## Where to Store Learnings
+    Update your workspace memory files:
+    - memory/YYYY-MM-DD.md for daily logs
+    - MEMORY.md for distilled lessons
+
+    ## Weekly Self-Assessment (Sundays)
+    Review the week and update MEMORY.md:
+    - What went well?
+    - What went wrong?
+    - What should you do differently?
+    - Post a brief self-assessment to #ops
+
+  docs-SKILL.md: |
+    ---
+    name: docs
+    description: >-
+      Documentation automation. Keeps the MkDocs site current with
+      infrastructure changes and generates runbooks.
+    user-invocable: true
+    ---
+
+    # Documentation
+
+    The homelab has a MkDocs site. Keep it current.
+
+    ## When to Update Docs
+    - When you create a PR that changes infrastructure, create a follow-up
+      PR updating the relevant docs
+    - When you discover undocumented procedures, document them
+    - When you fix an incident, add a runbook for the failure mode
+
+    ## Docs Location
+    - Source: docs/ directory in the repo
+    - Config: mkdocs.yml at repo root
+    - Sections: Prerequisites, Quick Start, Architecture, Apps, Infrastructure,
+      Runbooks, Reference
+
+    ## What to Document
+    - New apps: add a page under docs/apps/<app>.md
+    - New infrastructure: add under docs/infrastructure/
+    - Runbooks: add under docs/runbooks/ with step-by-step procedures
+    - Architecture changes: update docs/architecture/
+
+    ## Style
+    - Concise, actionable
+    - Include kubectl commands where relevant
+    - Link to related docs pages
+    - Don't duplicate information that's in the manifests themselves

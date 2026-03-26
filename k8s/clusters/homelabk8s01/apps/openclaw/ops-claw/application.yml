@@ -45,6 +45,12 @@ spec:
                     curl -fsSL "https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz" \
                       | tar xz -C /tools kubeconform
                     # git is included in the OpenClaw base image (Pi agent dependency)
+                    # Copy workspace files into the persistent OpenClaw state dir
+                    mkdir -p /state/workspace
+                    cp /boot/BOOT.md /state/workspace/BOOT.md 2>/dev/null || true
+                    for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md; do
+                      cp /workspace-src/$f /state/workspace/$f 2>/dev/null || true
+                    done
                 securityContext:
                   runAsUser: 0
                   runAsNonRoot: false
@@ -148,8 +154,12 @@ spec:
             storageClass: nfs-client
             accessMode: ReadWriteOnce
             size: 10Gi
-            globalMounts:
-              - path: /home/node/.openclaw
+            advancedMounts:
+              main:
+                tooling:
+                  - path: /state
+                main:
+                  - path: /home/node/.openclaw
           config:
             type: configMap
             name: openclaw-ops-config
@@ -170,13 +180,41 @@ spec:
               - path: /skills/maintenance/SKILL.md
                 subPath: maintenance-SKILL.md
                 readOnly: true
+          skills-phase3:
+            type: configMap
+            name: openclaw-ops-skills-phase3
+            globalMounts:
+              - path: /skills/research/SKILL.md
+                subPath: research-SKILL.md
+                readOnly: true
+              - path: /skills/dr/SKILL.md
+                subPath: dr-SKILL.md
+                readOnly: true
+              - path: /skills/incident-manager/SKILL.md
+                subPath: incident-SKILL.md
+                readOnly: true
+              - path: /skills/self-improvement/SKILL.md
+                subPath: self-improvement-SKILL.md
+                readOnly: true
+              - path: /skills/docs/SKILL.md
+                subPath: docs-SKILL.md
+                readOnly: true
+          workspace-src:
+            type: configMap
+            name: openclaw-ops-workspace
+            advancedMounts:
+              main:
+                tooling:
+                  - path: /workspace-src
           boot:
             type: configMap
             name: openclaw-ops-boot
-            globalMounts:
-              - path: /home/node/BOOT.md
-                subPath: BOOT.md
-                readOnly: true
+            advancedMounts:
+              main:
+                tooling:
+                  - path: /boot/BOOT.md
+                    subPath: BOOT.md
+                    readOnly: true
           tools:
             type: emptyDir
             advancedMounts:

@@ -28,6 +28,30 @@ spec:
           main:
             serviceAccount:
               identifier: openclaw-media
+            initContainers:
+              copy-boot:
+                image:
+                  repository: alpine
+                  tag: "3.21"
+                command: ["/bin/sh", "-c"]
+                args:
+                  - |
+                    mkdir -p /state/workspace
+                    cp /boot/BOOT.md /state/workspace/BOOT.md 2>/dev/null || true
+                    for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md; do
+                      cp /workspace-src/$f /state/workspace/$f 2>/dev/null || true
+                    done
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                      - ALL
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 16Mi
+                  limits:
+                    memory: 32Mi
             containers:
               main:
                 image:
@@ -113,8 +137,12 @@ spec:
             storageClass: nfs-client
             accessMode: ReadWriteOnce
             size: 2Gi
-            globalMounts:
-              - path: /home/node/.openclaw
+            advancedMounts:
+              main:
+                copy-boot:
+                  - path: /state
+                main:
+                  - path: /home/node/.openclaw
           config:
             type: configMap
             name: openclaw-media-config
@@ -129,13 +157,22 @@ spec:
               - path: /skills/media/SKILL.md
                 subPath: media-SKILL.md
                 readOnly: true
+          workspace-src:
+            type: configMap
+            name: openclaw-media-workspace
+            advancedMounts:
+              main:
+                copy-boot:
+                  - path: /workspace-src
           boot:
             type: configMap
             name: openclaw-media-boot
-            globalMounts:
-              - path: /home/node/BOOT.md
-                subPath: BOOT.md
-                readOnly: true
+            advancedMounts:
+              main:
+                copy-boot:
+                  - path: /boot/BOOT.md
+                    subPath: BOOT.md
+                    readOnly: true
 
   destination:
     server: https://kubernetes.default.svc
