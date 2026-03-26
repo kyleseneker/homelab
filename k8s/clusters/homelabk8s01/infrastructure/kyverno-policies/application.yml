@@ -22,3 +22,4 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - ServerSideDiff=true
+      - SkipDryRunOnMissingResource=true

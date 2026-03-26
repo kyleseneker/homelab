@@ -62,3 +62,4 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - ServerSideDiff=true
+      - SkipDryRunOnMissingResource=true
