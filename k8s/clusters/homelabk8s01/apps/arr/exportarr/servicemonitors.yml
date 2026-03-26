@@ -13,7 +13,8 @@ spec:
       app.kubernetes.io/name: arr-exportarr
   endpoints:
     - port: metrics
-      interval: 60s
+      interval: 120s
+      scrapeTimeout: 90s
       path: /metrics
 ---
 apiVersion: monitoring.coreos.com/v1
