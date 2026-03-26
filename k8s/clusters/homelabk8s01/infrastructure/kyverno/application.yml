@@ -53,21 +53,7 @@ spec:
               memory: 192Mi
         crds:
           annotations:
-            argocd.argoproj.io/sync-options: Replace=true
-          groups:
-            policies:
-              deletingpolicies: false
-              generatingpolicies: false
-              imagevalidatingpolicies: false
-              mutatingpolicies: false
-              namespaceddeletingpolicies: false
-              namespacedimagevalidatingpolicies: false
-              namespacedmutatingpolicies: false
-              namespacedvalidatingpolicies: false
-              policyexceptions: false
-              validatingpolicies: false
-          migration:
-            enabled: false
+            argocd.argoproj.io/sync-options: ServerSideApply=true
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
@@ -78,5 +64,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - ServerSideDiff=true
       - SkipDryRunOnMissingResource=true
