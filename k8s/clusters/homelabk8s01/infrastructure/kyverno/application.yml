@@ -54,11 +54,20 @@ spec:
         crds:
           annotations:
             argocd.argoproj.io/sync-options: Replace=true
-  ignoreDifferences:
-    - group: apiextensions.k8s.io
-      kind: CustomResourceDefinition
-      jqPathExpressions:
-        - .spec
+          groups:
+            policies:
+              deletingpolicies: false
+              generatingpolicies: false
+              imagevalidatingpolicies: false
+              mutatingpolicies: false
+              namespaceddeletingpolicies: false
+              namespacedimagevalidatingpolicies: false
+              namespacedmutatingpolicies: false
+              namespacedvalidatingpolicies: false
+              policyexceptions: false
+              validatingpolicies: false
+          migration:
+            enabled: false
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
@@ -71,4 +80,3 @@ spec:
       - ServerSideApply=true
       - ServerSideDiff=true
       - SkipDryRunOnMissingResource=true
-      - RespectIgnoreDifferences=true
