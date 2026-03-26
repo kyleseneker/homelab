@@ -13,6 +13,10 @@ spec:
     - vers=3
     - hard
     - intr
+    - rsize=1048576
+    - wsize=1048576
+    - async
+    - noatime
   nfs:
     server: 192.168.1.158
     path: /volume/3378ed38-0d32-49cd-b634-08ab63e14f07/.srv/.unifi-drive/Media/.data
