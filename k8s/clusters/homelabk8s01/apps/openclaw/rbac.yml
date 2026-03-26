@@ -1,8 +1,8 @@
-# Ops Claw — full operational access + read-everything for auditing
+# Claw — full operational access + read-everything for auditing
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: openclaw-ops
+  name: openclaw
 rules:
   # Operational: pod management
   - apiGroups: [""]
@@ -70,43 +70,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: openclaw-ops
+  name: openclaw
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: openclaw-ops
+  name: openclaw
 subjects:
   - kind: ServiceAccount
-    name: openclaw-ops
-    namespace: openclaw
----
-# Media Claw — read-only, scoped to arr namespace only
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: openclaw-media
-rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "events"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["pods/log"]
-    verbs: ["get"]
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list", "watch"]
----
-# RoleBinding scopes Media Claw access to arr namespace only
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: openclaw-media
-  namespace: arr
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: openclaw-media
-subjects:
-  - kind: ServiceAccount
-    name: openclaw-media
+    name: openclaw
     namespace: openclaw

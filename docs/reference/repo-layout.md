@@ -83,8 +83,7 @@ homelab/
 │           ├── homepage/
 │           ├── uptime-kuma/
 │           ├── openclaw/
-│           │   ├── ops-claw/
-│           │   └── media-claw/
+│           │   └── application.yml
 │           └── arr/
 │               ├── namespace.yml
 │               ├── shared-data-pv.yml

@@ -48,17 +48,17 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
-# Ops Claw: Alertmanager webhook ingress
+# Claw: Alertmanager webhook ingress
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: openclaw-ops-alertmanager-ingress
+  name: openclaw-alertmanager-ingress
   namespace: openclaw
 spec:
-  description: "Allow Alertmanager webhooks to Ops Claw"
+  description: "Allow Alertmanager webhooks to Claw"
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: openclaw-ops
+      app.kubernetes.io/name: openclaw
   ingress:
     - fromEndpoints:
         - matchLabels:
@@ -68,17 +68,17 @@ spec:
             - port: "18789"
               protocol: TCP
 ---
-# Media Claw: arr service webhook ingress
+# Claw: arr service webhook ingress
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: openclaw-media-arr-webhook-ingress
+  name: openclaw-arr-webhook-ingress
   namespace: openclaw
 spec:
-  description: "Allow arr service webhooks to Media Claw"
+  description: "Allow arr service webhooks to Claw"
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: openclaw-media
+      app.kubernetes.io/name: openclaw
   ingress:
     - fromEndpoints:
         - matchLabels:
@@ -88,17 +88,17 @@ spec:
             - port: "18789"
               protocol: TCP
 ---
-# Ops Claw egress: K8s API, monitoring, GitHub, Slack, Anthropic
+# Claw egress: K8s API, monitoring, GitHub, Slack, Anthropic
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: openclaw-ops-egress
+  name: openclaw-egress
   namespace: openclaw
 spec:
-  description: "Ops Claw: full operational egress"
+  description: "Claw: full operational egress"
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: openclaw-ops
+      app.kubernetes.io/name: openclaw
   egress:
     - toEndpoints:
         - matchLabels:
@@ -133,51 +133,7 @@ spec:
               protocol: TCP
             - port: "3100"
               protocol: TCP
-    # Media Claw webhook for bot-to-bot communication
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: openclaw
-      toPorts:
-        - ports:
-            - port: "18789"
-              protocol: TCP
----
-# Media Claw egress: arr namespace + Slack/Anthropic APIs only
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: openclaw-media-egress
-  namespace: openclaw
-spec:
-  description: "Media Claw: arr services + external APIs only"
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: openclaw-media
-  egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-            - port: "53"
-              protocol: TCP
-    - toEntities:
-        - world
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
+    # Arr namespace for media pipeline management
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: arr
-    # Ops Claw webhook for bot-to-bot communication
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: openclaw
-      toPorts:
-        - ports:
-            - port: "18789"
-              protocol: TCP

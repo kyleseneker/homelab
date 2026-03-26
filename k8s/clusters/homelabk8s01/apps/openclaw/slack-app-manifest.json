@@ -4,8 +4,8 @@
     "minor_version": 1
   },
   "display_information": {
-    "name": "OpenClaw Ops",
-    "description": "Autonomous homelab operator — SRE, GitOps, security, monitoring",
+    "name": "Claw",
+    "description": "Autonomous homelab platform engineer",
     "background_color": "#1a1a2e"
   },
   "features": {
@@ -15,7 +15,7 @@
       "messages_tab_read_only_enabled": false
     },
     "bot_user": {
-      "display_name": "OpenClaw Ops",
+      "display_name": "Claw",
       "always_online": true
     }
   },

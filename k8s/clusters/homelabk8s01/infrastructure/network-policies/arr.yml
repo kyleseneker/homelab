@@ -50,7 +50,7 @@ metadata:
   name: arr-allow-openclaw
   namespace: arr
 spec:
-  description: "Allow OpenClaw Media Claw to reach arr service APIs"
+  description: "Allow OpenClaw to reach arr service APIs"
   endpointSelector: {}
   ingress:
     - fromEndpoints:

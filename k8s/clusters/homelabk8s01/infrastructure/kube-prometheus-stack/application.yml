@@ -114,7 +114,7 @@ spec:
                   matchers:
                     - severity =~ "warning|critical"
                   continue: true
-                - receiver: openclaw-ops
+                - receiver: openclaw
                   matchers:
                     - severity =~ "warning|critical"
             inhibit_rules:
@@ -141,9 +141,9 @@ spec:
                       {{ if .Labels.node }}*Node:* {{ .Labels.node }}{{ end }}
                       {{ end }}
                     color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical" }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
-              - name: openclaw-ops
+              - name: openclaw
                 webhook_configs:
-                  - url: http://openclaw-ops.openclaw.svc.cluster.local:18789/webhook/alertmanager
+                  - url: http://openclaw.openclaw.svc.cluster.local:18789/webhook/alertmanager
                     send_resolved: true
                     http_config:
                       authorization:

@@ -1,8 +1,8 @@
-# Ops Claw — Claude Sonnet 4.6 for complex reasoning
+# Claw — Claude Sonnet 4.6 for complex reasoning
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openclaw-ops-config
+  name: openclaw-config
   namespace: openclaw
 data:
   config.json5: |
@@ -19,36 +19,7 @@ data:
         bind: "0.0.0.0",
         port: 18789,
         controlUi: {
-          allowedOrigins: ["https://openclaw-ops.homelab.local"],
-        },
-      },
-      skills: {
-        paths: ["/skills"],
-      },
-    }
----
-# Media Claw — Claude Haiku 4.5 for simple API interactions
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: openclaw-media-config
-  namespace: openclaw
-data:
-  config.json5: |
-    {
-      provider: "anthropic",
-      model: "claude-haiku-4-5-20251001",
-      channels: {
-        slack: {
-          enabled: true,
-          mode: "socket",
-        },
-      },
-      gateway: {
-        bind: "0.0.0.0",
-        port: 18789,
-        controlUi: {
-          allowedOrigins: ["https://openclaw-media.homelab.local"],
+          allowedOrigins: ["https://openclaw.homelab.local"],
         },
       },
       skills: {

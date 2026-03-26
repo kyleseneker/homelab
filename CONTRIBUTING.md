@@ -32,6 +32,7 @@ Thanks for your interest in this project! While this is a personal homelab repo,
 - **Kubernetes manifests** use the [bjw-s app-template](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/library/common) Helm chart where possible
 - **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat(sonarr): add readOnlyRootFilesystem`)
 - **Secrets** never go in git — use Vault + External Secrets Operator (see [secrets docs](docs/architecture/secrets.md))
+- **OpenClaw skills must stay in sync with cluster state.** If a PR changes what's deployed or how it's configured, also update the relevant OpenClaw ConfigMaps in `apps/openclaw/`. The Claw's weekly self-audit will catch drift, but it's better to keep them in sync at PR time.
 
 ## Documentation
 

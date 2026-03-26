@@ -106,8 +106,7 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | Prometheus | `prometheus.homelab.local` |
 | Alertmanager | `alertmanager.homelab.local` |
 | Vault | `vault.homelab.local` |
-| OpenClaw Ops | `openclaw-ops.homelab.local` |
-| OpenClaw Media | `openclaw-media.homelab.local` |
+| OpenClaw | `openclaw.homelab.local` |
 
 ## Network Policies
 
