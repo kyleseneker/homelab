@@ -83,8 +83,9 @@ Go to the **Flows** tab and click **Flow+** to create a new flow. Build this pip
 7. **Remove Data Streams** (category: `ffmpegCommand`) -- removes cover art, fonts, attachments
 8. **Custom Arguments** (category: `ffmpegCommand`) -- Output Arguments: `-c copy` (copy all streams, no re-encode)
 9. **Execute** (category: `ffmpegCommand`) -- runs the assembled ffmpeg command
+10. **Replace Original File** (category: `file`) -- moves the processed file from cache back to the source location
 
-This flow remuxes files without re-encoding video or audio. It only strips unwanted streams.
+Wire Check File Medium's **first output** (video) to Begin Command. This flow remuxes files without re-encoding video or audio. It only strips unwanted streams.
 
 ### 3. Add Libraries
 
