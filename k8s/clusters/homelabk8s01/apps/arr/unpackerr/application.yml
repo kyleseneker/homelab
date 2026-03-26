@@ -41,6 +41,7 @@ spec:
                       name: unpackerr-secrets
                 securityContext:
                   allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
                   capabilities:
                     drop:
                       - ALL
@@ -66,6 +67,10 @@ spec:
                 port: 5656
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           data:
             type: persistentVolumeClaim
             existingClaim: arr-data

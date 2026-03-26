@@ -49,6 +49,7 @@
       "datasourceTemplate": "github-releases"
     }
   ],
+  "pinDigests": true,
   "packageRules": [
     {
       "description": "Group app-template chart updates",

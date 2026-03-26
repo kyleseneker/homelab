@@ -35,6 +35,7 @@ spec:
                   NODE_TLS_REJECT_UNAUTHORIZED: "0"
                 securityContext:
                   allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
                   capabilities:
                     drop:
                       - ALL
@@ -84,6 +85,10 @@ spec:
                     port: 3001
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           data:
             type: persistentVolumeClaim
             storageClass: nfs-client

@@ -80,6 +80,7 @@ spec:
                       name: openclaw-ops-secrets
                 securityContext:
                   allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
                   capabilities:
                     drop:
                       - ALL
@@ -145,6 +146,10 @@ spec:
                     port: 18789
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           data:
             type: persistentVolumeClaim
             storageClass: nfs-client

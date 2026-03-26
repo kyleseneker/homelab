@@ -39,6 +39,7 @@ spec:
                       optional: true
                 securityContext:
                   allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
                   capabilities:
                     drop:
                       - ALL
@@ -88,6 +89,10 @@ spec:
                     port: 3000
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           config:
             type: configMap
             name: homepage-config

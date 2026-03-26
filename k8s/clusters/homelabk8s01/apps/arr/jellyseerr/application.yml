@@ -34,6 +34,7 @@ spec:
                       name: arr-env
                 securityContext:
                   allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
                   capabilities:
                     drop:
                       - ALL
@@ -80,6 +81,10 @@ spec:
                     port: 5055
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           config:
             type: persistentVolumeClaim
             existingClaim: arr-jellyseerr-config
