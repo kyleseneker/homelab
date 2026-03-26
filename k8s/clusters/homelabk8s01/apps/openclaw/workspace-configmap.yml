@@ -119,7 +119,7 @@ data:
     Media Claw: ws://openclaw-media.openclaw.svc:18789 ($MEDIA_CLAW_TOKEN)
 
   HEARTBEAT.md: |
-    # Heartbeat — Every 60 Minutes
+    # Heartbeat — Every 15 Minutes
 
     Rotate through these. Use judgment on what matters most right now.
 
@@ -225,7 +225,7 @@ data:
     Ops Claw: ws://openclaw-ops.openclaw.svc:18789 ($OPS_CLAW_TOKEN)
 
   HEARTBEAT.md: |
-    # Heartbeat — Every 60 Minutes
+    # Heartbeat — Every 15 Minutes
 
     1. Are all arr services responding? Hit each health endpoint.
     2. Stuck downloads? Anything stalled >6 hours in qBittorrent.
