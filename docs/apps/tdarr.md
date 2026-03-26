@@ -20,7 +20,7 @@ Tdarr is an automated media transcoding application. It scans media libraries an
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
 | `config` | PVC (`nfs-client`) | 1Gi | `/app/server` | Tdarr server database and configuration |
-| `temp` | emptyDir | 100Gi | `/temp` | Scratch space for active transcodes |
+| `temp` | PVC (`nfs-client`) | 100Gi | `/temp` | Scratch space for active transcodes |
 | `media` | PVC (existing `arr-data`) | -- | `/data/media` | Shared media library (`subPath: media`) |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device for hardware transcoding |
 

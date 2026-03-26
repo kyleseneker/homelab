@@ -118,8 +118,10 @@ spec:
             globalMounts:
               - path: /app/server
           temp:
-            type: emptyDir
-            sizeLimit: 100Gi
+            type: persistentVolumeClaim
+            storageClass: nfs-client
+            accessMode: ReadWriteOnce
+            size: 100Gi
             globalMounts:
               - path: /temp
           media:
