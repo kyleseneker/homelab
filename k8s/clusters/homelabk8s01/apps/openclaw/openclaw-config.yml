@@ -18,6 +18,9 @@ data:
       gateway: {
         bind: "0.0.0.0",
         port: 18789,
+        controlUi: {
+          allowedOrigins: ["https://openclaw-ops.homelab.local"],
+        },
       },
       skills: {
         paths: ["/skills"],
@@ -44,6 +47,9 @@ data:
       gateway: {
         bind: "0.0.0.0",
         port: 18789,
+        controlUi: {
+          allowedOrigins: ["https://openclaw-media.homelab.local"],
+        },
       },
       skills: {
         paths: ["/skills"],
