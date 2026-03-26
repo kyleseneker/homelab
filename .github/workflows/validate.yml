@@ -69,6 +69,7 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           format: table
+          trivyignores: .trivyignore
 
   ansible:
     runs-on: ubuntu-latest

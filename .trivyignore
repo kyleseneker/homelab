@@ -1,0 +1,5 @@
+# Homepage configmap contains widget template keys with "password" in the name, not actual secrets
+KSV-0109
+
+# OpenClaw ops agent intentionally has pods/exec create access for cluster operations
+KSV-0053
