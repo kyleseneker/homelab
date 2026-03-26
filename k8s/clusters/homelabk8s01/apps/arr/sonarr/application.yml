@@ -47,9 +47,9 @@ spec:
                       httpGet:
                         path: /ping
                         port: 8989
-                      periodSeconds: 10
-                      timeoutSeconds: 10
-                      failureThreshold: 5
+                      periodSeconds: 30
+                      timeoutSeconds: 15
+                      failureThreshold: 10
                   readiness:
                     enabled: true
                     custom: true
@@ -57,8 +57,8 @@ spec:
                       httpGet:
                         path: /ping
                         port: 8989
-                      periodSeconds: 10
-                      timeoutSeconds: 10
+                      periodSeconds: 15
+                      timeoutSeconds: 15
                       failureThreshold: 5
                   startup:
                     enabled: true
@@ -68,7 +68,7 @@ spec:
                         path: /ping
                         port: 8989
                       periodSeconds: 5
-                      timeoutSeconds: 10
+                      timeoutSeconds: 15
                       failureThreshold: 30
 
         service:
