@@ -50,8 +50,7 @@ flowchart LR
 |------|------|-----------|
 | Cilium | Container Network Interface (CNI) | `kube-system` |
 | ArgoCD | GitOps continuous delivery | `argocd` |
-| MetalLB | Bare-metal LoadBalancer IP allocation | `metallb-system` |
-| ingress-nginx | Ingress controller (DaemonSet mode) | `ingress-nginx` |
+| Cilium Gateway API | Gateway controller + L2 LoadBalancer IP allocation | `default` |
 | cert-manager | TLS certificate management (self-signed CA) | `cert-manager` |
 | Vault | Centralized secrets backend (KV v2) | `vault` |
 | External Secrets Operator | Syncs Vault secrets into K8s Secrets | `external-secrets` |
@@ -79,6 +78,7 @@ flowchart LR
 | Exportarr | Prometheus exporter for *arr app metrics | `arr` |
 | Homepage | Dashboard | `arr` |
 | Uptime Kuma | Synthetic monitoring and status page | `monitoring` |
+| OpenClaw | AI agents for cluster ops and media management | `openclaw` |
 
 ## Naming Conventions
 

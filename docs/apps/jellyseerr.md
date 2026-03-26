@@ -9,7 +9,7 @@ Jellyseerr is a media request management application. Users browse and request m
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `fallenbagel/jellyseerr:2.7.3` |
 | Port | 5055 |
-| Ingress | `jellyseerr.homelab.local` |
+| HTTPRoute | `jellyseerr.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-jellyseerr` |
 | Sync wave | 1 |

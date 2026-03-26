@@ -37,6 +37,13 @@ spec:
     targetRevision: 4.6.2
     helm:
       valuesObject:
+        defaultPodOptions:
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            runAsNonRoot: true
+
         controllers:
           main:
             containers:
@@ -47,6 +54,12 @@ spec:
                 envFrom:
                   - configMapRef:
                       name: arr-env
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  capabilities:
+                    drop:
+                      - ALL
                 resources:
                   requests:
                     cpu: 100m
@@ -68,25 +81,32 @@ spec:
               http:
                 port: <port>
 
-        ingress:
+        route:
           main:
             enabled: true
-            className: nginx
-            annotations:
-              cert-manager.io/cluster-issuer: homelab-ca-issuer
-            hosts:
-              - host: <app-name>.homelab.local
-                paths:
-                  - path: /
-                    service:
-                      identifier: main
-                      port: http
-            tls:
-              - hosts:
-                  - <app-name>.homelab.local
-                secretName: <app-name>-tls
+            kind: HTTPRoute
+            parentRefs:
+              - group: gateway.networking.k8s.io
+                kind: Gateway
+                name: homelab-gateway
+                namespace: default
+                sectionName: https
+            hostnames:
+              - <app-name>.homelab.local
+            rules:
+              - matches:
+                  - path:
+                      type: PathPrefix
+                      value: /
+                backendRefs:
+                  - name: arr-<app-name>
+                    port: <port>
 
         persistence:
+          tmp:
+            type: emptyDir
+            globalMounts:
+              - path: /tmp
           config:
             type: persistentVolumeClaim
             storageClass: nfs-client
@@ -117,6 +137,9 @@ Replace the `<placeholder>` values with your application's specifics.
 !!! tip
     Use an existing app's `application.yml` as a starting point. The Sonarr manifest at `k8s/clusters/homelabk8s01/apps/arr/sonarr/application.yml` is a good reference for a typical arr-stack application.
 
+!!! note "linuxserver.io images"
+    If the image is from linuxserver.io, you will need to remove `readOnlyRootFilesystem: true` and add `SETUID`/`SETGID` capabilities for the s6-overlay init system. See the Sonarr or Radarr manifests for examples.
+
 ### Key Fields
 
 | Field | Description |
@@ -125,7 +148,7 @@ Replace the `<placeholder>` values with your application's specifics.
 | `metadata.annotations.argocd.argoproj.io/sync-wave` | Deploy order -- use `"1"` for standard apps, `"2"` for dashboards like Homepage |
 | `spec.source.targetRevision` | Helm chart version -- keep consistent across apps unless testing a new version |
 | `spec.destination.namespace` | Target namespace (`arr` for media apps, or create a new one) |
-| `helm.valuesObject` | Inline Helm values -- configure containers, service, ingress, and persistence here |
+| `helm.valuesObject` | Inline Helm values -- configure containers, service, route, and persistence here |
 
 ## Step 3: Add Secrets (If Needed)
 
@@ -163,10 +186,10 @@ If the application requires secrets (API keys, credentials, etc.):
 
 ## Step 4: Add a DNS Entry
 
-Add a DNS record for the new hostname (`<app-name>.homelab.local`) pointing to the ingress LoadBalancer IP address. The MetalLB-assigned IP can be found with:
+Add a DNS record for the new hostname (`<app-name>.homelab.local`) pointing to the Cilium L2 VIP assigned to the `homelab-gateway`. The gateway IP can be found with:
 
 ```bash
-kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+kubectl get gateway homelab-gateway -n default -o jsonpath='{.status.addresses[0].value}'
 ```
 
 ## Step 5: Commit and Push

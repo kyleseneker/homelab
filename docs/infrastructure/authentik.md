@@ -18,13 +18,13 @@ Authentik uses two authentication mechanisms depending on the application:
 
 ### Forward Auth (Domain-Level)
 
-Apps that lack native SSO support are protected via nginx-ingress `auth_request` subrequests. When a user visits a protected app, nginx checks the session with Authentik's embedded outpost before allowing access.
+Apps that lack native SSO support are protected via Authentik's embedded outpost using forward-auth. When a user visits a protected app, the gateway checks the session with Authentik before allowing access.
 
 ```
-User -> nginx-ingress -> auth_request -> Authentik outpost
-                      |                        |
-                      |<-- 200 (authenticated) -|
-                      |-> proxy to backend app
+User -> Cilium Gateway -> forward-auth -> Authentik outpost
+                       |                        |
+                       |<-- 200 (authenticated) -|
+                       |-> proxy to backend app
 ```
 
 **Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage
@@ -44,12 +44,9 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik as a
 
 - PostgreSQL persistence via `nfs-client` (5Gi)
 - Redis in standalone mode with `nfs-client` persistence (1Gi)
-- Ingress at `auth.homelab.local` with TLS via `homelab-ca-issuer`
+- HTTPRoute at `auth.homelab.local` via the `homelab-gateway` with TLS via `homelab-ca-issuer`
 - Outpost cookie domain: `.homelab.local` (enables cross-subdomain SSO sessions)
-- Forward-auth `auth-url` uses the embedded outpost's internal service URL (`http://ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000/...`)
-- `auth-signin` uses external URL (`https://auth.homelab.local/...`) for browser redirects
-- `auth-snippet` sets `X-Forwarded-Host` so the outpost knows the original domain
-- ingress-nginx requires `allowSnippetAnnotations: true` and `annotations-risk-level: Critical`
+- Forward-auth uses the embedded outpost's internal service URL (`http://ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000/...`)
 
 ## Secrets
 

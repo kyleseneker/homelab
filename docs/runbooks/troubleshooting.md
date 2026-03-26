@@ -152,21 +152,21 @@ The application is running but not reachable via its hostname.
 **Diagnosis:**
 
 ```bash
-# Check ingress resources
-kubectl get ingress -n <namespace>
+# Check HTTPRoute resources
+kubectl get httproute -n <namespace>
 
-# Check ingress controller logs
-kubectl logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx
+# Check Gateway status
+kubectl get gateway homelab-gateway -n default
 
-# Verify DNS resolves to the MetalLB IP
+# Verify DNS resolves to the Cilium L2 VIP
 dig <app-name>.homelab.local
 ```
 
 **Common causes:**
 
-- DNS does not point to the MetalLB LoadBalancer IP
-- Ingress class name is incorrect (should be `nginx`)
-- The backend service or port is misconfigured
+- DNS does not point to the Cilium L2 LoadBalancer IP
+- HTTPRoute parentRef does not reference the correct Gateway
+- The backend service name or port is misconfigured
 
 ### VPN Not Connecting
 

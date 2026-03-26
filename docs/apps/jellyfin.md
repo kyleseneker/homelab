@@ -10,7 +10,7 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 | Image | `lscr.io/linuxserver/jellyfin:10.11.6` |
 | Port | 8096 |
 | Service type | LoadBalancer |
-| Ingress | `jellyfin.homelab.local` |
+| HTTPRoute | `jellyfin.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-jellyfin` |
 | Sync wave | 1 |
@@ -39,7 +39,7 @@ GPU limit: `gpu.intel.com/i915: 1`
 ## Key Configuration
 
 - Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
-- The service is type `LoadBalancer`, giving Jellyfin a dedicated IP via MetalLB in addition to the nginx ingress.
+- The service is type `LoadBalancer`, giving Jellyfin a dedicated IP via Cilium L2 in addition to the Gateway API HTTPRoute.
 - Startup probe allows up to 30 failures at 10-second intervals (5 minutes) to account for library scanning on first boot.
 
 ## Post-Deploy Setup

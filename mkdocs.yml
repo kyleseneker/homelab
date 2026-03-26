@@ -76,11 +76,11 @@ nav:
       - FlareSolverr: apps/flaresolverr.md
       - Homepage: apps/homepage.md
       - Uptime Kuma: apps/uptime-kuma.md
+      - OpenClaw: apps/openclaw.md
   - Infrastructure:
       - infrastructure/index.md
+      - Cilium Gateway: infrastructure/cilium-gateway.md
       - cert-manager: infrastructure/cert-manager.md
-      - ingress-nginx: infrastructure/ingress-nginx.md
-      - MetalLB: infrastructure/metallb.md
       - Vault: infrastructure/vault.md
       - External Secrets: infrastructure/external-secrets.md
       - NFS Provisioner: infrastructure/nfs-provisioner.md
@@ -108,6 +108,14 @@ nav:
       - Backup & Restore: runbooks/backup-and-restore.md
       - Adding App to SSO: runbooks/adding-app-to-sso.md
       - Authentik Emergency Bypass: runbooks/authentik-emergency-bypass.md
+  - Decisions:
+      - Cilium as CNI: decisions/001-cilium-cni.md
+      - Vault + ESO: decisions/002-vault-eso-secrets.md
+      - ArgoCD App-of-Apps: decisions/003-argocd-app-of-apps.md
+      - bjw-s App Template: decisions/004-bjw-s-app-template.md
+      - NFS Storage: decisions/005-nfs-storage.md
+      - Velero + MinIO: decisions/006-velero-minio-backups.md
+      - Authentik SSO: decisions/007-authentik-sso.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md

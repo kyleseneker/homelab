@@ -1,6 +1,6 @@
 # Applications
 
-The homelab runs an automated media management stack commonly referred to as the *arr stack. All applications are deployed into the `arr` namespace on Kubernetes via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2). Ingress is provided by nginx with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
+The homelab runs an automated media management stack commonly referred to as the *arr stack. All applications are deployed into the `arr` namespace on Kubernetes via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2). Routing is provided by Cilium Gateway API with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
 
 ## Shared Configuration
 
@@ -40,7 +40,7 @@ flowchart LR
 
 ## Application Summary
 
-| Application | Ingress URL | Description | Image |
+| Application | URL | Description | Image |
 |-------------|-------------|-------------|-------|
 | [Jellyfin](jellyfin.md) | `jellyfin.homelab.local` | Media server for movies, TV, and music | `lscr.io/linuxserver/jellyfin:10.11.6` |
 | [Sonarr](sonarr.md) | `sonarr.homelab.local` | TV series management and automation | `lscr.io/linuxserver/sonarr:4.0.17` |

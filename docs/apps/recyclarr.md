@@ -10,7 +10,7 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 | Image | `ghcr.io/recyclarr/recyclarr:8.5.1` |
 | Controller type | CronJob |
 | Schedule | `0 */6 * * *` (every 6 hours) |
-| Ingress | -- (headless CronJob, no web UI) |
+| HTTPRoute | -- (headless CronJob, no web UI) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-recyclarr` |
 | Sync wave | 1 |

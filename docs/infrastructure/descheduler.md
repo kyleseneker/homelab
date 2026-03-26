@@ -29,7 +29,7 @@ The Kubernetes Descheduler runs as a CronJob and evicts pods that violate schedu
 
 ## Interaction with PDBs
 
-The Descheduler respects PodDisruptionBudgets. It will not evict pods if doing so would violate a PDB constraint. The PDBs defined for ingress-nginx, Loki, and Authentik will prevent those pods from being evicted during rebalancing.
+The Descheduler respects PodDisruptionBudgets. It will not evict pods if doing so would violate a PDB constraint. The PDBs defined for Loki, Vault, and other critical services will prevent those pods from being evicted during rebalancing.
 
 ## Upstream Documentation
 

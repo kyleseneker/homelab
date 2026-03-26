@@ -9,6 +9,7 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-vpn-downloads` |
+| HTTPRoute | `qbit.homelab.local` |
 | Sync wave | 1 |
 
 ### Containers
@@ -17,12 +18,6 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 |-----------|-------|------|------|
 | `gluetun` | `qmcgaw/gluetun:v3.41.1` | -- | VPN sidecar (PIA) |
 | `qbittorrent` | `lscr.io/linuxserver/qbittorrent:5.1.4` | 8080 | Torrent client |
-
-### Ingress
-
-| Host | Port | Service |
-|------|------|---------|
-| `qbit.homelab.local` | 8080 | qBittorrent web UI |
 
 ### Storage
 
@@ -55,7 +50,7 @@ flowchart TB
 
     vpn["PIA VPN\n(CA Montreal)"] <-->|"WireGuard/OpenVPN"| gluetun
     qbit -->|"traffic via tunnel"| gluetun
-    ingress["nginx ingress"] -->|"qbit.homelab.local"| netns
+    gateway["Cilium Gateway"] -->|"qbit.homelab.local"| netns
 ```
 
 ## Key Configuration

@@ -58,7 +58,7 @@ Defined in `kube-prometheus-stack/homelab-rules.yml` as a standalone `Prometheus
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
 | `AuthentikDown` | critical | 5m | Authentik server deployment has 0 replicas |
-| `IngressNginxDown` | critical | 5m | No ingress-nginx DaemonSet pods available |
+| `LokiDown` | critical | 5m | Loki deployment has 0 available replicas |
 | `NFSStorageLow` | warning | 15m | Any PVC usage above 85% |
 | `CertificateExpiringSoon` | warning | 1h | cert-manager certificate expires within 14 days |
 

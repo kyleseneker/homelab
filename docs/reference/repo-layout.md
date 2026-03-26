@@ -52,11 +52,11 @@ homelab/
 │   │   ├── argocd/                   # ArgoCD installation
 │   │   │   ├── kustomization.yml     # Kustomize overlay
 │   │   │   ├── namespace.yml         # argocd namespace
-│   │   │   ├── ingress.yml           # ArgoCD ingress
+│   │   │   ├── ingress.yml           # ArgoCD HTTPRoute
 │   │   │   └── custom-ca.yml         # Homelab CA trust for OIDC
 │   │   └── root-app.yml              # Root app-of-apps
 │   ├── components/
-│   │   └── metallb-config/           # MetalLB IP pool + L2 ad
+│   │   └── gateway-api/              # Gateway API CRDs
 │   └── clusters/<cluster>/
 │       ├── config/
 │       │   └── env.yml               # Shared env ConfigMap
@@ -64,13 +64,12 @@ homelab/
 │       │   ├── vault/
 │       │   ├── external-secrets/
 │       │   ├── cert-manager/
-│       │   ├── metallb/
-│       │   ├── metallb-config/
+│       │   ├── gateway/              # Gateway + L2 pool + redirect
+│       │   ├── gateway-api/          # Gateway API CRD installation
 │       │   ├── metrics-server/
 │       │   ├── nfs-provisioner/
 │       │   ├── intel-gpu-operator/
 │       │   ├── intel-gpu-plugin/
-│       │   ├── ingress-nginx/
 │       │   ├── kube-prometheus-stack/
 │       │   ├── loki/
 │       │   ├── alloy/
@@ -83,6 +82,9 @@ homelab/
 │       └── apps/                     # User-facing applications
 │           ├── homepage/
 │           ├── uptime-kuma/
+│           ├── openclaw/
+│           │   ├── ops-claw/
+│           │   └── media-claw/
 │           └── arr/
 │               ├── namespace.yml
 │               ├── shared-data-pv.yml
@@ -95,9 +97,13 @@ homelab/
 │               ├── downloads/
 │               ├── recyclarr/
 │               ├── tdarr/
+│               ├── unpackerr/
+│               ├── flaresolverr/
 │               └── exportarr/
 ├── .editorconfig                     # Editor settings
 ├── .gitignore                        # Git ignore rules
+├── .trivyignore                      # Trivy false positive suppressions
+├── renovate.json                     # Renovate dependency update config
 └── README.md                         # Project overview
 ```
 
@@ -105,6 +111,6 @@ homelab/
 
 **Directory recursion over ApplicationSets.** The root ArgoCD Application uses directory recursion to discover child Applications rather than ApplicationSets. Each application is defined as its own `application.yml` with explicit sync wave annotations, giving full per-app control over Helm values, namespace targeting, and deployment ordering. ApplicationSets trade that granularity for templating convenience, which is unnecessary at homelab scale where each application has distinct configuration.
 
-**Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, MetalLB, ingress-nginx, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
+**Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, Cilium Gateway, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
 
-**Sync wave ordering.** ArgoCD sync wave annotations control the deployment sequence within each layer. Infrastructure components are assigned ascending wave numbers so that foundational services (Vault, External Secrets, cert-manager) are ready before components that depend on them (ingress-nginx, monitoring). Applications deploy at higher wave numbers, guaranteeing the full platform is in place first. This eliminates race conditions that would otherwise require manual intervention or retry loops.
+**Sync wave ordering.** ArgoCD sync wave annotations control the deployment sequence within each layer. Infrastructure components are assigned ascending wave numbers so that foundational services (Vault, External Secrets, cert-manager) are ready before components that depend on them (monitoring, backups). Applications deploy at higher wave numbers, guaranteeing the full platform is in place first. This eliminates race conditions that would otherwise require manual intervention or retry loops.

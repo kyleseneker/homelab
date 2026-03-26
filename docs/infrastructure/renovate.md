@@ -6,7 +6,7 @@ Renovate automatically tracks dependency versions across the homelab repo and op
 
 | Category | Manager | Count | Examples |
 |----------|---------|-------|---------|
-| Helm charts | `argocd` (built-in) | 15 | kube-prometheus-stack, ingress-nginx, app-template |
+| Helm charts | `argocd` (built-in) | 15 | kube-prometheus-stack, app-template, loki, alloy |
 | Container images | `regex` (custom) | 11 | linuxserver/sonarr, gethomepage/homepage, gluetun |
 | ArgoCD install URL | `regex` (custom) | 1 | argoproj/argo-cd v3.3.4 in kustomization.yml |
 | GitHub Actions | `github-actions` (built-in) | 4 | actions/checkout, actions/setup-python |
@@ -49,7 +49,7 @@ Everything else gets individual PRs.
 1. Renovate PRs include a changelog summary and compatibility notes
 2. Check the ArgoCD diff after merging -- ArgoCD will show the pending sync
 3. For Helm chart major version bumps, review the chart's migration guide before merging
-4. For infrastructure charts (ingress-nginx, cert-manager, kube-prometheus-stack), test in a maintenance window
+4. For infrastructure charts (cert-manager, kube-prometheus-stack, loki), test in a maintenance window
 
 ## Adding New Dependencies
 

@@ -60,7 +60,7 @@ flowchart LR
 | VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
 | GitOps | ArgoCD, External Secrets Operator, Renovate |
-| Networking | MetalLB, ingress-nginx, cert-manager |
+| Networking | Cilium Gateway API, Cilium L2, cert-manager |
 | Storage | NFS dynamic provisioning |
 | Auth | Authentik SSO (forward-auth + OIDC) |
 | Monitoring | Prometheus, Grafana, Loki, Alertmanager, Exportarr, Uptime Kuma |

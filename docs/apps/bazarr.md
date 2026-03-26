@@ -9,7 +9,7 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `lscr.io/linuxserver/bazarr:1.5.6` |
 | Port | 6767 |
-| Ingress | `bazarr.homelab.local` |
+| HTTPRoute | `bazarr.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-bazarr` |
 | Sync wave | 1 |

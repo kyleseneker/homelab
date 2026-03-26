@@ -118,7 +118,7 @@ mkdir -p k8s/clusters/<cluster>/{config,infrastructure,apps}
 ```
 
 - `config/` -- Shared resources (namespaces, ConfigMaps) deployed at early sync waves
-- `infrastructure/` -- Infrastructure components (MetalLB, cert-manager, ingress-nginx, etc.)
+- `infrastructure/` -- Infrastructure components (Cilium Gateway, cert-manager, Vault, etc.)
 - `apps/` -- Application workloads
 
 !!! tip

@@ -2,7 +2,7 @@
 
 ## External URLs (Browser Access)
 
-These are the ingress hostnames exposed by ingress-nginx. All require DNS entries pointing to the MetalLB LoadBalancer IP and trusting the homelab CA certificate.
+These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). All require DNS entries pointing to the Cilium L2 LoadBalancer IP and trusting the homelab CA certificate.
 
 | Service | URL |
 |---------|-----|
@@ -22,6 +22,8 @@ These are the ingress hostnames exposed by ingress-nginx. All require DNS entrie
 | Uptime Kuma | `https://status.homelab.local` |
 | Authentik | `https://auth.homelab.local` |
 | Vault | `https://vault.homelab.local` |
+| OpenClaw Ops | `https://openclaw-ops.homelab.local` |
+| OpenClaw Media | `https://openclaw-media.homelab.local` |
 
 ## Internal URLs (Kubernetes Service DNS)
 

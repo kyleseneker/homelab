@@ -9,7 +9,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/unpackerr/unpackerr:v0.15.2` |
 | Port | 5656 (health/metrics only) |
-| Ingress | -- (internal only) |
+| HTTPRoute | -- (internal only) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-unpackerr` |
 | Sync wave | 1 |

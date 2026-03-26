@@ -9,7 +9,7 @@ Homepage is a dashboard that aggregates all homelab services into a single page 
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/gethomepage/homepage:v1.11.0` |
 | Port | 3000 |
-| Ingress | `home.homelab.local` |
+| HTTPRoute | `home.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `homepage` |
 | Sync wave | 2 |
