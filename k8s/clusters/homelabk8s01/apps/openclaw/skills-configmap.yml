@@ -34,7 +34,7 @@ data:
 
     All persistent changes go through git:
     - Clone to `/tmp/homelab-ops`, branch `openclaw/<description>`
-    - Validate: yamllint + kubeconform + dry-run for critical changes
+    - Validate: kubeconform -strict + dry-run for critical changes
     - One logical change per PR with what/why/impact/rollback
 
     ### Patterns to Follow

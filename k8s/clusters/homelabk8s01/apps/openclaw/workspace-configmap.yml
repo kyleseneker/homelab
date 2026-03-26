@@ -91,7 +91,7 @@ data:
     - Branch: main (protected — never push directly)
     - PRs: branch from main as `openclaw/<description>`
     - Commits: conventional, single line, no body, no Co-Authored-By
-    - Validate: `yamllint -c .yamllint.yml` + `kubeconform -kubernetes-version 1.31.4`
+    - Validate: `kubeconform -strict -kubernetes-version 1.31.4`
 
     ## Monitoring
     - Prometheus: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
