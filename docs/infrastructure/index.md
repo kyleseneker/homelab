@@ -13,6 +13,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Metrics Server | kube-system | -2 | metrics-server | 3.13.0 |
 | NFS Provisioner | nfs-provisioner | -2 | nfs-subdir-external-provisioner | 4.0.18 |
 | MinIO | backups | -2 | minio | 5.4.0 |
+| Kyverno | kyverno | -2 | kyverno | 3.7.1 |
 | Intel GPU Operator | intel-gpu-operator | -2 | intel-device-plugins-operator | 0.35.0 |
 | Gateway + Cilium L2 | default | -- | (plain manifests) | - |
 | kube-prometheus-stack | monitoring | -1 | kube-prometheus-stack | 82.13.6 |
@@ -23,6 +24,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Descheduler | kube-system | -1 | descheduler | 0.35.1 |
 | Alloy | monitoring | 0 | alloy | 1.6.2 |
 | Authentik | auth | 0 | authentik | 2026.2.1 |
+| Kyverno Policies | -- | -1 | (plain manifests) | - |
 | Network Policies | (multiple) | -- | (plain manifests) | - |
 
 ## Sync Wave Ordering
@@ -30,7 +32,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 ArgoCD sync waves control the order in which components are deployed. Components with lower (more negative) sync wave values are deployed first, ensuring that dependencies are fully available before the services that rely on them.
 
 - **Wave -3**: Core primitives that almost everything else depends on -- secrets backend (Vault), secret syncing (ESO), certificate issuance, and Gateway API CRDs.
-- **Wave -2**: Storage, metrics, GPU operators, and MinIO. These require the wave -3 foundations (e.g., CRDs must exist before Gateway resources can be applied).
+- **Wave -2**: Storage, metrics, GPU operators, MinIO, and Kyverno. These require the wave -3 foundations (e.g., CRDs must exist before Gateway resources can be applied). Kyverno is deployed here so its admission webhooks are ready before higher-wave workloads arrive.
 - **Wave -1**: Higher-level services that consume storage, certificates, and load balancers -- the full monitoring stack, backup infrastructure, and GPU device plugins.
 - **Wave 0**: Components that depend on wave -1 services. For example, Alloy ships logs to Loki, so it must not start until Loki is ready.
 

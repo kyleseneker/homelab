@@ -9,6 +9,7 @@ CiliumNetworkPolicies provide namespace-level ingress isolation. Each applicatio
 | `arr` | 4 | gateway (ingress), arr (internal), monitoring, openclaw |
 | `auth` | 4 | gateway (ingress), auth (internal), monitoring, cluster-wide |
 | `monitoring` | 4 | gateway (ingress), monitoring (internal), cluster-wide (Prometheus) |
+| `kyverno` | 3 | cluster, kube-apiserver, host |
 | `backups` | 3 | backups (internal), monitoring |
 
 ## Design
@@ -24,7 +25,7 @@ The `monitoring` namespace has an additional rule allowing cluster-wide ingress 
 
 The `backups` namespace does not need gateway access because MinIO is accessed only via internal service URLs.
 
-The `openclaw` namespace has granular egress rules: the ops agent gets egress to the K8s API, GitHub, Slack, Anthropic, and media claw; the media agent gets egress to the arr namespace and external HTTPS only.
+The `openclaw` namespace has granular egress rules: the agent gets egress to the K8s API, GitHub, Slack, Anthropic, monitoring stack, and arr namespace.
 
 ### What Is Not Restricted
 

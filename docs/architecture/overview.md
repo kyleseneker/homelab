@@ -65,6 +65,7 @@ flowchart LR
 | Alloy | DaemonSet log collector | `monitoring` |
 | Authentik | SSO provider (forward-auth + OIDC) | `auth` |
 | Reloader | Automatic pod restarts on ConfigMap/Secret changes | `kube-system` |
+| Kyverno | Kubernetes policy engine (admission control) | `kyverno` |
 | Descheduler | Pod rebalancing across nodes (CronJob) | `kube-system` |
 | Jellyfin | Media server | `arr` |
 | Sonarr | TV series management | `arr` |

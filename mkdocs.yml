@@ -94,6 +94,7 @@ nav:
       - Authentik: infrastructure/authentik.md
       - Reloader: infrastructure/reloader.md
       - Descheduler: infrastructure/descheduler.md
+      - Kyverno: infrastructure/kyverno.md
       - Network Policies: infrastructure/network-policies.md
       - Alerting: infrastructure/alerting.md
       - Renovate: infrastructure/renovate.md
