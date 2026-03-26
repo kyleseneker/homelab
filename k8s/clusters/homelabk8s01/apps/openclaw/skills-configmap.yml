@@ -131,10 +131,9 @@ data:
 
     When you need media stack help or want to delegate arr-related work:
     ```sh
-    curl -s -X POST http://openclaw-media.openclaw.svc:18789/hooks/agent \
-      -H "Authorization: Bearer $MEDIA_CLAW_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"message": "your request here"}'
+    openclaw agent --message "your request here" \
+      --url ws://openclaw-media.openclaw.svc:18789 \
+      --token "$MEDIA_CLAW_TOKEN"
     ```
 ---
 # Media Claw skills — arr stack management
@@ -199,12 +198,11 @@ data:
     ## Contacting Ops Claw
 
     When you need infrastructure help (pods down, network issues, etc.),
-    POST to the Ops Claw webhook directly:
+    call the Ops Claw gateway directly:
     ```sh
-    curl -s -X POST http://openclaw-ops.openclaw.svc:18789/hooks/agent \
-      -H "Authorization: Bearer $OPS_CLAW_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"message": "your request here"}'
+    openclaw agent --message "your request here" \
+      --url ws://openclaw-ops.openclaw.svc:18789 \
+      --token "$OPS_CLAW_TOKEN"
     ```
 
     ## Reporting

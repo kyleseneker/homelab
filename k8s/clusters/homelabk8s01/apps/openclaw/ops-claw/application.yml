@@ -70,6 +70,7 @@ spec:
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
+                  OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: "1"
                   PATH: /usr/local/bin/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
                 envFrom:
                   - secretRef:

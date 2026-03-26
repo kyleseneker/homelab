@@ -36,6 +36,7 @@ spec:
                 env:
                   TZ: America/Chicago
                   OPENCLAW_CONFIG: /config/config.json5
+                  OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: "1"
                 envFrom:
                   - secretRef:
                       name: openclaw-media-secrets
