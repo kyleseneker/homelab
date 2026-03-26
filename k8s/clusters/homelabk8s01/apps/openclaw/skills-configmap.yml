@@ -131,10 +131,13 @@ data:
 
     When you need media stack help or want to delegate arr-related work:
     ```sh
-    openclaw agent --message "your request here" \
+    OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1 openclaw gateway call agent \
       --url ws://openclaw-media.openclaw.svc:18789 \
-      --token "$MEDIA_CLAW_TOKEN"
+      --token "$MEDIA_CLAW_TOKEN" \
+      --params '{"message":"your request here","idempotencyKey":"ops-REQ_ID","agentId":"main"}' \
+      --timeout 120000 --expect-final
     ```
+    Replace REQ_ID with a unique value each time (e.g., timestamp).
   security-SKILL.md: |
     ---
     name: security
@@ -282,12 +285,15 @@ data:
     ## Contacting Ops Claw
 
     When you need infrastructure help (pods down, network issues, etc.),
-    call the Ops Claw gateway directly:
+    call the Ops Claw gateway directly via WebSocket:
     ```sh
-    openclaw agent --message "your request here" \
+    OPENCLAW_ALLOW_INSECURE_PRIVATE_WS=1 openclaw gateway call agent \
       --url ws://openclaw-ops.openclaw.svc:18789 \
-      --token "$OPS_CLAW_TOKEN"
+      --token "$OPS_CLAW_TOKEN" \
+      --params '{"message":"your request here","idempotencyKey":"media-REQ_ID","agentId":"main"}' \
+      --timeout 120000 --expect-final
     ```
+    Replace REQ_ID with a unique value each time (e.g., timestamp).
 
     ## Reporting
 
