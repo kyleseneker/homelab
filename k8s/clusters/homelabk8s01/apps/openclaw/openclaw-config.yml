@@ -19,21 +19,6 @@ data:
         bind: "0.0.0.0",
         port: 18789,
       },
-      hooks: {
-        enabled: true,
-        token: "${OPENCLAW_HOOKS_TOKEN}",
-        path: "/webhook",
-        defaultSessionKey: "hook:ingress",
-        allowedAgentIds: ["main"],
-        mappings: [
-          {
-            match: { path: "alertmanager" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-          },
-        ],
-      },
       skills: {
         paths: ["/skills"],
       },
@@ -59,27 +44,6 @@ data:
       gateway: {
         bind: "0.0.0.0",
         port: 18789,
-      },
-      hooks: {
-        enabled: true,
-        token: "${OPENCLAW_HOOKS_TOKEN}",
-        path: "/webhook",
-        defaultSessionKey: "hook:ingress",
-        allowedAgentIds: ["main"],
-        mappings: [
-          {
-            match: { path: "sonarr" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-          },
-          {
-            match: { path: "radarr" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-          },
-        ],
       },
       skills: {
         paths: ["/skills"],

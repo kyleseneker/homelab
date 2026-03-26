@@ -100,15 +100,35 @@ data:
     5. Summary to #media
     6. Verify your cron jobs exist (create if missing)
 
-    ## Webhook Registration
+    ## Webhook Setup
 
-    Register webhooks so Sonarr and Radarr push events to you in
-    real-time. This is idempotent — check first, create only if missing.
+    You receive Sonarr/Radarr events via HTTP webhooks on your gateway.
+    Two pieces must be in place:
 
-    **For each service (Sonarr, Radarr):**
+    ### 1. Gateway hooks config (persisted on PVC)
 
+    Verify hooks are enabled: `openclaw config get hooks.enabled`
+
+    If not configured, set up:
+    ```sh
+    openclaw config set hooks.enabled true
+    openclaw config set hooks.token "$OPENCLAW_HOOKS_TOKEN"
+    openclaw config set hooks.path "/webhook"
+    openclaw config set hooks.defaultSessionKey "hook:ingress"
+    openclaw config set hooks.allowedAgentIds '["main"]'
+    openclaw config set hooks.mappings '[{"match":{"path":"sonarr"},"action":"agent","agentId":"main","deliver":true,"transform":{"module":"arr-webhook.js"}},{"match":{"path":"radarr"},"action":"agent","agentId":"main","deliver":true,"transform":{"module":"arr-webhook.js"}}]'
+    openclaw config set hooks.transformsDir "$HOME/.openclaw/hooks/transforms"
+    ```
+
+    The transform at `~/.openclaw/hooks/transforms/arr-webhook.js`
+    converts raw arr payloads into agent messages. If it's missing,
+    recreate it (ESM default export returning `{message: string}`).
+
+    ### 2. Arr notification registration (idempotent)
+
+    For each service (Sonarr, Radarr):
     1. `GET /api/v3/notification` — list existing notifications
-    2. Look for one with URL matching your webhook endpoint
+    2. Look for one named "Media Claw"
     3. If missing, `POST /api/v3/notification` with:
 
     ```json
@@ -119,7 +139,7 @@ data:
       "fields": [
         {"name": "url", "value": "http://openclaw-media.openclaw.svc.cluster.local:18789/webhook/<service>"},
         {"name": "method", "value": 1},
-        {"name": "headers", "value": [{"key": "Authorization", "value": "Bearer $OPENCLAW_HOOKS_TOKEN"}]}
+        {"name": "headers", "value": [{"key": "Authorization", "value": "Bearer <token>"}]}
       ],
       "onGrab": true,
       "onDownload": true,
@@ -133,9 +153,9 @@ data:
     }
     ```
 
-    Replace `<service>` with `sonarr` or `radarr`. Use the appropriate
-    API key header for each service (see TOOLS.md). The `$OPENCLAW_HOOKS_TOKEN`
-    env var is available from your secrets — use its value in the header.
+    Replace `<service>` with `sonarr` or `radarr`. Replace `<token>`
+    with the value of `$OPENCLAW_HOOKS_TOKEN`. Use the appropriate
+    API key header for each service (see TOOLS.md).
 
     If registration fails, log the error and continue — the heartbeat
     will cover monitoring until webhooks are fixed.
