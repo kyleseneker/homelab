@@ -1,0 +1,33 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: {{ k8s_control_plane_version }}
+networking:
+  podSubnet: {{ k8s_control_plane_pod_network_cidr }}
+  serviceSubnet: {{ k8s_control_plane_service_cidr }}
+apiServer:
+  extraArgs:
+    - name: advertise-address
+      value: "{{ ansible_host }}"
+    - name: audit-policy-file
+      value: /etc/kubernetes/audit/audit-policy.yml
+    - name: audit-log-path
+      value: /var/log/kubernetes/audit/audit.log
+    - name: audit-log-maxage
+      value: "7"
+    - name: audit-log-maxbackup
+      value: "3"
+    - name: audit-log-maxsize
+      value: "100"
+  extraVolumes:
+    - name: audit-policy
+      hostPath: /etc/kubernetes/audit
+      mountPath: /etc/kubernetes/audit
+      readOnly: true
+    - name: audit-log
+      hostPath: /var/log/kubernetes/audit
+      mountPath: /var/log/kubernetes/audit
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+skipPhases:
+  - addon/kube-proxy

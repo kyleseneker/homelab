@@ -1,0 +1,97 @@
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # Don't log requests to the following API endpoints
+  - level: None
+    nonResourceURLs:
+      - "/healthz*"
+      - "/version"
+      - "/readyz"
+      - "/livez"
+
+  # Don't log watch requests (too noisy)
+  - level: None
+    verbs:
+      - watch
+      - list
+
+  # Don't log kube-proxy, kubelet, or system:nodes token reviews
+  - level: None
+    users:
+      - system:kube-proxy
+      - system:apiserver
+    verbs:
+      - get
+
+  # Don't log kubelet and node heartbeat/status updates
+  - level: None
+    resources:
+      - group: ""
+        resources:
+          - endpoints
+          - nodes/status
+      - group: coordination.k8s.io
+        resources:
+          - leases
+
+  # Log secret access at RequestResponse level (who touched secrets and when)
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources:
+          - secrets
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+
+  # Log RBAC changes at RequestResponse level
+  - level: RequestResponse
+    resources:
+      - group: rbac.authorization.k8s.io
+        resources:
+          - clusterroles
+          - clusterrolebindings
+          - roles
+          - rolebindings
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+
+  # Log authentication token and certificate requests
+  - level: RequestResponse
+    resources:
+      - group: authentication.k8s.io
+        resources:
+          - tokenreviews
+      - group: certificates.k8s.io
+        resources:
+          - certificatesigningrequests
+
+  # Log changes to namespaces, nodes, and persistent volumes
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources:
+          - namespaces
+          - nodes
+          - persistentvolumes
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+
+  # Log all other mutating actions at Metadata level
+  - level: Metadata
+    verbs:
+      - create
+      - delete
+      - patch
+      - update
+
+  # Log everything else at Metadata level
+  - level: Metadata

@@ -58,6 +58,41 @@ spec:
                 }
               }
 
+              local.file_match "audit_logs" {
+                path_targets = [
+                  {__path__ = "/var/log/kubernetes/audit/audit.log", job = "kubernetes-audit", source = "audit"},
+                ]
+              }
+
+              loki.source.file "audit_logs" {
+                targets    = local.file_match.audit_logs.targets
+                forward_to = [loki.process.audit_logs.receiver]
+              }
+
+              loki.process "audit_logs" {
+                stage.json {
+                  expressions = {
+                    level  = "level",
+                    verb   = "verb",
+                    user   = "user.username",
+                  }
+                }
+                stage.labels {
+                  values = {
+                    level = "",
+                    verb  = "",
+                    user  = "",
+                  }
+                }
+                forward_to = [loki.write.default.receiver]
+              }
+
+          mounts:
+            extra:
+              - name: audit-logs
+                mountPath: /var/log/kubernetes/audit
+                readOnly: true
+
         controller:
           type: daemonset
           resources:
@@ -65,7 +100,13 @@ spec:
               cpu: 50m
               memory: 64Mi
             limits:
-              memory: 128Mi
+              memory: 192Mi
+          volumes:
+            extra:
+              - name: audit-logs
+                hostPath:
+                  path: /var/log/kubernetes/audit
+                  type: DirectoryOrCreate
 
   destination:
     server: https://kubernetes.default.svc

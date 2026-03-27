@@ -4,14 +4,34 @@
     path: /etc/kubernetes/admin.conf
   register: k8s_control_plane_init_check
 
+- name: Create audit policy directory
+  ansible.builtin.file:
+    path: /etc/kubernetes/audit
+    state: directory
+    mode: "0755"
+
+- name: Create audit log directory
+  ansible.builtin.file:
+    path: /var/log/kubernetes/audit
+    state: directory
+    mode: "0755"
+
+- name: Deploy audit policy
+  ansible.builtin.template:
+    src: audit-policy.yml.j2
+    dest: /etc/kubernetes/audit/audit-policy.yml
+    mode: "0644"
+
+- name: Deploy kubeadm configuration
+  ansible.builtin.template:
+    src: kubeadm-config.yml.j2
+    dest: /etc/kubernetes/kubeadm-config.yml
+    mode: "0644"
+  when: not k8s_control_plane_init_check.stat.exists
+
 - name: Initialize the Kubernetes control plane
   ansible.builtin.command: >
-    kubeadm init
-    --pod-network-cidr={{ k8s_control_plane_pod_network_cidr }}
-    --service-cidr={{ k8s_control_plane_service_cidr }}
-    --apiserver-advertise-address={{ ansible_host }}
-    --kubernetes-version={{ k8s_control_plane_version }}
-    --skip-phases=addon/kube-proxy
+    kubeadm init --config=/etc/kubernetes/kubeadm-config.yml
   register: k8s_control_plane_init
   changed_when: true
   when: not k8s_control_plane_init_check.stat.exists

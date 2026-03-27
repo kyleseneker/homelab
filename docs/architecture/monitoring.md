@@ -16,6 +16,7 @@ flowchart LR
 
     subgraph logsPath["Logs Pipeline"]
         pods["Application Pods"] --> alloy["Alloy\n(DaemonSet)"]
+        auditLog["API Server\nAudit Log"] --> alloy
         alloy --> loki["Loki\n(single-binary)"]
     end
 
@@ -126,6 +127,9 @@ flowchart LR
     discovery["Kubernetes\nPod Discovery"] --> relabel["Relabel\n(namespace, pod,\ncontainer, node)"]
     relabel --> logScrape["Log Scrape\n(pod stdout/stderr)"]
     logScrape --> lokiWrite["Loki Write\nEndpoint"]
+
+    auditFile["/var/log/kubernetes/\naudit/audit.log"] --> auditProcess["JSON Parse\n(level, verb, user)"]
+    auditProcess --> lokiWrite
 ```
 
 1. **Discovery:** Alloy uses the Kubernetes discovery mechanism to find all running pods on the node
@@ -135,7 +139,43 @@ flowchart LR
     - `container` -- Container name
     - `node` -- Node the pod is running on
 3. **Log scrape:** Reads `stdout`/`stderr` log streams from discovered pods
-4. **Loki write:** Ships labeled log entries to Loki's push API
+4. **Audit log collection:** Tails the kube-apiserver audit log from the host filesystem and parses JSON fields into labels (see [Kubernetes Audit Logging](#kubernetes-audit-logging))
+5. **Loki write:** Ships labeled log entries to Loki's push API
+
+## Kubernetes Audit Logging
+
+The Kubernetes API server is configured to write structured audit events to a log file on the control plane node. Alloy tails this file and ships the events to Loki.
+
+### Audit Policy
+
+The audit policy (`/etc/kubernetes/audit/audit-policy.yml`) defines what gets logged:
+
+| Event Category | Audit Level | Examples |
+|---------------|-------------|---------|
+| Secret mutations | RequestResponse | create, update, delete, patch on secrets |
+| RBAC changes | RequestResponse | Changes to roles, clusterroles, and bindings |
+| Auth events | RequestResponse | Token reviews, certificate signing requests |
+| Infrastructure mutations | RequestResponse | Namespace, node, and PV changes |
+| All other mutations | Metadata | Any create, update, delete, patch |
+| Read operations | Metadata | Remaining get requests |
+| Noise (filtered out) | None | Health checks, watches, lists, lease heartbeats |
+
+### Log Rotation
+
+Audit logs are rotated by the API server:
+
+- **Max age:** 7 days
+- **Max backups:** 3 files
+- **Max size:** 100 MB per file
+
+### Querying Audit Logs
+
+In Grafana Explore, query Loki with:
+
+- `{job="kubernetes-audit"}` -- all audit events
+- `{job="kubernetes-audit", verb="delete"}` -- all delete operations
+- `{job="kubernetes-audit", user="system:serviceaccount:argocd:argocd-server"}` -- events from a specific service account
+- `{job="kubernetes-audit", level="RequestResponse"} |= "secrets"` -- secret access with full request/response bodies
 
 ## Grafana
 
@@ -167,6 +207,7 @@ flowchart TD
         ne["Node Exporter"]
         alloyDs["Alloy DaemonSet"]
         appPods["Application Pods"]
+        auditLog["API Server\nAudit Log"]
     end
 
     subgraph monitoring["monitoring Namespace"]
@@ -181,6 +222,7 @@ flowchart TD
     ksm -->|"k8s object metrics"| prom
     appPods -->|"scrape annotations"| prom
     appPods -->|"stdout/stderr"| alloyDs
+    auditLog -->|"audit events"| alloyDs
     alloyDs -->|"labeled logs"| loki
     prom -->|"metrics queries"| grafana
     loki -->|"log queries"| grafana
