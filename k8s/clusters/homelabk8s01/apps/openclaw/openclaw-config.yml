@@ -13,6 +13,8 @@ data:
         slack: {
           enabled: true,
           mode: "socket",
+          dmPolicy: "open",
+          allowFrom: ["*"],
         },
       },
       gateway: {
