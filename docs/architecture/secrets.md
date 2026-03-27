@@ -41,6 +41,7 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
 | `infrastructure/argocd-oidc` | `argocd-secret` (merge) | `argocd` |
+| `infrastructure/argocd-notifications-slack` | `argocd-notifications-secret` (merge) | `argocd` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
@@ -49,6 +50,8 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `apps/exportarr` | `exportarr-secrets` | `arr` |
 | `apps/unpackerr` | `unpackerr-secrets` | `arr` |
 | `apps/homepage` | `homepage-secrets` | `arr` |
+| `apps/openclaw` | `openclaw-secrets` | `openclaw` |
+| `apps/openclaw` | `alertmanager-openclaw-hooks-token` | `monitoring` |
 
 ## Workflow
 

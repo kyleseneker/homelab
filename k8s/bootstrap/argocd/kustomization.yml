@@ -72,6 +72,69 @@ patches:
         policy.csv: |
           g, authentik Admins, role:admin
   - target:
+      kind: ConfigMap
+      name: argocd-notifications-cm
+    patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: argocd-notifications-cm
+      data:
+        service.slack: |
+          token: $slack-token
+        context: |
+          argocdUrl: https://argocd.homelab.local
+        subscriptions: |
+          - recipients:
+              - slack:alerts
+            triggers:
+              - on-sync-succeeded
+              - on-sync-failed
+              - on-health-degraded
+        template.app-sync-succeeded: |
+          slack:
+            attachments: |
+              [{
+                "color": "#18be52",
+                "title": "{{.app.metadata.name}} synced successfully",
+                "title_link": "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}",
+                "fields": [
+                  {"title": "Revision", "value": "{{.app.status.operationState.syncResult.revision | trunc 7}}", "short": true},
+                  {"title": "Namespace", "value": "{{.app.spec.destination.namespace}}", "short": true}
+                ]
+              }]
+        template.app-sync-failed: |
+          slack:
+            attachments: |
+              [{
+                "color": "#e53935",
+                "title": "{{.app.metadata.name}} sync failed",
+                "title_link": "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}",
+                "fields": [
+                  {"title": "Message", "value": "{{.app.status.operationState.message}}", "short": false}
+                ]
+              }]
+        template.app-health-degraded: |
+          slack:
+            attachments: |
+              [{
+                "color": "#f4c030",
+                "title": "{{.app.metadata.name}} health degraded",
+                "title_link": "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}",
+                "fields": [
+                  {"title": "Health Status", "value": "{{.app.status.health.status}}", "short": true}
+                ]
+              }]
+        trigger.on-sync-succeeded: |
+          - when: app.status.operationState.phase in ['Succeeded']
+            send: [app-sync-succeeded]
+        trigger.on-sync-failed: |
+          - when: app.status.operationState.phase in ['Error', 'Failed']
+            send: [app-sync-failed]
+        trigger.on-health-degraded: |
+          - when: app.status.health.status == 'Degraded'
+            send: [app-health-degraded]
+  - target:
       kind: Deployment
       name: argocd-server
     patch: |
