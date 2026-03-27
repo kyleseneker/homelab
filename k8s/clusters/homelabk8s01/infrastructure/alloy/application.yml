@@ -95,6 +95,9 @@ spec:
 
         controller:
           type: daemonset
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
           resources:
             requests:
               cpu: 50m
