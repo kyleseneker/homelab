@@ -93,11 +93,11 @@ spec:
             type: emptyDir
             globalMounts:
               - path: /tmp
-          logs:
+          config:
             type: emptyDir
             globalMounts:
-              - path: /app/config/logs
-          config:
+              - path: /app/config
+          config-files:
             type: configMap
             name: homepage-config
             globalMounts:
