@@ -27,10 +27,6 @@ spec:
             memory: 256Mi
           limits:
             memory: 512Mi
-        buckets:
-          - name: velero
-            policy: none
-            purge: false
         consoleIngress:
           enabled: false
   destination:
