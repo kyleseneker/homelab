@@ -27,6 +27,11 @@ spec:
             memory: 256Mi
           limits:
             memory: 512Mi
+        securityContext:
+          enabled: true
+          runAsUser: 977
+          runAsGroup: 988
+          fsGroup: 988
         consoleIngress:
           enabled: false
   destination:
