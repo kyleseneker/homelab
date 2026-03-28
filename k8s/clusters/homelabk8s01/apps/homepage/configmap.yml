@@ -82,7 +82,7 @@ data:
         - OpenClaw:
             icon: openclaw.svg
             href: https://openclaw.homelab.local
-            description: OpenClaw game
+            description: AI agent platform
     - Media:
         - qBittorrent:
             icon: qbittorrent.svg
