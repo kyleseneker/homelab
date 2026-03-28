@@ -20,6 +20,9 @@ data:
       gateway: {
         bind: "lan",
         port: 18789,
+        auth: {
+          mode: "token",
+        },
         controlUi: {
           allowedOrigins: ["https://openclaw.homelab.local"],
         },
