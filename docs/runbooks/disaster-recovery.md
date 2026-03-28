@@ -26,7 +26,7 @@ Before a disaster occurs, ensure the following are available **outside the clust
     make k8s-deploy
     ```
 
-    This provisions VMs with Terraform, bootstraps Kubernetes with Ansible, and installs ArgoCD with the root application.
+    This provisions VMs with Terraform, bootstraps Kubernetes with Ansible, and installs ArgoCD with the ApplicationSet.
 
 2. Retrieve the kubeconfig:
 

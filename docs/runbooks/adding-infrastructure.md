@@ -124,12 +124,12 @@ mkdir -p k8s/clusters/<cluster>/{config,infrastructure,apps}
 !!! tip
     Copy and adapt manifests from `k8s/clusters/homelabk8s01/` as a starting point. Update IP addresses, hostnames, and other cluster-specific values.
 
-### 4. Configure ArgoCD Root Application
+### 4. Configure ArgoCD ApplicationSet
 
-The root application tells ArgoCD where to find manifests for the cluster. You have two options:
+The ApplicationSet tells ArgoCD where to find `config.yaml` files for the cluster. You have two options:
 
-- **Modify `k8s/bootstrap/root-app.yml`** to point to the new cluster path (replaces the existing cluster).
-- **Create a second root application** (e.g., `root-app-<cluster>.yml`) to manage both clusters from the same ArgoCD instance.
+- **Modify `k8s/bootstrap/applicationsets/cluster-apps.yml`** to update the glob path for the new cluster.
+- **Create a second ApplicationSet** to manage both clusters from the same ArgoCD instance.
 
 ### 5. Deploy
 

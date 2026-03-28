@@ -38,9 +38,9 @@ ArgoCD's `selfHeal` will revert these changes once Authentik recovers and the au
 
 ## Longer Fix: Remove Annotations from Git
 
-If Authentik will be down for an extended period, remove the forward-auth annotations from the `application.yml` files in Git to prevent ArgoCD from re-adding them.
+If Authentik will be down for an extended period, remove the forward-auth annotations from the `values.yaml` files in Git to prevent ArgoCD from re-adding them.
 
-1. Remove the four `nginx.ingress.kubernetes.io/auth-*` annotations from each protected app's `application.yml`
+1. Remove the four `nginx.ingress.kubernetes.io/auth-*` annotations from each protected app's `values.yaml`
 2. Commit and push
 3. ArgoCD syncs and apps become accessible without SSO
 

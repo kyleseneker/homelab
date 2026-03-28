@@ -112,7 +112,7 @@ nav:
   - Decisions:
       - Cilium as CNI: decisions/001-cilium-cni.md
       - Vault + ESO: decisions/002-vault-eso-secrets.md
-      - ArgoCD App-of-Apps: decisions/003-argocd-app-of-apps.md
+      - ArgoCD ApplicationSet: decisions/003-argocd-applicationset.md
       - bjw-s App Template: decisions/004-bjw-s-app-template.md
       - NFS Storage: decisions/005-nfs-storage.md
       - Velero + MinIO: decisions/006-velero-minio-backups.md

@@ -8,7 +8,7 @@ For apps that don't support OIDC/OAuth2 natively, use nginx-ingress forward-auth
 
 ### 1. Add Ingress Annotations
 
-In the app's `application.yml`, add these annotations to the ingress section:
+In the app's `values.yaml`, add these annotations to the ingress section:
 
 ```yaml
 ingress:

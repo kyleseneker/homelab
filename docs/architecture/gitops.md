@@ -60,7 +60,7 @@ Each app directory contains up to three files consumed by the ApplicationSet:
 
 ## Independent Syncs
 
-Each Application syncs independently. Unlike the previous app-of-apps pattern where a single root Application synced all children as one operation, ApplicationSet-generated apps have no cross-app sync dependencies. A broken app does not block fixes to other apps.
+Each Application syncs independently. ApplicationSet-generated apps have no cross-app sync dependencies. A broken app does not block fixes to other apps.
 
 Ordering between apps (e.g., the `arr` namespace must exist before arr apps deploy) is handled by health checks -- an app targeting namespace `arr` will wait for the namespace to exist, which is created by the `arr-prereqs` Application.
 

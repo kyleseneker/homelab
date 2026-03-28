@@ -175,7 +175,7 @@ velero restore logs <restore-name>
 In the event of a full cluster rebuild:
 
 1. **Rebuild the cluster** using Terraform and Ansible
-2. **Deploy ArgoCD** and the root application
+2. **Deploy ArgoCD** and the ApplicationSet
 3. **Wait for MinIO** to come up (sync wave -2) with its NFS-backed data intact
 4. **Wait for Velero** to come up (sync wave -1) and connect to MinIO
 5. **Verify backups** are visible: `velero backup get`

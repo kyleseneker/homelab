@@ -103,12 +103,12 @@ The following manifest files contain environment-specific values that must be ed
 
 | File | What to edit |
 |------|--------------|
-| `k8s/clusters/homelabk8s01/config/env.yml` | `TZ`, `PUID`, `PGID` for *arr pods |
+| `k8s/clusters/homelabk8s01/apps/arr/prereqs/env.yml` | `TZ`, `PUID`, `PGID` for *arr pods |
 | `k8s/clusters/homelabk8s01/infrastructure/gateway/l2-pool.yml` | LoadBalancer IP range for Cilium L2 |
-| `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/application.yml` | NAS IP address for the NFS provisioner |
-| `k8s/clusters/homelabk8s01/apps/arr/shared-data-pv.yml` | NAS IP address for the shared media PersistentVolume |
-| `k8s/clusters/homelabk8s01/apps/arr/downloads/application.yml` | VPN server region |
-| `k8s/bootstrap/root-app.yml` | Git repository URL for ArgoCD |
+| `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/values.yaml` | NAS IP address for the NFS provisioner |
+| `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml` | NAS IP address for the shared media PersistentVolume |
+| `k8s/clusters/homelabk8s01/apps/arr/downloads/values.yaml` | VPN server region |
+| `k8s/bootstrap/applicationsets/cluster-apps.yml` | Git repository URL for ArgoCD |
 
 !!! tip
     After editing these files, commit the changes to your Git repository. ArgoCD will pick up the new configuration on its next sync cycle.

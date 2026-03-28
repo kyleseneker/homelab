@@ -54,14 +54,19 @@ homelab/
 │   │   │   ├── namespace.yml         # argocd namespace
 │   │   │   ├── ingress.yml           # ArgoCD HTTPRoute
 │   │   │   └── custom-ca.yml         # Homelab CA trust for OIDC
-│   │   └── root-app.yml              # Root app-of-apps
+│   │   └── applicationsets/          # ApplicationSet definitions
+│   │       ├── kustomization.yml     # Kustomize wrapper
+│   │       └── cluster-apps.yml      # Git File Generator ApplicationSet
 │   ├── components/
 │   │   └── gateway-api/              # Gateway API CRDs
 │   └── clusters/<cluster>/
-│       ├── config/
-│       │   └── env.yml               # Shared env ConfigMap
 │       ├── infrastructure/           # Platform components
 │       │   ├── vault/
+│       │   │   ├── config.yaml       # App metadata for ApplicationSet
+│       │   │   ├── values.yaml       # Helm values
+│       │   │   ├── kustomization.yaml # Supporting resources list
+│       │   │   ├── pdb.yml           # Supporting resource
+│       │   │   └── httproute.yml     # Supporting resource
 │       │   ├── external-secrets/
 │       │   ├── cert-manager/
 │       │   ├── gateway/              # Gateway + L2 pool + redirect
@@ -83,10 +88,8 @@ homelab/
 │           ├── homepage/
 │           ├── uptime-kuma/
 │           ├── openclaw/
-│           │   └── application.yml
 │           └── arr/
-│               ├── namespace.yml
-│               ├── shared-data-pv.yml
+│               ├── prereqs/          # Shared namespace, PV, ConfigMap
 │               ├── jellyfin/
 │               ├── sonarr/
 │               ├── radarr/
@@ -108,8 +111,8 @@ homelab/
 
 ## Design Decisions
 
-**Directory recursion over ApplicationSets.** The root ArgoCD Application uses directory recursion to discover child Applications rather than ApplicationSets. Each application is defined as its own `application.yml` with explicit sync wave annotations, giving full per-app control over Helm values, namespace targeting, and deployment ordering. ApplicationSets trade that granularity for templating convenience, which is unnecessary at homelab scale where each application has distinct configuration.
+**ApplicationSet with Git File Generator.** A single ApplicationSet discovers `config.yaml` files via a glob pattern and generates an Application per component. Each app has its own `config.yaml` (metadata), `values.yaml` (Helm values), and optionally a `kustomization.yaml` (supporting resources). This gives full per-app control over chart versions, sync options, and namespace targeting while allowing independent syncs -- a broken app never blocks fixes to other apps.
 
 **Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, Cilium Gateway, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
 
-**Sync wave ordering.** ArgoCD sync wave annotations control the deployment sequence within each layer. Infrastructure components are assigned ascending wave numbers so that foundational services (Vault, External Secrets, cert-manager) are ready before components that depend on them (monitoring, backups). Applications deploy at higher wave numbers, guaranteeing the full platform is in place first. This eliminates race conditions that would otherwise require manual intervention or retry loops.
+**Namespace strategy.** Single-app namespaces use `CreateNamespace=true` on the Application, requiring no separate namespace manifest. The shared `arr` namespace is owned by a dedicated `arr/prereqs` Application that manages the namespace, shared PV, and shared ConfigMap.

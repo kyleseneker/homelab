@@ -44,7 +44,7 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-configure` | Bootstrap K8s cluster via Ansible |
 | `make k8s-deploy` | Full deploy: VMs + cluster + ArgoCD |
 | `make k8s-destroy` | Tear down all K8s VMs |
-| `make k8s-bootstrap` | Install ArgoCD and root app-of-apps (one-time) |
+| `make k8s-bootstrap` | Install ArgoCD and ApplicationSet (one-time) |
 | `make k8s-backup` | Trigger an on-demand Velero backup |
 | `make k8s-backup-status` | Show Velero backup and schedule status |
 | `make k8s-restore` | List available Velero backups for restore |

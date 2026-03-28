@@ -4,9 +4,9 @@ This runbook covers the process for upgrading application versions in the cluste
 
 ## Updating an Image Tag
 
-Most upgrades involve bumping the container image tag in the application's `application.yml` file.
+Most upgrades involve bumping the container image tag in the application's `values.yaml` file.
 
-1. Open the app's `application.yml` file.
+1. Open the app's `values.yaml` file.
 2. Locate the `image.tag` field under `controllers.main.containers.main.image`.
 3. Change the tag to the new version.
 4. Commit and push the change.
@@ -14,20 +14,22 @@ Most upgrades involve bumping the container image tag in the application's `appl
 
 ### Example: Upgrading Sonarr
 
-To upgrade Sonarr from `4.0.17` to `4.0.18`, edit `k8s/clusters/homelabk8s01/apps/arr/sonarr/application.yml`:
+To upgrade Sonarr from `4.0.17` to `4.0.18`, edit `k8s/clusters/homelabk8s01/apps/arr/sonarr/values.yaml`:
 
 ```yaml
-containers:
+controllers:
   main:
-    image:
-      repository: lscr.io/linuxserver/sonarr
-      tag: 4.0.18  # was 4.0.17
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/sonarr
+          tag: 4.0.18  # was 4.0.17
 ```
 
 Commit and push:
 
 ```bash
-git add k8s/clusters/homelabk8s01/apps/arr/sonarr/application.yml
+git add k8s/clusters/homelabk8s01/apps/arr/sonarr/values.yaml
 git commit -m "upgrade sonarr to 4.0.18"
 git push
 ```
@@ -39,14 +41,10 @@ ArgoCD will detect the change within its polling interval and roll out the new v
 When a new version of the bjw-s app-template chart (or any other Helm chart) is released:
 
 1. Check the chart's changelog for breaking changes. For app-template, see the [bjw-s releases page](https://github.com/bjw-s-labs/helm-charts/releases).
-2. Update the `targetRevision` field in the app's `application.yml`:
+2. Update the `chartVersion` field in the app's `config.yaml`:
 
     ```yaml
-    spec:
-      source:
-        repoURL: https://bjw-s-labs.github.io/helm-charts
-        chart: app-template
-        targetRevision: 4.7.0
+    chartVersion: "4.7.0"
     ```
 
 3. Commit and push.

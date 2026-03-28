@@ -79,7 +79,7 @@ A single `ClusterSecretStore` named `vault-backend` is configured to connect to 
 
 ## Cluster Integration
 
-ESO deploys at sync wave -3 alongside Vault and cert-manager. The `ClusterSecretStore` and `ExternalSecret` resources are plain YAML discovered by the root ArgoCD Application via directory recursion. They may fail initially if Vault is not yet initialized, but the root app's retry backoff handles this gracefully.
+ESO is deployed by the ApplicationSet as an independent Application. The `ClusterSecretStore` is a supporting resource applied via the kustomize source alongside the Helm chart. `ExternalSecret` resources in other apps are similarly applied as supporting resources in their respective kustomize sources. They may fail initially if Vault is not yet initialized, but the retry backoff on each Application handles this gracefully.
 
 ## Upstream Documentation
 

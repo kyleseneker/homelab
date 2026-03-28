@@ -92,7 +92,7 @@ This single command will:
 
 1. Provision VMs with Terraform
 2. Bootstrap Kubernetes with kubeadm and Cilium via Ansible
-3. Install ArgoCD and the root application
+3. Install ArgoCD and the ApplicationSet
 
 ## 9. Get Kubeconfig and Initialize Vault
 
