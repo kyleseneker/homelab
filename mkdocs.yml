@@ -54,6 +54,7 @@ nav:
   - Architecture:
       - Overview: architecture/overview.md
       - GitOps: architecture/gitops.md
+      - Network Infrastructure: architecture/network-infrastructure.md
       - Networking: architecture/networking.md
       - Storage: architecture/storage.md
       - Monitoring: architecture/monitoring.md
@@ -127,7 +128,18 @@ nav:
       - Velero + MinIO: decisions/013-velero-minio-backups.md
       - Kyverno Policies: decisions/014-kyverno-policy-engine.md
       - VPA & Goldilocks: decisions/015-vpa-goldilocks-capacity-planning.md
+  - Roadmap:
+      - roadmap/index.md
+      - Assessment: roadmap/assessment.md
+      - "Phase 1: Foundations": roadmap/phase-1-foundations.md
+      - "Phase 2: Kubernetes Hardening": roadmap/phase-2-kubernetes-hardening.md
+      - "Phase 3: Network": roadmap/phase-3-network.md
+      - "Phase 4: Compute & Storage": roadmap/phase-4-compute-and-storage.md
+      - "Phase 5: Observability": roadmap/phase-5-observability.md
+      - "Phase 6: Platform Engineering": roadmap/phase-6-platform-engineering.md
+      - "Phase 7: Long-Term Vision": roadmap/phase-7-long-term-vision.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md
       - Repo Layout: reference/repo-layout.md
+      - Hardware: reference/hardware.md

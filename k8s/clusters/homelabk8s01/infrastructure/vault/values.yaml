@@ -42,10 +42,7 @@ server:
         path = "/vault/data"
       }
 
-      seal "awskms" {
-        region     = "us-east-1"
-        kms_key_id = "295c979e-56ee-4e73-b429-395cb657f346"
-      }
+      seal "awskms" {}
   dataStorage:
     enabled: true
     size: 1Gi
