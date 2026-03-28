@@ -8,4 +8,4 @@ createNamespace: true
 syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
-hasResources: false
+hasResources: true

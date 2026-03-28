@@ -70,8 +70,6 @@ persistence:
       - path: /tmp
   data:
     type: persistentVolumeClaim
-    storageClass: nfs-client
-    accessMode: ReadWriteOnce
-    size: 1Gi
+    existingClaim: uptime-kuma-data
     globalMounts:
       - path: /app/data
