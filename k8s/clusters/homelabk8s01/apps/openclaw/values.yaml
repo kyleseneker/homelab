@@ -29,7 +29,9 @@ controllers:
             \ state dir\nmkdir -p /state/workspace\ncp /boot/BOOT.md /state/workspace/BOOT.md\
             \ 2>/dev/null || true\nfor f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md\
             \ WEBHOOKS.md; do\n  cp /workspace-src/$f /state/workspace/$f 2>/dev/null\
-            \ || true\ndone\n"
+            \ || true\ndone\n# Copy webhook transform modules\nmkdir -p /state/hooks/transforms\n\
+            for f in /hooks-transforms-src/*.js; do\n  cp \"$f\" /state/hooks/transforms/\
+            \ 2>/dev/null || true\ndone\n"
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -172,6 +174,13 @@ persistence:
       main:
         tooling:
           - path: /workspace-src
+  hooks-transforms-src:
+    type: configMap
+    name: openclaw-hooks-transforms
+    advancedMounts:
+      main:
+        tooling:
+          - path: /hooks-transforms-src
   boot:
     type: configMap
     name: openclaw-boot

@@ -27,6 +27,37 @@ data:
           allowedOrigins: ["https://openclaw.homelab.local"],
         },
       },
+      hooks: {
+        enabled: true,
+        path: "/webhook",
+        token: "${OPENCLAW_HOOKS_TOKEN}",
+        defaultSessionKey: "hook:ingress",
+        allowedAgentIds: ["main"],
+        transformsDir: "~/.openclaw/hooks/transforms",
+        mappings: [
+          {
+            match: { path: "sonarr" },
+            action: "agent",
+            agentId: "main",
+            deliver: true,
+            transform: { module: "arr-webhook.js" },
+          },
+          {
+            match: { path: "radarr" },
+            action: "agent",
+            agentId: "main",
+            deliver: true,
+            transform: { module: "arr-webhook.js" },
+          },
+          {
+            match: { path: "alertmanager" },
+            action: "agent",
+            agentId: "main",
+            deliver: true,
+            transform: { module: "alertmanager-webhook.js" },
+          },
+        ],
+      },
       skills: {
         paths: ["/skills"],
       },

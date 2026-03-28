@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openclaw-hooks-transforms
+  namespace: openclaw
+data:
+  arr-webhook.js: |
+    export default function transform(payload) {
+      const event = payload.eventType || "unknown";
+      const service = payload.instanceName || "arr";
+      const title =
+        payload.series?.title ||
+        payload.movie?.title ||
+        payload.episodes?.[0]?.title ||
+        "unknown";
+      return { message: `[${service}] ${event}: ${title}` };
+    }
+  alertmanager-webhook.js: |
+    export default function transform(payload) {
+      const alerts = payload.alerts || [];
+      const status = payload.status || "unknown";
+      if (!alerts.length) {
+        return { message: "Alertmanager webhook received with no alerts." };
+      }
+      const lines = alerts.map((a) => {
+        const sev = (a.labels && a.labels.severity) || "unknown";
+        const name = (a.labels && a.labels.alertname) || "unnamed";
+        const ns = (a.labels && a.labels.namespace) || "cluster";
+        const desc =
+          (a.annotations && (a.annotations.description || a.annotations.summary)) || "";
+        return "[" + sev.toUpperCase() + "] " + name + " (" + ns + "): " + desc;
+      });
+      const header = status === "resolved" ? "RESOLVED" : "FIRING";
+      return { message: "Alertmanager " + header + ":\n" + lines.join("\n") };
+    }
