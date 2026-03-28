@@ -14,15 +14,20 @@ spec:
         app.kubernetes.io/name: local-path-provisioner
     spec:
       serviceAccountName: local-path-provisioner-service-account
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: local-path-provisioner
           image: rancher/local-path-provisioner:v0.0.35
           imagePullPolicy: IfNotPresent
           securityContext:
-            readOnlyRootFilesystem: true
-            runAsNonRoot: true
-            runAsUser: 1000
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
