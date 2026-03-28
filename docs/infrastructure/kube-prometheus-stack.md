@@ -44,6 +44,17 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 - Enabled, providing metrics about the state of Kubernetes objects (deployments, pods, nodes, etc.).
 
+### Custom Dashboards
+
+Two capacity planning dashboards are provisioned via sidecar ConfigMaps (label `grafana_dashboard: "1"`):
+
+| Dashboard | Description |
+|-----------|-------------|
+| Cluster Capacity Overview | CPU/memory requested vs allocatable vs used, utilization gauges, pod count, namespace pie charts |
+| Namespace Resource Breakdown | Per-namespace tables with requests, limits, usage, efficiency %, stacked usage timeseries |
+
+These complement the 34 built-in kube-prometheus-stack dashboards, which focus on detailed drill-down views rather than high-level capacity planning.
+
 ### Disabled Components
 
 The following components are disabled because they are either not applicable or not accessible in a kubeadm-based cluster:

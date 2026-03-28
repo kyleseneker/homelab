@@ -26,6 +26,8 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Authentik | auth | 0 | authentik | 2026.2.1 |
 | Kyverno Policies | -- | -1 | (plain manifests) | - |
 | Network Policies | (multiple) | -- | (plain manifests) | - |
+| VPA | kube-system | 0 | vertical-pod-autoscaler | 0.8.1 |
+| Goldilocks | goldilocks | 0 | goldilocks | 10.3.0 |
 
 ## Sync Wave Ordering
 

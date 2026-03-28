@@ -97,6 +97,8 @@ nav:
       - Kyverno: infrastructure/kyverno.md
       - Network Policies: infrastructure/network-policies.md
       - Alerting: infrastructure/alerting.md
+      - VPA: infrastructure/vpa.md
+      - Goldilocks: infrastructure/goldilocks.md
       - Renovate: infrastructure/renovate.md
   - Runbooks:
       - Disaster Recovery: runbooks/disaster-recovery.md
@@ -124,6 +126,7 @@ nav:
       - Renovate: decisions/012-renovate-dependency-management.md
       - Velero + MinIO: decisions/013-velero-minio-backups.md
       - Kyverno Policies: decisions/014-kyverno-policy-engine.md
+      - VPA & Goldilocks: decisions/015-vpa-goldilocks-capacity-planning.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md

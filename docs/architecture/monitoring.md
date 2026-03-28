@@ -40,6 +40,8 @@ flowchart LR
 | Alloy | Pod log collection and shipping | DaemonSet | None (streams to Loki) |
 | Exportarr | Prometheus metrics exporter for *arr apps | Multi-Deployment (one per target) | None |
 | Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`nfs-client`) |
+| VPA Recommender | Per-workload CPU/memory right-sizing recommendations | Deployment | None |
+| Goldilocks | Auto-creates VPA CRs, provides recommendation dashboard | Deployment (controller + dashboard) | None |
 
 ## Metrics Pipeline
 
@@ -198,6 +200,31 @@ Grafana is deployed with both data sources pre-configured via Helm values, elimi
 
 !!! tip "Log Correlation"
     Use Grafana's split view to correlate metrics spikes with log entries. Select a time range on a Prometheus dashboard panel and switch to the Explore view with Loki to see logs from the same period.
+
+## Capacity Planning
+
+The cluster includes a capacity planning layer that surfaces resource right-sizing data and cluster-wide headroom visibility.
+
+### VPA + Goldilocks
+
+The Vertical Pod Autoscaler (VPA) recommender analyzes historical CPU and memory usage for each workload and computes right-sizing recommendations. Goldilocks automatically creates a VPA CR for every Deployment and StatefulSet in the cluster, eliminating manual VPA object management.
+
+- **VPA Recommender**: Runs in `kube-system`, computes target/lower-bound/upper-bound recommendations, exposes `vpa_status_recommendation` Prometheus metrics
+- **Goldilocks Controller**: Watches all namespaces (except `kube-node-lease`, `kube-public`) and creates `VerticalPodAutoscaler` CRs with `updateMode: "Off"`
+- **Goldilocks Dashboard**: Web UI for browsing per-workload recommendations (access via `kubectl port-forward`)
+
+VPA runs in recommend-only mode -- no pods are ever mutated. Recommendations are advisory and applied through manual manifest updates.
+
+### Capacity Dashboards
+
+Two custom Grafana dashboards (provisioned via sidecar ConfigMaps) complement the Goldilocks per-workload view with cluster-wide capacity data:
+
+| Dashboard | Purpose |
+|-----------|---------|
+| Cluster Capacity Overview | CPU/memory requested vs allocatable vs used (timeseries + gauges), pod count, namespace breakdown pie charts |
+| Namespace Resource Breakdown | Per-namespace tables with requests, limits, usage, and efficiency %, stacked usage timeseries |
+
+These dashboards answer "how much headroom does the cluster have?" while Goldilocks answers "what should each workload request?"
 
 ## Data Flow Summary
 
