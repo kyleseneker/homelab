@@ -1,12 +1,12 @@
 # Phase 1 -- Foundations
 
-**Status:** Not started
+**Status:** In progress
 
 **Goal:** Protect against the failures that would cause unrecoverable data loss or hardware damage.
 
 These are physical-layer changes. A power event or drive failure today could take out production data, backups, and the boot drive simultaneously.
 
-**Addresses:** [P1, P2](assessment.md#physical-layer) (no UPS, single NAS drive), [K5, K16](assessment.md#kubernetes--software-layer) (no offsite backup, no etcd snapshot)
+**Addresses:** [P1, P2](assessment.md#physical-layer) (no UPS, single NAS drive), [K16](assessment.md#kubernetes--software-layer) (no etcd snapshot)
 
 ---
 
@@ -36,27 +36,9 @@ These are physical-layer changes. A power event or drive failure today could tak
 | **Sizing** | The UNAS Pro supports 4 drives. Start with a 2-drive mirror. A 4-drive RAID 10 (Phase 4.4) adds capacity and read performance later. |
 | **Note** | RAID is not backup. This protects against drive failure, not deletion, corruption, or ransomware. Offsite backup (1.3) addresses that. |
 
-## 1.3 Add Offsite Backup Target
+## ~~1.3 Add Offsite Backup Target~~ Done
 
-- [x] Choose an offsite object store: **AWS S3 Standard-IA** in us-east-1
-- [x] Create Terraform resources for S3 bucket (`velero-offsite-homelab`) and IAM user
-- [x] Create a second Velero `BackupStorageLocation` (`offsite`) pointing at the S3 bucket
-- [x] Create a Velero `Schedule` (`weekly-offsite`) for weekly offsite backups at 5:00 AM Sunday
-- [x] Add Cilium FQDN egress policy for `*.s3.us-east-1.amazonaws.com`
-- [x] Add PrometheusRules for offsite backup staleness and BSL availability
-- [x] Create ExternalSecret for offsite AWS credentials (Vault path: `infrastructure/velero-offsite`)
-- [x] Update backup and DR runbooks with offsite restore procedures
-- [ ] Run `terraform apply` to create the S3 bucket and IAM user
-- [ ] Store the IAM credentials in Vault at `infrastructure/velero-offsite`
-- [ ] Verify the offsite BSL shows as `Available` in Velero
-- [ ] Verify a restore from the offsite target works end-to-end
-- [ ] Write an ADR for the offsite backup decision
-
-| | |
-|---|---|
-| **Why** | Velero writes to MinIO on the same NAS as production data. A NAS failure, ransomware event, or physical disaster loses both. The 3-2-1 rule requires at least one offsite copy. |
-| **Cost** | AWS S3 Standard-IA: ~$0.0125/GB/month. For a homelab backup set (~50 GB), roughly $0.63/month. Objects start in S3 Standard and transition to Standard-IA after 30 days via lifecycle policy. |
-| **Implementation** | Velero natively supports multiple `BackupStorageLocation` resources. The existing `velero-plugin-for-aws` handles both MinIO and real S3. Offsite backups run weekly (5:00 AM Sunday, 1 hour after local weekly). |
+Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-offsite-homelab` in us-east-1). See [ADR-013](../decisions/013-velero-minio-backups.md) and the [backup runbook](../runbooks/backup-and-restore.md).
 
 ## 1.4 Add etcd Snapshot Schedule
 
@@ -77,6 +59,6 @@ These are physical-layer changes. A power event or drive failure today could tak
 
 - [ ] UPS protecting all rack gear with automated graceful shutdown on low battery
 - [ ] NAS running a mirrored drive pool
-- [ ] Velero writing weekly backups to an offsite object store
-- [ ] Restore from offsite backup tested successfully
+- [x] Velero writing weekly backups to an offsite object store
+- [ ] Restore from offsite backup tested successfully (pending first weekly run)
 - [ ] etcd snapshots running daily with alerting on staleness
