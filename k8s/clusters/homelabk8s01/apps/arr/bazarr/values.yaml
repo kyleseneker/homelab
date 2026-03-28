@@ -1,0 +1,74 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/bazarr
+          tag: 1.5.6
+        env:
+          SONARR_HTTP_TIMEOUT: '300'
+          RADARR_HTTP_TIMEOUT: '300'
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 5
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 6767
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - bazarr.homelab.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: arr-bazarr
+            port: 6767
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: arr-bazarr-config
+    globalMounts:
+      - path: /config
+  data:
+    type: persistentVolumeClaim
+    existingClaim: arr-data
+    globalMounts:
+      - path: /data

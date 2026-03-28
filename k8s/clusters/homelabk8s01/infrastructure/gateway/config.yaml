@@ -1,0 +1,8 @@
+appName: gateway
+namespace: default
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/infrastructure/gateway
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - SkipDryRunOnMissingResource=true

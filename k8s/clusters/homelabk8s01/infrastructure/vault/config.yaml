@@ -1,0 +1,11 @@
+appName: vault
+namespace: vault
+sourceType: helm
+chartRepo: https://helm.releases.hashicorp.com
+chartName: vault
+chartVersion: 0.32.0
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

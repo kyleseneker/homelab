@@ -1,0 +1,11 @@
+appName: loki
+namespace: monitoring
+sourceType: helm
+chartRepo: https://grafana.github.io/helm-charts
+chartName: loki
+chartVersion: 6.55.0
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

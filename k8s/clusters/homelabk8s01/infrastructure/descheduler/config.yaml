@@ -1,0 +1,11 @@
+appName: descheduler
+namespace: kube-system
+sourceType: helm
+chartRepo: https://kubernetes-sigs.github.io/descheduler/
+chartName: descheduler
+chartVersion: 0.35.1
+createNamespace: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false

@@ -1,0 +1,11 @@
+appName: authentik
+namespace: auth
+sourceType: helm
+chartRepo: https://charts.goauthentik.io
+chartName: authentik
+chartVersion: 2026.2.1
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

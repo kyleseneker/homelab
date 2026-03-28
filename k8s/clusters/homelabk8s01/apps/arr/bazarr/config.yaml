@@ -1,0 +1,11 @@
+appName: arr-bazarr
+namespace: arr
+sourceType: helm
+chartRepo: https://bjw-s-labs.github.io/helm-charts
+chartName: app-template
+chartVersion: 4.6.2
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false

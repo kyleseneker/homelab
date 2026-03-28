@@ -1,0 +1,12 @@
+appName: kube-prometheus-stack
+namespace: monitoring
+sourceType: helm
+chartRepo: https://prometheus-community.github.io/helm-charts
+chartName: kube-prometheus-stack
+chartVersion: 82.13.6
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipDryRunOnMissingResource=true

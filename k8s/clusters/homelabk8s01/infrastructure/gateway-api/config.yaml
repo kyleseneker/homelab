@@ -1,0 +1,9 @@
+appName: gateway-api
+namespace: ''
+sourceType: git
+gitPath: k8s/components/gateway-api
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipDryRunOnMissingResource=true

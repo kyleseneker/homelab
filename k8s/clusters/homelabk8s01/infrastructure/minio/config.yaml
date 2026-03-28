@@ -1,0 +1,12 @@
+appName: minio
+namespace: backups
+sourceType: helm
+chartRepo: https://charts.min.io/
+chartName: minio
+chartVersion: 5.4.0
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipHooks=true

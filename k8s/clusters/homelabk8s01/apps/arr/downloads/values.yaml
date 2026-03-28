@@ -1,0 +1,126 @@
+controllers:
+  main:
+    containers:
+      gluetun:
+        image:
+          repository: qmcgaw/gluetun
+          tag: v3.41.1
+        env:
+          VPN_SERVICE_PROVIDER: private internet access
+          SERVER_REGIONS: CA Montreal
+          VPN_PORT_FORWARDING: 'on'
+          FIREWALL_INPUT_PORTS: '8080'
+          DOT: 'off'
+        envFrom:
+          - secretRef:
+              name: vpn-credentials
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - /gluetun-entrypoint
+                  - healthcheck
+              initialDelaySeconds: 60
+              periodSeconds: 60
+              timeoutSeconds: 5
+              failureThreshold: 3
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - /gluetun-entrypoint
+                  - healthcheck
+              failureThreshold: 60
+              periodSeconds: 5
+      qbittorrent:
+        image:
+          repository: lscr.io/linuxserver/qbittorrent
+          tag: 5.1.4
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        env:
+          WEBUI_PORT: '8080'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 1Gi
+        dependsOn: gluetun
+service:
+  main:
+    controller: main
+    ports:
+      qbit-http:
+        port: 8080
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - qbit.homelab.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: arr-vpn-downloads
+            port: 8080
+persistence:
+  gluetun-config:
+    type: persistentVolumeClaim
+    storageClass: nfs-client
+    accessMode: ReadWriteOnce
+    size: 256Mi
+    globalMounts:
+      - path: /gluetun
+  qbit-config:
+    type: persistentVolumeClaim
+    storageClass: nfs-client
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    advancedMounts:
+      main:
+        qbittorrent:
+          - path: /config
+  data:
+    type: persistentVolumeClaim
+    existingClaim: arr-data
+    globalMounts:
+      - path: /data
+defaultPodOptions:
+  securityContext:
+    sysctls:
+      - name: net.ipv4.conf.all.src_valid_mark
+        value: '1'

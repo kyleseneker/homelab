@@ -1,0 +1,11 @@
+appName: nfs-provisioner
+namespace: nfs-provisioner
+sourceType: helm
+chartRepo: https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
+chartName: nfs-subdir-external-provisioner
+chartVersion: 4.0.18
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

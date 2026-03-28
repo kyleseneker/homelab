@@ -1,0 +1,228 @@
+defaultPodOptions:
+  securityContext:
+    runAsUser: 65534
+    runAsGroup: 65534
+    fsGroup: 65534
+    runAsNonRoot: true
+controllers:
+  sonarr:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/onedr0p/exportarr
+          tag: v2.3.0
+        args:
+          - sonarr
+        env:
+          PORT: '9707'
+          URL: http://arr-sonarr.arr.svc.cluster.local:8989
+          APIKEY:
+            valueFrom:
+              secretKeyRef:
+                name: exportarr-secrets
+                key: sonarr-api-key
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9707
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9707
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9707
+  radarr:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/onedr0p/exportarr
+          tag: v2.3.0
+        args:
+          - radarr
+        env:
+          PORT: '9708'
+          URL: http://arr-radarr.arr.svc.cluster.local:7878
+          APIKEY:
+            valueFrom:
+              secretKeyRef:
+                name: exportarr-secrets
+                key: radarr-api-key
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9708
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9708
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9708
+  prowlarr:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/onedr0p/exportarr
+          tag: v2.3.0
+        args:
+          - prowlarr
+        env:
+          PORT: '9709'
+          URL: http://arr-prowlarr.arr.svc.cluster.local:9696
+          APIKEY:
+            valueFrom:
+              secretKeyRef:
+                name: exportarr-secrets
+                key: prowlarr-api-key
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9709
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9709
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9709
+  bazarr:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/onedr0p/exportarr
+          tag: v2.3.0
+        args:
+          - bazarr
+        env:
+          PORT: '9710'
+          URL: http://arr-bazarr.arr.svc.cluster.local:6767
+          APIKEY:
+            valueFrom:
+              secretKeyRef:
+                name: exportarr-secrets
+                key: bazarr-api-key
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9710
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9710
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9710
+service:
+  sonarr:
+    controller: sonarr
+    ports:
+      metrics:
+        port: 9707
+  radarr:
+    controller: radarr
+    ports:
+      metrics:
+        port: 9708
+  prowlarr:
+    controller: prowlarr
+    ports:
+      metrics:
+        port: 9709
+  bazarr:
+    controller: bazarr
+    ports:
+      metrics:
+        port: 9710

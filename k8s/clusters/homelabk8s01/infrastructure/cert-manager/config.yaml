@@ -1,0 +1,12 @@
+appName: cert-manager
+namespace: cert-manager
+sourceType: helm
+chartRepo: https://charts.jetstack.io
+chartName: cert-manager
+chartVersion: v1.20.0
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipDryRunOnMissingResource=true

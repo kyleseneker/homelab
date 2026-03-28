@@ -8,6 +8,7 @@ resources:
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.4/manifests/install.yaml
   - ingress.yml
   - custom-ca.yml
+  - argocd-notifications-slack-external-secret.yml
 
 patches:
   - target:

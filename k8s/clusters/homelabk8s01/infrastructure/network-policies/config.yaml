@@ -1,0 +1,7 @@
+appName: network-policies
+namespace: ''
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/infrastructure/network-policies
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true

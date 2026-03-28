@@ -1,0 +1,93 @@
+alloy:
+  configMap:
+    content: |
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.kubernetes "nodes" {
+        role = "node"
+      }
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "node"
+        }
+      }
+
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }
+
+      local.file_match "audit_logs" {
+        path_targets = [
+          {__path__ = "/var/log/kubernetes/audit/audit.log", job = "kubernetes-audit", source = "audit"},
+        ]
+      }
+
+      loki.source.file "audit_logs" {
+        targets    = local.file_match.audit_logs.targets
+        forward_to = [loki.process.audit_logs.receiver]
+      }
+
+      loki.process "audit_logs" {
+        stage.json {
+          expressions = {
+            level  = "level",
+            verb   = "verb",
+            user   = "user.username",
+          }
+        }
+        stage.labels {
+          values = {
+            level = "",
+            verb  = "",
+            user  = "",
+          }
+        }
+        forward_to = [loki.write.default.receiver]
+      }
+  mounts:
+    extra:
+      - name: audit-logs
+        mountPath: /var/log/kubernetes/audit
+        readOnly: true
+controller:
+  type: daemonset
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 192Mi
+  volumes:
+    extra:
+      - name: audit-logs
+        hostPath:
+          path: /var/log/kubernetes/audit
+          type: DirectoryOrCreate

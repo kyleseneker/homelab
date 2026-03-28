@@ -1,0 +1,11 @@
+appName: openclaw
+namespace: openclaw
+sourceType: helm
+chartRepo: https://bjw-s-labs.github.io/helm-charts
+chartName: app-template
+chartVersion: 4.6.2
+createNamespace: true
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

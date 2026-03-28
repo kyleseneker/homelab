@@ -1,0 +1,63 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/prowlarr
+          tag: 2.3.0
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 9696
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - prowlarr.homelab.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: arr-prowlarr
+            port: 9696
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: arr-prowlarr-config
+    globalMounts:
+      - path: /config

@@ -1,0 +1,36 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/flaresolverr/flaresolverr
+          tag: v3.4.6
+        env:
+          LOG_LEVEL: info
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 8191

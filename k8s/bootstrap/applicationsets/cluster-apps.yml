@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/kyleseneker/homelab.git
+        revision: HEAD
+        files:
+          - path: "k8s/clusters/homelabk8s01/**/config.yaml"
+  template:
+    metadata:
+      name: "{{ .appName }}"
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/kyleseneker/homelab.git
+        targetRevision: HEAD
+      destination:
+        server: https://kubernetes.default.svc
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+  templatePatch: |
+    {{- if hasKey . "annotations" }}
+    metadata:
+      annotations:
+        {{- range $k, $v := .annotations }}
+        {{ $k }}: {{ $v | quote }}
+        {{- end }}
+    {{- end }}
+    spec:
+      {{- if eq .sourceType "helm" }}
+      source:
+      sources:
+        - repoURL: {{ .chartRepo | quote }}
+          chart: {{ .chartName | quote }}
+          targetRevision: {{ .chartVersion | quote }}
+          helm:
+            valueFiles:
+              - "$values/{{ .path.path }}/values.yaml"
+        - repoURL: https://github.com/kyleseneker/homelab.git
+          targetRevision: HEAD
+          ref: values
+        {{- if .hasResources }}
+        - repoURL: https://github.com/kyleseneker/homelab.git
+          targetRevision: HEAD
+          path: {{ .path.path | quote }}
+        {{- end }}
+      {{- else }}
+      source:
+        repoURL: https://github.com/kyleseneker/homelab.git
+        targetRevision: HEAD
+        path: {{ .gitPath | quote }}
+      {{- end }}
+      destination:
+        namespace: {{ .namespace | quote }}
+      syncPolicy:
+        syncOptions:
+          {{- range .syncOptions }}
+          - {{ . }}
+          {{- end }}
+          {{- if .createNamespace }}
+          - CreateNamespace=true
+          {{- end }}
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            maxDuration: 3m
+            factor: 2

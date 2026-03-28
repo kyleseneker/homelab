@@ -1,0 +1,62 @@
+global:
+  envFrom:
+    - secretRef:
+        name: authentik-credentials
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 1Gi
+worker:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+postgresql:
+  enabled: true
+  auth:
+    existingSecret: authentik-credentials
+    secretKeys:
+      adminPasswordKey: postgresql-password
+      userPasswordKey: postgresql-password
+  primary:
+    podSecurityContext:
+      enabled: true
+      fsGroup: 988
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 977
+      runAsGroup: 988
+      runAsNonRoot: true
+    persistence:
+      enabled: true
+      storageClass: nfs-client
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      storageClass: nfs-client
+      size: 1Gi
+    resources:
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 128Mi

@@ -1,0 +1,12 @@
+appName: kyverno
+namespace: kyverno
+sourceType: helm
+chartRepo: https://kyverno.github.io/kyverno/
+chartName: kyverno
+chartVersion: 3.7.1
+createNamespace: true
+syncOptions:
+  - ServerSideApply=true
+annotations:
+  argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+hasResources: false

@@ -1,0 +1,12 @@
+appName: intel-gpu-operator
+namespace: intel-gpu-operator
+sourceType: helm
+chartRepo: https://intel.github.io/helm-charts
+chartName: intel-device-plugins-operator
+chartVersion: 0.35.0
+createNamespace: true
+hasResources: true
+syncOptions:
+  - SkipDryRunOnMissingResource=true
+  - ServerSideApply=true
+  - ServerSideDiff=true

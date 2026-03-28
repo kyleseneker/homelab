@@ -1,0 +1,15 @@
+crds:
+  enabled: true
+config:
+  enableGatewayAPI: true
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+cainjector:
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+webhook:
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1

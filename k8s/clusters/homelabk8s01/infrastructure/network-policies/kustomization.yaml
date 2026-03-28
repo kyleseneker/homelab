@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - arr.yml
+  - auth.yml
+  - backups.yml
+  - external-secrets.yml
+  - kyverno.yml
+  - monitoring.yml
+  - openclaw.yml
+  - vault.yml

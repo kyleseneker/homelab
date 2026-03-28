@@ -1,0 +1,83 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/jellyfin
+          tag: 10.11.6
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 10
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            memory: 4Gi
+            gpu.intel.com/i915: 1
+defaultPodOptions:
+  nodeSelector:
+    gpu: intel
+service:
+  main:
+    controller: main
+    type: LoadBalancer
+    ports:
+      http:
+        port: 8096
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - jellyfin.homelab.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: arr-jellyfin
+            port: 8096
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: arr-jellyfin-config
+    globalMounts:
+      - path: /config
+  media:
+    type: persistentVolumeClaim
+    existingClaim: arr-data
+    globalMounts:
+      - path: /data/media
+        subPath: media
+        readOnly: false
+  dri:
+    type: hostPath
+    hostPath: /dev/dri
+    globalMounts:
+      - path: /dev/dri

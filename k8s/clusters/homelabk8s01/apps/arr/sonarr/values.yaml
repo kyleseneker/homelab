@@ -1,0 +1,92 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/sonarr
+          tag: 4.0.17
+        envFrom:
+          - configMapRef:
+              name: arr-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            memory: 1Gi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 30
+              timeoutSeconds: 15
+              failureThreshold: 10
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 15
+              timeoutSeconds: 15
+              failureThreshold: 5
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 5
+              timeoutSeconds: 15
+              failureThreshold: 30
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 8989
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - sonarr.homelab.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: arr-sonarr
+            port: 8989
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: arr-sonarr-config
+    globalMounts:
+      - path: /config
+  data:
+    type: persistentVolumeClaim
+    existingClaim: arr-data
+    globalMounts:
+      - path: /data

@@ -1,0 +1,66 @@
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.14.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: velero
+      credential:
+        name: velero-cloud-credentials
+        key: cloud
+      config:
+        region: minio
+        s3ForcePathStyle: 'true'
+        s3Url: http://minio.backups.svc.cluster.local:9000
+  volumeSnapshotLocation: []
+  defaultVolumesToFsBackup: true
+credentials:
+  useSecret: true
+  existingSecret: velero-cloud-credentials
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 512Mi
+schedules:
+  daily-stateful:
+    disabled: false
+    schedule: 0 3 * * *
+    template:
+      includedNamespaces:
+        - arr
+        - monitoring
+        - auth
+      defaultVolumesToFsBackup: true
+      ttl: 168h0m0s
+      storageLocation: default
+  weekly-full-cluster:
+    disabled: false
+    schedule: 0 4 * * 0
+    template:
+      includedNamespaces:
+        - '*'
+      excludedNamespaces:
+        - kube-system
+        - kube-public
+      defaultVolumesToFsBackup: true
+      ttl: 720h0m0s
+      storageLocation: default
+deployNodeAgent: true
+nodeAgent:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 1Gi

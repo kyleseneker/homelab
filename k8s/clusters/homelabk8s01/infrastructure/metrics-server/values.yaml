@@ -1,0 +1,11 @@
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+args:
+  - --kubelet-insecure-tls
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

@@ -1,0 +1,11 @@
+appName: uptime-kuma
+namespace: monitoring
+sourceType: helm
+chartRepo: https://bjw-s-labs.github.io/helm-charts
+chartName: app-template
+chartVersion: 4.6.2
+createNamespace: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false

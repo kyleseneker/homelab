@@ -1,0 +1,19 @@
+mode: standalone
+existingSecret: minio-credentials
+persistence:
+  enabled: true
+  storageClass: nfs-client
+  size: 50Gi
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+securityContext:
+  enabled: true
+  runAsUser: 977
+  runAsGroup: 988
+  fsGroup: 988
+consoleIngress:
+  enabled: false

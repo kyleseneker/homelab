@@ -1,0 +1,11 @@
+appName: kyverno-policies
+namespace: ''
+sourceType: git
+gitPath: k8s/components/kyverno-policies
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipDryRunOnMissingResource=true
+annotations:
+  argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
