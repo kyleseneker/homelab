@@ -168,7 +168,7 @@ data:
             description: GitOps
         - Proxmox:
             icon: proxmox.svg
-            href: https://proxmox.homelab.local
+            href: https://proxmox.homelab.local:8006
             description: Hypervisor
         - Vault:
             icon: vault.svg

@@ -59,7 +59,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | ArgoCD | `https://argocd.homelab.local` |
     | Vault | `https://vault.homelab.local` |
     | Authentik | `https://auth.homelab.local` |
-    | Proxmox | `https://proxmox.homelab.local` |
+    | Proxmox | `https://proxmox.homelab.local:8006` |
     | Homepage | `https://home.homelab.local` |
 
 !!! note
