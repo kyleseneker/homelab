@@ -4,7 +4,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/haveagitgat/tdarr
-          tag: 2.65.01
+          tag: 2.66.01
         envFrom:
           - configMapRef:
               name: arr-env
