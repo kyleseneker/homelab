@@ -1,0 +1,11 @@
+appName: vpa
+namespace: kube-system
+sourceType: helm
+chartRepo: https://kubernetes.github.io/autoscaler
+chartName: vertical-pod-autoscaler
+chartVersion: 0.8.1
+createNamespace: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false

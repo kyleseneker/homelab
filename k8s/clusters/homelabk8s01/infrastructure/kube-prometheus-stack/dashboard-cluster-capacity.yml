@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-cluster-capacity
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  cluster-capacity.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "title": "CPU: Requested vs Allocatable",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "custom": {
+                "fillOpacity": 10,
+                "lineWidth": 2,
+                "spanNulls": true
+              }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "Allocatable" },
+                "properties": [
+                  { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
+                  { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Requested" },
+                "properties": [
+                  { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Used" },
+                "properties": [
+                  { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+                ]
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_node_status_allocatable{resource=\"cpu\"})",
+              "legendFormat": "Allocatable"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"})",
+              "legendFormat": "Requested"
+            },
+            {
+              "expr": "sum(rate(node_cpu_seconds_total{mode!=\"idle\"}[5m]))",
+              "legendFormat": "Used"
+            }
+          ]
+        },
+        {
+          "title": "Memory: Requested vs Allocatable",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": {
+                "fillOpacity": 10,
+                "lineWidth": 2,
+                "spanNulls": true
+              }
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byName", "options": "Allocatable" },
+                "properties": [
+                  { "id": "custom.lineStyle", "value": { "fill": "dash", "dash": [10, 10] } },
+                  { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Requested" },
+                "properties": [
+                  { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }
+                ]
+              },
+              {
+                "matcher": { "id": "byName", "options": "Used" },
+                "properties": [
+                  { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }
+                ]
+              }
+            ]
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_node_status_allocatable{resource=\"memory\"})",
+              "legendFormat": "Allocatable"
+            },
+            {
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"})",
+              "legendFormat": "Requested"
+            },
+            {
+              "expr": "sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)",
+              "legendFormat": "Used"
+            }
+          ]
+        },
+        {
+          "title": "CPU Request Utilization %",
+          "type": "gauge",
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 0.7 },
+                  { "color": "red", "value": 0.9 }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"cpu\"}) / sum(kube_node_status_allocatable{resource=\"cpu\"})"
+            }
+          ]
+        },
+        {
+          "title": "Memory Request Utilization %",
+          "type": "gauge",
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 0.7 },
+                  { "color": "red", "value": 0.9 }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_container_resource_requests{resource=\"memory\"}) / sum(kube_node_status_allocatable{resource=\"memory\"})"
+            }
+          ]
+        },
+        {
+          "title": "Pod Count vs Capacity",
+          "type": "gauge",
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "yellow", "value": 200 },
+                  { "color": "red", "value": 300 }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(kubelet_running_pods)"
+            }
+          ]
+        },
+        {
+          "title": "Node Count",
+          "type": "stat",
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 8 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "expr": "count(kube_node_info)"
+            }
+          ]
+        },
+        {
+          "title": "CPU Requests by Namespace",
+          "type": "piechart",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "short" }
+          },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"cpu\"})",
+              "legendFormat": "{{ namespace }}"
+            }
+          ]
+        },
+        {
+          "title": "Memory Requests by Namespace",
+          "type": "piechart",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": { "unit": "bytes" }
+          },
+          "targets": [
+            {
+              "expr": "sum by (namespace) (kube_pod_container_resource_requests{resource=\"memory\"})",
+              "legendFormat": "{{ namespace }}"
+            }
+          ]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["capacity", "homelab"],
+      "templating": { "list": [] },
+      "time": { "from": "now-7d", "to": "now" },
+      "title": "Cluster Capacity Overview",
+      "uid": "homelab-cluster-capacity"
+    }

@@ -1,0 +1,11 @@
+appName: goldilocks
+namespace: goldilocks
+sourceType: helm
+chartRepo: https://charts.fairwinds.com/stable
+chartName: goldilocks
+chartVersion: 10.3.0
+createNamespace: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false

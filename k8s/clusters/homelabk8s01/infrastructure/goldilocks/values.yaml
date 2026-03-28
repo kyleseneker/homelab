@@ -1,0 +1,22 @@
+vpa:
+  enabled: false
+
+controller:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
+  flags:
+    on-by-default: "true"
+    exclude-namespaces: "kube-node-lease,kube-public"
+
+dashboard:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 15m
+      memory: 64Mi
+    limits:
+      memory: 128Mi

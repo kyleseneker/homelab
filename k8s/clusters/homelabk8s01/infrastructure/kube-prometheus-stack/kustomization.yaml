@@ -4,6 +4,8 @@ resources:
   - alertmanager-openclaw-external-secret.yml
   - alertmanager-pdb.yml
   - alertmanager-slack-external-secret.yml
+  - dashboard-cluster-capacity.yml
+  - dashboard-namespace-resources.yml
   - grafana-external-secret.yml
   - grafana-oidc-external-secret.yml
   - homelab-rules.yml
