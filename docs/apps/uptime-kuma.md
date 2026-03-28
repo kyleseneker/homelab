@@ -59,8 +59,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | ArgoCD | `https://argocd.homelab.local` |
     | Vault | `https://vault.homelab.local` |
     | Authentik | `https://auth.homelab.local` |
-    | Proxmox | `https://proxmox.homelab.local:8006` |
-    | Homepage | `https://home.homelab.local` |
+| Homepage | `https://home.homelab.local` |
 
 !!! note
     Uptime Kuma monitors from within the cluster. For TLS checks to work against `*.homelab.local` endpoints using the internal CA, the monitors should be configured to accept self-signed certificates (or use HTTP checks against the internal service URLs instead).
