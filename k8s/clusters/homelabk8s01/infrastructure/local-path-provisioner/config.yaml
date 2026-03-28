@@ -1,0 +1,10 @@
+appName: local-path-provisioner
+namespace: local-path-storage
+sourceType: kustomize
+gitPath: k8s/clusters/homelabk8s01/infrastructure/local-path-provisioner
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+annotations:
+  argocd.argoproj.io/sync-wave: "-2"
