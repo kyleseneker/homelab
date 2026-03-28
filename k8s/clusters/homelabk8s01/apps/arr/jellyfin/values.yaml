@@ -34,6 +34,8 @@ controllers:
             memory: 4Gi
             gpu.intel.com/i915: 1
 defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes-excludes: media,dri
   nodeSelector:
     gpu: intel
 service:

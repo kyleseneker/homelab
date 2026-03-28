@@ -61,6 +61,9 @@ route:
         backendRefs:
           - name: arr-bazarr
             port: 6767
+defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes-excludes: data
 persistence:
   config:
     type: persistentVolumeClaim

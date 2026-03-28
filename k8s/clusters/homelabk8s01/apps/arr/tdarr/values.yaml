@@ -60,6 +60,8 @@ controllers:
               failureThreshold: 30
               periodSeconds: 10
 defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes-excludes: media,temp,dri
   nodeSelector:
     gpu: intel
 service:

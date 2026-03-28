@@ -120,6 +120,8 @@ persistence:
     globalMounts:
       - path: /data
 defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes-excludes: data
   securityContext:
     sysctls:
       - name: net.ipv4.conf.all.src_valid_mark

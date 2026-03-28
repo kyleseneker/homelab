@@ -69,10 +69,13 @@ schedules:
     schedule: 0 5 * * 0
     template:
       includedNamespaces:
-        - '*'
-      excludedNamespaces:
-        - kube-system
-        - kube-public
+        - arr
+        - monitoring
+        - auth
+        - backups
+        - argocd
+        - vault
+        - external-secrets
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
       storageLocation: offsite
