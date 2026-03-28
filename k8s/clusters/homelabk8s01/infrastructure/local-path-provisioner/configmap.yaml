@@ -26,6 +26,8 @@ data:
     kind: Pod
     metadata:
       name: helper-pod
+      labels:
+        app.kubernetes.io/name: local-path-provisioner-helper
     spec:
       priorityClassName: system-node-critical
       tolerations:
@@ -34,5 +36,5 @@ data:
           effect: NoSchedule
       containers:
         - name: helper-pod
-          image: busybox
+          image: busybox:1.37
           imagePullPolicy: IfNotPresent
