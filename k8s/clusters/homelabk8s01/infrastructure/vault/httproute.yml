@@ -20,3 +20,5 @@ spec:
       backendRefs:
         - name: vault
           port: 8200
+          group: ''
+          kind: Service

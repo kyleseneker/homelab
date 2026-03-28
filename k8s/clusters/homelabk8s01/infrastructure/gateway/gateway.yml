@@ -15,7 +15,9 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: homelab-gateway-tls
+          - group: ""
+            kind: Secret
+            name: homelab-gateway-tls
       allowedRoutes:
         namespaces:
           from: All
