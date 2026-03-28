@@ -20,5 +20,6 @@ spec:
       backendRefs:
         - name: vault
           port: 8200
+          weight: 1
           group: ''
           kind: Service
