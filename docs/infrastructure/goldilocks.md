@@ -36,13 +36,7 @@ When workloads are added or removed, Goldilocks creates or deletes the correspon
 
 ## Accessing the Dashboard
 
-The Goldilocks dashboard is not exposed via HTTPRoute by default. Access it via port-forward:
-
-```bash
-kubectl port-forward -n goldilocks svc/goldilocks-dashboard 8080:80
-```
-
-Then open `http://localhost:8080`.
+The Goldilocks dashboard is exposed via Gateway API HTTPRoute at `https://goldilocks.homelab.local`.
 
 ## Cluster Integration
 

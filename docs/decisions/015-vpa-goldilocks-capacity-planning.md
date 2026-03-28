@@ -38,6 +38,6 @@ Deploy the Kubernetes Vertical Pod Autoscaler (VPA) in recommend-only mode along
 
 - VPA recommendations are advisory. Tuning resource requests still requires manual manifest updates and a deploy cycle. This is intentional for a single-host cluster where unexpected resource changes could cascade.
 - Goldilocks creates VPA CRs for all workloads including infrastructure components managed by Helm charts. These VPA CRs are cluster state not tracked in Git. If Goldilocks is removed, the VPA CRs it created will be garbage collected.
-- The Goldilocks dashboard is not exposed via HTTPRoute by default. It can be accessed via `kubectl port-forward` or an HTTPRoute can be added later.
+- The Goldilocks dashboard is exposed at `https://goldilocks.homelab.local` via HTTPRoute. It does not require authentication -- consider adding Authentik forward auth if the cluster becomes multi-user.
 - VPA recommendations require several hours of usage data before they stabilize. Initial recommendations should not be trusted until workloads have run through at least one full usage cycle.
 - The Fairwinds Helm chart for Goldilocks is a third-party dependency. Unlike VPA (official SIG project), Goldilocks depends on Fairwinds' continued maintenance. However, it is widely adopted and actively maintained.

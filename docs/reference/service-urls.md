@@ -23,6 +23,7 @@ These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). Al
 | Authentik | `https://auth.homelab.local` |
 | Vault | `https://vault.homelab.local` |
 | OpenClaw | `https://openclaw.homelab.local` |
+| Goldilocks | `https://goldilocks.homelab.local` |
 
 ## Internal URLs (Kubernetes Service DNS)
 
