@@ -48,8 +48,18 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | Prowlarr | `https://prowlarr.homelab.local` |
     | Bazarr | `https://bazarr.homelab.local` |
     | Jellyseerr | `https://jellyseerr.homelab.local` |
+    | qBittorrent | `https://qbit.homelab.local` |
+    | Tdarr | `http://tdarr.homelab.local` |
+    | OpenClaw | `https://openclaw.homelab.local` |
     | Grafana | `https://grafana.homelab.local` |
+    | Prometheus | `https://prometheus.homelab.local` |
+    | Alertmanager | `https://alertmanager.homelab.local` |
+    | Uptime Kuma | `https://status.homelab.local` |
+    | Goldilocks | `https://goldilocks.homelab.local` |
     | ArgoCD | `https://argocd.homelab.local` |
+    | Vault | `https://vault.homelab.local` |
+    | Authentik | `https://auth.homelab.local` |
+    | Proxmox | `https://proxmox.homelab.local` |
     | Homepage | `https://home.homelab.local` |
 
 !!! note

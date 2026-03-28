@@ -11,21 +11,18 @@ data:
     color: slate
     headerStyle: clean
     layout:
-      Media:
-        style: row
-        columns: 2
-      Downloads:
+      Apps:
         style: row
         columns: 3
-      Management:
-        style: row
-        columns: 4
-      Observability:
+      Media:
         style: row
         columns: 5
+      Observability:
+        style: row
+        columns: 6
       Infrastructure:
         style: row
-        columns: 4
+        columns: 5
 
   widgets.yaml: |
     - kubernetes:
@@ -62,7 +59,7 @@ data:
               description: Source repo
 
   services.yaml: |
-    - Media:
+    - Apps:
         - Jellyfin:
             icon: jellyfin.svg
             href: https://jellyfin.homelab.local
@@ -82,7 +79,11 @@ data:
               type: jellyseerr
               url: http://arr-jellyseerr.arr.svc.cluster.local:5055
               key: "{{HOMEPAGE_VAR_JELLYSEERR_KEY}}"
-    - Downloads:
+        - OpenClaw:
+            icon: openclaw.svg
+            href: https://openclaw.homelab.local
+            description: OpenClaw game
+    - Media:
         - qBittorrent:
             icon: qbittorrent.svg
             href: https://qbit.homelab.local
@@ -108,7 +109,6 @@ data:
               type: radarr
               url: http://arr-radarr.arr.svc.cluster.local:7878
               key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
-    - Management:
         - Prowlarr:
             icon: prowlarr.svg
             href: https://prowlarr.homelab.local
@@ -132,15 +132,6 @@ data:
             widget:
               type: tdarr
               url: http://arr-tdarr.arr.svc.cluster.local:8265
-        - Recyclarr:
-            icon: recyclarr.svg
-            description: Quality profiles
-        - FlareSolverr:
-            icon: flaresolverr.svg
-            description: Captcha solving proxy
-        - Unpackerr:
-            icon: unpackerr.svg
-            description: Download extraction
     - Observability:
         - Grafana:
             icon: grafana.svg
@@ -166,6 +157,10 @@ data:
               type: uptimekuma
               url: http://uptime-kuma.monitoring.svc.cluster.local:3001
               slug: default
+        - Goldilocks:
+            icon: goldilocks.svg
+            href: https://goldilocks.homelab.local
+            description: Resource recommendations
     - Infrastructure:
         - ArgoCD:
             icon: argo-cd.svg
@@ -175,9 +170,10 @@ data:
             icon: proxmox.svg
             href: https://proxmox.homelab.local
             description: Hypervisor
-        - Gluetun:
-            icon: gluetun.svg
-            description: VPN sidecar
+        - Vault:
+            icon: vault.svg
+            href: https://vault.homelab.local
+            description: Secrets management
         - Authentik:
             icon: authentik.png
             href: https://auth.homelab.local
