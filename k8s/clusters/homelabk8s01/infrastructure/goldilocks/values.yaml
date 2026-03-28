@@ -14,6 +14,9 @@ controller:
 
 dashboard:
   replicaCount: 1
+  flags:
+    on-by-default: "true"
+    exclude-namespaces: "kube-node-lease,kube-public"
   resources:
     requests:
       cpu: 15m
