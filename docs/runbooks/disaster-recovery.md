@@ -12,7 +12,8 @@ Before a disaster occurs, ensure the following are available **outside the clust
 
 - Vault root token (stored in password manager after `make vault-init`)
 - AWS credentials and KMS key ID for Vault auto-unseal (the `vault-aws-kms` Secret must be recreated after a rebuild)
-- Velero backups stored on MinIO (running on the NAS or otherwise accessible)
+- Velero backups stored on MinIO (local, running on the NAS) or AWS S3 (offsite, `velero-offsite-homelab` bucket in us-east-1)
+- AWS credentials for the `velero-offsite-homelab` IAM user (stored in password manager, also in Vault at `infrastructure/velero-offsite`)
 - This Git repository (the single source of truth for all cluster state)
 
 !!! warning "Critical"
@@ -65,10 +66,29 @@ Before a disaster occurs, ensure the following are available **outside the clust
     kubectl get applications -n argocd
     ```
 
-7. Once Velero and MinIO are running, restore the most recent backup:
+7. Once Velero is running, restore from the most recent backup. If the NAS is intact, use a local MinIO backup. If the NAS is lost, restore from offsite:
+
+    **From local (MinIO):**
 
     ```bash
     velero backup get
+    velero restore create --from-backup <backup-name>
+    ```
+
+    **From offsite (AWS S3) -- use when NAS is unavailable:**
+
+    First, create the offsite credentials Secret (Vault is not yet available to sync via ESO):
+
+    ```bash
+    kubectl create secret generic velero-offsite-credentials \
+      --namespace backups \
+      --from-file=cloud=<(printf '[default]\naws_access_key_id=<key>\naws_secret_access_key=<secret>')
+    ```
+
+    Then restore from the offsite BSL:
+
+    ```bash
+    velero backup get --storage-location offsite
     velero restore create --from-backup <backup-name>
     ```
 

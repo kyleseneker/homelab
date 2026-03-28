@@ -17,6 +17,14 @@ configuration:
         region: minio
         s3ForcePathStyle: 'true'
         s3Url: http://minio.backups.svc.cluster.local:9000
+    - name: offsite
+      provider: aws
+      bucket: velero-offsite-homelab
+      credential:
+        name: velero-offsite-credentials
+        key: cloud
+      config:
+        region: us-east-1
   volumeSnapshotLocation: []
   defaultVolumesToFsBackup: true
 credentials:
@@ -56,6 +64,18 @@ schedules:
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
       storageLocation: default
+  weekly-offsite:
+    disabled: false
+    schedule: 0 5 * * 0
+    template:
+      includedNamespaces:
+        - '*'
+      excludedNamespaces:
+        - kube-system
+        - kube-public
+      defaultVolumesToFsBackup: true
+      ttl: 720h0m0s
+      storageLocation: offsite
 deployNodeAgent: true
 nodeAgent:
   resources:

@@ -1,17 +1,21 @@
 # Backup & Restore
 
-This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with MinIO as the S3-compatible storage backend.
+This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with MinIO (local) and AWS S3 (offsite) as storage backends.
 
 ## Automated Backup Schedules
 
-Velero runs two automated backup schedules:
+Velero runs three automated backup schedules:
 
-| Schedule | Scope | Retention | Time |
-|----------|-------|-----------|------|
-| `daily-stateful` | `arr`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily |
-| `weekly-full-cluster` | All namespaces (excluding `kube-system`, `kube-public`) | 30 days | 4:00 AM Sunday |
+| Schedule | Scope | Retention | Time | Target |
+|----------|-------|-----------|------|--------|
+| `daily-stateful` | `arr`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily | MinIO (local) |
+| `weekly-full-cluster` | All namespaces (excluding `kube-system`, `kube-public`) | 30 days | 4:00 AM Sunday | MinIO (local) |
+| `weekly-offsite` | All namespaces (excluding `kube-system`, `kube-public`) | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
 
-Both schedules back up Kubernetes resources and PVC data using file-system-level backup via Kopia.
+Both local schedules back up Kubernetes resources and PVC data using file-system-level backup via Kopia. The offsite schedule mirrors the weekly full-cluster backup to AWS S3 Standard-IA in us-east-1 for disaster recovery.
+
+!!! info "Offsite backup"
+    The `weekly-offsite` schedule writes to an S3 bucket (`velero-offsite-homelab`) in AWS us-east-1. Objects are stored in S3 Standard and transitioned to Standard-IA after 30 days via lifecycle policy. Estimated cost is ~$1/month for a typical homelab backup set.
 
 !!! note
     The `kube-system` and `kube-public` namespaces are excluded from backups because their resources are managed by kubeadm and ArgoCD. These are recreated during a cluster rebuild rather than restored from backup.
@@ -137,11 +141,34 @@ kubectl get pods -n backups -l app=minio
 # Check MinIO logs
 kubectl logs -n backups -l app=minio
 
-# Verify the BackupStorageLocation is available
+# Verify all BackupStorageLocations are available
 velero backup-location get
 ```
 
-A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the MinIO endpoint. Check the MinIO service, credentials, and network connectivity.
+A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the storage endpoint. Check the service, credentials, and network connectivity.
+
+### Offsite (AWS S3) Connectivity
+
+If the `offsite` BackupStorageLocation shows `Unavailable`:
+
+1. Verify the `velero-offsite-credentials` Secret exists and is synced:
+
+    ```bash
+    kubectl get externalsecret -n backups velero-offsite-credentials
+    ```
+
+2. Verify the Cilium network policy allows egress to S3:
+
+    ```bash
+    kubectl get ciliumnetworkpolicy -n backups backups-egress -o yaml
+    ```
+
+3. Test S3 connectivity from the Velero pod:
+
+    ```bash
+    kubectl exec -n backups -it deploy/velero -- \
+      wget -qO- --spider https://s3.us-east-1.amazonaws.com
+    ```
 
 ### Backup Contains No PVC Data
 

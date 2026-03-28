@@ -4,3 +4,4 @@ resources:
   - namespace.yml
   - pdb.yml
   - velero-external-secret.yml
+  - velero-offsite-external-secret.yml

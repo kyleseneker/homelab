@@ -122,6 +122,24 @@ spec:
             summary: "No successful backup for schedule {{ $labels.schedule }}"
             description: "Velero schedule {{ $labels.schedule }} has not completed a successful backup in over 25 hours."
 
+        - alert: VeleroOffsiteBackupMissing
+          expr: time() - velero_backup_last_successful_timestamp{schedule="weekly-offsite"} > 8 * 24 * 3600
+          for: 1h
+          labels:
+            severity: critical
+          annotations:
+            summary: "No successful offsite backup in over 8 days"
+            description: "The weekly-offsite Velero schedule has not completed a successful backup in over 8 days. Offsite data protection is degraded."
+
+        - alert: VeleroOffsiteBSLUnavailable
+          expr: velero_backup_storage_location_available{location="offsite"} == 0
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Offsite BackupStorageLocation is unavailable"
+            description: "The offsite S3 BackupStorageLocation has been unavailable for more than 15 minutes. Check AWS credentials and network connectivity."
+
         - alert: VeleroBackupPartialFailure
           expr: increase(velero_backup_partial_failure_total[24h]) > 0
           labels:

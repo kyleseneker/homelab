@@ -64,3 +64,10 @@ spec:
         - ports:
             - port: "2049"
               protocol: TCP
+    - toFQDNs:
+        - matchPattern: "*.s3.us-east-1.amazonaws.com"
+        - matchPattern: "s3.us-east-1.amazonaws.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

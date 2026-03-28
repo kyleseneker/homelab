@@ -28,3 +28,24 @@ output "aws_secret_access_key" {
   value       = aws_iam_access_key.vault_unseal.secret
   sensitive   = true
 }
+
+output "velero_offsite_bucket_name" {
+  description = "S3 bucket name for Velero offsite backups"
+  value       = aws_s3_bucket.velero_offsite.id
+}
+
+output "velero_offsite_bucket_arn" {
+  description = "S3 bucket ARN for Velero offsite backups"
+  value       = aws_s3_bucket.velero_offsite.arn
+}
+
+output "velero_offsite_access_key_id" {
+  description = "AWS access key ID for the velero-offsite IAM user"
+  value       = aws_iam_access_key.velero_offsite.id
+}
+
+output "velero_offsite_secret_access_key" {
+  description = "AWS secret access key for the velero-offsite IAM user"
+  value       = aws_iam_access_key.velero_offsite.secret
+  sensitive   = true
+}
