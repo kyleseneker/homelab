@@ -8,6 +8,7 @@ controllers:
         env:
           VPN_SERVICE_PROVIDER: private internet access
           SERVER_REGIONS: CA Montreal
+          SERVER_ENDPOINT_PORT: '8080'
           VPN_PORT_FORWARDING: 'on'
           FIREWALL_INPUT_PORTS: '8080'
           DOT: 'off'
