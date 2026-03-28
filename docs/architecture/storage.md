@@ -13,18 +13,23 @@ flowchart TD
 
     subgraph k8sCluster["Kubernetes Cluster"]
         nfsProv["NFS Subdir External Provisioner"]
+        localProv["Local-Path Provisioner"]
         scNfsClient["StorageClass: nfs-client"]
+        scLocalPath["StorageClass: local-path"]
 
         subgraph sharedVol["Shared Media Volume"]
             arrPV["PV: arr-data (10Ti)"]
             arrPVC["PVC: arr-data"]
         end
 
-        subgraph dynamicVols["Dynamic Config Volumes"]
-            sonarrPVC["PVC: arr-sonarr-config"]
-            radarrPVC["PVC: arr-radarr-config"]
+        subgraph nfsVols["NFS Config Volumes"]
             prowlarrPVC["PVC: arr-prowlarr-config"]
             otherPVC["PVC: ..."]
+        end
+
+        subgraph localVols["Local-Path Config Volumes"]
+            sonarrPVC["PVC: arr-sonarr-config"]
+            radarrPVC["PVC: arr-radarr-config"]
         end
 
         subgraph appPods["Application Pods"]
@@ -39,16 +44,19 @@ flowchart TD
     nfsExport --> arrPV
     configExport --> nfsProv
     nfsProv --> scNfsClient
-    scNfsClient --> dynamicVols
+    scNfsClient --> nfsVols
+    localProv --> scLocalPath
+    scLocalPath --> localVols
     arrPVC --> appPods
-    dynamicVols --> appPods
+    nfsVols --> appPods
+    localVols --> appPods
 ```
 
-## NFS Subdir External Provisioner
+## Storage Provisioners
+
+### NFS Subdir External Provisioner
 
 The NFS Subdir External Provisioner dynamically creates PersistentVolumes backed by subdirectories on the Unifi NAS. It eliminates the need to manually pre-create PVs for each application.
-
-### Configuration
 
 | Setting | Value |
 |---------|-------|
@@ -58,10 +66,27 @@ The NFS Subdir External Provisioner dynamically creates PersistentVolumes backed
 | Reclaim Policy | Retain |
 | Sync Wave | -2 |
 
-The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-sonarr-config` in the `arr` namespace creates the NFS subdirectory `arr-arr-sonarr-config`.
+The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-prowlarr-config` in the `arr` namespace creates the NFS subdirectory `arr-arr-prowlarr-config`.
 
 !!! info "Default StorageClass"
     `nfs-client` serves as the default StorageClass for the cluster. Any PVC that does not specify a `storageClassName` will be provisioned by this provisioner.
+
+### Local-Path Provisioner
+
+The Rancher Local-Path Provisioner provides node-local storage for applications that require proper POSIX file locking, such as those using SQLite databases. NFS does not support the file locking primitives that SQLite requires, which causes database lock contention and potential corruption.
+
+| Setting | Value |
+|---------|-------|
+| StorageClass Name | `local-path` |
+| Volume Binding Mode | WaitForFirstConsumer |
+| Reclaim Policy | Retain |
+| Storage Path | `/opt/local-path-provisioner/` |
+| Sync Wave | -2 |
+
+Local-path volumes are tied to the worker node where they are first provisioned. Applications using this StorageClass (Sonarr, Radarr) define their PVCs as standalone kustomize resources with `existingClaim` references in their Helm values.
+
+!!! warning "Node Affinity"
+    Pods using local-path PVCs are pinned to the node where the volume was created. If the node becomes unavailable, the pod cannot reschedule to another node until the original node recovers.
 
 ## Shared Media Volume (arr-data)
 
@@ -115,17 +140,17 @@ The NAS follows the recommended media server folder structure, keeping downloads
 
 ## Per-Application Config Volumes
 
-Each application also has its own dynamically provisioned PVC for configuration and database storage. These are created via the `nfs-client` StorageClass and hold application-specific data (databases, configuration files, logs).
+Each application has its own PVC for configuration and database storage. Most use the `nfs-client` StorageClass. Applications with SQLite databases that are sensitive to NFS locking limitations use `local-path` instead.
 
-| Application | PVC Name | Typical Size |
-|------------|----------|-------------|
-| Jellyfin | `arr-jellyfin-config` | 10Gi - 50Gi |
-| Sonarr | `arr-sonarr-config` | 1Gi - 5Gi |
-| Radarr | `arr-radarr-config` | 1Gi - 5Gi |
-| Prowlarr | `arr-prowlarr-config` | 1Gi |
-| Bazarr | `arr-bazarr-config` | 1Gi |
-| Jellyseerr | `arr-jellyseerr-config` | 1Gi |
-| Tdarr | `arr-tdarr-config` | 1Gi |
+| Application | PVC Name | StorageClass | Typical Size |
+|------------|----------|-------------|-------------|
+| Jellyfin | `arr-jellyfin-config` | `nfs-client` | 10Gi - 50Gi |
+| Sonarr | `arr-sonarr-config` | `local-path` | 5Gi |
+| Radarr | `arr-radarr-config` | `local-path` | 5Gi |
+| Prowlarr | `arr-prowlarr-config` | `nfs-client` | 1Gi |
+| Bazarr | `arr-bazarr-config` | `nfs-client` | 1Gi |
+| Jellyseerr | `arr-jellyseerr-config` | `nfs-client` | 1Gi |
+| Tdarr | `arr-tdarr-config` | `nfs-client` | 1Gi |
 
 ## Infrastructure Storage
 

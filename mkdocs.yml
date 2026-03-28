@@ -115,7 +115,7 @@ nav:
       - Network Policies: decisions/003-cilium-network-policies.md
       - ArgoCD ApplicationSet: decisions/004-argocd-applicationset.md
       - cert-manager CA: decisions/005-cert-manager-self-signed-ca.md
-      - NFS Storage: decisions/006-nfs-storage.md
+      - NFS & Local-Path Storage: decisions/006-nfs-local-path-storage.md
       - Vault + ESO: decisions/007-vault-eso-secrets.md
       - bjw-s App Template: decisions/008-bjw-s-app-template.md
       - Gluetun VPN Sidecar: decisions/009-gluetun-vpn-sidecar.md
