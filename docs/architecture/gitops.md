@@ -2,81 +2,74 @@
 
 ArgoCD manages the entire cluster lifecycle declaratively. Every infrastructure component and application is defined as an ArgoCD `Application` custom resource in Git. Changes flow from a `git push` to live cluster state without manual intervention.
 
-## App-of-Apps Pattern
+## ApplicationSet Pattern
 
-The homelab uses the **app-of-apps** pattern with **directory recursion**. A single root Application watches a directory tree and automatically discovers child Application manifests.
+The homelab uses an **ApplicationSet** with a **Git File Generator** to discover `config.yaml` files and generate independent Applications per component. Each app syncs in isolation -- no cross-app blocking.
 
 ```mermaid
 flowchart TD
-    rootApp["Root Application"] --> clusterDir["k8s/clusters/homelabk8s01/"]
-    clusterDir --> infraDir["infrastructure/"]
-    clusterDir --> appsDir["apps/"]
+    appSet["ApplicationSet (cluster-apps)"] --> generator["Git File Generator"]
+    generator --> glob["k8s/clusters/homelabk8s01/**/config.yaml"]
 
-    infraDir --> gateway["gateway/gateway.yml"]
-    infraDir --> certManager["cert-manager/application.yml"]
-    infraDir --> vault["vault/application.yml"]
-    infraDir --> externalSecrets["external-secrets/application.yml"]
-    infraDir --> nfsProvisioner["nfs-provisioner/application.yml"]
-    infraDir --> prometheusStack["kube-prometheus-stack/application.yml"]
-    infraDir --> loki["loki/application.yml"]
-    infraDir --> velero["velero/application.yml"]
-    infraDir --> moreInfra["..."]
+    glob --> infraConfigs["infrastructure/"]
+    glob --> appConfigs["apps/"]
 
-    appsDir --> arrDir["arr/"]
-    appsDir --> homepage["homepage/application.yml"]
+    infraConfigs --> certManager["cert-manager/config.yaml"]
+    infraConfigs --> vault["vault/config.yaml"]
+    infraConfigs --> externalSecrets["external-secrets/config.yaml"]
+    infraConfigs --> prometheusStack["kube-prometheus-stack/config.yaml"]
+    infraConfigs --> moreInfra["..."]
 
-    arrDir --> sonarr["sonarr/application.yml"]
-    arrDir --> radarr["radarr/application.yml"]
-    arrDir --> jellyfin["jellyfin/application.yml"]
+    appConfigs --> arrDir["arr/"]
+    appConfigs --> homepage["homepage/config.yaml"]
+
+    arrDir --> prereqs["prereqs/config.yaml"]
+    arrDir --> sonarr["sonarr/config.yaml"]
+    arrDir --> radarr["radarr/config.yaml"]
     arrDir --> moreArr["..."]
 ```
 
-### Root Application
+### ApplicationSet Definition
 
-The root application is defined at `k8s/bootstrap/root-app.yml`. It uses the `directory.recurse` source option to scan `k8s/clusters/homelabk8s01` for any `*.yml` file matching an ArgoCD Application resource.
+The ApplicationSet is defined at `k8s/bootstrap/applicationsets/cluster-apps.yml`. It uses a Git File Generator to discover all `config.yaml` files under `k8s/clusters/homelabk8s01/` and generates an Application for each one.
 
 Key configuration:
 
-- **Source path:** `k8s/clusters/homelabk8s01`
-- **Directory recurse:** Enabled -- scans all subdirectories
-- **Include pattern:** `*.yml`
-- **Automated sync:** Enabled with `prune` and `selfHeal`
+- **Generator:** Git File Generator matching `**/config.yaml`
+- **Go templates:** Enabled with `missingkey=error`
+- **`templatePatch`:** Handles conditional rendering of `sources` (Helm multi-source) vs `source` (git single-source)
+- **Automated sync:** Enabled with `prune`, `selfHeal`, and retry backoff
 
-When ArgoCD processes the root application, it discovers every `application.yml` file in the directory tree and creates the corresponding child Applications in the cluster.
+### Per-App Directory Structure
 
-### Child Applications
+Each app directory contains up to three files consumed by the ApplicationSet:
 
-Each child Application manifest defines:
+| File | Purpose | Required |
+|------|---------|----------|
+| `config.yaml` | App metadata: name, namespace, chart info, sync options | Always |
+| `values.yaml` | Helm chart values | Helm apps only |
+| `kustomization.yaml` | Lists supporting resources (PDBs, ExternalSecrets, HTTPRoutes) | Only if supporting resources exist |
 
-- The Helm chart repository and version (or Git source) for the component
-- Helm values inline or from a values file
-- The target namespace
-- Sync policy (automated with prune and self-heal)
-- A **sync wave annotation** controlling deployment order
+**Helm apps** produce multi-source Applications:
 
-## Sync Wave Ordering
+1. **Chart source**: Helm repository with `values.yaml` from git
+2. **Values ref**: Git repo reference for the values file
+3. **Kustomize source** (optional): Supporting resources from the same directory
 
-Sync waves ensure dependencies are deployed before the components that rely on them. ArgoCD processes waves in ascending numerical order, waiting for each wave to become healthy before proceeding.
+**Git-directory apps** (network-policies, gateway, kyverno-policies) produce single-source Applications pointing to a git path.
 
-```mermaid
-flowchart LR
-    wave3["Wave -3"] --> wave2["Wave -2"]
-    wave2 --> wave1["Wave -1"]
-    wave1 --> wave0["Wave 0"]
-    wave0 --> wavePos1["Wave 1"]
-    wavePos1 --> wavePos2["Wave 2"]
-```
+## Independent Syncs
 
-### Sync Wave Table
+Each Application syncs independently. Unlike the previous app-of-apps pattern where a single root Application synced all children as one operation, ApplicationSet-generated apps have no cross-app sync dependencies. A broken app does not block fixes to other apps.
 
-| Wave | Components | Rationale |
-|------|-----------|-----------|
-| -3 | Gateway API CRDs, cert-manager, Vault, External Secrets | Core infrastructure that everything depends on: CRDs, TLS, and secret management |
-| -2 | Metrics Server, NFS Provisioner, MinIO, Intel GPU Operator | Storage, metrics, and GPU primitives needed by higher-level services |
-| -1 | kube-prometheus-stack, Loki, Velero, Intel GPU Plugin, Reloader, Descheduler | Monitoring stack, backup system, GPU device plugin, config reload automation, and pod rebalancing |
-| 0 | Authentik, Alloy | SSO provider and log collector; both depend on wave -1 services being available |
-| 1 | All arr apps (Jellyfin, Sonarr, Radarr, Prowlarr, Bazarr, Jellyseerr, qBittorrent/Gluetun, Recyclarr, Tdarr, Exportarr, FlareSolverr, Unpackerr) | Application workloads requiring ingress, storage, monitoring, and GPU resources |
-| 2 | Homepage, Uptime Kuma | Dashboard and status page that aggregate links to all other services; deployed last |
+Ordering between apps (e.g., the `arr` namespace must exist before arr apps deploy) is handled by health checks -- an app targeting namespace `arr` will wait for the namespace to exist, which is created by the `arr-prereqs` Application.
+
+## Namespace Strategy
+
+Two patterns based on whether a namespace is shared:
+
+- **Single-app namespaces** (auth, vault, monitoring, cert-manager, etc.): `CreateNamespace=true` on the Application. No separate namespace manifest.
+- **Shared namespace** (arr): A dedicated `arr/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
 
 ## Git Push to Cluster State
 
@@ -89,11 +82,12 @@ sequenceDiagram
     participant argo as ArgoCD
     participant cluster as Kubernetes Cluster
 
-    dev->>git: git push (modify Application or Helm values)
+    dev->>git: git push (modify config.yaml, values.yaml, or resources)
     git-->>argo: Webhook or poll detects change
+    argo->>argo: ApplicationSet regenerates affected Application specs
     argo->>argo: Compare desired state vs live state
     argo->>argo: Detect drift (OutOfSync)
-    argo->>cluster: Apply manifests (respecting sync waves)
+    argo->>cluster: Apply manifests
     cluster-->>argo: Report resource health
     argo->>argo: Mark Application as Synced/Healthy
 ```
@@ -104,7 +98,7 @@ All Applications are configured with automated sync:
 
 - **Prune:** Resources removed from Git are deleted from the cluster
 - **Self-Heal:** Manual changes made directly to the cluster are reverted to match Git
-- **Retry:** Failed syncs are retried automatically
+- **Retry:** Failed syncs are retried with exponential backoff (10s to 3m, up to 10 retries)
 
 !!! warning "Manual Overrides"
     With self-heal enabled, any manual `kubectl` changes will be reverted on the next sync cycle. Always commit changes to Git rather than applying them directly.
@@ -114,10 +108,10 @@ All Applications are configured with automated sync:
 To add a new application to the cluster:
 
 1. Create a directory under `k8s/clusters/homelabk8s01/apps/` (or `infrastructure/` for infra components)
-2. Add an `application.yml` defining the ArgoCD Application resource
-3. Set the appropriate sync wave annotation
-4. Include any ExternalSecret manifests or additional resources in the same directory
-5. Commit and push -- ArgoCD discovers and deploys the new Application automatically
+2. Add a `config.yaml` with app metadata (name, namespace, chart info, sync options)
+3. Add a `values.yaml` with Helm chart values
+4. If the app has supporting resources (PDBs, ExternalSecrets, HTTPRoutes), add them and create a `kustomization.yaml` listing them
+5. Commit and push -- the ApplicationSet discovers and deploys the new Application automatically
 
 !!! tip "No Registration Required"
-    Because the root app uses directory recursion, new Applications are discovered automatically. There is no need to modify the root app or any parent manifest.
+    The ApplicationSet's Git File Generator automatically discovers new `config.yaml` files. There is no need to modify the ApplicationSet definition or any parent manifest.
