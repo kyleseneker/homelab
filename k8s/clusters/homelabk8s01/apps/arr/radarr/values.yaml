@@ -16,6 +16,7 @@ controllers:
             add:
               - SETUID
               - SETGID
+              - CHOWN
         resources:
           requests:
             cpu: 250m
