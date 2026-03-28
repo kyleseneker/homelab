@@ -16,7 +16,7 @@ controllers:
       tooling:
         image:
           repository: alpine
-          tag: '3.21'
+          tag: '3.23'
         command:
           - /bin/sh
           - -c
