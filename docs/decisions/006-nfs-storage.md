@@ -1,4 +1,4 @@
-# ADR-005: NFS External Provisioner for Storage
+# ADR-006: NFS External Provisioner for Storage
 
 ## Status
 
@@ -31,4 +31,4 @@ Use the NFS Subdir External Provisioner with a Unifi NAS as the backing store. A
 
 - NFS latency spikes can cause probe failures. Application health check timeouts have been tuned to tolerate this (multiple commits adjusting probe tolerances).
 - SQLite databases on NFS can experience locking issues under load. The *arr apps handle this internally but it's a known NFS limitation.
-- Single NAS is a single point of failure for all persistent storage. Mitigated by Velero backups to MinIO (also on NFS, but could be redirected to cloud S3).
+- Single NAS is a single point of failure for all persistent storage. A backup strategy for persistent data is essential to mitigate this risk.

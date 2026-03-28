@@ -1,4 +1,4 @@
-# ADR-006: Velero + MinIO for Backup and Restore
+# ADR-013: Velero + MinIO for Backup and Restore
 
 ## Status
 
@@ -17,7 +17,7 @@ Use Velero with the AWS plugin for backup orchestration, Kopia for file-system P
 - **NFS snapshots only**: Covers data but not Kubernetes resource state (Secrets, ConfigMaps, RBAC). Restoration requires manual re-creation of all cluster resources.
 - **Restic/Kopia standalone**: Can back up PVC data but doesn't handle Kubernetes resource backup or provide integration with `kubectl`-style restore workflows.
 - **Cloud S3 (AWS, Backblaze B2)**: Durable off-site storage but adds ongoing cost and external dependency. Could be used as a secondary target in the future.
-- **Longhorn/Rook volume snapshots**: Require distributed storage (see ADR-005). Not applicable with NFS.
+- **Longhorn/Rook volume snapshots**: Require distributed storage (see ADR-006). Not applicable with NFS.
 
 ## Rationale
 

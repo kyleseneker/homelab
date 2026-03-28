@@ -1,4 +1,4 @@
-# ADR-001: Cilium as CNI and Gateway Controller
+# ADR-002: Cilium as CNI and Gateway Controller
 
 ## Status
 

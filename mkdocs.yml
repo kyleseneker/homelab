@@ -110,13 +110,20 @@ nav:
       - Adding App to SSO: runbooks/adding-app-to-sso.md
       - Authentik Emergency Bypass: runbooks/authentik-emergency-bypass.md
   - Decisions:
-      - Cilium as CNI: decisions/001-cilium-cni.md
-      - Vault + ESO: decisions/002-vault-eso-secrets.md
-      - ArgoCD ApplicationSet: decisions/003-argocd-applicationset.md
-      - bjw-s App Template: decisions/004-bjw-s-app-template.md
-      - NFS Storage: decisions/005-nfs-storage.md
-      - Velero + MinIO: decisions/006-velero-minio-backups.md
-      - Authentik SSO: decisions/007-authentik-sso.md
+      - kubeadm Bootstrap: decisions/001-kubeadm-cluster-bootstrap.md
+      - Cilium as CNI: decisions/002-cilium-cni.md
+      - Network Policies: decisions/003-cilium-network-policies.md
+      - ArgoCD ApplicationSet: decisions/004-argocd-applicationset.md
+      - cert-manager CA: decisions/005-cert-manager-self-signed-ca.md
+      - NFS Storage: decisions/006-nfs-storage.md
+      - Vault + ESO: decisions/007-vault-eso-secrets.md
+      - bjw-s App Template: decisions/008-bjw-s-app-template.md
+      - Gluetun VPN Sidecar: decisions/009-gluetun-vpn-sidecar.md
+      - Authentik SSO: decisions/010-authentik-sso.md
+      - Observability Stack: decisions/011-observability-stack.md
+      - Renovate: decisions/012-renovate-dependency-management.md
+      - Velero + MinIO: decisions/013-velero-minio-backups.md
+      - Kyverno Policies: decisions/014-kyverno-policy-engine.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md
