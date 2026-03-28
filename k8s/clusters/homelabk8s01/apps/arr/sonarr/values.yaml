@@ -82,9 +82,7 @@ route:
 persistence:
   config:
     type: persistentVolumeClaim
-    storageClass: local-path
-    accessMode: ReadWriteOnce
-    size: 5Gi
+    existingClaim: arr-sonarr-config
     globalMounts:
       - path: /config
   data:
