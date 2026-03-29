@@ -6,7 +6,7 @@
 
 These are physical-layer changes. A power event or drive failure today could take out production data, backups, and the boot drive simultaneously.
 
-**Addresses:** [P1, P2](assessment.md#physical-layer) (no UPS, single NAS drive), [K16](assessment.md#kubernetes--software-layer) (no etcd snapshot)
+**Addresses:** [P1, P2](assessment.md#physical-layer) (no UPS, single NAS drive)
 
 ---
 
@@ -34,27 +34,7 @@ These are physical-layer changes. A power event or drive failure today could tak
 |---|---|
 | **Why** | A single drive failure loses all NFS-backed data: media, app configs, Prometheus, Loki, Vault, and Velero backups. |
 | **Sizing** | The UNAS Pro supports 4 drives. Start with a 2-drive mirror. A 4-drive RAID 10 (Phase 4.4) adds capacity and read performance later. |
-| **Note** | RAID is not backup. This protects against drive failure, not deletion, corruption, or ransomware. Offsite backup (1.3) addresses that. |
-
-## ~~1.3 Add Offsite Backup Target~~ Done
-
-Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-offsite-homelab` in us-east-1). See [ADR-013](../decisions/013-backup-strategy.md) and the [backup runbook](../runbooks/backup-and-restore.md).
-
-## 1.4 Add etcd Snapshot Schedule
-
-- [x] Create a CronJob running `etcdctl snapshot save` daily at 2:00 AM
-- [x] Store snapshots on the NAS via NFS PVC (separate from the etcd data directory)
-- [x] Upload snapshots offsite to AWS S3 (`velero-offsite-homelab/etcd-snapshots/`)
-- [x] Retain 7 daily snapshots (local and offsite)
-- [x] Add PrometheusRules for snapshot staleness (36h) and job failure
-- [ ] Store AWS credentials in Vault at `infrastructure/etcd-backup`
-- [x] Document the restore procedure in the DR runbook
-- [x] Back up control plane PKI (`/etc/kubernetes/pki/`) alongside etcd snapshots
-
-| | |
-|---|---|
-| **Why** | Velero backs up Kubernetes API resources, but an etcd corruption or unclean shutdown on the single control plane could leave the cluster unrecoverable without a raw etcd snapshot. This is especially urgent with only one CP node. |
-| **Note** | This becomes less critical after Phase 4 adds a 3-node etcd quorum, but remains a good practice for point-in-time recovery. |
+| **Note** | RAID is not backup. This protects against drive failure, not deletion, corruption, or ransomware. Offsite backups and etcd snapshots address that (see [ADR-013](../decisions/013-backup-strategy.md)). |
 
 ---
 
@@ -62,6 +42,3 @@ Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-of
 
 - [ ] UPS protecting all rack gear with automated graceful shutdown on low battery
 - [ ] NAS running a mirrored drive pool
-- [x] Velero writing weekly backups to an offsite object store
-- [ ] Restore from offsite backup tested successfully (pending first weekly run)
-- [ ] etcd snapshots running daily with alerting on staleness (manifests ready, pending Vault credential setup)
