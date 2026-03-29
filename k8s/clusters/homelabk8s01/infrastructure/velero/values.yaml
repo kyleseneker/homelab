@@ -63,6 +63,7 @@ schedules:
         - kube-system
         - kube-public
         - nfs-provisioner
+        - backups
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
       storageLocation: default
