@@ -4,7 +4,7 @@
 
 **Goal:** Close the software gaps that could cause outages or security incidents under normal operation.
 
-**Addresses:** [K3, K6, K7, K9, K11, K15, K17](assessment.md#kubernetes--software-layer), [N6](assessment.md#network-layer)
+**Addresses:** [K3, K6, K7, K9, K11, K15](assessment.md#kubernetes--software-layer), [N6](assessment.md#network-layer)
 
 ---
 
@@ -73,18 +73,7 @@
 |---|---|
 | **Why** | Existing alerts fire when a certificate is 14 days from expiry. But if cert-manager is dead, renewals silently stop and the alert only fires when expiry is imminent. |
 
-## 2.7 Configure Loki Retention Policy
-
-- [ ] Set `limits_config.retention_period` in Loki configuration (e.g., 30 days)
-- [ ] Enable the compactor for log retention enforcement
-- [ ] Verify old logs are pruned after the retention window
-- [ ] Monitor Loki storage usage via Prometheus
-
-| | |
-|---|---|
-| **Why** | Loki currently stores logs indefinitely on NFS. Without retention, storage grows unbounded and NFS performance degrades over time. |
-
-## 2.8 Restrict Pod Egress to Known Destinations
+## 2.7 Restrict Pod Egress to Known Destinations
 
 - [ ] Audit current pod egress patterns (DNS, NFS, external APIs, container registries)
 - [ ] Add CiliumNetworkPolicy `egressDeny` or implicit-deny rules per namespace
@@ -106,5 +95,4 @@
 - [ ] Prometheus running on local-path storage
 - [ ] Only trusted registries allowed
 - [ ] cert-manager failures trigger alerts
-- [ ] Loki retention policy enforced, storage bounded
 - [ ] Pod egress restricted to known destinations per namespace

@@ -1,0 +1,37 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: loki-storage
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: loki
+spec:
+  groups:
+    - name: loki-storage
+      rules:
+        - alert: LokiStorageHigh
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="monitoring", persistentvolumeclaim=~"storage-loki.*"}
+            / kubelet_volume_stats_capacity_bytes{namespace="monitoring", persistentvolumeclaim=~"storage-loki.*"}
+            > 0.80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Loki storage usage above 80%
+            description: >-
+              Loki PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full.
+              Verify the compactor is running and retention is enforced.
+        - alert: LokiStorageCritical
+          expr: |
+            kubelet_volume_stats_used_bytes{namespace="monitoring", persistentvolumeclaim=~"storage-loki.*"}
+            / kubelet_volume_stats_capacity_bytes{namespace="monitoring", persistentvolumeclaim=~"storage-loki.*"}
+            > 0.90
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: Loki storage usage above 90%
+            description: >-
+              Loki PVC {{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full.
+              Immediate action needed to prevent log ingestion failures.
