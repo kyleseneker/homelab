@@ -42,6 +42,7 @@ controllers:
             cpu: 100m
             memory: 64Mi
           limits:
+            cpu: 200m
             memory: 128Mi
     containers:
       main:
@@ -67,6 +68,7 @@ controllers:
             cpu: 200m
             memory: 1Gi
           limits:
+            cpu: 1000m
             memory: 2Gi
         probes:
           liveness:

@@ -5,6 +5,13 @@ nfs:
     - vers=3
     - hard
     - intr
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
 storageClass:
   name: nfs-client
   defaultClass: true

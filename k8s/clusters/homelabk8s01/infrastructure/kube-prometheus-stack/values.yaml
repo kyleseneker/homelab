@@ -8,6 +8,7 @@ prometheus:
         cpu: 200m
         memory: 512Mi
       limits:
+        cpu: 1000m
         memory: 2Gi
     storageSpec:
       volumeClaimTemplate:
@@ -43,6 +44,23 @@ grafana:
       token_url: http://authentik-server.auth.svc.cluster.local/application/o/token/
       api_url: http://authentik-server.auth.svc.cluster.local/application/o/userinfo/
       role_attribute_path: contains(groups, 'authentik Admins') && 'Admin' || 'Viewer'
+  sidecar:
+    dashboards:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+    datasources:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi
   initChownData:
     enabled: false
   securityContext:
@@ -58,6 +76,7 @@ grafana:
       cpu: 100m
       memory: 128Mi
     limits:
+      cpu: 500m
       memory: 512Mi
   additionalDataSources:
     - name: Loki
@@ -75,6 +94,7 @@ alertmanager:
         cpu: 25m
         memory: 32Mi
       limits:
+        cpu: 50m
         memory: 128Mi
   config:
     global:
@@ -139,6 +159,7 @@ prometheus-node-exporter:
       cpu: 50m
       memory: 32Mi
     limits:
+      cpu: 100m
       memory: 64Mi
 kubeProxy:
   enabled: false
@@ -149,6 +170,21 @@ kubeControllerManager:
 kubeScheduler:
   enabled: false
 prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  prometheusConfigReloader:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 50m
+        memory: 32Mi
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
@@ -162,4 +198,5 @@ kube-state-metrics:
       cpu: 50m
       memory: 64Mi
     limits:
+      cpu: 100m
       memory: 128Mi

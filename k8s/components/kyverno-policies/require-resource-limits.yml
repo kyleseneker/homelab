@@ -10,7 +10,7 @@ metadata:
       All containers must specify memory and CPU resource limits to prevent
       unbounded resource consumption on the cluster.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: validate-resource-limits
@@ -28,6 +28,7 @@ spec:
                 - argocd
                 - metallb-system
                 - cilium-test-*
+                - backups
       validate:
         message: "All containers must have memory and CPU limits defined."
         pattern:

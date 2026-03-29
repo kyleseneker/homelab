@@ -9,11 +9,13 @@ resources:
     cpu: 100m
     memory: 256Mi
   limits:
+    cpu: 500m
     memory: 512Mi
 securityContext:
   enabled: true
   runAsUser: 977
   runAsGroup: 988
   fsGroup: 988
+  runAsNonRoot: true
 consoleIngress:
   enabled: false

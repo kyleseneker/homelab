@@ -34,11 +34,28 @@ singleBinary:
       cpu: 100m
       memory: 256Mi
     limits:
+      cpu: 500m
       memory: 512Mi
   persistence:
     enabled: true
     storageClass: nfs-client
     size: 10Gi
+sidecar:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+lokiCanary:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
 chunksCache:
   enabled: false
 resultsCache:

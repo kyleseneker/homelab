@@ -39,6 +39,7 @@ resources:
     cpu: 100m
     memory: 128Mi
   limits:
+    cpu: 500m
     memory: 512Mi
 schedules:
   daily-stateful:
@@ -86,4 +87,5 @@ nodeAgent:
       cpu: 100m
       memory: 128Mi
     limits:
+      cpu: 1000m
       memory: 1Gi

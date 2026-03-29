@@ -74,6 +74,14 @@ alloy:
       - name: audit-logs
         mountPath: /var/log/kubernetes/audit
         readOnly: true
+configReloader:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
 controller:
   type: daemonset
   tolerations:
@@ -84,6 +92,7 @@ controller:
       cpu: 50m
       memory: 64Mi
     limits:
+      cpu: 200m
       memory: 192Mi
   volumes:
     extra:

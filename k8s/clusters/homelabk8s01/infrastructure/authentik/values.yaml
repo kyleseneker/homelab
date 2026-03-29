@@ -9,6 +9,7 @@ server:
       cpu: 100m
       memory: 256Mi
     limits:
+      cpu: 500m
       memory: 1Gi
 worker:
   replicas: 1
@@ -17,6 +18,7 @@ worker:
       cpu: 50m
       memory: 128Mi
     limits:
+      cpu: 200m
       memory: 512Mi
 postgresql:
   enabled: true
@@ -43,6 +45,7 @@ postgresql:
         cpu: 50m
         memory: 128Mi
       limits:
+        cpu: 200m
         memory: 512Mi
 redis:
   enabled: true
@@ -59,4 +62,5 @@ redis:
         cpu: 25m
         memory: 32Mi
       limits:
+        cpu: 50m
         memory: 128Mi

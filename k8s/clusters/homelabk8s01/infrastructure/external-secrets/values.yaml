@@ -1,4 +1,12 @@
 installCRDs: true
+podSecurityContext:
+  runAsNonRoot: true
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 podDisruptionBudget:
   enabled: true
   maxUnavailable: 1
@@ -7,6 +15,7 @@ resources:
     cpu: 25m
     memory: 32Mi
   limits:
+    cpu: 100m
     memory: 128Mi
 webhook:
   podDisruptionBudget:
@@ -17,6 +26,7 @@ webhook:
       cpu: 10m
       memory: 16Mi
     limits:
+      cpu: 50m
       memory: 64Mi
 certController:
   podDisruptionBudget:
@@ -27,4 +37,5 @@ certController:
       cpu: 10m
       memory: 16Mi
     limits:
+      cpu: 50m
       memory: 64Mi

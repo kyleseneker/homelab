@@ -10,7 +10,7 @@ metadata:
       Containers should use a read-only root filesystem to prevent modification
       of the container filesystem at runtime.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: validate-readonly-rootfs
@@ -28,6 +28,11 @@ spec:
                 - argocd
                 - metallb-system
                 - cilium-test-*
+                - arr
+                - auth
+                - backups
+                - monitoring
+                - nfs-provisioner
       validate:
         message: "Containers must set securityContext.readOnlyRootFilesystem to true."
         pattern:

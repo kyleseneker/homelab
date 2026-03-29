@@ -1,6 +1,6 @@
 # Phase 2 -- Kubernetes Hardening
 
-**Status:** Not started
+**Status:** In progress
 
 **Goal:** Close the software gaps that could cause outages or security incidents under normal operation.
 
@@ -10,12 +10,12 @@
 
 ## 2.1 Promote Kyverno Policies to Enforce
 
-- [ ] Review current Kyverno policy reports for existing violations
-- [ ] Fix any violations in existing workloads
-- [ ] Update exclusion lists as needed (linuxserver images, GPU operator, etc.)
-- [ ] Promote `require-resource-limits` to enforce
-- [ ] Promote `require-run-as-nonroot` to enforce
-- [ ] Promote `require-readonly-rootfs` to enforce
+- [x] Review current Kyverno policy reports for existing violations
+- [x] Fix any violations in existing workloads
+- [x] Update exclusion lists as needed (linuxserver images, GPU operator, etc.)
+- [x] Promote `require-resource-limits` to enforce
+- [x] Promote `require-run-as-nonroot` to enforce
+- [x] Promote `require-readonly-rootfs` to enforce
 
 | | |
 |---|---|
@@ -114,7 +114,7 @@
 
 ## Definition of Done
 
-- [ ] All three Kyverno audit-mode policies promoted to enforce
+- [x] All three Kyverno audit-mode policies promoted to enforce
 - [ ] Every namespace has a ResourceQuota and LimitRange
 - [ ] Authentik Redis requires authentication
 - [ ] Critical pods spread across nodes

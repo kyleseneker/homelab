@@ -2,14 +2,44 @@ crds:
   enabled: true
 config:
   enableGatewayAPI: true
+global:
+  podSecurityContext:
+    runAsNonRoot: true
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
 podDisruptionBudget:
   enabled: true
   maxUnavailable: 1
 cainjector:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
   podDisruptionBudget:
     enabled: true
     maxUnavailable: 1
 webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
   podDisruptionBudget:
     enabled: true
     maxUnavailable: 1

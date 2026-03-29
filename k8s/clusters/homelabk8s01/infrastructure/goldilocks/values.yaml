@@ -1,12 +1,20 @@
 vpa:
   enabled: false
-
+securityContext:
+  runAsNonRoot: true
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 controller:
   resources:
     requests:
       cpu: 25m
       memory: 64Mi
     limits:
+      cpu: 100m
       memory: 256Mi
   flags:
     on-by-default: "true"
@@ -21,4 +29,5 @@ dashboard:
       cpu: 15m
       memory: 64Mi
     limits:
+      cpu: 50m
       memory: 128Mi
