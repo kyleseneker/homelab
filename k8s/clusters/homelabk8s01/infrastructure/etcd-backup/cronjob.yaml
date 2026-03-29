@@ -16,13 +16,18 @@ spec:
           labels:
             app.kubernetes.io/name: etcd-backup
         spec:
-          hostNetwork: true
           nodeSelector:
             node-role.kubernetes.io/control-plane: ""
           tolerations:
             - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
           restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           initContainers:
             - name: snapshot
               image: bitnami/etcd:3.5.17
@@ -34,7 +39,7 @@ spec:
                   SNAPSHOT_NAME="snapshot-${TIMESTAMP}.db"
                   echo "Taking etcd snapshot: ${SNAPSHOT_NAME}"
                   etcdctl snapshot save "/snapshots/${SNAPSHOT_NAME}" \
-                    --endpoints=https://127.0.0.1:2379 \
+                    --endpoints=https://${NODE_IP}:2379 \
                     --cacert=/etc/kubernetes/pki/etcd/ca.crt \
                     --cert=/etc/kubernetes/pki/etcd/server.crt \
                     --key=/etc/kubernetes/pki/etcd/server.key
@@ -45,6 +50,16 @@ spec:
                   echo "Pruning old snapshots (keeping 7)"
                   ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
                   ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
+              env:
+                - name: NODE_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.hostIP
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
               resources:
                 requests:
                   cpu: 50m
@@ -106,6 +121,9 @@ spec:
                   memory: 128Mi
               securityContext:
                 readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
               volumeMounts:
                 - name: snapshots
                   mountPath: /snapshots

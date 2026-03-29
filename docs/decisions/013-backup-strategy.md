@@ -46,5 +46,5 @@ Two backup pipelines, both storing data locally on the NAS for fast recovery and
 - AWS credentials are stored in Vault and synced via ExternalSecret. During a DR rebuild where Vault is not yet available, credentials must be manually created from a password manager.
 - Velero restore may conflict with ArgoCD's desired state. ArgoCD sync should be verified after any restore.
 - The `vault-aws-kms` Secret is not backed up by Velero and must be manually created before Vault can start during disaster recovery.
-- The etcd-backup CronJob requires `hostNetwork: true` and `hostPath` access to `/etc/kubernetes/pki/`. This bypasses Cilium network policies.
+- The etcd-backup CronJob requires `hostPath` access to `/etc/kubernetes/pki/` and connects to etcd via the node IP (downward API).
 - The CronJob backs up the full control plane PKI alongside each etcd snapshot. Both are required for disaster recovery on a replacement node.
