@@ -69,6 +69,13 @@ alloy:
         }
         forward_to = [loki.write.default.receiver]
       }
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 192Mi
   mounts:
     extra:
       - name: audit-logs
@@ -87,13 +94,6 @@ controller:
   tolerations:
     - key: node-role.kubernetes.io/control-plane
       effect: NoSchedule
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 192Mi
   volumes:
     extra:
       - name: audit-logs
