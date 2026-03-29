@@ -18,40 +18,39 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 - **Resources** (across all controllers):
     - Requests: ~250m CPU, ~320Mi memory
     - Limits: ~896Mi memory
-- **Validation Mode**: Audit (no requests are blocked)
+- **Validation Mode**: Enforce (non-compliant pods are rejected at admission)
 
 ## Policies
 
-Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`) at sync wave -1. All policies run in **Audit** mode -- they generate policy reports but do not reject workloads.
+Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`) at sync wave -1. All policies run in **Enforce** mode -- non-compliant pods are rejected at admission time.
 
-| Policy | What It Checks |
-|--------|----------------|
-| `require-resource-limits` | All containers have CPU and memory limits |
-| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` |
-| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` |
-| `disallow-latest-tag` | Images use a specific tag, not `:latest` |
-| `require-labels` | Pods have the `app.kubernetes.io/name` label |
+| Policy | What It Checks | Excluded Namespaces |
+|--------|----------------|---------------------|
+| `require-resource-limits` | All containers have CPU and memory limits | backups |
+| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` | arr, auth, backups, intel-gpu-operator, monitoring, nfs-provisioner |
+| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` | arr, auth, backups, monitoring, nfs-provisioner |
+| `disallow-latest-tag` | Images use a specific tag, not `:latest` | |
+| `require-labels` | Pods have the `app.kubernetes.io/name` label | backups, intel-gpu-operator, nfs-provisioner |
+
+All policies also exclude the base system namespaces: kube-system, kyverno, argocd, metallb-system, and cilium-test-*.
+
+### Namespace Exclusions
+
+Exclusions exist for workloads where compliance is not feasible:
+
+- **arr, auth**: linuxserver and Authentik images require root and writable root filesystems (s6-overlay init system)
+- **backups**: Velero dynamically creates backup/restore/maintenance Job pods with specs we do not control
+- **intel-gpu-operator**: GPU device plugin DaemonSet requires host-level access
+- **monitoring**: Alloy requires root for reading host log files
+- **nfs-provisioner**: Requires host-level access for NFS mounts
 
 ### Checking Policy Reports
 
-To see which workloads violate policies:
+To see which workloads violate policies (background scan results):
 
 ```bash
 kubectl get policyreport -A
 ```
-
-For detailed violation messages:
-
-```bash
-kubectl get policyreport -A -o yaml | grep -A 5 "result: fail"
-```
-
-### Moving to Enforce Mode
-
-Once all violations are resolved, change `validationFailureAction` from `Audit` to `Enforce` in the policy YAML files under `k8s/components/kyverno-policies/`. Enforced policies will reject non-compliant workloads at admission time.
-
-!!! warning "Test Before Enforcing"
-    Switching to Enforce mode will block any pod that violates the policy. Review all audit violations first to avoid breaking running workloads during the next rollout.
 
 ## Network Policies
 

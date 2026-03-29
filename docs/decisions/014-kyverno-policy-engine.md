@@ -10,7 +10,7 @@ The cluster needs guardrails to enforce security and operational standards acros
 
 ## Decision
 
-Use Kyverno as the Kubernetes policy engine with a mix of enforced and audit-only ClusterPolicies. Two policies block violations at admission (disallow-latest-tag, require-labels). Three policies run in audit mode and report violations without blocking (require-resource-limits, require-run-as-nonroot, require-readonly-rootfs).
+Use Kyverno as the Kubernetes policy engine. All five ClusterPolicies run in Enforce mode, blocking non-compliant pods at admission. Namespaces with workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU operators) are excluded per-policy rather than left in audit mode.
 
 ## Alternatives Considered
 
@@ -22,14 +22,12 @@ Use Kyverno as the Kubernetes policy engine with a mix of enforced and audit-onl
 ## Rationale
 
 - **Kubernetes-native policies**: Kyverno policies are written as Kubernetes YAML resources, not a separate language. ClusterPolicy manifests are readable by anyone familiar with Kubernetes and reviewable in the same PR workflow as application manifests.
-- **Graduated enforcement**: Audit mode allows introducing policies without breaking existing workloads. Violations are reported via PolicyReport resources, providing visibility into non-compliance before enforcement begins.
-- **Selective enforcement**: `disallow-latest-tag` and `require-labels` are enforced because they catch common mistakes with low false-positive risk. Security policies (non-root, readonly-rootfs, resource-limits) are audit-only because some workloads (linuxserver images, GPU operators) have legitimate exceptions that need resolution before enforcement.
-- **Namespace exclusions**: System namespaces (kube-system, kyverno, argocd) and specific workloads (cilium-test) are excluded to avoid blocking cluster-critical components that don't conform to application-level policies.
+- **Full enforcement with targeted exclusions**: All policies enforce at admission. Workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU device plugins) are excluded by namespace rather than leaving policies in audit mode cluster-wide.
+- **Namespace exclusions**: System namespaces (kube-system, kyverno, argocd, metallb-system, cilium-test) are excluded from all policies. Application namespaces with legitimate non-compliance (arr, auth, backups, monitoring, nfs-provisioner, intel-gpu-operator) are excluded only from the specific policies they cannot satisfy.
 - **Background scanning**: All policies run with `background: true`, scanning existing resources on schedule — not just at admission time. This catches drift and pre-existing violations.
 
 ## Consequences
 
 - Kyverno's admission webhook adds latency to all pod creation requests. With a single replica, webhook unavailability could block deployments. A PDB or replica increase may be warranted as the cluster grows.
-- Audit-mode policies generate PolicyReports but do not prevent non-compliant resources. Compliance depends on actively reviewing reports and remediating violations.
 - Namespace exclusion lists must be maintained as new infrastructure namespaces are added. A missed exclusion could block critical system pods.
-- Moving audit policies to enforce mode requires first resolving all existing violations, which may involve upstream image changes or security context workarounds.
+- Excluded namespaces should be revisited periodically -- if upstream images add non-root support or workloads gain resource limits, exclusions can be removed to tighten coverage.
