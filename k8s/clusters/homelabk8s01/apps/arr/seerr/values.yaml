@@ -18,12 +18,4 @@ config:
 
 route:
   main:
-    enabled: true
-    parentRefs:
-      - group: gateway.networking.k8s.io
-        kind: Gateway
-        name: homelab-gateway
-        namespace: default
-        sectionName: https
-    hostnames:
-      - seerr.homelab.local
+    enabled: false
