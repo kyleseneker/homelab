@@ -185,6 +185,15 @@ prometheusOperator:
       limits:
         cpu: 50m
         memory: 32Mi
+  admissionWebhooks:
+    patch:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
