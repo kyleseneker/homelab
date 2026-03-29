@@ -1,6 +1,6 @@
 # Authentik
 
-Authentik is the centralized identity provider for the homelab, handling SSO via forward-auth (for arr apps and Homepage) and native OIDC (for Grafana, ArgoCD, and Seerr).
+Authentik is the centralized identity provider for the homelab, handling SSO via forward-auth (for arr apps and Homepage) and native OIDC (for Grafana and ArgoCD).
 
 ## Details
 
@@ -33,7 +33,7 @@ User -> Cilium Gateway -> forward-auth -> Authentik outpost
 
 Apps with built-in OAuth2/OIDC support authenticate directly with Authentik as an identity provider.
 
-**OIDC apps:** Grafana, ArgoCD, Seerr
+**OIDC apps:** Grafana, ArgoCD
 
 ### Unprotected (with rationale)
 
@@ -87,8 +87,7 @@ Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` 
       oidc.authentik.clientSecret=your_client_secret
     ```
 
-10. Create **OAuth2/OpenID Provider** for Seerr (client ID: `seerr`, redirect URI per Seerr settings). Configure in Seerr's Settings > Authentication.
-11. The built-in `authentik Admins` group maps to Grafana Admin and ArgoCD `role:admin`. Ensure your user is a member.
+10. The built-in `authentik Admins` group maps to Grafana Admin and ArgoCD `role:admin`. Ensure your user is a member.
 12. Create additional user accounts in Directory > Users as needed.
 
 ## Backups

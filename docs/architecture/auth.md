@@ -24,7 +24,6 @@ flowchart TB
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
-    Seerr["Seerr"] -->|"OIDC"| AuthentikServer
 ```
 
 ### Forward Auth (Domain-Level)
@@ -43,7 +42,7 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik. Eac
 
 - **Grafana** -- `auth.generic_oauth` with role mapping (`admin` group -> Admin role)
 - **ArgoCD** -- native OIDC via `oidc.config` in `argocd-cm` with RBAC group mapping
-- **Seerr** -- configured through its Settings UI
+- **Seerr** -- OIDC not yet supported ([seerr-team/seerr#2715](https://github.com/seerr-team/seerr/pull/2715)); authenticates via Jellyfin
 
 Server-to-server URLs (token, userinfo) use the internal service URL. Browser-facing URLs (authorize) use the external hostname.
 
