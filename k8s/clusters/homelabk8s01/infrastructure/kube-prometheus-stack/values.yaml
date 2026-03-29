@@ -102,6 +102,9 @@ alertmanager:
         - receiver: 'null'
           matchers:
             - alertname = "Watchdog"
+        - receiver: 'null'
+          matchers:
+            - alertname = "InfoInhibitor"
         - receiver: slack-alerts
           matchers:
             - severity =~ "warning|critical"
@@ -116,6 +119,12 @@ alertmanager:
           - severity = "warning"
         equal:
           - alertname
+          - namespace
+      - source_matchers:
+          - alertname = "InfoInhibitor"
+        target_matchers:
+          - severity = "info"
+        equal:
           - namespace
     receivers:
       - name: 'null'
