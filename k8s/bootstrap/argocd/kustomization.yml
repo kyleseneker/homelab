@@ -61,6 +61,9 @@ patches:
             - openid
             - profile
             - email
+            - groups
+            - offline_access
+          refreshTokenThreshold: 5m
   - target:
       kind: ConfigMap
       name: argocd-rbac-cm
