@@ -1,0 +1,124 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: etcd-backup
+  namespace: backups
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: etcd-backup
+        spec:
+          hostNetwork: true
+          nodeSelector:
+            node-role.kubernetes.io/control-plane: ""
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              effect: NoSchedule
+          restartPolicy: OnFailure
+          initContainers:
+            - name: snapshot
+              image: bitnami/etcd:3.5.17
+              command: ["/bin/bash", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  SNAPSHOT_NAME="snapshot-${TIMESTAMP}.db"
+                  echo "Taking etcd snapshot: ${SNAPSHOT_NAME}"
+                  etcdctl snapshot save "/snapshots/${SNAPSHOT_NAME}" \
+                    --endpoints=https://127.0.0.1:2379 \
+                    --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+                    --cert=/etc/kubernetes/pki/etcd/server.crt \
+                    --key=/etc/kubernetes/pki/etcd/server.key
+                  echo "Verifying snapshot integrity"
+                  etcdutl snapshot status "/snapshots/${SNAPSHOT_NAME}" --write-out=table
+                  echo "Backing up control plane PKI"
+                  tar czf "/snapshots/pki-${TIMESTAMP}.tar.gz" -C /etc/kubernetes pki
+                  echo "Pruning old snapshots (keeping 7)"
+                  ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
+                  ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              volumeMounts:
+                - name: k8s-pki
+                  mountPath: /etc/kubernetes/pki
+                  readOnly: true
+                - name: snapshots
+                  mountPath: /snapshots
+          containers:
+            - name: upload-offsite
+              image: amazon/aws-cli:2.22.35
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -euo pipefail
+                  LATEST_SNAP=$(ls -t /snapshots/snapshot-*.db | head -1)
+                  LATEST_PKI=$(ls -t /snapshots/pki-*.tar.gz | head -1)
+                  echo "Uploading $(basename "${LATEST_SNAP}") to s3://${S3_BUCKET}/etcd-snapshots/"
+                  aws s3 cp "${LATEST_SNAP}" "s3://${S3_BUCKET}/etcd-snapshots/$(basename "${LATEST_SNAP}")"
+                  echo "Uploading $(basename "${LATEST_PKI}") to s3://${S3_BUCKET}/etcd-snapshots/"
+                  aws s3 cp "${LATEST_PKI}" "s3://${S3_BUCKET}/etcd-snapshots/$(basename "${LATEST_PKI}")"
+                  echo "Pruning old offsite files (keeping 7 of each)"
+                  for prefix in snapshot pki; do
+                    aws s3 ls "s3://${S3_BUCKET}/etcd-snapshots/${prefix}-" \
+                      | sort -r \
+                      | tail -n +8 \
+                      | awk '{print $4}' \
+                      | while read -r f; do
+                          aws s3 rm "s3://${S3_BUCKET}/etcd-snapshots/${f}"
+                        done
+                  done
+                  echo "Upload complete"
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: etcd-backup-credentials
+                      key: aws_access_key_id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: etcd-backup-credentials
+                      key: aws_secret_access_key
+                - name: AWS_DEFAULT_REGION
+                  value: us-east-1
+                - name: S3_BUCKET
+                  value: velero-offsite-homelab
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+              securityContext:
+                readOnlyRootFilesystem: true
+              volumeMounts:
+                - name: snapshots
+                  mountPath: /snapshots
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: k8s-pki
+              hostPath:
+                path: /etc/kubernetes/pki
+                type: Directory
+            - name: snapshots
+              persistentVolumeClaim:
+                claimName: etcd-snapshots
+            - name: tmp
+              emptyDir: {}

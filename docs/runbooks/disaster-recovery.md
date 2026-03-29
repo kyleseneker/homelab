@@ -13,6 +13,7 @@ Before a disaster occurs, ensure the following are available **outside the clust
 - Vault root token (stored in password manager after `make vault-init`)
 - AWS credentials and KMS key ID for Vault auto-unseal (the `vault-aws-kms` Secret must be recreated after a rebuild)
 - Velero backups stored on MinIO (local, running on the NAS) or AWS S3 (offsite, `velero-offsite-homelab` bucket in us-east-1)
+- etcd snapshots and PKI tarballs stored on NAS (`etcd-snapshots` PVC) or AWS S3 (`velero-offsite-homelab/etcd-snapshots/`)
 - AWS credentials for the `velero-offsite-homelab` IAM user (stored in password manager, also in Vault at `infrastructure/velero-offsite`)
 - This Git repository (the single source of truth for all cluster state)
 
@@ -98,6 +99,71 @@ Before a disaster occurs, ensure the following are available **outside the clust
     velero restore get
     kubectl get pods --all-namespaces
     ```
+
+## etcd Restore (Control Plane Corruption)
+
+Use this procedure when the control plane is unresponsive due to etcd corruption but the underlying node is intact. If the node itself is lost, use the Complete Cluster Rebuild procedure instead, restoring PKI and etcd before running `kubeadm init`.
+
+### Prerequisites
+
+- An etcd snapshot (`snapshot-YYYYMMDD-HHMMSS.db`) from NAS or S3
+- The matching PKI tarball (`pki-YYYYMMDD-HHMMSS.tar.gz`) if certs are also lost
+- SSH access to the control plane node
+
+### Procedure
+
+1. Retrieve the snapshot and PKI tarball. From S3:
+
+    ```bash
+    aws s3 ls s3://velero-offsite-homelab/etcd-snapshots/
+    aws s3 cp s3://velero-offsite-homelab/etcd-snapshots/snapshot-YYYYMMDD-HHMMSS.db /tmp/snapshot.db
+    aws s3 cp s3://velero-offsite-homelab/etcd-snapshots/pki-YYYYMMDD-HHMMSS.tar.gz /tmp/pki.tar.gz
+    ```
+
+2. If PKI certs are lost or corrupted, restore them:
+
+    ```bash
+    sudo tar xzf /tmp/pki.tar.gz -C /etc/kubernetes
+    ```
+
+3. Stop the API server and etcd by moving their static pod manifests:
+
+    ```bash
+    sudo mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+    sudo mv /etc/kubernetes/manifests/etcd.yaml /tmp/
+    ```
+
+4. Wait for the containers to stop:
+
+    ```bash
+    sudo crictl ps | grep -E 'etcd|kube-apiserver'
+    ```
+
+5. Restore the etcd snapshot:
+
+    ```bash
+    sudo ETCDCTL_API=3 etcdctl snapshot restore /tmp/snapshot.db \
+      --data-dir=/var/lib/etcd-restore
+    sudo rm -rf /var/lib/etcd
+    sudo mv /var/lib/etcd-restore /var/lib/etcd
+    ```
+
+6. Restart the control plane components:
+
+    ```bash
+    sudo mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+    sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+    ```
+
+7. Wait for the API server to become available and verify:
+
+    ```bash
+    kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes
+    kubectl --kubeconfig /etc/kubernetes/admin.conf get pods -A
+    ```
+
+!!! warning
+    Restoring an etcd snapshot replaces the entire cluster state. All changes made after the snapshot was taken (deployments, secret rotations, scaling events) will be lost. ArgoCD will reconcile GitOps-managed resources on its next sync cycle.
 
 ## Single Node Failure
 

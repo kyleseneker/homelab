@@ -1,0 +1,33 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-backup
+  namespace: backups
+  labels:
+    app.kubernetes.io/name: etcd-backup
+spec:
+  groups:
+    - name: etcd-backup
+      rules:
+        - alert: EtcdBackupStale
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{cronjob="etcd-backup", namespace="backups"} > 129600
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: etcd backup is stale
+            description: >-
+              The last successful etcd backup was more than 36 hours ago.
+              Check the etcd-backup CronJob in the backups namespace.
+        - alert: EtcdBackupFailed
+          expr: |
+            kube_job_status_failed{job_name=~"etcd-backup-.*", namespace="backups"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: etcd backup job failed
+            description: >-
+              An etcd-backup job has failed. Check the job logs:
+              kubectl logs -n backups job/{{ $labels.job_name }}

@@ -125,7 +125,7 @@ nav:
       - Authentik SSO: decisions/010-authentik-sso.md
       - Observability Stack: decisions/011-observability-stack.md
       - Renovate: decisions/012-renovate-dependency-management.md
-      - Velero + MinIO: decisions/013-velero-minio-backups.md
+      - Backup Strategy: decisions/013-backup-strategy.md
       - Kyverno Policies: decisions/014-kyverno-policy-engine.md
       - VPA & Goldilocks: decisions/015-vpa-goldilocks-capacity-planning.md
   - Roadmap:

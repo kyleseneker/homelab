@@ -20,6 +20,76 @@ Both local schedules back up Kubernetes resources and PVC data using file-system
 !!! note
     The `kube-system` and `kube-public` namespaces are excluded from backups because their resources are managed by kubeadm and ArgoCD. These are recreated during a cluster rebuild rather than restored from backup.
 
+## etcd Snapshots
+
+A separate CronJob backs up the etcd database directly. Velero cannot back up or restore etcd — it operates at the Kubernetes API layer and requires a running API server. etcd snapshots are the only way to recover a cluster whose control plane is corrupted or unrecoverable.
+
+| Schedule | Retention | Local Storage | Offsite Storage |
+|----------|-----------|---------------|-----------------|
+| 2:00 AM daily | 7 snapshots | NFS PVC (`etcd-snapshots`) | S3 (`velero-offsite-homelab/etcd-snapshots/`) |
+
+The CronJob runs on the control plane node with `hostNetwork: true` to reach the etcd endpoint at `127.0.0.1:2379`. An init container takes the snapshot using `etcdctl`, then the main container uploads it to S3.
+
+### Checking etcd Backup Status
+
+```bash
+kubectl get cronjob -n backups etcd-backup
+kubectl get jobs -n backups -l app.kubernetes.io/name=etcd-backup --sort-by=.status.startTime
+```
+
+### Manual etcd Snapshot
+
+To trigger an immediate backup:
+
+```bash
+kubectl create job -n backups etcd-backup-manual --from=cronjob/etcd-backup
+```
+
+### Restoring from etcd Snapshot
+
+!!! warning
+    Restoring an etcd snapshot replaces the entire cluster state. All changes made after the snapshot was taken will be lost.
+
+1. Copy the snapshot to the control plane node:
+
+    ```bash
+    # From local NFS
+    kubectl cp backups/<etcd-backup-pod>:/snapshots/snapshot-YYYYMMDD-HHMMSS.db /tmp/snapshot.db
+
+    # Or from S3
+    aws s3 cp s3://velero-offsite-homelab/etcd-snapshots/snapshot-YYYYMMDD-HHMMSS.db /tmp/snapshot.db
+    ```
+
+2. Stop the API server and etcd (on the control plane node):
+
+    ```bash
+    sudo mv /etc/kubernetes/manifests/kube-apiserver.yaml /tmp/
+    sudo mv /etc/kubernetes/manifests/etcd.yaml /tmp/
+    ```
+
+3. Restore the snapshot:
+
+    ```bash
+    sudo ETCDCTL_API=3 etcdctl snapshot restore /tmp/snapshot.db \
+      --data-dir=/var/lib/etcd-restore
+    sudo rm -rf /var/lib/etcd
+    sudo mv /var/lib/etcd-restore /var/lib/etcd
+    ```
+
+4. Restart the control plane:
+
+    ```bash
+    sudo mv /tmp/kube-apiserver.yaml /etc/kubernetes/manifests/
+    sudo mv /tmp/etcd.yaml /etc/kubernetes/manifests/
+    ```
+
+5. Verify the cluster is healthy:
+
+    ```bash
+    kubectl get nodes
+    kubectl get pods -A
+    ```
+
 ## Manual Backup
 
 ### Creating a Backup

@@ -38,15 +38,18 @@ These are physical-layer changes. A power event or drive failure today could tak
 
 ## ~~1.3 Add Offsite Backup Target~~ Done
 
-Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-offsite-homelab` in us-east-1). See [ADR-013](../decisions/013-velero-minio-backups.md) and the [backup runbook](../runbooks/backup-and-restore.md).
+Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-offsite-homelab` in us-east-1). See [ADR-013](../decisions/013-backup-strategy.md) and the [backup runbook](../runbooks/backup-and-restore.md).
 
 ## 1.4 Add etcd Snapshot Schedule
 
-- [ ] Create a CronJob (or systemd timer on the control plane) running `etcdctl snapshot save` on a schedule
-- [ ] Store snapshots on the NAS via NFS (separate from the etcd data directory)
-- [ ] Retain at least 7 daily snapshots
-- [ ] Add a PrometheusRule for snapshot age (alert if latest snapshot is older than 36 hours)
-- [ ] Document the restore procedure in the DR runbook
+- [x] Create a CronJob running `etcdctl snapshot save` daily at 2:00 AM
+- [x] Store snapshots on the NAS via NFS PVC (separate from the etcd data directory)
+- [x] Upload snapshots offsite to AWS S3 (`velero-offsite-homelab/etcd-snapshots/`)
+- [x] Retain 7 daily snapshots (local and offsite)
+- [x] Add PrometheusRules for snapshot staleness (36h) and job failure
+- [ ] Store AWS credentials in Vault at `infrastructure/etcd-backup`
+- [x] Document the restore procedure in the DR runbook
+- [x] Back up control plane PKI (`/etc/kubernetes/pki/`) alongside etcd snapshots
 
 | | |
 |---|---|
@@ -61,4 +64,4 @@ Completed 2026-03-28. Velero writes weekly offsite backups to AWS S3 (`velero-of
 - [ ] NAS running a mirrored drive pool
 - [x] Velero writing weekly backups to an offsite object store
 - [ ] Restore from offsite backup tested successfully (pending first weekly run)
-- [ ] etcd snapshots running daily with alerting on staleness
+- [ ] etcd snapshots running daily with alerting on staleness (manifests ready, pending Vault credential setup)

@@ -1,0 +1,7 @@
+appName: etcd-backup
+namespace: backups
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/infrastructure/etcd-backup
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
