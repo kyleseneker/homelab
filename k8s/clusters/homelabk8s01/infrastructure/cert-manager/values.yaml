@@ -44,10 +44,4 @@ webhook:
     enabled: true
     maxUnavailable: 1
 startupapicheck:
-  resources:
-    requests:
-      cpu: 10m
-      memory: 16Mi
-    limits:
-      cpu: 50m
-      memory: 64Mi
+  enabled: false
