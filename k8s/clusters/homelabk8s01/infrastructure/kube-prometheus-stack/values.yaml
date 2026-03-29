@@ -45,22 +45,13 @@ grafana:
       api_url: http://authentik-server.auth.svc.cluster.local/application/o/userinfo/
       role_attribute_path: contains(groups, 'authentik Admins') && 'Admin' || 'Viewer'
   sidecar:
-    dashboards:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 32Mi
-        limits:
-          cpu: 50m
-          memory: 64Mi
-    datasources:
-      resources:
-        requests:
-          cpu: 10m
-          memory: 16Mi
-        limits:
-          cpu: 50m
-          memory: 32Mi
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        cpu: 50m
+        memory: 64Mi
   initChownData:
     enabled: false
   securityContext:
