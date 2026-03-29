@@ -22,8 +22,8 @@ The diagram below shows how data moves through the stack, from media requests th
 flowchart LR
     Prowlarr -->|"sync indexers"| Sonarr
     Prowlarr -->|"sync indexers"| Radarr
-    Jellyseerr -->|"requests"| Sonarr
-    Jellyseerr -->|"requests"| Radarr
+    Seerr -->|"requests"| Sonarr
+    Seerr -->|"requests"| Radarr
     Sonarr -->|"send to download"| Downloads["qBittorrent"]
     Radarr -->|"send to download"| Downloads
     Downloads -->|"completed archives"| Unpackerr
@@ -35,7 +35,7 @@ flowchart LR
     Recyclarr -->|"quality profiles"| Sonarr
     Recyclarr -->|"quality profiles"| Radarr
     FlareSolverr -->|"solve captchas"| Prowlarr
-    Jellyfin --> Jellyseerr
+    Jellyfin --> Seerr
 ```
 
 ## Application Summary
@@ -47,7 +47,7 @@ flowchart LR
 | [Radarr](radarr.md) | `radarr.homelab.local` | Movie management and automation | `lscr.io/linuxserver/radarr:6.0.4` |
 | [Prowlarr](prowlarr.md) | `prowlarr.homelab.local` | Centralized indexer manager | `lscr.io/linuxserver/prowlarr:2.3.0` |
 | [Bazarr](bazarr.md) | `bazarr.homelab.local` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr:1.5.6` |
-| [Jellyseerr](jellyseerr.md) | `jellyseerr.homelab.local` | Media request management | `fallenbagel/jellyseerr:2.7.3` |
+| [Seerr](seerr.md) | `seerr.homelab.local` | Media request management | `ghcr.io/seerr-team/seerr:v3.1.0` |
 | [Downloads](downloads.md) | `qbit.homelab.local` | VPN-routed torrent client (qBittorrent) | `qmcgaw/gluetun:v3.41.1`, `lscr.io/linuxserver/qbittorrent:5.1.4` |
 | [Recyclarr](recyclarr.md) | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr:8.5.1` |
 | [Tdarr](tdarr.md) | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr:2.65.01` |

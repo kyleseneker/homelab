@@ -1,0 +1,26 @@
+fullnameOverride: arr-seerr
+
+extraEnvFrom:
+  - configMapRef:
+      name: arr-env
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+config:
+  persistence:
+    existingClaim: arr-seerr-config
+
+route:
+  main:
+    enabled: true
+    parentRefs:
+      - name: homelab-gateway
+        namespace: default
+        sectionName: https
+    hostnames:
+      - seerr.homelab.local

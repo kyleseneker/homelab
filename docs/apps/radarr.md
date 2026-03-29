@@ -41,7 +41,7 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 2. Add root folder: `/data/media/movies` (Settings > Media Management > Root Folders).
 3. Add download clients (Settings > Download Clients):
     - **qBittorrent** -- host: `arr-vpn-downloads.arr.svc.cluster.local`, port: `8080`, category: `movies`
-4. Note the API key from Settings > General -- it is required by Prowlarr, Recyclarr, Bazarr, Jellyseerr, and Homepage.
+4. Note the API key from Settings > General -- it is required by Prowlarr, Recyclarr, Bazarr, Seerr, and Homepage.
 
 ## Dependencies
 
@@ -51,7 +51,7 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 | qBittorrent | Torrent download client |
 | Recyclarr | Pushes quality profiles and custom formats |
 | Bazarr | Fetches subtitles for downloaded movies |
-| Jellyseerr | Sends movie requests to Radarr |
+| Seerr | Sends movie requests to Radarr |
 
 ## Upstream
 

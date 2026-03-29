@@ -1,19 +1,18 @@
-# Jellyseerr
+# Seerr
 
-Jellyseerr is a media request management application. Users browse and request movies or TV shows through its web UI, and those requests are automatically forwarded to Radarr or Sonarr for processing.
+Seerr is a media request management application (the unified successor to Jellyseerr and Overseerr). Users browse and request movies or TV shows through its web UI, and those requests are automatically forwarded to Radarr or Sonarr for processing.
 
 ## Details
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `fallenbagel/jellyseerr:2.7.3` |
-| Port | 5055 |
-| HTTPRoute | `jellyseerr.homelab.local` |
+| Helm chart | `seerr-chart` v3.3.0 ([seerr-team](https://github.com/seerr-team/seerr)) |
+| Image | `ghcr.io/seerr-team/seerr:v3.1.0` |
+| Port | 80 |
+| HTTPRoute | `seerr.homelab.local` |
 | Namespace | `arr` |
-| ArgoCD app | `arr-jellyseerr` |
-| Sync wave | 1 |
-| Internal URL | `http://arr-jellyseerr.arr.svc.cluster.local:5055` |
+| ArgoCD app | `arr-seerr` |
+| Internal URL | `http://arr-seerr.arr.svc.cluster.local:80` |
 
 ### Storage
 
@@ -21,7 +20,7 @@ Jellyseerr is a media request management application. Users browse and request m
 |--------|------|------|------------|
 | `config` | PVC (`nfs-client`) | 1Gi | `/app/config` |
 
-Jellyseerr does not require the shared `arr-data` volume because it interacts with media through the Sonarr/Radarr and Jellyfin APIs rather than the filesystem.
+Seerr does not require the shared `arr-data` volume because it interacts with media through the Sonarr/Radarr and Jellyfin APIs rather than the filesystem.
 
 ### Resources
 
@@ -33,16 +32,16 @@ Jellyseerr does not require the shared `arr-data` volume because it interacts wi
 ## Key Configuration
 
 - Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
-- Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
+- Uses the official Seerr Helm chart (OCI: `ghcr.io/seerr-team/seerr/seerr-chart`).
 
 ### Authentication
 
-Jellyseerr uses **native OIDC** to Authentik rather than the forward-auth proxy used by other arr apps. This is because Jellyseerr has built-in OAuth2 support, so a direct OIDC integration is configured through its Settings UI. The ingress does not carry the `auth-url`/`auth-signin` annotations that other arr apps use.
+Seerr uses **native OIDC** to Authentik rather than the forward-auth proxy used by other arr apps. This is because Seerr has built-in OAuth2 support, so a direct OIDC integration is configured through its Settings UI. The ingress does not carry the `auth-url`/`auth-signin` annotations that other arr apps use.
 
 ## Post-Deploy Setup
 
-1. Open `https://jellyseerr.homelab.local` and start the setup wizard.
+1. Open `https://seerr.homelab.local` and start the setup wizard.
 2. Sign in with Jellyfin:
     - Jellyfin server URL: `http://arr-jellyfin.arr.svc.cluster.local:8096`
     - Use a Jellyfin admin account to authenticate.
@@ -65,4 +64,4 @@ Jellyseerr uses **native OIDC** to Authentik rather than the forward-auth proxy 
 
 ## Upstream
 
-- [https://github.com/Fallenbagel/jellyseerr](https://github.com/Fallenbagel/jellyseerr)
+- [https://github.com/seerr-team/seerr](https://github.com/seerr-team/seerr)

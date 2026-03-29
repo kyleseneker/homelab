@@ -71,14 +71,14 @@ data:
               enableBlocks: true
               enableNowPlaying: true
               fields: ["movies", "series", "episodes"]
-        - Jellyseerr:
-            icon: jellyseerr.svg
-            href: https://jellyseerr.homelab.local
+        - Seerr:
+            icon: seerr.svg
+            href: https://seerr.homelab.local
             description: Media requests
             widget:
-              type: jellyseerr
-              url: http://arr-jellyseerr.arr.svc.cluster.local:5055
-              key: "{{HOMEPAGE_VAR_JELLYSEERR_KEY}}"
+              type: seerr
+              url: http://arr-seerr.arr.svc.cluster.local:80
+              key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
         - OpenClaw:
             icon: openclaw.svg
             href: https://openclaw.homelab.local

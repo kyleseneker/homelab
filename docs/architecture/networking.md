@@ -96,7 +96,7 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 | Radarr | `radarr.homelab.local` |
 | Prowlarr | `prowlarr.homelab.local` |
 | Bazarr | `bazarr.homelab.local` |
-| Jellyseerr | `jellyseerr.homelab.local` |
+| Seerr | `seerr.homelab.local` |
 | qBittorrent | `qbit.homelab.local` |
 | Tdarr | `tdarr.homelab.local` |
 | Homepage | `home.homelab.local` |

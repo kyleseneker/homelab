@@ -72,7 +72,7 @@ flowchart LR
 | Radarr | Movie management | `arr` |
 | Prowlarr | Indexer management | `arr` |
 | Bazarr | Subtitle management | `arr` |
-| Jellyseerr | Media request management | `arr` |
+| Seerr | Media request management | `arr` |
 | qBittorrent | Torrent client (via Gluetun VPN sidecar) | `arr` |
 | Recyclarr | Quality profile sync (CronJob) | `arr` |
 | Tdarr | Media transcoding | `arr` |

@@ -95,7 +95,7 @@ homelab/
 │               ├── radarr/
 │               ├── prowlarr/
 │               ├── bazarr/
-│               ├── jellyseerr/
+│               ├── seerr/
 │               ├── downloads/
 │               ├── recyclarr/
 │               ├── tdarr/

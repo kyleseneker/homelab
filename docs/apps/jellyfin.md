@@ -60,7 +60,7 @@ GPU limit: `gpu.intel.com/i915: 1`
 | Dependency | Purpose |
 |------------|---------|
 | Sonarr / Radarr / Downloads | Provide media files to `/data/media` |
-| Jellyseerr | Connects to Jellyfin for user authentication and library status |
+| Seerr | Connects to Jellyfin for user authentication and library status |
 | Tdarr | Reads and transcodes files in `/data/media` |
 
 ## Upstream

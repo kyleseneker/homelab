@@ -72,7 +72,7 @@ data:
     - **Timezone:** America/Chicago (CT)
     - **Role:** Engineer at NVIDIA
     - Wants this homelab to be production-grade and world-class
-    - Household uses Jellyfin for streaming and Jellyseerr for requests
+    - Household uses Jellyfin for streaming and Seerr for requests
     - Will request media via Slack messages to you
     - Values autonomy — act within your scope without asking
     - Reviews and merges PRs when he has time
@@ -114,7 +114,7 @@ data:
     ## Running Apps
 
     **arr namespace:** Jellyfin (Intel GPU transcoding), Sonarr, Radarr,
-    Prowlarr, Bazarr, Jellyseerr, qBittorrent (Gluetun VPN sidecar),
+    Prowlarr, Bazarr, Seerr, qBittorrent (Gluetun VPN sidecar),
     Tdarr, Unpackerr, FlareSolverr, Homepage, Recyclarr, Exportarr
 
     **monitoring:** Prometheus, Alertmanager, Grafana, Loki, Alloy
@@ -140,7 +140,7 @@ data:
     | qBittorrent | http://arr-vpn-downloads.arr.svc:8080 | — |
     | Tdarr (Transcoding) | http://arr-tdarr.arr.svc:8265 | — |
     | Jellyfin (Streaming) | http://arr-jellyfin.arr.svc:8096 | — |
-    | Jellyseerr (Requests) | http://arr-jellyseerr.arr.svc:5055 | — |
+    | Seerr (Requests) | http://arr-seerr.arr.svc:80 | — |
 
   WEBHOOKS.md: |
     # Incoming Webhooks

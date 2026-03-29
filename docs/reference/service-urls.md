@@ -9,7 +9,7 @@ These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). Al
 | ArgoCD | `https://argocd.homelab.local` |
 | Homepage | `https://home.homelab.local` |
 | Jellyfin | `https://jellyfin.homelab.local` |
-| Jellyseerr | `https://jellyseerr.homelab.local` |
+| Seerr | `https://seerr.homelab.local` |
 | Sonarr | `https://sonarr.homelab.local` |
 | Radarr | `https://radarr.homelab.local` |
 | Prowlarr | `https://prowlarr.homelab.local` |
@@ -36,7 +36,7 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | Prowlarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` |
 | Bazarr | `http://arr-bazarr.arr.svc.cluster.local:6767` |
 | Jellyfin | `http://arr-jellyfin.arr.svc.cluster.local:8096` |
-| Jellyseerr | `http://arr-jellyseerr.arr.svc.cluster.local:5055` |
+| Seerr | `http://arr-seerr.arr.svc.cluster.local:80` |
 | qBittorrent | `http://arr-vpn-downloads.arr.svc.cluster.local:8080` |
 | Tdarr | `http://arr-tdarr.arr.svc.cluster.local:8265` |
 | Loki | `http://loki.monitoring.svc.cluster.local:3100` |

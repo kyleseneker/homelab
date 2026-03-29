@@ -60,7 +60,7 @@ Check upstream releases for available updates:
 |-------------|---------------|
 | Sonarr, Radarr, Prowlarr, Bazarr | [LinuxServer.io Fleet](https://fleet.linuxserver.io/) |
 | Jellyfin | [Jellyfin Releases](https://github.com/jellyfin/jellyfin/releases) |
-| Jellyseerr | [Jellyseerr Releases](https://github.com/Fallenbagel/jellyseerr/releases) |
+| Seerr | [Seerr Releases](https://github.com/seerr-team/seerr/releases) |
 | qBittorrent | [LinuxServer.io Fleet](https://fleet.linuxserver.io/) |
 | Tdarr | [Tdarr Releases](https://github.com/HaveAGitGat/Tdarr/releases) |
 | Homepage | [Homepage Releases](https://github.com/gethomepage/homepage/releases) |

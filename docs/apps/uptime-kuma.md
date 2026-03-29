@@ -47,7 +47,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | Radarr | `https://radarr.homelab.local` |
     | Prowlarr | `https://prowlarr.homelab.local` |
     | Bazarr | `https://bazarr.homelab.local` |
-    | Jellyseerr | `https://jellyseerr.homelab.local` |
+    | Seerr | `https://seerr.homelab.local` |
     | qBittorrent | `https://qbit.homelab.local` |
     | Tdarr | `http://tdarr.homelab.local` |
     | OpenClaw | `https://openclaw.homelab.local` |

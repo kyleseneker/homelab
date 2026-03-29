@@ -31,7 +31,7 @@ Visit the app's URL. You should be redirected to Authentik's login page. After a
 
 ## Native OIDC (apps with built-in support)
 
-For apps that support OAuth2/OIDC natively (e.g., Grafana, ArgoCD, Jellyseerr).
+For apps that support OAuth2/OIDC natively (e.g., Grafana, ArgoCD, Seerr).
 
 ### 1. Create OIDC Provider in Authentik
 

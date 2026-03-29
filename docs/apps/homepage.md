@@ -39,7 +39,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 
 | Group | Services |
 |-------|----------|
-| Media | Jellyfin, Jellyseerr |
+| Media | Jellyfin, Seerr |
 | Downloads | qBittorrent, Sonarr, Radarr |
 | Management | Prowlarr, Bazarr, Tdarr, Recyclarr |
 | Observability | Grafana, Prometheus, Alertmanager, Loki |

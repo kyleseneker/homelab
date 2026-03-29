@@ -68,7 +68,7 @@ nav:
       - Radarr: apps/radarr.md
       - Prowlarr: apps/prowlarr.md
       - Bazarr: apps/bazarr.md
-      - Jellyseerr: apps/jellyseerr.md
+      - Seerr: apps/seerr.md
       - Downloads: apps/downloads.md
       - Recyclarr: apps/recyclarr.md
       - Tdarr: apps/tdarr.md

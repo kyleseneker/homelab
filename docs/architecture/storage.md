@@ -149,7 +149,7 @@ Each application has its own PVC for configuration and database storage. Most us
 | Radarr | `arr-radarr-config` | `local-path` | 5Gi |
 | Prowlarr | `arr-prowlarr-config` | `nfs-client` | 1Gi |
 | Bazarr | `arr-bazarr-config` | `nfs-client` | 1Gi |
-| Jellyseerr | `arr-jellyseerr-config` | `nfs-client` | 1Gi |
+| Seerr | `arr-seerr-config` | `nfs-client` | 1Gi |
 | Tdarr | `arr-tdarr-config` | `nfs-client` | 1Gi |
 
 ## Infrastructure Storage

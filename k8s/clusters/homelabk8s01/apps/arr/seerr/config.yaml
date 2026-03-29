@@ -1,9 +1,9 @@
-appName: arr-jellyseerr
+appName: arr-seerr
 namespace: arr
 sourceType: helm
-chartRepo: https://bjw-s-labs.github.io/helm-charts
-chartName: app-template
-chartVersion: 4.6.2
+chartRepo: ghcr.io/seerr-team/seerr
+chartName: seerr-chart
+chartVersion: "3.3.0"
 createNamespace: false
 syncOptions:
   - ServerSideApply=true
