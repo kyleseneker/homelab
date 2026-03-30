@@ -31,25 +31,15 @@ spec:
           initContainers:
             - name: snapshot
               image: registry.k8s.io/etcd:3.5.15-0
-              command: ["/bin/sh", "-c"]
-              args:
-                - |
-                  set -eu
-                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-                  SNAPSHOT_NAME="snapshot-${TIMESTAMP}.db"
-                  echo "Taking etcd snapshot: ${SNAPSHOT_NAME}"
-                  etcdctl snapshot save "/snapshots/${SNAPSHOT_NAME}" \
-                    --endpoints=https://${NODE_IP}:2379 \
-                    --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-                    --cert=/etc/kubernetes/pki/etcd/server.crt \
-                    --key=/etc/kubernetes/pki/etcd/server.key
-                  echo "Verifying snapshot integrity"
-                  etcdutl snapshot status "/snapshots/${SNAPSHOT_NAME}" --write-out=table
-                  echo "Backing up control plane PKI"
-                  tar czf "/snapshots/pki-${TIMESTAMP}.tar.gz" -C /etc/kubernetes pki
-                  echo "Pruning old snapshots (keeping 7)"
-                  ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
-                  ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
+              command:
+                - etcdctl
+                - snapshot
+                - save
+                - /snapshots/latest.db
+                - --endpoints=https://$(NODE_IP):2379
+                - --cacert=/etc/kubernetes/pki/etcd/ca.crt
+                - --cert=/etc/kubernetes/pki/etcd/server.crt
+                - --key=/etc/kubernetes/pki/etcd/server.key
               env:
                 - name: NODE_IP
                   valueFrom:
@@ -67,6 +57,37 @@ spec:
                 limits:
                   cpu: 200m
                   memory: 256Mi
+              volumeMounts:
+                - name: k8s-pki
+                  mountPath: /etc/kubernetes/pki
+                  readOnly: true
+                - name: snapshots
+                  mountPath: /snapshots
+            - name: prepare
+              image: alpine:3.21
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+                  mv /snapshots/latest.db "/snapshots/snapshot-${TIMESTAMP}.db"
+                  echo "Backing up control plane PKI"
+                  tar czf "/snapshots/pki-${TIMESTAMP}.tar.gz" -C /etc/kubernetes pki
+                  echo "Pruning old snapshots (keeping 7)"
+                  ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
+                  ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
               volumeMounts:
                 - name: k8s-pki
                   mountPath: /etc/kubernetes/pki
