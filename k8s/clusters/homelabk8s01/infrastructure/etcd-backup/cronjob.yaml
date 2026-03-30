@@ -30,11 +30,11 @@ spec:
               type: RuntimeDefault
           initContainers:
             - name: snapshot
-              image: bitnami/etcd:3.5.17
-              command: ["/bin/bash", "-c"]
+              image: registry.k8s.io/etcd:3.5.15-0
+              command: ["/bin/sh", "-c"]
               args:
                 - |
-                  set -euo pipefail
+                  set -eu
                   TIMESTAMP=$(date +%Y%m%d-%H%M%S)
                   SNAPSHOT_NAME="snapshot-${TIMESTAMP}.db"
                   echo "Taking etcd snapshot: ${SNAPSHOT_NAME}"
