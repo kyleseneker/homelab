@@ -51,7 +51,9 @@ redis:
   enabled: true
   architecture: standalone
   auth:
-    enabled: false
+    enabled: true
+    existingSecret: authentik-credentials
+    existingSecretPasswordKey: redis-password
   master:
     persistence:
       enabled: true
