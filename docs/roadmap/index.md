@@ -9,7 +9,7 @@ For current infrastructure details, see [Hardware Inventory](../reference/hardwa
 | Phase | Focus | Status |
 |-------|-------|--------|
 | [1 -- Foundations](phase-1-foundations.md) | ~~UPS~~, NAS redundancy, ~~offsite backups~~, ~~etcd snapshots~~ | In progress |
-| [2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Policy enforcement, resource quotas, Prometheus storage, Redis auth, Loki retention, egress filtering | Not started |
+| [2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Policy enforcement, resource quotas, registry allowlist, cert-manager alerting, egress filtering | In progress |
 | [3 -- Network](phase-3-network.md) | 10G, management VLAN, WireGuard VPN, DNS automation, external access | Not started |
 | [4 -- Compute & Storage](phase-4-compute-and-storage.md) | Second host, HA control plane, Vault HA, NAS expansion | Not started |
 | [5 -- Observability](phase-5-observability.md) | Distributed tracing, dashboards-as-code, SLO alerting, synthetic monitoring | Not started |

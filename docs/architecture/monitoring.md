@@ -31,7 +31,7 @@ flowchart LR
 
 | Component | Purpose | Deployment | Storage |
 |-----------|---------|-----------|---------|
-| Prometheus | Metrics collection, storage, and rule evaluation | StatefulSet | 20Gi PVC (`nfs-client`), 15d retention |
+| Prometheus | Metrics collection, storage, and rule evaluation | StatefulSet | 20Gi PVC (`local-path`), 15d retention |
 | Grafana | Dashboards and visualization for metrics and logs | Deployment | Persistent PVC (`nfs-client`) |
 | Alertmanager | Alert routing, grouping, and notification | StatefulSet | Ephemeral |
 | Node Exporter | Host-level hardware and OS metrics | DaemonSet | None |
