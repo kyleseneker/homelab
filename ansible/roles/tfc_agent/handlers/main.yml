@@ -1,0 +1,6 @@
+---
+- name: Restart tfc-agent
+  ansible.builtin.systemd:
+    name: tfc-agent
+    state: restarted
+    daemon_reload: true

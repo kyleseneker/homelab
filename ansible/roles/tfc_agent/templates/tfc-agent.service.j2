@@ -1,0 +1,17 @@
+[Unit]
+Description=HCP Terraform Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ tfc_agent_user }}
+Group={{ tfc_agent_group }}
+EnvironmentFile=/etc/tfc-agent.env
+ExecStart={{ tfc_agent_install_dir }}/tfc-agent
+Restart=on-failure
+RestartSec=5
+WorkingDirectory={{ tfc_agent_data_dir }}
+
+[Install]
+WantedBy=multi-user.target

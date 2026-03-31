@@ -1,0 +1,8 @@
+---
+tfc_agent_version: "1.28.5"
+tfc_agent_user: tfc-agent
+tfc_agent_group: tfc-agent
+tfc_agent_install_dir: /opt/tfc-agent
+tfc_agent_data_dir: /opt/tfc-agent/data
+tfc_agent_name: "{{ inventory_hostname }}"
+tfc_agent_log_level: info
