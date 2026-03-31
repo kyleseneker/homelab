@@ -17,7 +17,7 @@ Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures 
 | Router | [UniFi Dream Router 7](architecture/network-infrastructure.md) |
 | Switch | USW-16-PoE (16x GbE PoE + 2x 1G SFP) |
 | Storage | [UNAS Pro](reference/hardware.md#unas-pro) (1x 8TB WD Red Plus, NFS) |
-| VLANs | [Default (192.168.1.0/24), Homelab (192.168.10.0/24)](architecture/network-infrastructure.md#vlans) |
+| VLANs | [Default (192.168.1.0/24), Homelab (192.168.10.0/24), Management (192.168.99.0/24)](architecture/network-infrastructure.md#vlans) |
 
 ## How It All Fits Together
 

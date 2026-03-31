@@ -4,7 +4,7 @@
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
-**Addresses:** [P3](assessment.md#physical-layer) (GbE bottleneck), [N1, N3, N4, N5](assessment.md#network-layer)
+**Addresses:** [P3](assessment.md#physical-layer) (GbE bottleneck), [N3, N4, N5](assessment.md#network-layer)
 
 ---
 
@@ -30,32 +30,19 @@
 
 **Recommendation:** Option A. Connect both MS-01 SFP+ ports. When a second host is added (Phase 4.1), it connects at 10G immediately.
 
-## 3.2 Add a Management VLAN
-
-- [ ] Create VLAN 99 (192.168.99.0/24) in UniFi Network controller
-- [ ] Tag management VLAN on relevant switch ports
-- [ ] Assign management IPs to: Proxmox, USW-16-PoE, USP PDU Pro, UNAS Pro
-- [ ] Create firewall rules restricting management VLAN access to trusted clients (workstation, VPN)
-- [ ] Update [network infrastructure docs](../architecture/network-infrastructure.md) with new VLAN
-- [ ] Write an ADR for the VLAN segmentation decision
-
-| | |
-|---|---|
-| **Why** | Proxmox management shares the Homelab VLAN. Switch/PDU/NAS management is on the Default VLAN with household devices. A misconfigured rule or compromised device could reach management interfaces. |
-
-## 3.3 Configure WireGuard VPN
+## 3.2 Configure WireGuard VPN
 
 - [ ] Create WireGuard client profiles on the Dream Router 7 (phone, laptop)
 - [ ] Configure split-tunnel routing (only homelab traffic through VPN)
 - [ ] Grant VPN access to the Homelab VLAN (192.168.10.0/24)
-- [ ] Optionally grant VPN access to the Management VLAN (192.168.99.0/24)
+- [ ] Grant VPN access to the Management VLAN (192.168.99.0/24)
 - [ ] Test access to homelab services from an external network
 
 | | |
 |---|---|
 | **Why** | No way to reach the homelab off-site. Blocks remote management, media streaming, and dashboard access. The Dream Router 7 already has WireGuard enabled. |
 
-## 3.4 Automate Internal DNS
+## 3.3 Automate Internal DNS
 
 - [ ] Choose a DNS approach (see below)
 - [ ] Deploy and configure
@@ -77,7 +64,7 @@
 
 **Recommendation:** Option B as a middle ground. Provides a DNS dashboard and ad-blocking. Layer external-dns on top later if full automation is needed.
 
-## 3.5 Plan External Access for Jellyfin
+## 3.4 Plan External Access for Jellyfin
 
 - [ ] Choose an external access approach (see below)
 - [ ] Implement and test
@@ -85,7 +72,7 @@
 
 | | |
 |---|---|
-| **Why** | Streaming media while traveling. VPN (3.3) works for personal devices. Sharing with friends/family needs something that doesn't require VPN setup on their end. |
+| **Why** | Streaming media while traveling. VPN (3.2) works for personal devices. Sharing with friends/family needs something that doesn't require VPN setup on their end. |
 
 **Options:**
 
@@ -102,7 +89,6 @@
 ## Definition of Done
 
 - [ ] 10G link between MS-01 and at least one other device
-- [ ] Management VLAN isolating infrastructure management traffic
 - [ ] WireGuard VPN functional for remote access
 - [ ] DNS centralized (automated or in a dedicated server)
 - [ ] External access path chosen and implemented for Jellyfin
