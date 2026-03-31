@@ -4,7 +4,11 @@
   roles:
     - pve_repos
     - pve_iommu
+    - role: pve_disable_wireless
+      tags: [pve_disable_wireless]
     - pve_cloud_init
     - pve_pci_mapping
     - pve_api_token
     - pve_ups
+    - role: tfc_agent
+      tags: [tfc_agent]

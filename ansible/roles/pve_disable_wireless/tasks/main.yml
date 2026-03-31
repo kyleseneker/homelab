@@ -1,0 +1,24 @@
+---
+- name: Blacklist wireless and Bluetooth kernel modules
+  ansible.builtin.copy:
+    dest: /etc/modprobe.d/blacklist-wireless.conf
+    content: |
+      blacklist iwlwifi
+      blacklist btusb
+    mode: "0644"
+  register: pve_wireless_blacklist_updated
+
+- name: Update initramfs # noqa: no-handler
+  ansible.builtin.command: update-initramfs -u
+  changed_when: true
+  when: pve_wireless_blacklist_updated.changed
+
+- name: Unload wireless modules immediately # noqa: no-handler
+  ansible.builtin.command: "modprobe -r {{ item }}"
+  loop:
+    - iwlmvm
+    - iwlwifi
+    - btusb
+  changed_when: true
+  failed_when: false
+  when: pve_wireless_blacklist_updated.changed
