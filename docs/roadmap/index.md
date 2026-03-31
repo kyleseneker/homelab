@@ -8,7 +8,7 @@ For current infrastructure details, see [Hardware Inventory](../reference/hardwa
 
 | Phase | Focus | Status |
 |-------|-------|--------|
-| [1 -- Foundations](phase-1-foundations.md) | UPS, NAS redundancy, ~~offsite backups~~, etcd snapshots | In progress |
+| [1 -- Foundations](phase-1-foundations.md) | ~~UPS~~, NAS redundancy, ~~offsite backups~~, ~~etcd snapshots~~ | In progress |
 | [2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Policy enforcement, resource quotas, Prometheus storage, Redis auth, Loki retention, egress filtering | Not started |
 | [3 -- Network](phase-3-network.md) | 10G, management VLAN, WireGuard VPN, DNS automation, external access | Not started |
 | [4 -- Compute & Storage](phase-4-compute-and-storage.md) | Second host, HA control plane, Vault HA, NAS expansion | Not started |
@@ -26,6 +26,6 @@ See [Assessment](assessment.md) for the full analysis of current strengths and i
 2. **Eliminate SPOFs in order of blast radius.** NAS (all data) > compute host (all VMs) > control plane (cluster management) > individual services.
 3. **Graduate from audit to enforce.** Policies that only report are policies that get ignored.
 4. **Prefer boring solutions.** Backblaze B2 over a self-hosted S3 cluster. ResourceQuotas over custom admission webhooks. WireGuard over a bespoke proxy chain.
-5. **Hardware purchases should unlock capabilities, not just add capacity.** A second host unlocks HA, live migration, and rolling upgrades. 10G unlocks the SFP+ ports already in the MS-01. A UPS unlocks graceful shutdown automation.
+5. **Hardware purchases should unlock capabilities, not just add capacity.** A second host unlocks HA, live migration, and rolling upgrades. 10G unlocks the SFP+ ports already in the MS-01.
 6. **Every significant change gets an ADR.** The documentation standard is a strength worth maintaining.
 7. **Use the homelab to learn, not just host.** Tracing, SLOs, chaos engineering, Falco, and supply chain security are career-relevant skills worth building even when a 3-node cluster doesn't strictly require them.

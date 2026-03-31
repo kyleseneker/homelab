@@ -24,7 +24,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 
 | # | Gap | Risk | Severity |
 |---|-----|------|----------|
-| P1 | **No UPS** | Power event corrupts NVMe mid-write, kills NAS mid-IO, or causes unclean Proxmox/etcd shutdown. | Critical |
+| P1 | **No UPS** | Power event corrupts NVMe mid-write, kills NAS mid-IO, or causes unclean Proxmox/etcd shutdown. | Resolved |
 | P2 | **Single NAS drive** | One drive failure loses all NFS-backed data: media, app configs, Prometheus, Loki, Vault, Velero backups. | Critical |
 | P3 | **Running at GbE when 10G is available** | MS-01 has 2x 10G SFP+ unused. NFS throughput and future live migration bottlenecked at 1 Gbps. USW-16-PoE has 1G SFP only. | Low |
 | P4 | **Single compute host** | All VMs on one machine. Hardware failure means total cluster loss. | High |
@@ -35,7 +35,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 
 | # | Gap | Risk | Severity |
 |---|-----|------|----------|
-| N1 | **No dedicated management VLAN** | Proxmox, switch, PDU, and NAS management share VLANs with production or household traffic. | Medium |
+| N1 | **No dedicated management VLAN** | Proxmox, switch, PDU, and NAS management share VLANs with production or household traffic. | Resolved |
 | N2 | **No IoT VLAN** | Smart home devices (if any) share the default VLAN with household devices and the NAS. | Low |
 | N3 | **DNS is manual static entries** | Adding a service requires a manual UniFi console edit. | Medium |
 | N4 | **WireGuard VPN not configured** | No way to reach the homelab off-site. | Medium |
@@ -68,7 +68,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 
 | Gap | Addressed In |
 |-----|-------------|
-| P1, P2, K5, K16 | [Phase 1 -- Foundations](phase-1-foundations.md) |
+| P2 | [Phase 1 -- Foundations](phase-1-foundations.md) |
 | K3, K6, K7, K9, K11, K15, N6 | [Phase 2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) |
 | P3, N1, N3, N4, N5 | [Phase 3 -- Network](phase-3-network.md) |
 | P4, K1, K4 | [Phase 4 -- Compute & Storage](phase-4-compute-and-storage.md) |
