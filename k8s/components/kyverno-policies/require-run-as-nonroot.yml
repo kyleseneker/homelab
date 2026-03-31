@@ -34,6 +34,7 @@ spec:
                 - intel-gpu-operator
                 - monitoring
                 - nfs-provisioner
+                - local-path-storage
       validate:
         message: "Containers must set securityContext.runAsNonRoot to true."
         anyPattern:

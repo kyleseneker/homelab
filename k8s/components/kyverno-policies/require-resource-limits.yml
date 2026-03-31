@@ -29,6 +29,7 @@ spec:
                 - metallb-system
                 - cilium-test-*
                 - backups
+                - local-path-storage
       validate:
         message: "All containers must have memory and CPU limits defined."
         pattern:

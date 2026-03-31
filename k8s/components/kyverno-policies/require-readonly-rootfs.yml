@@ -33,6 +33,7 @@ spec:
                 - backups
                 - monitoring
                 - nfs-provisioner
+                - local-path-storage
       validate:
         message: "Containers must set securityContext.readOnlyRootFilesystem to true."
         pattern:
