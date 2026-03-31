@@ -1,0 +1,2 @@
+---
+tfc_agent_token: "{{ vault_tfc_agent_token }}"
