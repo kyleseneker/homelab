@@ -19,6 +19,7 @@
       - jq
       - unzip
       - lsb-release
+      - qemu-guest-agent
     state: present
 
 - name: Set timezone
