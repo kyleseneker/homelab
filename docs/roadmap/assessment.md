@@ -51,7 +51,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | K3 | **No ResourceQuotas or LimitRanges** | A runaway pod can OOM an entire node and cascade-kill neighbors. | Medium |
 | K4 | **Vault standalone, no HA** | Single Vault pod on NFS. Pod failure loses secret access cluster-wide. | Medium |
 | K5 | **No offsite backup copy** | Velero backs up to MinIO on the same NAS as production data. | Resolved |
-| K6 | **Authentik Redis unauthenticated** | `auth.enabled: false`. Network policies mitigate but any pod in the auth namespace has access. | Low |
+| K6 | **Authentik Redis unauthenticated** | `auth.enabled: false`. Network policies mitigate but any pod in the auth namespace has access. | Resolved |
 | K7 | **Prometheus TSDB on NFS** | Heavy random I/O on NFS degrades query performance and risks TSDB corruption. | Medium |
 | K8 | **No HPA** | Nothing scales horizontally under load. | Low |
 | K9 | **No pod topology spread constraints** | Scheduler may co-locate critical services on one node. | Medium |
@@ -69,7 +69,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | Gap | Addressed In |
 |-----|-------------|
 | P2 | [Phase 1 -- Foundations](phase-1-foundations.md) |
-| K3, K6, K7, K9, K11, K15, N6 | [Phase 2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) |
+| K3, K7, K9, K11, K15, N6 | [Phase 2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) |
 | P3, N1, N3, N4, N5 | [Phase 3 -- Network](phase-3-network.md) |
 | P4, K1, K4 | [Phase 4 -- Compute & Storage](phase-4-compute-and-storage.md) |
 | K10, K14, K8 | [Phase 5 -- Observability](phase-5-observability.md) |
