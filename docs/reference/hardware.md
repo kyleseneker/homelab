@@ -23,18 +23,27 @@ The Dream Router 7 sits on the main floor and connects to the closet via a singl
 
 ```mermaid
 graph TD
-    subgraph rack ["Network Closet"]
-        direction TB
-        SW["USW-16-PoE"]
-        PDU["USP PDU Pro"]
-        NAS["UNAS Pro"]
-        MS01["Minisforum MS-01"]
+    subgraph main_floor ["Main Floor"]
+        APC["APC Back-UPS 1500"]
+        FIBER["Google Fiber ONT"] --> APC
+        DR7["UniFi Dream Router 7"] --> APC
     end
 
-    DR7["UniFi Dream Router 7<br/>(main floor)"] -->|"GbE uplink"| SW
-    SW --> PDU
-    SW -->|"GbE RJ45"| NAS
-    SW -->|"GbE RJ45"| MS01
+    subgraph rack ["Network Closet"]
+        direction TB
+        UPS["CyberPower CP1500PFCRM2U"]
+        PDU["USP PDU Pro"]
+        SW["USW-16-PoE"]
+        NAS["UNAS Pro"]
+        MS01["Minisforum MS-01"]
+        UPS -->|"battery outlet"| PDU
+        PDU --> SW
+        PDU --> NAS
+        PDU --> MS01
+    end
+
+    DR7 -->|"GbE uplink"| SW
+    UPS -->|"USB-B"| MS01
 ```
 
 ## Compute
@@ -124,9 +133,35 @@ Serves all NFS-backed PersistentVolumes for the Kubernetes cluster via the `nfs-
 
 ## Power
 
+### CyberPower CP1500PFCRM2U
+
+Pure sine wave rackmount UPS protecting all rack equipment via the PDU.
+
+| Spec | Detail |
+|------|--------|
+| Model | CP1500PFCRM2U |
+| Capacity | 1500VA / 1000W |
+| Output | Pure sine wave |
+| Outlets | 8x NEMA 5-15R (all battery + surge protected) |
+| Interface | USB-B (HID), serial DB9 |
+| Display | Color LCD |
+| Rack size | 2U |
+
+### APC Back-UPS Pro BN1500M2
+
+Battery backup for the internet uplink and router. Located on the main floor.
+
+| Spec | Detail |
+|------|--------|
+| Model | BN1500M2 |
+| Capacity | 1500VA / 900W |
+| Output | Stepped approximation to sine wave |
+| Outlets | 6x battery + surge, 4x surge only |
+| Protected devices | Google Fiber ONT, UniFi Dream Router 7 |
+
 ### USP PDU Pro
 
-Per-outlet power monitoring and remote switching for all rack equipment. No UPS.
+Per-outlet power monitoring and remote switching for all rack equipment. Powered by the CyberPower UPS.
 
 | Spec | Detail |
 |------|--------|
