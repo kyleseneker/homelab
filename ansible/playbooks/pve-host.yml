@@ -7,3 +7,4 @@
     - pve_cloud_init
     - pve_pci_mapping
     - pve_api_token
+    - pve_ups

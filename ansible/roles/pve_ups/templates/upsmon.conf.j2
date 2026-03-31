@@ -1,0 +1,16 @@
+MONITOR {{ pve_ups_monitor }} {{ pve_ups_powervalue }} upsmon {{ pve_ups_upsmon_password }} primary
+
+SHUTDOWNCMD "{{ pve_ups_shutdown_command }}"
+
+MINSUPPLIES 1
+POLLFREQ 5
+POLLFREQALERT 5
+HOSTSYNC 15
+DEADTIME 15
+FINALDELAY {{ pve_ups_shutdown_delay }}
+
+NOTIFYFLAG ONLINE SYSLOG+WALL
+NOTIFYFLAG ONBATT SYSLOG+WALL
+NOTIFYFLAG LOWBATT SYSLOG+WALL
+NOTIFYFLAG FSD SYSLOG+WALL
+NOTIFYFLAG SHUTDOWN SYSLOG+WALL

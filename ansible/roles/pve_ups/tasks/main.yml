@@ -1,0 +1,90 @@
+---
+- name: Install NUT packages
+  ansible.builtin.apt:
+    name:
+      - nut
+      - nut-client
+      - nut-server
+    state: present
+
+- name: Add udev rule for UPS USB access
+  ansible.builtin.template:
+    src: ups-udev.rules.j2
+    dest: /etc/udev/rules.d/99-ups.rules
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload udev rules
+
+- name: Deploy graceful shutdown script
+  ansible.builtin.template:
+    src: nut-shutdown.sh.j2
+    dest: /usr/local/sbin/nut-shutdown.sh
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Configure NUT mode
+  ansible.builtin.template:
+    src: nut.conf.j2
+    dest: /etc/nut/nut.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify:
+    - Restart nut-driver
+    - Restart nut-server
+    - Restart nut-monitor
+
+- name: Configure UPS device
+  ansible.builtin.template:
+    src: ups.conf.j2
+    dest: /etc/nut/ups.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart nut-driver
+
+- name: Configure upsd listener
+  ansible.builtin.template:
+    src: upsd.conf.j2
+    dest: /etc/nut/upsd.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  notify: Restart nut-server
+
+- name: Configure upsd users
+  ansible.builtin.template:
+    src: upsd.users.j2
+    dest: /etc/nut/upsd.users
+    owner: root
+    group: nut
+    mode: "0640"
+  no_log: true
+  notify: Restart nut-server
+
+- name: Configure upsmon
+  ansible.builtin.template:
+    src: upsmon.conf.j2
+    dest: /etc/nut/upsmon.conf
+    owner: root
+    group: nut
+    mode: "0640"
+  no_log: true
+  notify: Restart nut-monitor
+
+- name: Enable nut-server service
+  ansible.builtin.systemd:
+    name: nut-server
+    enabled: true
+
+- name: Enable nut-monitor service
+  ansible.builtin.systemd:
+    name: nut-monitor
+    enabled: true
+
+- name: Enable nut-driver target
+  ansible.builtin.systemd:
+    name: nut-driver.target
+    enabled: true

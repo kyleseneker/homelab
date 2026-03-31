@@ -1,0 +1,23 @@
+---
+pve_ups_name: cyberpower
+pve_ups_driver: usbhid-ups
+pve_ups_port: auto
+pve_ups_description: "CyberPower CP1500PFCRM2U"
+
+pve_ups_shutdown_command: /usr/local/sbin/nut-shutdown.sh
+
+# Seconds to wait for VMs to shut down gracefully before force stopping
+pve_ups_vm_shutdown_timeout: 120
+
+# Address for upsd to listen on for remote clients (e.g. NUT exporter in K8s)
+pve_ups_listen_address: "{{ ansible_host }}"
+
+# Local-only password for upsmon <-> upsd communication
+pve_ups_upsmon_password: upsmon
+
+# upsmon settings
+pve_ups_monitor: "{{ pve_ups_name }}@localhost"
+pve_ups_powervalue: 1
+
+# Seconds to wait before shutting down (after battery is critical)
+pve_ups_shutdown_delay: 30

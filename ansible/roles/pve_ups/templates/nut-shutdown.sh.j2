@@ -1,0 +1,33 @@
+#!/bin/bash
+# Graceful shutdown script for NUT/upsmon.
+# Shuts down all running Proxmox VMs before powering off the host.
+
+LOG_TAG="nut-shutdown"
+TIMEOUT={{ pve_ups_vm_shutdown_timeout }}
+
+logger -t "$LOG_TAG" "UPS shutdown initiated, stopping all running VMs"
+
+# Get list of running VM IDs
+VMIDS=$(qm list | awk '/running/ {print $1}')
+
+if [ -z "$VMIDS" ]; then
+    logger -t "$LOG_TAG" "No running VMs found"
+else
+    for VMID in $VMIDS; do
+        logger -t "$LOG_TAG" "Sending shutdown to VM $VMID"
+        qm shutdown "$VMID" --timeout "$TIMEOUT" &
+    done
+
+    logger -t "$LOG_TAG" "Waiting up to ${TIMEOUT}s for VMs to stop"
+    wait
+
+    # Force stop any VMs that didn't shut down in time
+    REMAINING=$(qm list | awk '/running/ {print $1}')
+    for VMID in $REMAINING; do
+        logger -t "$LOG_TAG" "Force stopping VM $VMID"
+        qm stop "$VMID"
+    done
+fi
+
+logger -t "$LOG_TAG" "All VMs stopped, powering off host"
+/sbin/shutdown -h +0

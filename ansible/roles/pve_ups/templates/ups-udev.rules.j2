@@ -1,0 +1,2 @@
+# CyberPower UPS - grant access to nut group for NUT driver
+SUBSYSTEM=="usb", ATTR{idVendor}=="0764", ATTR{idProduct}=="0601", GROUP="nut", MODE="0660"
