@@ -103,13 +103,13 @@ VAL ?=
 .PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
-	cd $(TF_DIR) && terraform init
+	terraform -chdir=$(TF_DIR) init
 
 k8s-plan: ## Preview K8s VM changes
-	cd $(TF_DIR) && terraform plan
+	terraform -chdir=$(TF_DIR) plan
 
 k8s-infra: ## Provision K8s VMs on Proxmox
-	cd $(TF_DIR) && terraform apply -auto-approve
+	terraform -chdir=$(TF_DIR) apply
 
 k8s-configure: ## Bootstrap K8s cluster via Ansible
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(CLUSTER)/hosts.yml playbooks/k8s-cluster.yml
@@ -117,7 +117,7 @@ k8s-configure: ## Bootstrap K8s cluster via Ansible
 k8s-deploy: k8s-infra k8s-configure k8s-bootstrap ## Full deploy: VMs + cluster + ArgoCD
 
 k8s-destroy: ## Tear down all K8s VMs
-	cd $(TF_DIR) && terraform destroy
+	terraform -chdir=$(TF_DIR) destroy
 
 k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	kubectl apply -k k8s/bootstrap/argocd/
@@ -186,10 +186,10 @@ vault-status: ## Show Vault seal status
 AWS_TF_DIR := terraform/aws
 
 aws-init: ## Initialize Terraform for AWS resources
-	cd $(AWS_TF_DIR) && terraform init
+	terraform -chdir=$(AWS_TF_DIR) init
 
 aws-plan: ## Preview AWS resource changes
-	cd $(AWS_TF_DIR) && terraform plan
+	terraform -chdir=$(AWS_TF_DIR) plan
 
 aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
-	cd $(AWS_TF_DIR) && terraform apply
+	terraform -chdir=$(AWS_TF_DIR) apply

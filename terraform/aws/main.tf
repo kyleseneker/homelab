@@ -1,6 +1,14 @@
 terraform {
   required_version = ">= 1.5.0"
 
+  cloud {
+    organization = "kyleseneker"
+
+    workspaces {
+      name = "homelab-aws"
+    }
+  }
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"

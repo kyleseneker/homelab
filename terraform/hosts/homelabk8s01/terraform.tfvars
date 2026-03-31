@@ -2,7 +2,7 @@ proxmox_endpoint = "https://192.168.10.2:8006"
 target_node      = "homelabpve01"
 
 clone_template_id = 9000
-ssh_public_key   = "ssh-ed25519 AAAA... user@host"
+ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJfcTkmi2Wd832gavFsAGSLIUN7lrbCX0hWsb/V1mHVg kseneker@MY9RL0MMWJ"
 
 gateway    = "192.168.10.1"
 nameserver = "192.168.10.1"

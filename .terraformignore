@@ -1,0 +1,15 @@
+.git/
+.github/
+.claude/
+ansible/
+docs/
+k8s/
+packer/
+scripts/
+site/
+*.md
+Makefile
+mkdocs.yml
+kubeconfig
+.gitignore
+.DS_Store
