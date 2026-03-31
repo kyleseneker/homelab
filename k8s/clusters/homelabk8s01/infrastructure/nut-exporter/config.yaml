@@ -1,0 +1,12 @@
+appName: nut-exporter
+namespace: monitoring
+sourceType: helm
+chartRepo: https://bjw-s-labs.github.io/helm-charts
+chartName: app-template
+chartVersion: 4.6.2
+createNamespace: false
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+  - SkipDryRunOnMissingResource=true

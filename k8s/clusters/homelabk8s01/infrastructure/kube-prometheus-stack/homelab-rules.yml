@@ -148,6 +148,44 @@ spec:
             summary: "Velero backup partially failed"
             description: "A Velero backup completed with partial failures in the last 24 hours."
 
+    - name: homelab-ups-health
+      rules:
+        - alert: UPSOnBattery
+          expr: network_ups_tools_ups_status{flag="OB"} == 1
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "UPS is running on battery power"
+            description: "The UPS has been on battery power for more than 1 minute. If power does not return, the system will shut down when battery is low."
+
+        - alert: UPSBatteryLow
+          expr: network_ups_tools_battery_charge < 50
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "UPS battery charge below 50%"
+            description: "UPS battery is at {{ $value | printf \"%.0f\" }}%. Graceful shutdown will begin at low battery threshold."
+
+        - alert: UPSHighLoad
+          expr: network_ups_tools_ups_load > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UPS load above 80%"
+            description: "UPS load is at {{ $value | printf \"%.0f\" }}%. Consider reducing connected equipment or upgrading the UPS."
+
+        - alert: NUTExporterDown
+          expr: up{job=~".*nut-exporter.*"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "NUT exporter is unreachable"
+            description: "The NUT exporter has been down for more than 5 minutes. UPS monitoring is degraded."
+
     - name: homelab-node-health
       rules:
         - alert: HighNodeCPU

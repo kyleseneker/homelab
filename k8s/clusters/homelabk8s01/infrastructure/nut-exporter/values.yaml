@@ -1,0 +1,57 @@
+defaultPodOptions:
+  securityContext:
+    runAsUser: 65534
+    runAsGroup: 65534
+    fsGroup: 65534
+    runAsNonRoot: true
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/druggeri/nut_exporter
+          tag: "3.2.5"
+        env:
+          NUT_EXPORTER_SERVER: 192.168.10.2
+          NUT_EXPORTER_SERVERPORT: "3493"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 20m
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9199
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9199
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /healthz
+                port: 9199
+service:
+  main:
+    controller: main
+    ports:
+      metrics:
+        port: 9199

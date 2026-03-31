@@ -135,6 +135,24 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: monitoring-egress-nut-exporter
+  namespace: monitoring
+spec:
+  description: "Allow NUT exporter to reach upsd on the Proxmox host"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: nut-exporter
+  egress:
+    - toCIDR:
+        - 192.168.10.2/32
+      toPorts:
+        - ports:
+            - port: "3493"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: monitoring-egress-uptime-kuma
   namespace: monitoring
 spec:
