@@ -1,19 +1,21 @@
 injector:
   enabled: false
 server:
-  securityContext:
-    runAsUser: 100
-    runAsGroup: 1000
-    fsGroup: 1000
-    runAsNonRoot: true
-  containerSecurityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop:
-        - ALL
-      add:
-        - IPC_LOCK
+  statefulSet:
+    securityContext:
+      pod:
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      container:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - IPC_LOCK
   extraSecretEnvironmentVars:
     - envName: AWS_ACCESS_KEY_ID
       secretName: vault-aws-kms
