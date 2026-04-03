@@ -28,15 +28,17 @@ VLAN IDs follow a convention where the ID matches the third octet of the subnet 
 |--------|--------------|---------|-------|
 | Dream Router 7 | 192.168.99.1 | 192.168.1.1 | Gateway for Management VLAN |
 | Proxmox (MS-01) | 192.168.99.2 | 192.168.10.2 | Dual-homed: mgmt + homelab |
-| USW-16-PoE | 192.168.99.3 | -- | Management only |
-| USP PDU Pro | 192.168.99.4 | -- | Management only |
+| USW-16-PoE | DHCP | -- | Management only |
+| USP PDU Pro | DHCP | -- | Management only |
+| Intel AMT (MS-01) | 192.168.99.5 | -- | Out-of-band management, dedicated NIC (ADR-017) |
 | UNAS Pro | N/A (stays on Default) | 192.168.1.158 | Cannot dual-home; management stays on Default VLAN |
 
 ### Switch Port Configuration
 
 Devices that need both data and management access use trunk ports:
 
-- **MS-01**: Native VLAN = Homelab (10), tagged VLAN = Management (99). Proxmox has a VLAN 99 subinterface for management.
+- **MS-01 (nic0)**: Native VLAN = Homelab (10), tagged VLAN = Management (99). Proxmox has a VLAN 99 subinterface for management. STP disabled on this port to prevent flapping from the Linux bridge.
+- **MS-01 (nic1)**: Access port on Management (99). Dedicated to Intel AMT out-of-band management (ADR-017).
 - **UNAS Pro**: Default VLAN access port only. The UNAS Pro does not support dual-homing -- setting a management VLAN override moves its only interface off the Default VLAN, breaking NFS. Management stays on the Default VLAN.
 - **USW-16-PoE and USP PDU Pro**: Management VLAN assigned through the UniFi controller.
 
@@ -60,7 +62,7 @@ Management VLAN rules are evaluated before inter-VLAN rules:
 - **VLAN isolation over port-based filtering**: A VLAN boundary means management traffic is invisible to devices on other VLANs at Layer 2. Firewall rules provide additional protection, but the VLAN alone prevents accidental exposure if a rule is misconfigured.
 - **Dual-homing Proxmox rather than moving it**: Proxmox must remain on the Homelab VLAN (192.168.10.2) because Terraform, Ansible, and kubeconfig all reference that IP. Adding a management interface on VLAN 99 provides an independent path to the hypervisor without changing any automation.
 - **NAS data path stays on Default VLAN**: The NAS IP (192.168.1.158) is referenced in NFS mounts, Kubernetes PVs, and CiliumNetworkPolicy egress rules across the cluster. Moving NFS to a different VLAN would require changes to dozens of files and would break Kubernetes storage during the transition. Only the management interface moves.
-- **Static IPs with no DHCP**: Management devices are few and stable. DHCP adds complexity (reservations, lease expiry) for no benefit when the device count is under ten.
+- **DHCP for most management devices**: The gateway and Proxmox host use static IPs (configured on the devices themselves). Other management devices (switch, PDU, AMT) use DHCP for simplicity. DHCP reservations can be added later if stable addressing becomes important.
 - **VLAN 99 as the ID**: A high, distinctive number that is unlikely to collide with future VLANs (IoT, guest, etc.) and is immediately recognizable as management in firewall logs and switch configs.
 
 ## Consequences

@@ -4,7 +4,7 @@
 
 **Goal:** Build the capabilities that take the homelab from "well-run cluster" to a platform engineering practice.
 
-**Addresses:** [P6](assessment.md#physical-layer) (no remote management), [K12, K13](assessment.md#kubernetes--software-layer) (no chaos testing, no supply chain verification)
+**Addresses:** [K12, K13](assessment.md#kubernetes--software-layer) (no chaos testing, no supply chain verification)
 
 ---
 
@@ -56,18 +56,6 @@
 |---|---|
 | **Why** | Renovate pins digests (preventing tag mutation), but no verification that images were built by trusted parties. cosign ensures images are signed by their maintainers. Harbor adds scanning and caching. |
 
-## 6.5 Enable Intel vPro AMT
-
-- [ ] Configure Intel AMT on the MS-01 for out-of-band management (remote KVM, power control)
-- [ ] Place AMT on the Management VLAN (Phase 3.2)
-- [ ] Test remote power cycle and console access
-- [ ] Configure on second host (Phase 4.1) when available
-
-| | |
-|---|---|
-| **Why** | A hung Proxmox host requires physical access. AMT provides IPMI-like capabilities over the network. |
-| **Prerequisites** | Management VLAN (Phase 3.2). AMT must not be reachable from untrusted networks. |
-
 ---
 
 ## Definition of Done
@@ -76,4 +64,3 @@
 - [ ] Falco alerting on anomalous runtime behavior
 - [ ] Weekly chaos experiments running without manual intervention
 - [ ] Image signatures verified at admission
-- [ ] Remote management available for all hosts

@@ -59,15 +59,15 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | RAM | Crucial CT2K32G52S42U5 (2x32 GB DDR5-5200 SO-DIMM, dual-channel) |
 | Storage | WD Black SN850X 2TB NVMe (PCIe 4.0 x4, M.2 2280 slot 1) |
 | iGPU | Intel Iris Xe (i915, PCI 0000:00:02.0, passed through to K8s via VFIO) |
-| NICs | 2x Intel X710 10G SFP+, 2x Intel i226-V 2.5G RJ45 |
+| NICs | 2x Intel X710 10G SFP+, 1x Intel I226-V 2.5G RJ45 (nic0), 1x Intel I226-LM 2.5G RJ45 (nic1, vPro/AMT) |
 | Expansion | 1x PCIe 4.0 x16 (half-height single-slot), 2x M.2 NVMe (slot 2: PCIe 3.0 x4, slot 3: PCIe 3.0 x2) |
 | Other I/O | 2x USB4 (40 Gbps), 3x USB 3.2, 2x USB 2.0, HDMI 2.0 |
 | Wireless | Intel AX211 (Wi-Fi 6E + Bluetooth 5.2) -- unused |
-| Management | Intel AMT (vPro Enterprise) -- not configured |
+| Management | Intel AMT (vPro Enterprise) -- enabled on Management VLAN 99, DHCP, TLS only (ADR-017) |
 
-**In use:** 1x 2.5G RJ45 to USW-16-PoE (negotiated at 1 Gbps). NVMe slot 1. iGPU via VFIO passthrough.
+**In use:** 2x 2.5G RJ45 to USW-16-PoE (nic0: Proxmox host bridge, nic1: Intel AMT). NVMe slot 1. iGPU via VFIO passthrough.
 
-**Available:** 2x 10G SFP+, 1x 2.5G RJ45, PCIe x16 slot, 2x M.2 NVMe slots, Intel AMT.
+**Available:** 2x 10G SFP+, PCIe x16 slot, 2x M.2 NVMe slots.
 
 #### VM Allocation
 

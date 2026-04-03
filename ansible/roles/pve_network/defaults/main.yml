@@ -1,0 +1,7 @@
+---
+pve_network_bridge: vmbr0
+pve_network_physical_port: nic0
+pve_network_homelab_address: 192.168.10.2/24
+pve_network_homelab_gateway: 192.168.10.1
+pve_network_management_address: 192.168.99.2/24
+pve_network_management_vlan: 99

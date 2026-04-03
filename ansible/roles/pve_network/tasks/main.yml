@@ -1,0 +1,10 @@
+---
+- name: Configure VLAN-aware bridge
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: Reload networking

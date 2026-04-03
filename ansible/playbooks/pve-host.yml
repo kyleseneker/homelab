@@ -2,6 +2,8 @@
 - name: Configure Proxmox VE host
   hosts: all
   roles:
+    - role: pve_network
+      tags: [pve_network]
     - pve_repos
     - pve_iommu
     - role: pve_disable_wireless

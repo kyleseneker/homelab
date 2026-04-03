@@ -29,7 +29,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | P3 | **Running at GbE when 10G is available** | MS-01 has 2x 10G SFP+ unused. NFS throughput and future live migration bottlenecked at 1 Gbps. USW-16-PoE has 1G SFP only. | Low |
 | P4 | **Single compute host** | All VMs on one machine. Hardware failure means total cluster loss. | High |
 | P5 | **Unused PCIe x16 slot** | Half-height PCIe 4.0 x16 available for a dedicated GPU, HBA, or NIC. | Informational |
-| P6 | **No IPMI/remote management** | MS-01 supports Intel vPro AMT but it is not configured. Hung host requires physical access. | Medium |
+| P6 | **No IPMI/remote management** | MS-01 supports Intel vPro AMT but it is not configured. Hung host requires physical access. | Resolved |
 
 ### Network Layer
 
@@ -73,5 +73,5 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | P3, N3, N4, N5 | [Phase 3 -- Network](phase-3-network.md) |
 | P4, K1, K4 | [Phase 4 -- Compute & Storage](phase-4-compute-and-storage.md) |
 | K10, K14, K8 | [Phase 5 -- Observability](phase-5-observability.md) |
-| P6, K12, K13 | [Phase 6 -- Platform Engineering](phase-6-platform-engineering.md) |
+| K12, K13 | [Phase 6 -- Platform Engineering](phase-6-platform-engineering.md) |
 | P5, N2 | [Phase 7 -- Long-Term Vision](phase-7-long-term-vision.md) |
