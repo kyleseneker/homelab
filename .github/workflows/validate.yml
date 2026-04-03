@@ -53,8 +53,8 @@ jobs:
             -skip Kustomization \
             -skip CustomResourceDefinition \
             -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
-            -ignore-filename-pattern '.*config\.yaml$' \
-            -ignore-filename-pattern '.*values\.yaml$' \
+            -ignore-filename-pattern '.*config\.yml$' \
+            -ignore-filename-pattern '.*values\.yml$' \
             -ignore-filename-pattern '.*slack-app-manifest\.json$' \
             -summary \
             k8s/
