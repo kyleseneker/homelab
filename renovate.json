@@ -72,15 +72,38 @@
       "groupName": "linuxserver images"
     },
     {
-      "description": "Group Grafana stack charts",
+      "description": "Group monitoring stack charts",
       "matchDatasources": [
         "helm"
       ],
       "matchPackageNames": [
+        "kube-prometheus-stack",
         "loki",
         "alloy"
       ],
-      "groupName": "grafana stack"
+      "groupName": "monitoring stack"
+    },
+    {
+      "description": "Group backup stack charts",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "minio",
+        "velero"
+      ],
+      "groupName": "backup stack"
+    },
+    {
+      "description": "Group VPA and Goldilocks charts",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "vertical-pod-autoscaler",
+        "goldilocks"
+      ],
+      "groupName": "vpa & goldilocks"
     },
     {
       "description": "Group Intel GPU charts",
