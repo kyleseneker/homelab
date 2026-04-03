@@ -16,6 +16,9 @@ controllers:
             add:
               - SETUID
               - SETGID
+              - CHOWN
+              - DAC_OVERRIDE
+              - FOWNER
         probes:
           liveness:
             enabled: true
