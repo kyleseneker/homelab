@@ -5,7 +5,7 @@ chartRepo: ghcr.io/seerr-team/seerr
 chartName: seerr-chart
 chartVersion: "3.3.0"
 createNamespace: false
+hasResources: true
 syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
-hasResources: true
