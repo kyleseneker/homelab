@@ -1,6 +1,8 @@
 .git/
 .github/
 .claude/
+**/.terraform/
+operator/
 ansible/
 docs/
 k8s/

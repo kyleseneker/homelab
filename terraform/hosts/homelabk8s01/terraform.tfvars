@@ -16,11 +16,12 @@ nodes = {
     memory = 8192
   }
   homelabk8s01-node-2 = {
-    role   = "worker"
-    ip     = "192.168.10.51/24"
-    vm_id  = 201
-    cores  = 4
-    memory = 24576
+    role      = "worker"
+    ip        = "192.168.10.51/24"
+    vm_id     = 201
+    cores     = 4
+    memory    = 24576
+    disk_size = 64
   }
   homelabk8s01-node-3 = {
     role         = "worker"
@@ -28,6 +29,7 @@ nodes = {
     vm_id        = 202
     cores        = 4
     memory       = 24576
+    disk_size    = 64
     tags         = ["gpu"]
     pci_mappings = ["igpu"]
   }
