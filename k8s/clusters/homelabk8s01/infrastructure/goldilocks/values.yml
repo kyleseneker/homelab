@@ -12,10 +12,10 @@ controller:
   resources:
     requests:
       cpu: 25m
-      memory: 64Mi
+      memory: 128Mi
     limits:
       cpu: 100m
-      memory: 256Mi
+      memory: 512Mi
   flags:
     on-by-default: "true"
     exclude-namespaces: "kube-node-lease,kube-public"
