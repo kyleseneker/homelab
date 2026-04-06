@@ -4,7 +4,7 @@ controllers:
       main:
         image:
           repository: lscr.io/linuxserver/jellyfin
-          tag: 10.11.6
+          tag: 10.11.8
         envFrom:
           - configMapRef:
               name: arr-env
