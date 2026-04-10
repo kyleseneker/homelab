@@ -97,7 +97,7 @@ spec:
                   mountPath: /snapshots
           containers:
             - name: upload-offsite
-              image: amazon/aws-cli:2.22.35
+              image: amazon/aws-cli:2.34.29
               command: ["/bin/sh", "-c"]
               args:
                 - |
