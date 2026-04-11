@@ -27,7 +27,7 @@ spec:
               type: RuntimeDefault
           initContainers:
             - name: snapshot
-              image: registry.k8s.io/etcd:3.5.15-0
+              image: registry.k8s.io/etcd:3.6.10-0
               command:
                 - etcdctl
                 - snapshot
