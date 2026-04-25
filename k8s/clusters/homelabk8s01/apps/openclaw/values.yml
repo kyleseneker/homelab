@@ -48,7 +48,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/openclaw/openclaw
-          tag: 2026.3.24
+          tag: 2026.4.24
         env:
           TZ: America/Chicago
           OPENCLAW_CONFIG: /config/config.json5
