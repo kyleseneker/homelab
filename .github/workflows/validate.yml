@@ -13,6 +13,8 @@ jobs:
       - uses: hashicorp/setup-packer@main
       - run: packer fmt -check -recursive packer/
       - working-directory: packer/k8s-node
+        env:
+          PACKER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           packer init .
           packer validate \

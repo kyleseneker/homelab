@@ -2,9 +2,9 @@ defaultPodOptions:
   annotations:
     backup.velero.io/backup-volumes-excludes: data
   securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    fsGroup: 1000
+    runAsUser: 977
+    runAsGroup: 988
+    fsGroup: 988
     runAsNonRoot: true
 controllers:
   main:
@@ -16,7 +16,9 @@ controllers:
         env:
           UN_WEBSERVER_METRICS: 'true'
           UN_SONARR_0_URL: http://arr-sonarr.arr.svc.cluster.local:8989
+          UN_SONARR_0_PATHS_0: /data/torrents
           UN_RADARR_0_URL: http://arr-radarr.arr.svc.cluster.local:7878
+          UN_RADARR_0_PATHS_0: /data/torrents
           UN_QBIT_0_URL: http://arr-vpn-downloads.arr.svc.cluster.local:8080
         envFrom:
           - configMapRef:

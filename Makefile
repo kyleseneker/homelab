@@ -100,7 +100,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	terraform -chdir=$(TF_DIR) init
@@ -123,7 +123,7 @@ k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
 	kubectl apply -k k8s/bootstrap/argocd/
 	@echo "Waiting for ArgoCD to be ready..."
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
-	kubectl apply -f k8s/bootstrap/root-app.yml
+	kubectl apply -k k8s/bootstrap/applicationsets/
 
 k8s-backup: ## Trigger an on-demand Velero backup of all namespaces
 	velero backup create manual-$$(date +%Y%m%d-%H%M%S) \
@@ -171,6 +171,27 @@ vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRE
 	@sleep 3
 	@VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/$(SECRET_PATH) $(KEY)="$(VAL)" 2>/dev/null \
 		|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
+	@kill %% 2>/dev/null || true
+
+arr-keys-adopt: ## Copy each *arr app's live API key into Vault at homelab/apps/arr (never prints the key)
+	@if [ -z "$$VAULT_TOKEN" ]; then echo "Error: VAULT_TOKEN not set. Export your root token first: export VAULT_TOKEN=hvs.xxxxx"; exit 1; fi
+	@lsof -ti:8200 | xargs kill 2>/dev/null || true
+	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 >/dev/null 2>&1 &
+	@sleep 3
+	@for app in sonarr radarr prowlarr; do \
+		key=$$(kubectl --kubeconfig ./kubeconfig -n arr exec deploy/arr-$$app -c main -- \
+			sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' /config/config.xml 2>/dev/null); \
+		if [ -z "$$key" ]; then echo "  $$app: FAILED to read /config/config.xml"; continue; fi; \
+		VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/apps/arr $$app-api-key="$$key" >/dev/null 2>&1 \
+			|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/apps/arr $$app-api-key="$$key" >/dev/null; \
+		echo "  $$app: adopted"; \
+	done
+	@key=$$(kubectl --kubeconfig ./kubeconfig -n arr exec deploy/arr-bazarr -c main -- \
+		sed -n 's/^[[:space:]]*apikey:[[:space:]]*//p' /config/config/config.yaml 2>/dev/null | head -1); \
+	if [ -z "$$key" ]; then echo "  bazarr: FAILED to read config.yaml"; else \
+		VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/apps/arr bazarr-api-key="$$key" >/dev/null 2>&1 \
+			|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/apps/arr bazarr-api-key="$$key" >/dev/null; \
+		echo "  bazarr: adopted"; fi
 	@kill %% 2>/dev/null || true
 
 vault-status: ## Show Vault seal status
