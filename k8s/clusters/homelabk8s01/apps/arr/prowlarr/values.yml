@@ -4,7 +4,7 @@ controllers:
       main:
         image:
           repository: lscr.io/linuxserver/prowlarr
-          tag: 2.3.0
+          tag: 2.5.2
         envFrom:
           - configMapRef:
               name: arr-env
