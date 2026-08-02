@@ -9,7 +9,7 @@ jobs:
   packer:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: hashicorp/setup-packer@main
       - run: packer fmt -check -recursive packer/
       - working-directory: packer/k8s-node
@@ -28,7 +28,7 @@ jobs:
   terraform:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
       - run: terraform fmt -check -recursive terraform/
       - working-directory: terraform/aws
@@ -43,7 +43,7 @@ jobs:
   kubernetes:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: pip install yamllint
       - run: yamllint -c .yamllint.yml k8s/
       - uses: bmuschko/setup-kubeconform@v1
@@ -64,7 +64,7 @@ jobs:
   trivy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Scan k8s manifests for misconfigurations
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -78,7 +78,7 @@ jobs:
   ansible:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: pip install ansible-core ansible-lint
       - run: ansible-galaxy collection install -r ansible/requirements.yml
       - working-directory: ansible
