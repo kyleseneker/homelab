@@ -6,7 +6,7 @@ metadata:
 data:
   recyclarr.yml: |
     sonarr:
-      main:
+      sonarr-main:
         base_url: http://arr-sonarr.arr.svc.cluster.local:8989
         api_key: !secret sonarr_api_key
         quality_definition:
@@ -77,7 +77,7 @@ data:
               - name: WEB-1080p
 
     radarr:
-      main:
+      radarr-main:
         base_url: http://arr-radarr.arr.svc.cluster.local:7878
         api_key: !secret radarr_api_key
         quality_definition:
