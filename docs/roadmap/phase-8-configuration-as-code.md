@@ -10,15 +10,14 @@
 
 ## 8.1 Fix the Blocking Defects
 
-- [ ] Replace `Makefile:126` with `kubectl apply -k k8s/bootstrap/applicationsets/` (K18)
+- [x] Replace `Makefile:126` with `kubectl apply -k k8s/bootstrap/applicationsets/` (K18)
 - [ ] Give the media share its own export root -- point `nfs-provisioner/values.yml` at a sibling directory and re-provision (K19)
 - [ ] Replace ArgoCD's literal CA PEM with a trust-manager Bundle or a cert-manager `additionalOutputFormat` (K20)
-- [x] Bump Recyclarr past 8.6.0 to unmask the real error (K25) -- done, crash gone
-- [ ] Find why Recyclarr reports `Found 0 config files` and has never synced (K25) -- open
-- [ ] Add `- httproute.yml` to `apps/arr/seerr/kustomization.yml` and flip `route.main.enabled` (K26)
-- [ ] Set `UN_SONARR_0_PATHS_0` / `UN_RADARR_0_PATHS_0` to `/data/torrents`; change Unpackerr to UID 977 / GID 988 (K27). Its 401s are fixed by 8.2, not here
+- [x] Repair Recyclarr end to end: version bump, unique instance names, corrected `trash_id`s, required `qualities:` block (K25)
+- [x] Add `- httproute.yml` to `apps/arr/seerr/kustomization.yml` and flip `route.main.enabled` (K26)
+- [x] Set `UN_SONARR_0_PATHS_0` / `UN_RADARR_0_PATHS_0` to `/data/torrents`; change Unpackerr to UID 977 / GID 988 (K27). Its 401s are fixed by 8.2, not here
 - [ ] Add a `render` job to `validate.yml`: `kustomize build` per directory, `helm template` per `config.yml` (K22)
-- [ ] Add a Renovate `customManager` matching the `chartRepo`/`chartName`/`chartVersion` keys in `config.yml` (K23)
+- [x] Add a Renovate `customManager` matching the `chartRepo`/`chartName`/`chartVersion` keys in `config.yml` (K23)
 - [ ] Reconcile `docs/architecture/auth.md` with reality, and decide whether to build Gateway API forward-auth (K21)
 
 | | |
