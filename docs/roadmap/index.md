@@ -15,6 +15,7 @@ For current infrastructure details, see [Hardware Inventory](../reference/hardwa
 | [5 -- Observability](phase-5-observability.md) | Distributed tracing, dashboards-as-code, SLO alerting, synthetic monitoring | Not started |
 | [6 -- Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos engineering, supply chain security, vPro AMT | Not started |
 | [7 -- Long-Term Vision](phase-7-long-term-vision.md) | Third host, Crossplane, multi-cluster GitOps, dedicated GPU, full 10G | Not started |
+| [8 -- Configuration as Code](phase-8-configuration-as-code.md) | \*arr config-as-code, custom controller, Authentik blueprints, media platform gaps | Not started |
 
 ## Assessment
 

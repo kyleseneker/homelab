@@ -138,6 +138,7 @@ nav:
       - "Phase 5: Observability": roadmap/phase-5-observability.md
       - "Phase 6: Platform Engineering": roadmap/phase-6-platform-engineering.md
       - "Phase 7: Long-Term Vision": roadmap/phase-7-long-term-vision.md
+      - "Phase 8: Configuration as Code": roadmap/phase-8-configuration-as-code.md
   - Reference:
       - Commands: reference/commands.md
       - Service URLs: reference/service-urls.md
