@@ -135,6 +135,12 @@ persistence:
     type: emptyDir
     globalMounts:
       - path: /tmp
+  npm-cache:
+    type: emptyDir
+    advancedMounts:
+      main:
+        main:
+          - path: /home/node/.npm
   data:
     type: persistentVolumeClaim
     storageClass: nfs-client
