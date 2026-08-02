@@ -18,7 +18,7 @@ CILIUM_VER := $(shell grep k8s_control_plane_cilium_version $(ANSIBLE_DIR)/group
 .PHONY: help docs docs-serve
 
 help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ---------------------------------------------------------------------------
 # Documentation
@@ -100,7 +100,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	terraform -chdir=$(TF_DIR) init
@@ -158,6 +158,9 @@ k8s-ssh-cp: ## SSH into control plane
 # ---------------------------------------------------------------------------
 
 VAULT_NS ?= vault
+
+k8s-render: ## Render every ApplicationSet manifest locally (same check CI runs)
+	./scripts/render-manifests.sh
 
 vault-init: ## Initialize Vault and configure ESO integration (one-time)
 	./scripts/vault-init.sh
