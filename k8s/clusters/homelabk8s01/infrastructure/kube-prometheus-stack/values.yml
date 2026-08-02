@@ -80,6 +80,7 @@ alertmanager:
     secrets:
       - alertmanager-slack-webhook
       - alertmanager-openclaw-hooks-token
+      - alertmanager-heartbeat
     resources:
       requests:
         cpu: 25m
@@ -99,9 +100,12 @@ alertmanager:
       group_interval: 5m
       repeat_interval: 4h
       routes:
-        - receiver: 'null'
+        - receiver: heartbeat
           matchers:
             - alertname = "Watchdog"
+          group_wait: 0s
+          group_interval: 1m
+          repeat_interval: 1m
         - receiver: 'null'
           matchers:
             - alertname = "InfoInhibitor"
@@ -134,6 +138,10 @@ alertmanager:
           - namespace
     receivers:
       - name: 'null'
+      - name: heartbeat
+        webhook_configs:
+          - url_file: /etc/alertmanager/secrets/alertmanager-heartbeat/url
+            send_resolved: false
       - name: slack-alerts
         slack_configs:
           - api_url_file: /etc/alertmanager/secrets/alertmanager-slack-webhook/url
