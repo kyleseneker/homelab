@@ -107,7 +107,13 @@ alertmanager:
             - alertname = "InfoInhibitor"
         - receiver: slack-alerts
           matchers:
-            - severity =~ "warning|critical"
+            - severity = "critical"
+          repeat_interval: 1h
+          continue: true
+        - receiver: slack-alerts
+          matchers:
+            - severity = "warning"
+          repeat_interval: 4h
           continue: true
         - receiver: openclaw
           matchers:
