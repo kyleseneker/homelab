@@ -85,6 +85,7 @@ route:
             port: 8989
 defaultPodOptions:
   annotations:
+    reloader.stakater.com/auto: 'true'
     backup.velero.io/backup-volumes-excludes: data
 persistence:
   config:

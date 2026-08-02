@@ -1,3 +1,6 @@
+defaultPodOptions:
+  annotations:
+    reloader.stakater.com/auto: 'true'
 controllers:
   main:
     containers:

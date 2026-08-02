@@ -123,6 +123,7 @@ persistence:
       - path: /data
 defaultPodOptions:
   annotations:
+    reloader.stakater.com/auto: 'true'
     backup.velero.io/backup-volumes-excludes: data
   securityContext:
     sysctls:

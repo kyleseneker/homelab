@@ -1,4 +1,6 @@
 defaultPodOptions:
+  annotations:
+    reloader.stakater.com/auto: 'true'
   securityContext:
     runAsUser: 65534
     runAsGroup: 65534

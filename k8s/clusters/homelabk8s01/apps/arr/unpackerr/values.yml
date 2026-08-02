@@ -1,5 +1,6 @@
 defaultPodOptions:
   annotations:
+    reloader.stakater.com/auto: 'true'
     backup.velero.io/backup-volumes-excludes: data
   securityContext:
     runAsUser: 977
