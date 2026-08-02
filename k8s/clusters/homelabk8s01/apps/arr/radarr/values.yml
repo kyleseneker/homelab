@@ -8,6 +8,8 @@ controllers:
         envFrom:
           - configMapRef:
               name: arr-env
+          - secretRef:
+              name: arr-radarr-env
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
