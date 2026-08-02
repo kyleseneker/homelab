@@ -51,7 +51,7 @@ controllers:
       qbittorrent:
         image:
           repository: lscr.io/linuxserver/qbittorrent
-          tag: 5.1.4
+          tag: 5.2.3
         envFrom:
           - configMapRef:
               name: arr-env
