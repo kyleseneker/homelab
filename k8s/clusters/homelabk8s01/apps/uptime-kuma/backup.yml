@@ -1,0 +1,227 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptime-kuma-backups
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: uptime-kuma-backup
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: uptime-kuma-backup-script
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: uptime-kuma-backup
+data:
+  dump.py: |
+    import pathlib
+    import sqlite3
+    import sys
+
+    source = pathlib.Path("/data")
+    target = pathlib.Path("/backup")
+    target.mkdir(parents=True, exist_ok=True)
+
+    databases = sorted(
+        p
+        for p in source.rglob("*")
+        if p.is_file() and p.suffix in (".db", ".sqlite3", ".sqlite")
+    )
+
+    if not databases:
+        print(f"no sqlite database found under {source}", file=sys.stderr)
+        sys.exit(1)
+
+    failures = 0
+    for db in databases:
+        relative = db.relative_to(source)
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        staged = destination.with_name(destination.name + ".tmp")
+        try:
+            src = sqlite3.connect(f"file:{db}", uri=True)
+            dst = sqlite3.connect(staged)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
+            staged.replace(destination)
+            print(f"{relative} -> {destination} ({destination.stat().st_size} bytes)")
+        except Exception as exc:
+            failures += 1
+            print(f"FAILED {relative}: {exc}", file=sys.stderr)
+            staged.unlink(missing_ok=True)
+
+    sys.exit(1 if failures else 0)
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: uptime-kuma-backup
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: uptime-kuma-backup
+spec:
+  schedule: "40 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: uptime-kuma-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dump
+              image: python:3.13-alpine
+              command:
+                - python3
+                - /script/dump.py
+              env:
+                - name: HOME
+                  value: /tmp
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: backup
+                  mountPath: /backup
+                - name: script
+                  mountPath: /script
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: uptime-kuma-data
+            - name: backup
+              persistentVolumeClaim:
+                claimName: uptime-kuma-backups
+            - name: script
+              configMap:
+                name: uptime-kuma-backup-script
+            - name: tmp
+              emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uptime-kuma-backup-holder
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: uptime-kuma-backup
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: uptime-kuma-backup-holder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: uptime-kuma-backup-holder
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: holder
+          image: registry.k8s.io/pause:3.10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: uptime-kuma-backups
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: uptime-kuma-backup
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: uptime-kuma-backup
+spec:
+  groups:
+    - name: uptime-kuma-backup
+      rules:
+        - alert: UptimeKumaBackupStale
+          expr: |
+            (time() - kube_cronjob_status_last_successful_time{cronjob="uptime-kuma-backup", namespace="monitoring"} > 129600)
+            or (
+              (
+                kube_cronjob_info{cronjob="uptime-kuma-backup", namespace="monitoring"}
+                unless on(cronjob) kube_cronjob_status_last_successful_time{cronjob="uptime-kuma-backup", namespace="monitoring"}
+              )
+              and on() (time() - max(kube_cronjob_created{cronjob="uptime-kuma-backup", namespace="monitoring"}) > 172800)
+            )
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: uptime-kuma backup is stale
+            description: >-
+              No successful uptime-kuma database dump in over 36 hours, or none has ever
+              been reported. kuma.db lives on local-path, which Velero's file-system backup
+              cannot read, so this CronJob is the only thing placing it in a backup.
+        - alert: UptimeKumaBackupVolumeUnmounted
+          expr: |
+            kube_deployment_status_replicas_available{deployment="uptime-kuma-backup-holder", namespace="monitoring"} < 1
+            or absent(kube_deployment_status_replicas_available{deployment="uptime-kuma-backup-holder", namespace="monitoring"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: uptime-kuma backup volume is not mounted by any pod
+            description: >-
+              The holder Deployment is not running. Velero's file-system backup only reads
+              volumes attached to a running pod, so while this is down the dump is written
+              but never captured by any backup.
