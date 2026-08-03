@@ -114,3 +114,17 @@ spec:
   egress:
     - toEntities:
         - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: arr-egress-media-operator
+  namespace: arr
+spec:
+  description: "Allow media-operator to watch its CRs on the Kubernetes API"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: media-operator
+  egress:
+    - toEntities:
+        - kube-apiserver
