@@ -4,3 +4,4 @@ resources:
   - pvc.yml
   - script.yml
   - cronjobs.yml
+  - holder.yml
