@@ -20,6 +20,7 @@ configuration:
     - name: offsite
       provider: aws
       bucket: velero-offsite-homelab
+      prefix: velero
       credential:
         name: velero-offsite-credentials
         key: cloud

@@ -114,31 +114,46 @@ spec:
             description: "A Velero backup has failed in the last 24 hours. Check velero logs for details."
 
         - alert: VeleroBackupMissing
-          expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 25 * 3600
+          expr: |
+            (time() - velero_backup_last_successful_timestamp{schedule="velero-daily-stateful"} > 25 * 3600)
+            or absent(velero_backup_last_successful_timestamp{schedule="velero-daily-stateful"})
           for: 1h
           labels:
             severity: warning
           annotations:
-            summary: "No successful backup for schedule {{ $labels.schedule }}"
-            description: "Velero schedule {{ $labels.schedule }} has not completed a successful backup in over 25 hours."
+            summary: "No successful daily backup"
+            description: "The velero-daily-stateful schedule has not completed a successful backup in over 25 hours, or has never reported one."
 
         - alert: VeleroOffsiteBackupMissing
-          expr: time() - velero_backup_last_successful_timestamp{schedule="weekly-offsite"} > 8 * 24 * 3600
+          expr: |
+            (time() - velero_backup_last_successful_timestamp{schedule="velero-weekly-offsite"} > 8 * 24 * 3600)
+            or absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-offsite"})
           for: 1h
           labels:
             severity: critical
           annotations:
             summary: "No successful offsite backup in over 8 days"
-            description: "The weekly-offsite Velero schedule has not completed a successful backup in over 8 days. Offsite data protection is degraded."
+            description: "The velero-weekly-offsite schedule has not completed a successful backup in over 8 days, or has never reported one. Offsite data protection is degraded."
+
+        - alert: VeleroWeeklyBackupMissing
+          expr: |
+            (time() - velero_backup_last_successful_timestamp{schedule="velero-weekly-full-cluster"} > 8 * 24 * 3600)
+            or absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-full-cluster"})
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "No successful weekly full-cluster backup in over 8 days"
+            description: "The velero-weekly-full-cluster schedule has not completed a successful backup in over 8 days, or has never reported one."
 
         - alert: VeleroOffsiteBSLUnavailable
-          expr: velero_backup_storage_location_available{location="offsite"} == 0
+          expr: velero_backup_location_status_gauge{backup_location_name="offsite"} == 0
           for: 15m
           labels:
             severity: critical
           annotations:
             summary: "Offsite BackupStorageLocation is unavailable"
-            description: "The offsite S3 BackupStorageLocation has been unavailable for more than 15 minutes. Check AWS credentials and network connectivity."
+            description: "The offsite S3 BackupStorageLocation has been unavailable for more than 15 minutes. Check AWS credentials, bucket layout, and network connectivity."
 
         - alert: VeleroBackupPartialFailure
           expr: increase(velero_backup_partial_failure_total[24h]) > 0
