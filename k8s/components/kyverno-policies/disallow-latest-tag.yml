@@ -26,7 +26,6 @@ spec:
                 - kube-system
                 - kyverno
                 - argocd
-                - metallb-system
                 - cilium-test-*
       validate:
         message: "Container images must specify a tag and cannot use ':latest'."

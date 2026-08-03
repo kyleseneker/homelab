@@ -26,7 +26,6 @@ spec:
                 - kube-system
                 - kyverno
                 - argocd
-                - metallb-system
                 - cilium-test-*
                 - backups
                 - intel-gpu-operator

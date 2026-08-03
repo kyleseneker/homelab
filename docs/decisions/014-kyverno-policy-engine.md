@@ -23,7 +23,7 @@ Use Kyverno as the Kubernetes policy engine. All five ClusterPolicies run in Enf
 
 - **Kubernetes-native policies**: Kyverno policies are written as Kubernetes YAML resources, not a separate language. ClusterPolicy manifests are readable by anyone familiar with Kubernetes and reviewable in the same PR workflow as application manifests.
 - **Full enforcement with targeted exclusions**: All policies enforce at admission. Workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU device plugins) are excluded by namespace rather than leaving policies in audit mode cluster-wide.
-- **Namespace exclusions**: System namespaces (kube-system, kyverno, argocd, metallb-system, cilium-test) are excluded from all policies. Application namespaces with legitimate non-compliance (arr, auth, backups, monitoring, nfs-provisioner, intel-gpu-operator) are excluded only from the specific policies they cannot satisfy.
+- **Namespace exclusions**: System namespaces (kube-system, kyverno, argocd, cilium-test) are excluded from all policies. Application namespaces with legitimate non-compliance (arr, auth, backups, monitoring, nfs-provisioner, intel-gpu-operator) are excluded only from the specific policies they cannot satisfy.
 - **Background scanning**: All policies run with `background: true`, scanning existing resources on schedule — not just at admission time. This catches drift and pre-existing violations.
 
 ## Consequences

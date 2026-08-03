@@ -32,7 +32,7 @@ Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Applica
 | `disallow-latest-tag` | Images use a specific tag, not `:latest` | |
 | `require-labels` | Pods have the `app.kubernetes.io/name` label | backups, intel-gpu-operator, nfs-provisioner |
 
-All policies also exclude the base system namespaces: kube-system, kyverno, argocd, metallb-system, and cilium-test-*.
+All policies also exclude the base system namespaces: kube-system, kyverno, argocd, and cilium-test-*.
 
 ### Namespace Exclusions
 
