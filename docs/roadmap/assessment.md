@@ -29,7 +29,7 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | P3 | **Running at GbE when 10G is available** | MS-01 has 2x 10G SFP+ unused. NFS throughput and future live migration bottlenecked at 1 Gbps. USW-16-PoE has 1G SFP only. | Low |
 | P4 | **Single compute host** | All VMs on one machine. Hardware failure means total cluster loss. | High |
 | P5 | **Unused PCIe x16 slot** | Half-height PCIe 4.0 x16 available for a dedicated GPU, HBA, or NIC. | Informational |
-| P6 | **No IPMI/remote management** | Intel AMT is genuinely activated in firmware (ME reports Enterprise mode, provisioning state POST, AMT 16.1.25) but its dedicated NIC has never been cabled: `nic1` shows zero link events across 122 days of uptime, nothing answers on VLAN 99, and every AMT port is closed even from a host on that VLAN. There is no working out-of-band path -- which is why recovering the wedged control plane today required a Proxmox power-cycle. | High |
+| P6 | **No IPMI/remote management** | Intel AMT is activated in firmware (ME reports Enterprise mode, provisioning state POST, AMT 16.1.25), but the dedicated AMT NIC is patched into the wrong switch port, so `nic1` has no link and nothing answers on VLAN 99. The fix is repatching to the correct port, not new cabling. Out-of-band management is unavailable until then. | Medium |
 | P7 | **UPS USB driver flaps ~35 times a day** | The UPS itself is real and the shutdown path is verified working, but `usbhid-ups` loses the device ~35 times daily (1094 events in 30 days), leaving it unmonitored 1.63% of the time. Nothing alerts if the flapping becomes permanent. | Low |
 
 ### Network Layer
