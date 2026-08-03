@@ -99,11 +99,11 @@ Notes:
 
 AMT inherits the Management VLAN firewall rules from ADR-016:
 
-1. Workstation -> Management VLAN: Allow
-2. WireGuard VPN -> Management VLAN: Allow
-3. Any -> Management VLAN: Deny
+1. Workstation -> Management VLAN: Allow, scoped to the Homelab DHCP block `192.168.10.160/27`
+2. WireGuard VPN -> Management VLAN: Allow, from the `Vpn` zone
+3. Everything else: denied by zone default
 
-No additional firewall rules are needed. AMT is unreachable from the Default VLAN, Homelab VLAN, and the internet.
+No additional firewall rules are needed. AMT is unreachable from the Default VLAN, from the statically addressed hosts on the Homelab VLAN, and from the internet. It is reachable from the workstation and from a VPN client, which are the two paths that need it.
 
 ## Alternatives Considered
 

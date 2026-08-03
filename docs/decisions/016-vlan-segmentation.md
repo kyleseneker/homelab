@@ -44,12 +44,15 @@ Devices that need both data and management access use trunk ports:
 
 ### Firewall Rules
 
-Management VLAN rules are evaluated before inter-VLAN rules:
+The UniFi zone-based firewall denies inter-zone traffic by default, so Management isolation is achieved by the absence of a rule rather than an explicit deny. Only these sources are permitted in:
 
-1. Workstation -> Management: Allow
-2. WireGuard VPN -> Management: Allow
-3. Any -> Management: Deny
-4. Management -> Any: Allow (updates, NTP)
+1. Workstation -> Management: Allow, scoped to the Homelab DHCP block `192.168.10.160/27`
+2. WireGuard VPN -> Management: Allow, from the `Vpn` zone
+3. Management -> Any: Allow, via zone defaults (updates, NTP)
+
+Rule 1 matches an address range rather than a host. The workstation uses a rotating private Wi-Fi address enforced by device management, so any rule pinned to a MAC or a single IP stops matching when the address rotates -- failing closed and silently. The `/27` covers every address DHCP can issue on the Homelab VLAN while excluding the statically addressed Proxmox host and Kubernetes nodes, so the hypervisor and pod traffic masquerading behind a node IP stay outside the grant.
+
+The Default VLAN is not permitted into Management. It carries household IoT devices, which would otherwise gain an unrestricted path to the hypervisor, the switch, the PDU, and Intel AMT.
 
 ## Alternatives Considered
 
