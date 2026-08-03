@@ -33,7 +33,7 @@ Use two storage provisioners, each suited to its workload:
 ## Consequences
 
 - NFS latency spikes can cause probe failures. Application health check timeouts have been tuned to tolerate this (multiple commits adjusting probe tolerances).
-- SQLite databases require proper POSIX file locking that NFS cannot provide. Applications with SQLite databases (Sonarr, Radarr) use `local-path` instead of `nfs-client` for their config volumes.
+- Applications with SQLite databases use `local-path` instead of `nfs-client` for their config volumes. NFS does implement POSIX byte-range locking (NLM in NFSv3, integrated into the protocol in NFSv4), but these databases run in WAL mode, and WAL coordinates through a memory-mapped `-shm` file that is only coherent between processes on the same host — SQLite does not support WAL over a network filesystem. The Servarr projects separately warn against network storage for their databases.
 - Local-path volumes are tied to a specific worker node. If a pod reschedules to a different node, it cannot access the data.
 - Velero does not protect local-path data. The provisioner creates `hostPath` PersistentVolumes, and Kopia file-system backup skips `hostPath` volumes, logging a warning rather than an error — so a backup containing none of this data still reports success. Velero captures the PVC and PV objects, so a restore recreates the volumes empty. Anything on `local-path` that must survive node loss needs an application-level dump written onto an `nfs-client` volume, which Velero does back up.
 - Single NAS is a single point of failure for all persistent storage. A backup strategy for persistent data is essential to mitigate this risk.
