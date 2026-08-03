@@ -116,7 +116,10 @@ spec:
         - alert: VeleroBackupMissing
           expr: |
             (time() - velero_backup_last_successful_timestamp{schedule="velero-daily-stateful"} > 25 * 3600)
-            or absent(velero_backup_last_successful_timestamp{schedule="velero-daily-stateful"})
+            or (
+              absent(velero_backup_last_successful_timestamp{schedule="velero-daily-stateful"})
+              and on() (time() - max(process_start_time_seconds{job="velero"}) > 25 * 3600)
+            )
           for: 1h
           labels:
             severity: warning
@@ -127,7 +130,10 @@ spec:
         - alert: VeleroOffsiteBackupMissing
           expr: |
             (time() - velero_backup_last_successful_timestamp{schedule="velero-weekly-offsite"} > 8 * 24 * 3600)
-            or absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-offsite"})
+            or (
+              absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-offsite"})
+              and on() (time() - max(process_start_time_seconds{job="velero"}) > 8 * 24 * 3600)
+            )
           for: 1h
           labels:
             severity: critical
@@ -138,7 +144,10 @@ spec:
         - alert: VeleroWeeklyBackupMissing
           expr: |
             (time() - velero_backup_last_successful_timestamp{schedule="velero-weekly-full-cluster"} > 8 * 24 * 3600)
-            or absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-full-cluster"})
+            or (
+              absent(velero_backup_last_successful_timestamp{schedule="velero-weekly-full-cluster"})
+              and on() (time() - max(process_start_time_seconds{job="velero"}) > 8 * 24 * 3600)
+            )
           for: 1h
           labels:
             severity: warning
