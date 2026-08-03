@@ -441,3 +441,79 @@ spec:
                 name: arr-config-backup-script
             - name: tmp
               emptyDir: {}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: arr-config-backup-tdarr
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: arr-config-backup
+spec:
+  schedule: "36 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: arr-config-backup
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 977
+            runAsGroup: 988
+            fsGroup: 988
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dump
+              image: python:3.13-alpine
+              command:
+                - python3
+                - /script/copy-latest.py
+              env:
+                - name: APP_NAME
+                  value: tdarr
+                - name: SOURCE_DIR
+                  value: /data/Tdarr/Backups
+                - name: HOME
+                  value: /tmp
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: backup
+                  mountPath: /backup
+                - name: script
+                  mountPath: /script
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: arr-tdarr-config
+            - name: backup
+              persistentVolumeClaim:
+                claimName: arr-config-backups
+            - name: script
+              configMap:
+                name: arr-config-backup-script
+            - name: tmp
+              emptyDir: {}

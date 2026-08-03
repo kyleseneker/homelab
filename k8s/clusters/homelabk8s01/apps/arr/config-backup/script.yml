@@ -6,6 +6,32 @@ metadata:
   labels:
     app.kubernetes.io/name: arr-config-backup
 data:
+  copy-latest.py: |
+    import os
+    import pathlib
+    import shutil
+    import sys
+
+    app = os.environ["APP_NAME"]
+    source = pathlib.Path(os.environ["SOURCE_DIR"])
+    target = pathlib.Path("/backup") / app
+    target.mkdir(parents=True, exist_ok=True)
+
+    archives = sorted(
+        (p for p in source.glob("*.zip") if p.is_file()),
+        key=lambda p: p.stat().st_mtime,
+    )
+
+    if not archives:
+        print(f"{app}: no archive found in {source}", file=sys.stderr)
+        sys.exit(1)
+
+    newest = archives[-1]
+    destination = target / "latest.zip"
+    staged = target / "latest.zip.tmp"
+    shutil.copy2(newest, staged)
+    staged.replace(destination)
+    print(f"{app}: {newest.name} -> {destination} ({destination.stat().st_size} bytes)")
   dump.py: |
     import os
     import pathlib
