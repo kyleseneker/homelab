@@ -203,6 +203,42 @@ spec:
 
     - name: homelab-node-health
       rules:
+        - alert: UPSDataAbsent
+          expr: absent(network_ups_tools_battery_charge)
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "UPS telemetry has disappeared"
+            description: "No UPS metrics for 15 minutes. The NUT driver may have lost the device permanently. Power protection is unmonitored."
+
+        - alert: VeleroMetricsAbsent
+          expr: absent(up{job=~".*velero.*"})
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Velero is no longer being scraped"
+            description: "Velero's metrics target has disappeared. Every backup alert depends on these series and is now blind."
+
+        - alert: CertManagerMetricsAbsent
+          expr: absent(certmanager_certificate_expiration_timestamp_seconds)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "cert-manager certificate metrics have disappeared"
+            description: "CertificateExpiringSoon depends on these series. Certificate expiry is now unmonitored."
+
+        - alert: ExportarrMetricsAbsent
+          expr: absent(up{job=~".*exportarr.*"})
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Exportarr metrics have disappeared"
+            description: "No *arr application metrics are being scraped. Media pipeline health is unmonitored."
+
         - alert: HighNodeCPU
           expr: |
             100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85

@@ -120,10 +120,10 @@ k8s-destroy: ## Tear down all K8s VMs
 	terraform -chdir=$(TF_DIR) destroy
 
 k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
-	kubectl apply -k k8s/bootstrap/argocd/
+	kubectl apply -k k8s/bootstrap/argocd/ --server-side --force-conflicts
 	@echo "Waiting for ArgoCD to be ready..."
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
-	kubectl apply -k k8s/bootstrap/applicationsets/
+	kubectl apply -k k8s/bootstrap/applicationsets/ --server-side --force-conflicts
 
 k8s-backup: ## Trigger an on-demand Velero backup of all namespaces
 	velero backup create manual-$$(date +%Y%m%d-%H%M%S) \
