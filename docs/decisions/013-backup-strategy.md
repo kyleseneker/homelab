@@ -33,7 +33,7 @@ Two backup pipelines, both storing data locally on the NAS for fast recovery and
 - **Two pipelines by design**: etcd snapshots solve "the cluster is dead" scenarios; Velero solves "I deleted a namespace" scenarios. These are fundamentally different recovery paths that cannot be unified without fragility.
 - **Every layer local + offsite**: Both Velero and etcd snapshots land on the NAS (fast restore) and S3 (disaster recovery). Consistent storage strategy across both pipelines.
 - **In-cluster S3 via MinIO**: Provides S3-compatible storage without cloud dependency. Velero's AWS plugin works unmodified against MinIO. NFS-backed PVC with Retain policy ensures backup data survives cluster rebuilds.
-- **Resource + volume data**: Velero backs up both Kubernetes manifests and PVC data via Kopia file-system backup, providing a complete application-layer snapshot.
+- **Resource + volume data**: Velero backs up Kubernetes manifests and `nfs-client` PVC data via Kopia file-system backup. Kopia cannot read `hostPath` volumes, so `local-path` PVC data is outside this pipeline (see ADR-006).
 - **Three Velero schedules**: Daily backups for stateful namespaces catch frequent changes. Weekly full-cluster and offsite backups provide broader coverage with longer retention.
 - **AWS S3 Standard-IA lifecycle**: Objects transition from S3 Standard to Standard-IA after 30 days. Noncurrent versions expire after 90 days. Cost is ~$1/month.
 - **Selective restore**: Velero supports namespace-scoped and resource-scoped restores, allowing targeted recovery without affecting the rest of the cluster.
@@ -46,5 +46,6 @@ Two backup pipelines, both storing data locally on the NAS for fast recovery and
 - AWS credentials are stored in Vault and synced via ExternalSecret. During a DR rebuild where Vault is not yet available, credentials must be manually created from a password manager.
 - Velero restore may conflict with ArgoCD's desired state. ArgoCD sync should be verified after any restore.
 - The `vault-aws-kms` Secret is not backed up by Velero and must be manually created before Vault can start during disaster recovery.
+- The seven *arr config volumes, the Prometheus TSDB, and Uptime Kuma's database sit on `local-path` and are therefore absent from every Velero backup. Their SQLite databases require an application-level dump onto an `nfs-client` volume to enter the pipeline; a file-level copy of a live SQLite database can capture a torn write even where Kopia can read it.
 - The etcd-backup CronJob requires `hostPath` access to `/etc/kubernetes/pki/` and connects to etcd via the node IP (downward API).
 - The CronJob backs up the full control plane PKI alongside each etcd snapshot. Both are required for disaster recovery on a replacement node.
