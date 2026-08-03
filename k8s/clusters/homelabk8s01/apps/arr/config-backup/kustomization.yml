@@ -5,3 +5,4 @@ resources:
   - script.yml
   - cronjobs.yml
   - holder.yml
+  - prometheusrule.yml

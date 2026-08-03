@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: arr-config-backup
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: arr-config-backup
+spec:
+  groups:
+    - name: arr-config-backup
+      rules:
+        - alert: ArrConfigBackupStale
+          expr: |
+            (time() - kube_cronjob_status_last_successful_time{cronjob=~"arr-config-backup-.*", namespace="arr"} > 129600)
+            or (
+              (
+                kube_cronjob_info{cronjob=~"arr-config-backup-.*", namespace="arr"}
+                unless on(cronjob) kube_cronjob_status_last_successful_time{cronjob=~"arr-config-backup-.*", namespace="arr"}
+              )
+              and on() (time() - max(kube_cronjob_created{cronjob=~"arr-config-backup-.*", namespace="arr"}) > 172800)
+            )
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: arr config backup is stale
+            description: >-
+              {{ $labels.cronjob }} has not completed a successful run in over 36 hours,
+              or has never reported one. These SQLite databases live on local-path, which
+              Velero's file-system backup cannot read, so this CronJob is the only thing
+              placing them in a backup.
+        - alert: ArrConfigBackupFailed
+          expr: |
+            kube_job_status_failed{job_name=~"arr-config-backup-.*", namespace="arr"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: arr config backup job failed
+            description: >-
+              An arr-config-backup job has failed. Check the job logs:
+              kubectl logs -n arr job/{{ $labels.job_name }}
+        - alert: ArrConfigBackupVolumeUnmounted
+          expr: |
+            kube_deployment_status_replicas_available{deployment="arr-config-backup-holder", namespace="arr"} < 1
+            or absent(kube_deployment_status_replicas_available{deployment="arr-config-backup-holder", namespace="arr"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: arr config backup volume is not mounted by any pod
+            description: >-
+              The holder Deployment is not running. Velero's file-system backup only reads
+              volumes attached to a running pod, so while this is down the config dumps are
+              written but never captured by any backup.
