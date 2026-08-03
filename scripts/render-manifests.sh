@@ -85,6 +85,20 @@ while IFS= read -r k; do
   fi
 done < <(find k8s -name kustomization.yml | sort)
 
+echo "==> Checking bootstrap drift (not reconciled by ArgoCD)"
+if kubectl --kubeconfig "${KUBECONFIG:-$ROOT/kubeconfig}" version >/dev/null 2>&1; then
+  for d in k8s/bootstrap/*/; do
+    [ -f "$d/kustomization.yml" ] || continue
+    n=$(kubectl --kubeconfig "${KUBECONFIG:-$ROOT/kubeconfig}" diff -k "$d" 2>/dev/null | grep -c '^[+-]' || true)
+    if [ "${n:-0}" -gt 0 ]; then
+      echo "  DRIFT $d has $n changed lines vs the cluster -- run: kubectl apply -k $d"
+      fail=$((fail+1))
+    fi
+  done
+else
+  echo "  (cluster unreachable, skipping drift check)"
+fi
+
 echo "==> Checking for orphaned manifests"
 while IFS= read -r k; do
   d="$(dirname "$k")"
