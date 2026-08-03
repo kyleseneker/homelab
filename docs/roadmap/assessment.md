@@ -29,29 +29,31 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | P3 | **Running at GbE when 10G is available** | MS-01 has 2x 10G SFP+ unused. NFS throughput and future live migration bottlenecked at 1 Gbps. USW-16-PoE has 1G SFP only. | Low |
 | P4 | **Single compute host** | All VMs on one machine. Hardware failure means total cluster loss. | High |
 | P5 | **Unused PCIe x16 slot** | Half-height PCIe 4.0 x16 available for a dedicated GPU, HBA, or NIC. | Informational |
-| P6 | **No IPMI/remote management** | MS-01 supports Intel vPro AMT but it is not configured. Hung host requires physical access. | Resolved |
+| P6 | **No IPMI/remote management** | Intel AMT is genuinely activated in firmware (ME reports Enterprise mode, provisioning state POST, AMT 16.1.25) but its dedicated NIC has never been cabled: `nic1` shows zero link events across 122 days of uptime, nothing answers on VLAN 99, and every AMT port is closed even from a host on that VLAN. There is no working out-of-band path -- which is why recovering the wedged control plane today required a Proxmox power-cycle. | High |
+| P7 | **UPS USB driver flaps ~35 times a day** | The UPS itself is real and the shutdown path is verified working, but `usbhid-ups` loses the device ~35 times daily (1094 events in 30 days), leaving it unmonitored 1.63% of the time. Nothing alerts if the flapping becomes permanent. | Low |
 
 ### Network Layer
 
 | # | Gap | Risk | Severity |
 |---|-----|------|----------|
-| N1 | **No dedicated management VLAN** | Proxmox, switch, PDU, and NAS management share VLANs with production or household traffic. | Resolved |
+| N1 | **No dedicated management VLAN** | VLAN 99 exists and its inbound firewall works, but the management services it was meant to protect were never moved onto it. Any unprivileged pod can still reach the Proxmox hypervisor UI and SSH at 192.168.10.2 and the NAS admin UI at 192.168.1.158. The original risk is substantially unmitigated. | High |
 | N2 | **No IoT VLAN** | Smart home devices (if any) share the default VLAN with household devices and the NAS. | Low |
 | N3 | **DNS is manual static entries** | Adding a service requires a manual UniFi console edit. | Medium |
 | N4 | **WireGuard VPN not configured** | No way to reach the homelab off-site. | Medium |
 | N5 | **No external access path** | No reverse proxy, Cloudflare Tunnel, or Tailscale Funnel for sharing services externally. | Low |
 | N6 | **Unrestricted internet egress from Homelab VLAN** | A compromised pod can reach any external destination. | Low |
+| N7 | **Management planes reachable from the pod network** | Any unprivileged pod can reach the Proxmox UI/SSH at 192.168.10.2 and the NAS admin UI at 192.168.1.158. VLAN 99 exists but the management services were never moved behind it. | High |
 
 ### Kubernetes / Software Layer
 
 | # | Gap | Risk | Severity |
 |---|-----|------|----------|
 | K1 | **Single control plane** | API server, etcd, and scheduler are a single point of failure. | High |
-| K2 | **Kyverno audit-mode policies not enforced** | `require-resource-limits`, `require-run-as-nonroot`, `require-readonly-rootfs` only report. | Resolved |
+| K2 | **Kyverno audit-mode policies not enforced** | All five ClusterPolicies are genuinely Enforce and do reject violating workloads at admission. But every one of the 100+ existing violations sits in a namespace excluded from the policy it violates, the two securityContext policies cover only ~10% of pods, and argocd and kube-system are exempt from all five. Exclusions were shaped around what already violated. | Medium |
 | K3 | **No ResourceQuotas or LimitRanges** | A runaway pod can OOM an entire node and cascade-kill neighbors. | Medium |
 | K4 | **Vault standalone, no HA** | Single Vault pod on NFS. Pod failure loses secret access cluster-wide. | Medium |
-| K5 | **No offsite backup copy** | Velero backs up to MinIO on the same NAS as production data. | Resolved |
-| K6 | **Authentik Redis unauthenticated** | `auth.enabled: false`. Network policies mitigate but any pod in the auth namespace has access. | Resolved |
+| K5 | **No offsite backup copy** | Regressed silently for 126 days and has been repaired. The etcd-snapshot CronJob added in `56c1704` wrote `etcd-snapshots/` to the root of the same S3 bucket; Velero rejects buckets with unknown top-level directories, so the offsite BSL went Unavailable on 2026-04-05 and 18 consecutive weekly backups hit FailedValidation with zero bytes written. Fixed by giving the offsite BSL a `velero` prefix; a verification backup then completed 1883/1883 items and 22.1 GiB to S3. | Resolved |
+| K6 | **Authentik Redis unauthenticated** | The exposure is genuinely gone, but not for the documented reason: the authentik chart dropped Redis entirely in favour of a Postgres task queue. The `redis.auth` setting the claim rests on is dead YAML that Helm ignores and that never governed a running Redis. | Resolved |
 | K7 | **Prometheus TSDB on NFS** | Heavy random I/O on NFS degrades query performance and risks TSDB corruption. | Resolved |
 | K8 | **No HPA** | Nothing scales horizontally under load. | Low |
 | K9 | **No pod topology spread constraints** | Scheduler may co-locate critical services on one node. | Medium |
@@ -76,6 +78,15 @@ Analysis of the homelab's current strengths and gaps, used to prioritize the [ro
 | K30 | **Alertmanager delivery was silently broken** | Every notification failed with `connect: operation not permitted` to the `openclaw` webhook receiver. Not a policy denial: Cilium's socket-LB returns `EPERM` when a ClusterIP has zero ready backends, and OpenClaw was CrashLoopBackOff (its image needed a writable `/home/node/.npm`). Because that receiver sits in the shared route tree, its retry exhaustion suppressed delivery for every alert. Both integrations were failing at ~99.8% for 121 days. Now fixed, with an external healthchecks.io heartbeat receiving the Watchdog alert every minute, so a future delivery outage surfaces from outside the cluster. Critical alerts also repeat hourly instead of 4-hourly. | Resolved |
 | K26 | **Seerr's HTTPRoute is dead code** | `apps/arr/seerr/httproute.yml` is in Git and passes CI but is listed in no `kustomization.yml`, and `values.yml` sets `route.main.enabled: false`. Nothing creates the route. | Medium |
 | K27 | **Unpackerr is a silent no-op** | It has been returning `401` from both Sonarr and Radarr continuously for 16+ weeks -- the API keys in `unpackerr-secrets` no longer match the ones the apps generated, which is C1 manifesting in production. Separately, `UN_SONARR_0_PATHS` / `UN_RADARR_0_PATHS` are unset and default to `/downloads`, a path the pod does not mount, and it runs as UID 1000 against a share that squashes to 977:988. All three must be fixed for it to do anything. | High |
+
+| K31 | **Velero alert rules could never fire** | Four alerts nominally covered the offsite failure. `VeleroOffsiteBSLUnavailable` queried `velero_backup_storage_location_available`, a metric that does not exist (the real one is `velero_backup_location_status_gauge`, whose offsite series read 0 the whole time), and `VeleroOffsiteBackupMissing` matched `schedule="weekly-offsite"` when the real label is `velero-weekly-offsite`. Prometheus reported both rules health=ok, state=inactive -- indistinguishable from healthy. Fixed, and the metric names verified live. | Resolved |
+| K32 | **No absence or dead-man alerting** | Every alert in the repo fires on a metric's *value*; none fire on a metric's *disappearance*, and `absent()` appears nowhere in `k8s/`. The universal failure mode is therefore: the exporter dies, the series vanishes, the expression matches nothing, and the rule stays green forever. This is the single mechanism behind the etcd, Recyclarr, Velero and UPS blind spots. | High |
+| K33 | **Disaster-recovery runbooks are not executable as written** | `docs/runbooks/` calls an etcdctl subcommand that does not exist in the deployed etcd version, among other drift. The procedures have never been executed end to end. | High |
+| K34 | **Kyverno does not validate initContainers** | Four of five policies inspect only `spec.containers`, so any workload can bypass them entirely by doing the work in an initContainer. | Medium |
+| K35 | **authentik-server has restarted 8801 times** | ArgoCD reports the application Synced/Healthy throughout. Nothing alerts on a restart count that high because the crash loop is short enough to stay under the existing thresholds. | Medium |
+| K36 | **velero-weekly-full-cluster backups are all PartiallyFailed** | Every run of the weekly full-cluster schedule partially fails, and `VeleroBackupPartialFailure` has been firing unresolved. | Medium |
+| K37 | **Prometheus TSDB is node-pinned with no size cap and no backup** | It correctly lives on local-path ext4 rather than NFS, but it is pinned to node-3, unbounded, and excluded from backup. Losing that node loses all metrics history. | Medium |
+| K38 | **58 of 78 PVs are Released** | Orphaned data accumulates on the single NAS drive, and because `pathPattern` derives the directory from the *claim* name, nine directories are shared between a Bound PV and one or more Released PVs -- including Vault storage, the MinIO bucket, Authentik's database and the etcd snapshots. `reclaimPolicy: Retain` is the only reason cleaning up a stale PV does not destroy live data. | Medium |
 
 ### Configuration Layer
 

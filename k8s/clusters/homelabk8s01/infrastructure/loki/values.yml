@@ -71,3 +71,6 @@ read:
   replicas: 0
 write:
   replicas: 0
+monitoring:
+  serviceMonitor:
+    enabled: true
