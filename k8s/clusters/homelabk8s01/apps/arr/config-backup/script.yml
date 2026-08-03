@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arr-config-backup-script
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: arr-config-backup
+data:
+  dump.py: |
+    import os
+    import pathlib
+    import sqlite3
+    import sys
+
+    app = os.environ["APP_NAME"]
+    source = pathlib.Path("/data")
+    target = pathlib.Path("/backup") / app
+    target.mkdir(parents=True, exist_ok=True)
+
+    skip = {"logs.db"}
+    databases = sorted(
+        p
+        for p in source.rglob("*")
+        if p.is_file() and p.suffix in (".db", ".sqlite3", ".sqlite") and p.name not in skip
+    )
+
+    if not databases:
+        print(f"{app}: no sqlite database found under {source}", file=sys.stderr)
+        sys.exit(1)
+
+    failures = 0
+    for db in databases:
+        relative = db.relative_to(source)
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        staged = destination.with_name(destination.name + ".tmp")
+        try:
+            src = sqlite3.connect(f"file:{db}", uri=True)
+            dst = sqlite3.connect(staged)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
+            staged.replace(destination)
+            print(f"{app}: {relative} -> {destination} ({destination.stat().st_size} bytes)")
+        except Exception as exc:
+            failures += 1
+            print(f"{app}: FAILED {relative}: {exc}", file=sys.stderr)
+            staged.unlink(missing_ok=True)
+
+    sys.exit(1 if failures else 0)
