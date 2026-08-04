@@ -1,0 +1,10 @@
+appName: media-operator
+namespace: arr
+sourceType: helm
+chartRepo: ghcr.io/kyleseneker/media-operator
+chartName: media-operator-servarr
+chartVersion: "0.2.0"
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
