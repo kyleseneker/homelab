@@ -5,6 +5,7 @@ chartRepo: ghcr.io/kyleseneker/media-operator
 chartName: media-operator-servarr
 chartVersion: "0.2.0"
 createNamespace: false
+hasResources: false
 syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
