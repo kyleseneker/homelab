@@ -1,8 +1,8 @@
-appName: media-operator
+appName: media-operator-downloads
 namespace: arr
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/media-operator
-chartName: media-operator-servarr
+chartName: media-operator-downloads
 chartVersion: "0.4.0"
 createNamespace: false
 hasResources: false

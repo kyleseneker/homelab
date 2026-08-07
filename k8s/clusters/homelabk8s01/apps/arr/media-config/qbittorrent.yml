@@ -1,0 +1,28 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: QBittorrentConfig
+metadata:
+  name: qbittorrent
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-vpn-downloads.arr.svc.cluster.local:8080
+    usernameSecretRef:
+      name: qbittorrent-credentials
+      key: username
+    passwordSecretRef:
+      name: qbittorrent-credentials
+      key: password
+  reconcile:
+    interval: 5m
+    deletionPolicy: orphan
+  preferences:
+    savePath: /data/torrents
+    tempPathEnabled: true
+    maxRatioEnabled: true
+    maxRatio: "1.0"
+    maxRatioAction: stop
+    maxSeedingTimeEnabled: true
+    maxSeedingTime: 1440
+  categories:
+    - name: tv
+    - name: movies
