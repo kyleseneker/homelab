@@ -6,4 +6,5 @@ createNamespace: false
 hasResources: true
 syncOptions:
   - ServerSideApply=true
+  - ServerSideDiff=true
   - SkipDryRunOnMissingResource=true
