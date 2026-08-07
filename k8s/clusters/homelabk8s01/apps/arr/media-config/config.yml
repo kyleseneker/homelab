@@ -1,0 +1,9 @@
+appName: arr-media-config
+namespace: arr
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/apps/arr/media-config
+createNamespace: false
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - SkipDryRunOnMissingResource=true

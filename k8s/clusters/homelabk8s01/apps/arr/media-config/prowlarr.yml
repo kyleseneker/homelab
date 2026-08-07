@@ -1,0 +1,100 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: ProwlarrConfig
+metadata:
+  name: prowlarr
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-prowlarr.arr.svc.cluster.local:9696
+    apiKeySecretRef:
+      name: arr-api-keys
+      key: prowlarr-api-key
+  reconcile:
+    interval: 5m
+    deletionPolicy: orphan
+  tags:
+    - label: flaresolverr
+  proxies:
+    - name: flaresolverr
+      implementation: FlareSolverr
+      configContract: FlareSolverrSettings
+      host: http://arr-flaresolverr.arr.svc.cluster.local:8191
+      requestTimeout: 60
+      tags:
+        - flaresolverr
+  applications:
+    - name: Sonarr
+      implementation: Sonarr
+      configContract: SonarrSettings
+      syncLevel: fullSync
+      prowlarrUrl: http://arr-prowlarr.arr.svc.cluster.local:9696
+      baseUrl: http://arr-sonarr.arr.svc.cluster.local:8989
+      apiKeySecretRef:
+        name: arr-api-keys
+        key: sonarr-api-key
+      syncCategories: [5000, 5010, 5020, 5030, 5040, 5045, 5050]
+    - name: Radarr
+      implementation: Radarr
+      configContract: RadarrSettings
+      syncLevel: fullSync
+      prowlarrUrl: http://arr-prowlarr.arr.svc.cluster.local:9696
+      baseUrl: http://arr-radarr.arr.svc.cluster.local:7878
+      apiKeySecretRef:
+        name: arr-api-keys
+        key: radarr-api-key
+      syncCategories: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]
+  indexers:
+    - name: YTS
+      implementation: Cardigann
+      configContract: CardigannSettings
+      enable: true
+      priority: 25
+      fields:
+        - name: definitionFile
+          value: yts
+        - name: baseUrl
+          value: https://yts.mx/
+    - name: LimeTorrents
+      implementation: Cardigann
+      configContract: CardigannSettings
+      enable: true
+      priority: 25
+      fields:
+        - name: definitionFile
+          value: limetorrents
+        - name: baseUrl
+          value: https://www.limetorrents.lol/
+    - name: Nyaa
+      implementation: Cardigann
+      configContract: CardigannSettings
+      enable: true
+      priority: 30
+      fields:
+        - name: definitionFile
+          value: nyaasi
+        - name: baseUrl
+          value: https://nyaa.si/
+    - name: 1337x
+      implementation: Cardigann
+      configContract: CardigannSettings
+      enable: true
+      priority: 25
+      tags:
+        - flaresolverr
+      fields:
+        - name: definitionFile
+          value: 1337x
+        - name: baseUrl
+          value: https://1337x.to/
+    - name: ThePirateBay
+      implementation: Cardigann
+      configContract: CardigannSettings
+      enable: true
+      priority: 30
+      tags:
+        - flaresolverr
+      fields:
+        - name: definitionFile
+          value: thepiratebay
+        - name: baseUrl
+          value: https://thepiratebay.org/

@@ -1,0 +1,34 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: SonarrConfig
+metadata:
+  name: sonarr
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-sonarr.arr.svc.cluster.local:8989
+    apiKeySecretRef:
+      name: arr-api-keys
+      key: sonarr-api-key
+  reconcile:
+    interval: 5m
+    deletionPolicy: orphan
+  rootFolders:
+    - path: /data/media/tv
+  downloadClients:
+    - name: qBittorrent
+      implementation: QBittorrent
+      configContract: QBittorrentSettings
+      protocol: torrent
+      host: arr-vpn-downloads.arr.svc.cluster.local
+      port: 8080
+      category: tv
+      enable: true
+      usernameSecretRef:
+        name: qbittorrent-credentials
+        key: username
+      passwordSecretRef:
+        name: qbittorrent-credentials
+        key: password
+  downloadClientConfig:
+    enableCompletedDownloadHandling: true
+    autoRedownloadFailed: true
