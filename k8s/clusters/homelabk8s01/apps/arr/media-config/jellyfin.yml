@@ -1,0 +1,46 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: JellyfinConfig
+metadata:
+  name: jellyfin
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-jellyfin.arr.svc.cluster.local:8096
+  reconcile:
+    interval: 15m
+    deletionPolicy: orphan
+  adminUser:
+    usernameSecretRef:
+      name: jellyfin-credentials
+      key: username
+    passwordSecretRef:
+      name: jellyfin-credentials
+      key: password
+  server:
+    serverName: homelab
+    preferredMetadataLanguage: en
+    metadataCountryCode: US
+  encoding:
+    hardwareAccelerationType: qsv
+    vaapiDevice: /dev/dri/renderD128
+    enableHardwareEncoding: true
+    allowHevcEncoding: true
+    enableSubtitleExtraction: true
+    hardwareDecodingCodecs:
+      - h264
+      - hevc
+      - vc1
+      - vp8
+      - vp9
+      - av1
+  libraries:
+    - name: Movies
+      collectionType: movies
+      paths:
+        - /data/media/movies
+      enableRealtimeMonitor: true
+    - name: TV Shows
+      collectionType: tvshows
+      paths:
+        - /data/media/tv
+      enableRealtimeMonitor: true
