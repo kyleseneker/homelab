@@ -99,7 +99,7 @@ Bootstrap Jobs and seeded config files, not controller work.
 - [ ] **Jellyfin** (C5): one Job hitting `/Startup/Configuration`, `/Startup/User`, `/Library/VirtualFolders`, then `/System/Configuration/encoding` to enable QSV
 - [ ] **Authentik** (C7): blueprints in `/blueprints/custom/` for providers, applications, outposts, flows and groups, with client secrets from `!Env` so Vault becomes the source rather than the destination
 - [ ] **Seerr** (C6): `/api/v1/settings/{jellyfin,radarr,sonarr}` + `initialize`
-- [ ] **qBittorrent** (C6): seed `qBittorrent.conf` from a ConfigMap + initContainer with a PBKDF2 hash derived from the Vault password; ship `categories.json`
+- [x] **qBittorrent** (C6): share-limit policy and categories reconciled by `QBittorrentConfig`; the WebUI account itself still needs seeding into `qBittorrent.conf` with a PBKDF2 hash derived from the Vault password
 - [ ] **Bazarr** (C6): template `/config/config/config.yaml` -- the API is too weak to drive
 - [ ] **Tdarr** (C6): export the flow as JSON, commit it, POST via `/api/v2/cruddb`
 - [ ] **Uptime Kuma** (C8): no REST write API exists -- replace the monitor list with `blackbox-exporter` and Git-committed `Probe` resources
