@@ -21,6 +21,7 @@ patches:
         name: argocd-cmd-params-cm
       data:
         server.insecure: "true"
+        controller.diff.server.side: "true"
   - target:
       kind: ConfigMap
       name: argocd-cm
