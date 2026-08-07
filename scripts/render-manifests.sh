@@ -9,6 +9,44 @@ rendered=0
 
 val() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1 | tr -d "'\"" ; }
 
+echo "==> Validating config.yml against the ApplicationSet contract"
+if ! python3 - <<'PY'; then fail=$((fail+1)); fi
+import glob, re, sys, yaml
+
+APPSET = "k8s/bootstrap/applicationsets/cluster-apps.yml"
+GENERATOR = {"path"}
+OPTIONAL = {"annotations"}
+ALWAYS = {"appName", "sourceType", "namespace", "syncOptions", "createNamespace"}
+HELM = {"chartRepo", "chartName", "chartVersion", "hasResources"}
+GIT = {"gitPath"}
+KNOWN = GENERATOR | OPTIONAL | ALWAYS | HELM | GIT
+
+src = open(APPSET).read()
+refs = set()
+for action in re.findall(r"\{\{(.*?)\}\}", src, re.S):
+    refs |= set(re.findall(r"(?<![\w$])\.([A-Za-z][A-Za-z0-9_]*)", action))
+
+bad = 0
+for key in sorted(refs - KNOWN):
+    print(f"  FAIL {APPSET} reads .{key}, which this checker does not know about")
+    print(f"       add it to ALWAYS/HELM/GIT/OPTIONAL in {__file__ or 'render-manifests.sh'}")
+    bad += 1
+
+for cfg in sorted(glob.glob("k8s/clusters/**/config.yml", recursive=True)):
+    data = yaml.safe_load(open(cfg)) or {}
+    source = data.get("sourceType")
+    required = ALWAYS | (HELM if source == "helm" else GIT)
+    for key in sorted(required - set(data)):
+        print(f"  FAIL {cfg} is missing '{key}' -- goTemplateOptions=missingkey=error")
+        print(f"       will freeze every app in the generator, not just this one")
+        bad += 1
+    for key in sorted(set(data) - KNOWN):
+        print(f"  FAIL {cfg} sets '{key}', which the ApplicationSet never reads (typo?)")
+        bad += 1
+
+sys.exit(1 if bad else 0)
+PY
+
 echo "==> Rendering apps from config.yml"
 while IFS= read -r cfg; do
   dir="$(dirname "$cfg")"
