@@ -8,6 +8,8 @@
     - pve_iommu
     - role: pve_disable_wireless
       tags: [pve_disable_wireless]
+    - role: pve_disable_ksm
+      tags: [pve_disable_ksm]
     - pve_cloud_init
     - pve_pci_mapping
     - pve_api_token

@@ -1,0 +1,19 @@
+---
+- name: Stop, disable and mask ksmtuned
+  ansible.builtin.systemd_service:
+    name: ksmtuned
+    state: stopped
+    enabled: false
+    masked: true
+
+- name: Read current KSM run state
+  ansible.builtin.slurp:
+    src: /sys/kernel/mm/ksm/run
+  register: pve_disable_ksm_run_state
+
+- name: Stop KSM page merging # noqa: risky-file-permissions
+  ansible.builtin.copy:
+    dest: /sys/kernel/mm/ksm/run
+    content: "0\n"
+    unsafe_writes: true
+  when: pve_disable_ksm_run_state.content | b64decode | trim != "0"
