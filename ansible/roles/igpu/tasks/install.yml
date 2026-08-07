@@ -2,6 +2,7 @@
 - name: Install kernel extra modules for i915
   ansible.builtin.apt:
     name:
+      - linux-image-generic
       - "linux-modules-extra-{{ ansible_kernel }}"
     state: present
   register: igpu_kernel_modules_install
