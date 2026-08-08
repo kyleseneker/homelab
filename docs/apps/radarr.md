@@ -7,12 +7,11 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `lscr.io/linuxserver/radarr:6.0.4` |
+| Image | `lscr.io/linuxserver/radarr` |
 | Port | 7878 |
 | HTTPRoute | `radarr.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-radarr` |
-| Sync wave | 1 |
 | Internal URL | `http://arr-radarr.arr.svc.cluster.local:7878` |
 
 ### Storage

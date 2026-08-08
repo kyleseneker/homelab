@@ -12,7 +12,7 @@ All internal services run behind HTTPS on `*.homelab.local` subdomains. The clus
 
 Use cert-manager with a three-stage self-signed CA chain: a `SelfSigned` ClusterIssuer creates a root CA certificate (`homelab-ca`, ECDSA P-256), which backs a `CA` ClusterIssuer (`homelab-ca-issuer`) that issues all per-service certificates. Clients (browsers, OS) import the root CA to trust the internal PKI.
 
-cert-manager deploys at sync wave -3 to ensure issuers and certificates are available before any Gateway or application that needs TLS.
+cert-manager must be healthy before any Gateway or application that needs TLS. Ordering is not enforced by sync waves -- ArgoCD retries a failed sync with backoff until the issuer chain exists.
 
 ## Alternatives Considered
 

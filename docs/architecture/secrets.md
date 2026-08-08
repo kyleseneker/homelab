@@ -39,19 +39,26 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 |------------|------------|-----------|
 | `infrastructure/minio` | `minio-credentials` | `backups` |
 | `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
+| `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
+| `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
 | `infrastructure/argocd-oidc` | `argocd-secret` (merge) | `argocd` |
 | `infrastructure/argocd-notifications-slack` | `argocd-notifications-secret` (merge) | `argocd` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
+| `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |
 | `apps/vpn` | `vpn-credentials` | `arr` |
+| `apps/arr` | `arr-sonarr-env`, `arr-radarr-env` | `arr` |
+| `apps/arr` | `exportarr-secrets` | `arr` |
+| `apps/arr`, `apps/unpackerr` | `unpackerr-secrets` | `arr` |
 | `apps/recyclarr` | `recyclarr-secrets` | `arr` |
-| `apps/exportarr` | `exportarr-secrets` | `arr` |
-| `apps/unpackerr` | `unpackerr-secrets` | `arr` |
 | `apps/homepage` | `homepage-secrets` | `arr` |
 | `apps/openclaw` | `openclaw-secrets` | `openclaw` |
 | `apps/openclaw` | `alertmanager-openclaw-hooks-token` | `monitoring` |
+
+!!! note "`apps/arr` holds the *arr API keys"
+    Sonarr, Radarr, Prowlarr and Bazarr each generate their own API key into `/config/config.xml` on first boot, so Vault is downstream of the apps rather than upstream. `make arr-keys-adopt` copies each live key into `homelab/apps/arr` without printing it. Everything that talks to an *arr API -- Exportarr, Unpackerr, Recyclarr, Homepage, the Media Operator -- reads from that one path.
 
 ## Workflow
 

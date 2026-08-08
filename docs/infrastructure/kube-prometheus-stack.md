@@ -67,7 +67,7 @@ The following components are disabled because they are either not applicable or 
 
 The monitoring stack is the central observability platform. Applications expose metrics via `ServiceMonitor` or `PodMonitor` resources, which Prometheus automatically discovers. Grafana provides visualization dashboards and integrates with Loki for log correlation.
 
-The stack deploys at sync wave -1, after storage (NFS provisioner at wave -2) and certificate management (cert-manager at wave -3) are ready.
+The stack depends on the NFS provisioner for its PVCs and on cert-manager for the Gateway certificate.
 
 ## Upstream Documentation
 

@@ -32,14 +32,15 @@ flowchart LR
 | Component | Purpose | Deployment | Storage |
 |-----------|---------|-----------|---------|
 | Prometheus | Metrics collection, storage, and rule evaluation | StatefulSet | 20Gi PVC (`local-path`), 15d retention |
-| Grafana | Dashboards and visualization for metrics and logs | Deployment | Persistent PVC (`nfs-client`) |
+| Grafana | Dashboards and visualization for metrics and logs | Deployment | 2Gi PVC (`nfs-client`) |
 | Alertmanager | Alert routing, grouping, and notification | StatefulSet | Ephemeral |
 | Node Exporter | Host-level hardware and OS metrics | DaemonSet | None |
 | kube-state-metrics | Kubernetes object state metrics | Deployment | None |
 | Loki | Log aggregation and querying | StatefulSet (single-binary) | 10Gi PVC (`nfs-client`), 168h retention |
 | Alloy | Pod log collection and shipping | DaemonSet | None (streams to Loki) |
 | Exportarr | Prometheus metrics exporter for *arr apps | Multi-Deployment (one per target) | None |
-| Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`nfs-client`) |
+| NUT Exporter | UPS metrics from the CyberPower unit via NUT | Deployment | None |
+| Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`local-path`) |
 | VPA Recommender | Per-workload CPU/memory right-sizing recommendations | Deployment | None |
 | Goldilocks | Auto-creates VPA CRs, provides recommendation dashboard | Deployment (controller + dashboard) | None |
 
@@ -47,12 +48,12 @@ flowchart LR
 
 ### Prometheus
 
-Prometheus is deployed via the `kube-prometheus-stack` Helm chart (sync wave -1) and serves as the central metrics store.
+Prometheus is deployed via the `kube-prometheus-stack` Helm chart and serves as the central metrics store.
 
 | Setting | Value |
 |---------|-------|
 | Retention | 15 days |
-| Storage | 20Gi PVC (`nfs-client`) |
+| Storage | 20Gi PVC (`local-path`) |
 | Access | `prometheus.homelab.local` |
 
 Prometheus scrapes metrics from:
@@ -61,7 +62,12 @@ Prometheus scrapes metrics from:
 - **kube-state-metrics** -- Kubernetes object states (pod status, deployment replicas, node conditions)
 - **Kubelet metrics** -- Container resource usage and pod lifecycle events
 - **Exportarr** -- *arr application metrics (queue depth, library size, missing episodes) via ServiceMonitors
+- **NUT Exporter** -- UPS load, battery charge, runtime, and input voltage
+- **Velero** -- backup and schedule status via its own ServiceMonitor
 - **Application metrics** -- Any pods with Prometheus scrape annotations
+
+!!! warning "Prometheus storage is node-pinned and unbacked"
+    The TSDB lives on a `local-path` volume, so it is tied to whichever node first bound it, has no size cap, and is excluded from Velero (Kopia cannot read `hostPath`). Losing that node loses all metrics history. This is a deliberate trade against the query performance and corruption risk of running a TSDB over NFS.
 
 ### Alertmanager
 
@@ -183,7 +189,7 @@ Grafana provides a unified interface for exploring both metrics (Prometheus) and
 | Setting | Value |
 |---------|-------|
 | Access | `grafana.homelab.local` |
-| Storage | Persistent PVC (`nfs-client`) |
+| Storage | 2Gi PVC (`nfs-client`) |
 | Admin Credentials | ExternalSecret (`grafana-admin`, synced from Vault) |
 
 ### Pre-Configured Data Sources

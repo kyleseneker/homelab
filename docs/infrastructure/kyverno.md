@@ -21,7 +21,7 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 
 ## Policies
 
-Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`) at sync wave -1. All policies run in **Enforce** mode -- non-compliant pods are rejected at admission time.
+Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`). All policies run in **Enforce** mode -- non-compliant pods are rejected at admission time.
 
 | Policy | What It Checks | Excluded Namespaces |
 |--------|----------------|---------------------|

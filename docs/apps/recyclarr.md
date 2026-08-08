@@ -7,13 +7,12 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/recyclarr/recyclarr:8.5.1` |
+| Image | `ghcr.io/recyclarr/recyclarr` |
 | Controller type | CronJob |
 | Schedule | `0 */6 * * *` (every 6 hours) |
 | HTTPRoute | -- (headless CronJob, no web UI) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-recyclarr` |
-| Sync wave | 1 |
 
 ### Storage
 

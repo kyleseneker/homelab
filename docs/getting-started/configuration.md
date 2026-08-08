@@ -80,11 +80,21 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 
 **File:** `ansible/group_vars/all/vars.yml`
 
-| Variable | Description |
-|----------|-------------|
-| `timezone` | Timezone for all nodes (e.g. `America/Chicago`) |
-| `media_uid` | UID for the shared media user across NFS and pods |
-| `media_gid` | GID for the shared media group across NFS and pods |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ansible_user` | SSH user on the provisioned VMs | `media` |
+| `base_timezone` | Timezone for all nodes | `America/Chicago` |
+| `base_media_uid` | UID for the shared media user across NFS and pods | `977` |
+| `base_media_gid` | GID for the shared media group across NFS and pods | `988` |
+| `k8s_control_plane_version` | Kubernetes version for `kubeadm init` | `1.31.4` |
+| `k8s_control_plane_pod_network_cidr` | Pod CIDR passed to kubeadm | `10.244.0.0/16` |
+| `k8s_control_plane_service_cidr` | Service CIDR passed to kubeadm | `10.96.0.0/12` |
+| `k8s_control_plane_cilium_version` | Cilium version installed by the CLI | `1.19.1` |
+| `k8s_prereqs_version` | Kubernetes package version on every node | `1.31.4` |
+| `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.31` |
+
+!!! note "Pod CIDR"
+    `k8s_control_plane_pod_network_cidr` is what kubeadm records, but Cilium is installed with its default `cluster-pool` IPAM and allocates pod IPs from `10.0.0.0/8` regardless. The kubeadm value is not what pods actually get.
 
 ### Inventory Files
 
@@ -106,9 +116,20 @@ The following manifest files contain environment-specific values that must be ed
 | `k8s/clusters/homelabk8s01/apps/arr/prereqs/env.yml` | `TZ`, `PUID`, `PGID` for *arr pods |
 | `k8s/clusters/homelabk8s01/infrastructure/gateway/l2-pool.yml` | LoadBalancer IP range for Cilium L2 |
 | `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/values.yml` | NAS IP address for the NFS provisioner |
-| `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml` | NAS IP address for the shared media PersistentVolume |
+| `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml` | NAS IP address **and export path** for the shared media PersistentVolume |
 | `k8s/clusters/homelabk8s01/apps/arr/downloads/values.yml` | VPN server region |
-| `k8s/bootstrap/applicationsets/cluster-apps.yml` | Git repository URL for ArgoCD |
+| `k8s/clusters/homelabk8s01/infrastructure/velero/values.yml` | Offsite S3 bucket name and region |
+| `k8s/clusters/homelabk8s01/infrastructure/etcd-backup/cronjob.yml` | Offsite S3 bucket for etcd snapshots |
+| `k8s/bootstrap/applicationsets/cluster-apps.yml` | Git repository URL for ArgoCD (appears three times) |
+
+!!! warning "The NAS export path contains a volume UUID"
+    `shared-data-pv.yml` hardcodes a UniFi volume UUID that will be different on any replacement NAS. The same path is set independently in `ansible/inventory/<cluster>/group_vars/all.yml` as `nas_export_path`; both must agree.
+
+## AWS
+
+**Directory:** `terraform/aws`
+
+Provisions the KMS key that backs Vault's auto-unseal and the IAM user Velero uses for offsite backups. Copy `terraform.tfvars.example` and run `make aws-init && make aws-apply`. The resulting key ID and access keys go into the `vault-aws-kms` Secret and into Vault at `infrastructure/velero-offsite` and `infrastructure/etcd-backup`.
 
 !!! tip
     After editing these files, commit the changes to your Git repository. ArgoCD will pick up the new configuration on its next sync cycle.

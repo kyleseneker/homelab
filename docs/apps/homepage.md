@@ -1,18 +1,17 @@
 # Homepage
 
-Homepage is a dashboard that aggregates all homelab services into a single page with status widgets, quick links, and Kubernetes integration. It is deployed at sync wave 2 so that all other services are available before the dashboard starts querying them.
+Homepage is a dashboard that aggregates all homelab services into a single page with status widgets, quick links, and Kubernetes integration. Its widgets query other services directly, so links and status tiles stay red until those services come up.
 
 ## Details
 
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/gethomepage/homepage:v1.11.0` |
+| Image | `ghcr.io/gethomepage/homepage` |
 | Port | 3000 |
 | HTTPRoute | `home.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `homepage` |
-| Sync wave | 2 |
 
 ### Storage
 

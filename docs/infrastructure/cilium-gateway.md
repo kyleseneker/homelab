@@ -31,7 +31,7 @@ Cilium's L2 announcement policy advertises LoadBalancer IPs via ARP on the local
 
 ### Gateway API CRDs
 
-The Gateway API CRDs are installed from upstream manifests at sync wave -3 via the `gateway-api` ArgoCD Application in `k8s/components/gateway-api/`. This ensures CRDs exist before the Gateway resource is created.
+The Gateway API CRDs are installed from upstream manifests via the `gateway-api` ArgoCD Application in `k8s/components/gateway-api/`. They must exist before the Gateway resource is created; if the Gateway syncs first it fails and ArgoCD retries until the CRDs land.
 
 ## Cluster Integration
 
@@ -60,7 +60,7 @@ route:
             port: <port>
 ```
 
-The gateway deploys with the core infrastructure. The Gateway API CRDs install at sync wave -3, and the gateway configuration (Gateway + L2 pool) deploys alongside other infrastructure components.
+The gateway deploys with the core infrastructure. The CRDs come from the `gateway-api` Application; the gateway configuration (Gateway + L2 pool) is a separate `gateway` Application.
 
 ## Upstream Documentation
 

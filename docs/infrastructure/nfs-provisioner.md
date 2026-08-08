@@ -30,7 +30,7 @@ The NFS Provisioner dynamically creates PersistentVolumes backed by an NFS share
 - Loki log data (10Gi)
 - MinIO object storage (50Gi)
 
-The provisioner deploys at sync wave -2 so that storage is available before the monitoring stack, backup services, and applications request PVCs at wave -1 and wave 0.
+The provisioner must be running before the monitoring stack, backup services, or applications request PVCs. Nothing enforces that -- a PVC created first simply stays Pending until the provisioner appears.
 
 ## Upstream Documentation
 

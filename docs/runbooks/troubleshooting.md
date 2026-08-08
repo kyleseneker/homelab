@@ -32,7 +32,7 @@ The application reports `Progressing` but never reaches `Healthy`.
 **Possible causes:**
 
 - Resource quotas preventing pod scheduling
-- Missing CRDs that the application depends on (check sync wave ordering)
+- Missing CRDs that the application depends on (nothing orders Applications -- check whether the CRD-owning app has synced)
 - Failed health checks (readiness/liveness probes misconfigured)
 - Pods stuck in `Pending` due to insufficient node resources
 

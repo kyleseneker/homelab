@@ -15,11 +15,11 @@ The Intel GPU stack enables iGPU passthrough for hardware-accelerated video tran
 
 The stack is split into two ArgoCD Applications:
 
-### Intel Device Plugins Operator (sync wave -2)
+### Intel Device Plugins Operator
 
 Installs the operator that manages GPU device plugin lifecycle. Uses a retry policy of limit 30 with exponential backoff (10s to 5m) and `SkipDryRunOnMissingResource=true` to handle CRD creation timing.
 
-### Intel Device Plugins GPU (sync wave -1)
+### Intel Device Plugins GPU
 
 Deploys the `GpuDevicePlugin` custom resource that the operator reconciles into a DaemonSet.
 

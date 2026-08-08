@@ -25,7 +25,7 @@ MinIO provides S3-compatible object storage within the cluster, serving as the b
 
 ## Cluster Integration
 
-MinIO deploys at sync wave -2 so it is available before Velero (wave -1) starts. Velero connects to MinIO as its S3-compatible backup storage location at:
+Velero connects to MinIO as its S3-compatible backup storage location at:
 
 ```
 http://minio.backups.svc.cluster.local:9000

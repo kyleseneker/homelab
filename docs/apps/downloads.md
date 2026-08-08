@@ -10,14 +10,13 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 | Namespace | `arr` |
 | ArgoCD app | `arr-vpn-downloads` |
 | HTTPRoute | `qbit.homelab.local` |
-| Sync wave | 1 |
 
 ### Containers
 
 | Container | Image | Port | Role |
 |-----------|-------|------|------|
-| `gluetun` | `qmcgaw/gluetun:v3.41.1` | -- | VPN sidecar (PIA) |
-| `qbittorrent` | `lscr.io/linuxserver/qbittorrent:5.1.4` | 8080 | Torrent client |
+| `gluetun` | `qmcgaw/gluetun` | -- | VPN sidecar (PIA) |
+| `qbittorrent` | `lscr.io/linuxserver/qbittorrent` | 8080 | Torrent client |
 
 ### Storage
 

@@ -7,12 +7,11 @@ Tdarr is an automated media transcoding application. It scans media libraries an
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/haveagitgat/tdarr:2.65.01` |
+| Image | `ghcr.io/haveagitgat/tdarr` |
 | Ports | 8265 (web UI), 8266 (server) |
 | HTTPRoute | `tdarr.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-tdarr` |
-| Sync wave | 1 |
 | Internal URL | `http://arr-tdarr.arr.svc.cluster.local:8265` |
 
 ### Storage

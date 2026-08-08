@@ -24,6 +24,15 @@ A **Unifi NAS** (or compatible NFS server) with:
 
 A **Private Internet Access** (PIA) VPN subscription. You will need your PIA username and password to create the VPN secret used by the Gluetun container in the *arr stack.
 
+### AWS
+
+An **AWS account**. Two things depend on it and neither is optional:
+
+- **Vault auto-unseal** uses a KMS key. Without it, Vault stays sealed after every pod restart and every secret in the cluster is unavailable.
+- **Offsite backups** use an S3 bucket for the weekly Velero backup and the nightly etcd snapshot.
+
+`terraform/aws` provisions the KMS key and the IAM users. Run it before the first `make k8s-bootstrap` -- see [Configuration &rarr; AWS](configuration.md#aws).
+
 ## Local Machine
 
 Install the following tools on the machine you will run deployments from:
@@ -36,6 +45,8 @@ Install the following tools on the machine you will run deployments from:
 | [kubectl](https://kubernetes.io/docs/tasks/tools/) | Interact with the Kubernetes cluster |
 | [Vault CLI](https://developer.hashicorp.com/vault/install) | Manage secrets in HashiCorp Vault |
 | [Velero CLI](https://velero.io/docs/main/basic-install/) | Manage cluster backups |
+| [Helm](https://helm.sh/docs/intro/install/) + [kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/) | Required by `make k8s-render` |
+| [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) | Retrieve offsite backups during disaster recovery |
 | SSH key pair | Used by Terraform and Ansible to access VMs |
 
 !!! tip

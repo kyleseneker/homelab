@@ -7,12 +7,11 @@ OpenClaw is an AI agent platform that provides autonomous cluster operations and
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/openclaw/openclaw:2026.3.7` |
+| Image | `ghcr.io/openclaw/openclaw` |
 | Port | 18789 |
 | HTTPRoute | `openclaw.homelab.local` |
 | Namespace | `openclaw` |
 | ArgoCD app | `openclaw` |
-| Sync wave | 2 |
 
 The agent has cluster-wide RBAC for operational tasks: pod management, workload restarts, job cleanup, and node patching. It receives alerts from AlertManager via webhook and webhook notifications from *arr applications. It manages the full media pipeline from requests to playback.
 

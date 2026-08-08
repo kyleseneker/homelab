@@ -57,7 +57,7 @@ Secrets are organized under the `homelab` KV v2 mount:
 
 ## Cluster Integration
 
-Vault deploys at sync wave -3 alongside cert-manager and the External Secrets Operator. ESO authenticates to Vault using the Kubernetes auth method -- the ESO service account token is validated against the cluster API server, so no static credentials are needed.
+Vault, cert-manager, and the External Secrets Operator form the bootstrap layer everything else depends on. ESO authenticates to Vault using the Kubernetes auth method -- the ESO service account token is validated against the cluster API server, so no static credentials are needed.
 
 !!! info "Internal traffic is plaintext"
     Vault's listener runs with `tls_disable = 1` inside the cluster. External access goes through the ingress (TLS-terminated by cert-manager), but pod-to-pod traffic between ESO and Vault is unencrypted HTTP. This is a deliberate homelab simplification -- all traffic stays within the cluster network.

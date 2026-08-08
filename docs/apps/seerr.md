@@ -7,7 +7,7 @@ Seerr is a media request management application (the unified successor to Jellys
 | Property | Value |
 |----------|-------|
 | Helm chart | `seerr-chart` v3.3.0 ([seerr-team](https://github.com/seerr-team/seerr)) |
-| Image | `ghcr.io/seerr-team/seerr:v3.1.0` |
+| Image | `ghcr.io/seerr-team/seerr` |
 | Port | 80 |
 | HTTPRoute | `seerr.homelab.local` |
 | Namespace | `arr` |

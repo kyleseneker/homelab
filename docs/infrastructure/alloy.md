@@ -38,7 +38,7 @@ Alloy also collects Kubernetes API server audit logs from the host filesystem:
 
 ## Cluster Integration
 
-Alloy is the final piece of the logging pipeline. It deploys at sync wave 0 -- the highest wave in the infrastructure layer -- because it depends on Loki (wave -1) being available to accept log data. If Alloy started before Loki, log shipment would fail until Loki became ready.
+Alloy is the final piece of the logging pipeline. It depends on Loki being available to accept log data; if Alloy starts first, log shipment fails and retries until Loki becomes ready.
 
 Logs collected by Alloy are queryable in Grafana Explore via the pre-configured Loki data source.
 

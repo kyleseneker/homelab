@@ -7,12 +7,11 @@ Unpackerr monitors download clients for completed downloads containing compresse
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/unpackerr/unpackerr:v0.15.2` |
+| Image | `ghcr.io/unpackerr/unpackerr` |
 | Port | 5656 (health/metrics only) |
 | HTTPRoute | -- (internal only) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-unpackerr` |
-| Sync wave | 1 |
 | Internal URL | `http://arr-unpackerr.arr.svc.cluster.local:5656` |
 
 ### Storage

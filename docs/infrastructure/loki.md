@@ -28,7 +28,7 @@ Loki is a log aggregation system designed for efficiency, storing log streams wi
 
 ## Cluster Integration
 
-Loki receives log streams from Alloy (deployed at sync wave 0), which runs as a DaemonSet and ships pod logs from every node.
+Loki receives log streams from Alloy, which runs as a DaemonSet and ships pod logs from every node.
 
 Grafana (part of kube-prometheus-stack) has Loki pre-configured as a data source at:
 
@@ -38,7 +38,7 @@ http://loki.monitoring.svc.cluster.local:3100
 
 Users query logs through Grafana Explore using LogQL.
 
-Loki deploys at sync wave -1 alongside the rest of the monitoring stack. Alloy, which depends on Loki being available, deploys at wave 0.
+Alloy depends on Loki being available to accept writes. Nothing sequences the two -- Alloy buffers and retries until Loki is ready.
 
 ## Upstream Documentation
 

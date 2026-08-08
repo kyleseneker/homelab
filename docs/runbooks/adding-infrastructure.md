@@ -117,7 +117,7 @@ Create the cluster's directory structure under `k8s/clusters/`:
 mkdir -p k8s/clusters/<cluster>/{config,infrastructure,apps}
 ```
 
-- `config/` -- Shared resources (namespaces, ConfigMaps) deployed at early sync waves
+- `prereqs/` -- Shared resources (namespace, shared PV, shared ConfigMap) owned by a dedicated Application
 - `infrastructure/` -- Infrastructure components (Cilium Gateway, cert-manager, Vault, etc.)
 - `apps/` -- Application workloads
 

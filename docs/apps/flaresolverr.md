@@ -7,12 +7,11 @@ FlareSolverr is a proxy server that bypasses Cloudflare and DDoS-GUARD protectio
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/flaresolverr/flaresolverr:v3.4.6` |
+| Image | `ghcr.io/flaresolverr/flaresolverr` |
 | Port | 8191 |
 | HTTPRoute | -- (internal only) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-flaresolverr` |
-| Sync wave | 1 |
 | Internal URL | `http://arr-flaresolverr.arr.svc.cluster.local:8191` |
 
 ### Resources

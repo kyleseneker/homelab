@@ -29,7 +29,7 @@ cert-manager.io/cluster-issuer: homelab-ca-issuer
 
 This triggers cert-manager to automatically provision a TLS certificate for the host defined in the Ingress. Because the CA is internal, browsers on the LAN must trust the `homelab-ca` root certificate to avoid warnings.
 
-cert-manager deploys at sync wave -3 so that the issuer chain is ready before any ingress controller or application attempts to request a certificate.
+The issuer chain must exist before the Gateway or any application requests a certificate. Nothing enforces that order -- a Certificate created too early stays pending and ArgoCD retries until the ClusterIssuer is ready.
 
 ## Upstream Documentation
 

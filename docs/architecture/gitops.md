@@ -56,13 +56,20 @@ Each app directory contains up to three files consumed by the ApplicationSet:
 2. **Values ref**: Git repo reference for the values file
 3. **Kustomize source** (optional): Supporting resources from the same directory
 
-**Git-directory apps** (network-policies, gateway, kyverno-policies) produce single-source Applications pointing to a git path.
+**Git-directory apps** (`sourceType: git` -- network-policies, gateway, gateway-api, kyverno-policies, etcd-backup, arr-prereqs, arr-media-config, arr-config-backup) produce single-source Applications pointing to a git path.
+
+**Kustomize apps** (`sourceType: kustomize` -- local-path-provisioner) also produce single-source Applications; ArgoCD detects the `kustomization.yml` in the target directory and builds it.
+
+!!! warning "The `.yml` extension is load-bearing"
+    The generator glob is `k8s/clusters/homelabk8s01/**/config.yml`. A file named `config.yaml` is not discovered, no Application is generated, and nothing reports an error -- the component simply never deploys.
 
 ## Independent Syncs
 
 Each Application syncs independently. ApplicationSet-generated apps have no cross-app sync dependencies. A broken app does not block fixes to other apps.
 
-Ordering between apps (e.g., the `arr` namespace must exist before arr apps deploy) is handled by health checks -- an app targeting namespace `arr` will wait for the namespace to exist, which is created by the `arr-prereqs` Application.
+The cost of that independence is that **there is no ordering mechanism at all**. `argocd.argoproj.io/sync-wave` orders resources *within* one Application's sync; it does nothing between Applications, because the applicationset-controller creates them directly with no parent Application syncing them. Any wave annotation on a generated Application -- there is still one in `local-path-provisioner/config.yml` -- is inert.
+
+Ordering emerges from failure and retry instead. An app targeting the `arr` namespace before `arr-prereqs` has created it fails, backs off, and succeeds on a later attempt. With `retry: limit 10` and backoff from 10s to 3m, a cold bootstrap converges in a few minutes with a visible period of failed Applications along the way.
 
 ## Namespace Strategy
 

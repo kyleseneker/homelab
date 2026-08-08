@@ -7,12 +7,11 @@ Prowlarr is a centralized indexer manager for the *arr stack. Add torrent tracke
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `lscr.io/linuxserver/prowlarr:2.3.0` |
+| Image | `lscr.io/linuxserver/prowlarr` |
 | Port | 9696 |
 | HTTPRoute | `prowlarr.homelab.local` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-prowlarr` |
-| Sync wave | 1 |
 | Internal URL | `http://arr-prowlarr.arr.svc.cluster.local:9696` |
 
 ### Storage

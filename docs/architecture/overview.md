@@ -55,8 +55,10 @@ flowchart LR
 | Vault | Centralized secrets backend (KV v2) | `vault` |
 | External Secrets Operator | Syncs Vault secrets into K8s Secrets | `external-secrets` |
 | NFS Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |
+| Local-Path Provisioner | Node-local PVC provisioning for SQLite workloads | `local-path-storage` |
 | Metrics Server | Kubernetes resource metrics API | `kube-system` |
 | MinIO | S3-compatible object storage for backups | `backups` |
+| etcd Backup | Nightly etcd snapshot + PKI tarball CronJob | `backups` |
 | Intel GPU Operator | Intel GPU device driver management | `intel-gpu-operator` |
 | Intel GPU Plugin | Intel iGPU device plugin for workloads | `intel-gpu-operator` |
 | kube-prometheus-stack | Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics | `monitoring` |
@@ -64,9 +66,12 @@ flowchart LR
 | Velero | Cluster and volume backup/restore | `backups` |
 | Alloy | DaemonSet log collector | `monitoring` |
 | Authentik | SSO provider (forward-auth + OIDC) | `auth` |
+| NUT Exporter | UPS metrics for Prometheus | `monitoring` |
 | Reloader | Automatic pod restarts on ConfigMap/Secret changes | `kube-system` |
 | Kyverno | Kubernetes policy engine (admission control) | `kyverno` |
 | Descheduler | Pod rebalancing across nodes (CronJob) | `kube-system` |
+| VPA | Workload right-sizing recommendations (recommend-only) | `kube-system` |
+| Goldilocks | Auto-creates VPA CRs, recommendation dashboard | `goldilocks` |
 | Jellyfin | Media server | `arr` |
 | Sonarr | TV series management | `arr` |
 | Radarr | Movie management | `arr` |
@@ -76,6 +81,10 @@ flowchart LR
 | qBittorrent | Torrent client (via Gluetun VPN sidecar) | `arr` |
 | Recyclarr | Quality profile sync (CronJob) | `arr` |
 | Tdarr | Media transcoding | `arr` |
+| Unpackerr | Extraction of compressed downloads | `arr` |
+| FlareSolverr | Captcha-solving proxy for Prowlarr | `arr` |
+| Media Operator | Declarative Sonarr/Radarr/Prowlarr configuration | `arr` |
+| Config Backup | Nightly SQLite dumps of *arr databases | `arr` |
 | Exportarr | Prometheus exporter for *arr app metrics | `arr` |
 | Homepage | Dashboard | `arr` |
 | Uptime Kuma | Synthetic monitoring and status page | `monitoring` |
@@ -100,15 +109,22 @@ homelab/
   packer/            # VM template builds
     k8s-node/        # K8s node template (Ubuntu 24.04 + autoinstall)
   ansible/           # Playbooks for Proxmox and K8s provisioning
-  terraform/         # VM provisioning on Proxmox
+  terraform/
+    hosts/           # Per-cluster VM provisioning on Proxmox
+    modules/         # Reusable proxmox-vm module
+    aws/             # KMS key + IAM users for Vault unseal and offsite backup
   k8s/
     bootstrap/       # ArgoCD bootstrap and ApplicationSet
+    components/      # Shared manifests (Gateway API CRDs, Kyverno policies)
     clusters/
       homelabk8s01/  # Cluster-specific ArgoCD Applications
         apps/        # Application workloads
         infrastructure/  # Infrastructure components
+  scripts/           # vault-init, manifest render, alert metric checks
   docs/              # MkDocs documentation
 ```
+
+See [Repository Layout](../reference/repo-layout.md) for the annotated tree.
 
 !!! info "Single Source of Truth"
     The Git repository is the single source of truth for all cluster state. Manual changes made directly to the cluster will be detected and reverted by ArgoCD's automated sync with pruning and self-healing enabled.

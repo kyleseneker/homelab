@@ -43,7 +43,7 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 
 ## Cluster Integration
 
-Velero depends on MinIO (wave -2) for its backup storage location and deploys at sync wave -1. The backup workflow is:
+Velero depends on MinIO for its default backup storage location. The backup workflow is:
 
 1. Velero server creates a backup according to the defined schedules.
 2. Kubernetes resource manifests are serialized and stored in the MinIO `velero` bucket.

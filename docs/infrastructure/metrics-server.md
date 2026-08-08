@@ -23,7 +23,7 @@ Metrics Server collects resource usage metrics (CPU and memory) from the kubelet
 
 ## Cluster Integration
 
-Metrics Server deploys at sync wave -2 as a foundational cluster service. Once running, it enables:
+Metrics Server is a foundational cluster service. Once running, it enables:
 
 - **`kubectl top nodes`** -- view CPU and memory usage per node
 - **`kubectl top pods`** -- view CPU and memory usage per pod

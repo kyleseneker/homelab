@@ -7,11 +7,10 @@ Exportarr is a Prometheus exporter for *arr applications. It exposes metrics suc
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/onedr0p/exportarr:v2.3.0` |
+| Image | `ghcr.io/onedr0p/exportarr` |
 | Namespace | `arr` |
 | HTTPRoute | -- (internal only, metrics scraped by Prometheus) |
 | ArgoCD app | `arr-exportarr` |
-| Sync wave | 1 |
 
 ### Exporters
 
