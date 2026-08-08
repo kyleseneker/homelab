@@ -1,0 +1,15 @@
+apiVersion: trust.cert-manager.io/v1alpha1
+kind: Bundle
+metadata:
+  name: custom-ca-certs
+spec:
+  sources:
+    - secret:
+        name: homelab-ca-secret
+        key: ca.crt
+  target:
+    configMap:
+      key: homelab-ca.crt
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: argocd
