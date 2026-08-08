@@ -109,7 +109,7 @@ Bootstrap Jobs and seeded config files, not controller work.
 - [x] Add a PrometheusRule on NFS free space with a `predict_linear` forecast (M3) -- `MediaLibrarySpaceLow`, `MediaLibraryFillingUp` and an `absent()` guard on `arr-data`
 - [ ] Add a Usenet path: SABnzbd as a standalone controller (not inside the gluetun pod), a provider and an indexer (M1). `arr-egress` allows world egress on TCP/443 only -- 563 must be added
 - [ ] Deploy Janitorr in dry-run for retention, and leave it there until the NAS mirror exists (M3)
-- [ ] Add a scheduled library refresh to work around NFS inotify (M4)
+- [x] Work around NFS inotify (M4) -- Sonarr and Radarr hold a `MediaBrowser` notification with `updateLibrary` on import, so Jellyfin refreshes on import rather than waiting for its 12h scan, which stays as the backstop
 
 | | |
 |---|---|
