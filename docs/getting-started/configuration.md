@@ -105,9 +105,9 @@ The following manifest files contain environment-specific values that must be ed
 |------|--------------|
 | `k8s/clusters/homelabk8s01/apps/arr/prereqs/env.yml` | `TZ`, `PUID`, `PGID` for *arr pods |
 | `k8s/clusters/homelabk8s01/infrastructure/gateway/l2-pool.yml` | LoadBalancer IP range for Cilium L2 |
-| `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/values.yaml` | NAS IP address for the NFS provisioner |
+| `k8s/clusters/homelabk8s01/infrastructure/nfs-provisioner/values.yml` | NAS IP address for the NFS provisioner |
 | `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml` | NAS IP address for the shared media PersistentVolume |
-| `k8s/clusters/homelabk8s01/apps/arr/downloads/values.yaml` | VPN server region |
+| `k8s/clusters/homelabk8s01/apps/arr/downloads/values.yml` | VPN server region |
 | `k8s/bootstrap/applicationsets/cluster-apps.yml` | Git repository URL for ArgoCD |
 
 !!! tip

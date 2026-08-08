@@ -42,7 +42,7 @@ flowchart LR
 
 **Stage 4 -- Kubernetes Bootstrap:** Ansible bootstraps the kubeadm-based Kubernetes cluster, handling NFS mounts, iGPU device verification, control plane initialization, worker node joins, and CNI (Cilium) deployment. Roles already baked into the template are conditionally skipped.
 
-**Stage 5 -- Workload Deployment:** ArgoCD manages all cluster workloads declaratively via GitOps. An ApplicationSet with a Git File Generator discovers per-app `config.yaml` files and generates independent Applications for each infrastructure component and application.
+**Stage 5 -- Workload Deployment:** ArgoCD manages all cluster workloads declaratively via GitOps. An ApplicationSet with a Git File Generator discovers per-app `config.yml` files and generates independent Applications for each infrastructure component and application.
 
 ## Component Inventory
 

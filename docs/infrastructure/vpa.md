@@ -39,7 +39,7 @@ VPA CRs are not managed manually. [Goldilocks](goldilocks.md) automatically crea
 VPA recommendations are advisory. To act on them:
 
 1. Check the Goldilocks dashboard or query `vpa_status_recommendation` in Grafana
-2. Compare the VPA target with the current request in the workload's `values.yaml`
+2. Compare the VPA target with the current request in the workload's `values.yml`
 3. Update the manifest and let ArgoCD sync the change
 
 ## Upstream Documentation

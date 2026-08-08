@@ -10,7 +10,7 @@ Each application needs Kubernetes manifests for Deployment/StatefulSet, Service,
 
 ## Decision
 
-Use the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart for all application deployments. Application-specific configuration is provided via a `values.yaml` file in each app's directory, referenced by the ApplicationSet's multi-source template.
+Use the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart for all application deployments. Application-specific configuration is provided via a `values.yml` file in each app's directory, referenced by the ApplicationSet's multi-source template.
 
 ## Alternatives Considered
 
@@ -22,7 +22,7 @@ Use the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm char
 
 - **Consistent interface**: Every application uses the same value schema for containers, services, routes, persistence, and security contexts. Learning one chart covers all apps.
 - **Security by default**: The template makes it natural to set `securityContext`, `resources`, `probes`, and `persistence` in a uniform structure, reducing the chance of omission.
-- **Values in git**: Each app's `values.yaml` is stored alongside its `config.yaml`, keeping Helm values version-controlled and diffable. The ApplicationSet's multi-source template references the values file via a git ref.
+- **Values in git**: Each app's `values.yml` is stored alongside its `config.yml`, keeping Helm values version-controlled and diffable. The ApplicationSet's multi-source template references the values file via a git ref.
 - **Community-maintained**: The chart is actively developed with regular releases.
 
 ## Consequences

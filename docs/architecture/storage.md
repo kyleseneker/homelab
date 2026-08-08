@@ -22,14 +22,15 @@ flowchart TD
             arrPVC["PVC: arr-data"]
         end
 
-        subgraph nfsVols["NFS Config Volumes"]
-            prowlarrPVC["PVC: arr-prowlarr-config"]
-            otherPVC["PVC: ..."]
+        subgraph nfsVols["NFS Volumes"]
+            backupPVC["PVC: arr-config-backups"]
+            otherPVC["PVC: Loki, MinIO, ..."]
         end
 
         subgraph localVols["Local-Path Config Volumes"]
             sonarrPVC["PVC: arr-sonarr-config"]
             radarrPVC["PVC: arr-radarr-config"]
+            moreLocalPVC["PVC: ..."]
         end
 
         subgraph appPods["Application Pods"]
@@ -64,16 +65,18 @@ The NFS Subdir External Provisioner dynamically creates PersistentVolumes backed
 | NFS Server | Unifi NAS |
 | Path Pattern | `${.PVC.namespace}-${.PVC.name}` |
 | Reclaim Policy | Retain |
-| Sync Wave | -2 |
 
-The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-prowlarr-config` in the `arr` namespace creates the NFS subdirectory `arr-arr-prowlarr-config`.
+The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-config-backups` in the `arr` namespace creates the NFS subdirectory `arr-arr-config-backups`.
+
+!!! warning "Released PVs share directories with live ones"
+    Because `pathPattern` derives the directory from the *claim* name, a deleted-and-recreated PVC of the same name reuses the same directory. `Retain` means the old PV stays `Released` while pointing at data the new PV is actively writing. Never delete the backing directory when cleaning up a `Released` PV without first confirming no `Bound` PV shares it.
 
 !!! info "Default StorageClass"
     `nfs-client` serves as the default StorageClass for the cluster. Any PVC that does not specify a `storageClassName` will be provisioned by this provisioner.
 
 ### Local-Path Provisioner
 
-The Rancher Local-Path Provisioner provides node-local storage for applications that require proper POSIX file locking, such as those using SQLite databases. NFS does not support the file locking primitives that SQLite requires, which causes database lock contention and potential corruption.
+The Rancher Local-Path Provisioner provides node-local storage for SQLite-backed applications. These run in WAL mode, which coordinates through a memory-mapped `-shm` file that SQLite does not support over a network filesystem, so their databases cannot live on NFS.
 
 | Setting | Value |
 |---------|-------|
@@ -81,12 +84,16 @@ The Rancher Local-Path Provisioner provides node-local storage for applications 
 | Volume Binding Mode | WaitForFirstConsumer |
 | Reclaim Policy | Retain |
 | Storage Path | `/opt/local-path-provisioner/` |
-| Sync Wave | -2 |
 
-Local-path volumes are tied to the worker node where they are first provisioned. Applications using this StorageClass (Sonarr, Radarr) define their PVCs as standalone kustomize resources with `existingClaim` references in their Helm values.
+Local-path volumes are tied to the worker node where they are first provisioned. Applications using this StorageClass define their PVCs as standalone kustomize resources with `existingClaim` references in their Helm values.
 
 !!! warning "Node Affinity"
     Pods using local-path PVCs are pinned to the node where the volume was created. If the node becomes unavailable, the pod cannot reschedule to another node until the original node recovers.
+
+!!! danger "local-path volumes are not in any Velero backup"
+    Velero's Kopia file-system backup cannot read `hostPath` volumes, which is what local-path provisions. Every PVC below is captured as a PVC and PV *object containing no data* -- a restore recreates them empty, and Velero logs this as a warning rather than an error, so the backup still reports success.
+
+    Coverage comes from application-level dumps instead: `arr-config-backup` writes nightly SQLite `.backup` dumps (plus Tdarr's native archive) to an `nfs-client` volume, and `uptime-kuma-backup` does the same for `kuma.db`. Those NFS volumes *are* backed up. The Prometheus TSDB is deliberately excluded.
 
 ## Shared Media Volume (arr-data)
 
@@ -99,7 +106,7 @@ All media applications share a single 10Ti PersistentVolume backed by a dedicate
 | PV Name | `arr-data` |
 | Capacity | 10Ti |
 | Access Mode | ReadWriteMany |
-| NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/arr/shared-data-pv.yml`) |
+| NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml`) |
 | NFS Server | Unifi NAS (`192.168.1.158`) |
 | PVC Name | `arr-data` |
 | PVC Namespace | `arr` |
@@ -140,25 +147,30 @@ The NAS follows the recommended media server folder structure, keeping downloads
 
 ## Per-Application Config Volumes
 
-Each application has its own PVC for configuration and database storage. Most use the `nfs-client` StorageClass. Applications with SQLite databases that are sensitive to NFS locking limitations use `local-path` instead.
+Each application has its own PVC for configuration and database storage. Every *arr app config volume is SQLite-backed and therefore uses `local-path`.
 
-| Application | PVC Name | StorageClass | Typical Size |
-|------------|----------|-------------|-------------|
-| Jellyfin | `arr-jellyfin-config` | `nfs-client` | 10Gi - 50Gi |
+| Application | PVC Name | StorageClass | Size |
+|------------|----------|-------------|------|
+| Jellyfin | `arr-jellyfin-config` | `local-path` | 5Gi |
 | Sonarr | `arr-sonarr-config` | `local-path` | 5Gi |
 | Radarr | `arr-radarr-config` | `local-path` | 5Gi |
-| Prowlarr | `arr-prowlarr-config` | `nfs-client` | 1Gi |
-| Bazarr | `arr-bazarr-config` | `nfs-client` | 1Gi |
-| Seerr | `arr-seerr-config` | `nfs-client` | 1Gi |
-| Tdarr | `arr-tdarr-config` | `nfs-client` | 1Gi |
+| Seerr | `arr-seerr-config` | `local-path` | 5Gi |
+| Tdarr | `arr-tdarr-config` | `local-path` | 5Gi |
+| Prowlarr | `arr-prowlarr-config` | `local-path` | 1Gi |
+| Bazarr | `arr-bazarr-config` | `local-path` | 1Gi |
+| Uptime Kuma | `uptime-kuma-data` | `local-path` | 1Gi |
+| Config backups | `arr-config-backups` | `nfs-client` | 2Gi |
 
 ## Infrastructure Storage
 
-Several infrastructure components also use `nfs-client` for persistent storage:
+| Component | PVC | StorageClass | Size | Purpose |
+|-----------|-----|--------------|------|---------|
+| Prometheus | `prometheus-data` | `local-path` | 20Gi | Metrics time-series data (15d retention) |
+| Loki | `loki-data` | `nfs-client` | 10Gi | Log storage (168h retention) |
+| Grafana | `grafana-data` | `nfs-client` | 2Gi | Dashboards and data source configuration |
+| MinIO | `minio-data` | `nfs-client` | 50Gi | S3 backup object storage |
+| etcd snapshots | `etcd-snapshots` | `nfs-client` | 1Gi | Nightly etcd snapshots + PKI tarballs |
+| Authentik | PostgreSQL PVC | `nfs-client` | 5Gi | Identity provider database |
+| Vault | Vault data PVC | `nfs-client` | 1Gi | KV v2 secret storage |
 
-| Component | PVC | Size | Purpose |
-|-----------|-----|------|---------|
-| Prometheus | `prometheus-data` | 20Gi | Metrics time-series data (15d retention) |
-| Loki | `loki-data` | 10Gi | Log storage (168h retention) |
-| Grafana | `grafana-data` | Persistent | Dashboards and data source configuration |
-| MinIO | `minio-data` | 50Gi | S3 backup object storage |
+Prometheus is on `local-path` because heavy random TSDB I/O over NFS degrades queries and risks corruption. The trade-off is that it is pinned to a single node, unbounded in size, and -- like every local-path volume -- outside the backup path.

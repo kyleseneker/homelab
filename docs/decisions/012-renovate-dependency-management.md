@@ -14,7 +14,7 @@ Use the free Mend Renovate GitHub App to scan the repository on a weekly schedul
 
 ## Alternatives Considered
 
-- **Dependabot**: GitHub's built-in dependency updater. Limited to standard package ecosystems (npm, pip, Docker). Cannot parse ArgoCD `targetRevision` fields, Helm chart references in `config.yaml`, or the bjw-s `repository`/`tag` pattern without custom configuration. Renovate's regex managers handle all of these natively.
+- **Dependabot**: GitHub's built-in dependency updater. Limited to standard package ecosystems (npm, pip, Docker). Cannot parse ArgoCD `targetRevision` fields, Helm chart references in `config.yml`, or the bjw-s `repository`/`tag` pattern without custom configuration. Renovate's regex managers handle all of these natively.
 - **Flux Image Automation**: Watches container registries and commits updated image tags directly to Git. Tightly coupled to Flux's GitOps model. Would require running Flux alongside ArgoCD solely for image updates.
 - **Manual tracking**: Check upstream releases periodically. Doesn't scale and relies on remembering to check.
 

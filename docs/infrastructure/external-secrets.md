@@ -10,7 +10,6 @@ External Secrets Operator (ESO) syncs secrets from HashiCorp Vault into Kubernet
 | Repository | <https://charts.external-secrets.io> |
 | Version | 2.2.0 |
 | Namespace | `external-secrets` |
-| Sync Wave | -3 |
 
 ## Key Configuration
 

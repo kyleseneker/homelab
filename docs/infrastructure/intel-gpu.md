@@ -10,7 +10,6 @@ The Intel GPU stack enables iGPU passthrough for hardware-accelerated video tran
 | Repository | <https://intel.github.io/helm-charts> |
 | Version | 0.35.0 (both) |
 | Namespace | `intel-gpu-operator` (CreateNamespace=true) |
-| Sync Waves | Operator: -2, Plugin: -1 |
 
 ## Key Configuration
 

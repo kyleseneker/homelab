@@ -10,7 +10,6 @@ Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments
 | Repository | <https://stakater.github.io/stakater-charts> |
 | Version | 2.2.9 |
 | Namespace | `kube-system` |
-| Sync Wave | -1 |
 
 ## Key Configuration
 

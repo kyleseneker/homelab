@@ -10,7 +10,6 @@ Loki is a log aggregation system designed for efficiency, storing log streams wi
 | Repository | <https://grafana.github.io/helm-charts> |
 | Version | 6.55.0 |
 | Namespace | `monitoring` (CreateNamespace=true) |
-| Sync Wave | -1 |
 
 ## Key Configuration
 

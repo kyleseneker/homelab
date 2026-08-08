@@ -10,7 +10,6 @@ The NFS Provisioner dynamically creates PersistentVolumes backed by an NFS share
 | Repository | <https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner> |
 | Version | 4.0.18 |
 | Namespace | `nfs-provisioner` (CreateNamespace=true) |
-| Sync Wave | -2 |
 
 ## Key Configuration
 

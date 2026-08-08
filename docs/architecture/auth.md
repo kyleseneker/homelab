@@ -1,6 +1,6 @@
 # Authentication & SSO
 
-The homelab uses Authentik as the centralized identity provider, giving every service a single login. Two mechanisms are used depending on the application's capabilities.
+The homelab uses Authentik as the centralized identity provider. Only applications with native OIDC support currently authenticate against it.
 
 ## Authentication Flows
 
@@ -10,31 +10,27 @@ flowchart TB
         AuthentikServer["Authentik Server"]
         AuthentikWorker["Authentik Worker"]
         PostgreSQL["PostgreSQL"]
-        Redis["Redis"]
         AuthentikServer --> PostgreSQL
-        AuthentikServer --> Redis
         AuthentikWorker --> PostgreSQL
-        AuthentikWorker --> Redis
     end
 
-    User["User"] --> NginxIngress["nginx-ingress"]
-    NginxIngress -->|"auth_request (internal svc URL)"| AuthentikServer
-    AuthentikServer -->|"authenticated"| NginxIngress
-    NginxIngress --> ProtectedApps["Forward-Auth Apps"]
+    User["User"] --> Gateway["Cilium Gateway"]
+    Gateway --> UnprotectedApps["*arr apps<br/>(no auth at the edge)"]
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
 ```
 
-### Forward Auth (Domain-Level)
+Authentik runs its server and worker against a bundled PostgreSQL instance. The chart no longer deploys Redis -- the task queue moved to PostgreSQL -- so the `redis:` block still present in `values.yml` is inert.
 
-For apps without native SSO support, nginx-ingress performs an `auth_request` subrequest to Authentik's embedded outpost before proxying to the backend. A single domain-level proxy provider covers all `*.homelab.local` subdomains, so adding a new app behind SSO only requires adding ingress annotations.
+### Forward Auth -- Not Currently Implemented
 
-The `auth-url` annotation points to the embedded outpost's internal service (`ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000`). The `auth-snippet` annotation sets `X-Forwarded-Host` so the outpost can identify the original domain. The `auth-signin` URL uses the external hostname for browser redirects.
+!!! danger "The *arr apps are not behind SSO"
+    Forward auth was previously implemented with nginx-ingress `auth_request` annotations pointing at Authentik's embedded outpost. `ingress-nginx` was removed when every app migrated to Gateway API HTTPRoutes, and no equivalent was put in its place.
 
-The outpost cookie domain is set to `homelab.local`, enabling a single authentication session across all subdomains.
+    **Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, and Homepage are reachable on the LAN with no authentication at the edge.** Each app's own login (where it has one) is the only control.
 
-**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage
+    Tracked as [K21](../roadmap/assessment.md) in the assessment. Re-implementing it requires an ext_authz path through Cilium's Envoy -- HTTPRoutes have no annotation-based equivalent to the nginx auth subrequest.
 
 ### Native OIDC
 
@@ -50,20 +46,21 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 
 | Service | Reason |
 |---------|--------|
+| *arr apps, qBittorrent, Tdarr, Homepage | No edge auth since the Gateway API migration -- see the warning above |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
-| Prometheus | Internal monitoring; forward-auth would break Grafana datasource scraping |
+| Prometheus | Internal monitoring; edge auth would break Grafana datasource scraping |
 | Alertmanager | Same as Prometheus |
 | Authentik | Circular dependency |
 
 ## Group-Based Access Control
 
-| Group | Grafana Role | ArgoCD Role | Forward-Auth |
-|-------|-------------|-------------|--------------|
-| `authentik Admins` | Admin | `role:admin` | Full access |
-| (default) | Viewer | Read-only | Full access |
+| Group | Grafana Role | ArgoCD Role |
+|-------|-------------|-------------|
+| `authentik Admins` | Admin | `role:admin` |
+| (default) | Viewer | Read-only |
 
 ## Resilience
 
-If Authentik goes down, forward-auth apps become inaccessible. OIDC apps (Grafana, ArgoCD) are unaffected and fall back to their own login pages. See the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for recovery procedures.
+Because no app depends on Authentik at the edge, an Authentik outage does not make any service inaccessible. Grafana and ArgoCD fall back to their own login pages. See the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for recovery procedures.
 
 The `auth` namespace is included in Velero's daily stateful backup and the weekly full-cluster backup.

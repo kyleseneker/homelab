@@ -10,7 +10,6 @@ The Kubernetes Descheduler runs as a CronJob and evicts pods that violate schedu
 | Repository | <https://kubernetes-sigs.github.io/descheduler/> |
 | Version | 0.35.1 |
 | Namespace | `kube-system` |
-| Sync Wave | -1 |
 
 ## Key Configuration
 

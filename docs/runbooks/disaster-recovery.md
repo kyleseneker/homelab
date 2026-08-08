@@ -139,14 +139,21 @@ Use this procedure when the control plane is unresponsive due to etcd corruption
     sudo crictl ps | grep -E 'etcd|kube-apiserver'
     ```
 
-5. Restore the etcd snapshot:
+5. Restore the etcd snapshot. `etcdctl snapshot restore` was removed in etcd 3.6 -- restore is now `etcdutl`, which ships in the same image the backup CronJob uses:
 
     ```bash
-    sudo ETCDCTL_API=3 etcdctl snapshot restore /tmp/snapshot.db \
-      --data-dir=/var/lib/etcd-restore
+    sudo ctr -n k8s.io run --rm \
+      --mount type=bind,src=/tmp,dst=/tmp,options=rbind:rw \
+      --mount type=bind,src=/var/lib,dst=/var/lib,options=rbind:rw \
+      registry.k8s.io/etcd:3.7.1-0 etcd-restore \
+      etcdutl snapshot restore /tmp/snapshot.db --data-dir=/var/lib/etcd-restore
+
     sudo rm -rf /var/lib/etcd
     sudo mv /var/lib/etcd-restore /var/lib/etcd
     ```
+
+    !!! note
+        Keep the image tag in step 5 matched to `k8s/clusters/homelabk8s01/infrastructure/etcd-backup/cronjob.yml`. Restoring with a different minor version than the snapshot was taken with is not supported.
 
 6. Restart the control plane components:
 

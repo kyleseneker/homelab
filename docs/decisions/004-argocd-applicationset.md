@@ -10,11 +10,11 @@ The cluster needs a GitOps controller to reconcile the desired state in Git with
 
 ## Decision
 
-Use an ArgoCD ApplicationSet with a Git File Generator that discovers `config.yaml` files and generates independent Applications per component. Each app has:
+Use an ArgoCD ApplicationSet with a Git File Generator that discovers `config.yml` files and generates independent Applications per component. Each app has:
 
-- **`config.yaml`**: App metadata (name, namespace, chart info, sync options)
-- **`values.yaml`**: Helm values
-- **`kustomization.yaml`**: Lists supporting resources like PDBs, HTTPRoutes, and other CRs (only for apps that have them)
+- **`config.yml`**: App metadata (name, namespace, chart info, sync options)
+- **`values.yml`**: Helm values
+- **`kustomization.yml`**: Lists supporting resources like PDBs, HTTPRoutes, and other CRs (only for apps that have them)
 
 Helm apps use multi-source Applications: the chart source, a git ref for values, and optionally a kustomize source for supporting resources. Git-directory apps (network-policies, gateway) use a single git source.
 
@@ -29,9 +29,9 @@ A single ApplicationSet definition (`k8s/bootstrap/applicationsets/cluster-apps.
 ## Rationale
 
 - **Independent syncs**: Each Application syncs in isolation. A broken app does not block fixes to other apps.
-- **Per-app control**: Each `config.yaml` carries distinct sync options, namespace targeting, and chart versions.
-- **Discoverability**: Adding a new app means creating a directory with `config.yaml` + `values.yaml`. The ApplicationSet generator picks it up automatically -- no generator template to update.
-- **Multi-source**: Helm values live in git (`values.yaml`) rather than inline in the Application spec. Supporting resources (PDBs, HTTPRoutes, and other CRs) are applied alongside the chart via a kustomize source, keeping everything in one Application.
+- **Per-app control**: Each `config.yml` carries distinct sync options, namespace targeting, and chart versions.
+- **Discoverability**: Adding a new app means creating a directory with `config.yml` + `values.yml`. The ApplicationSet generator picks it up automatically -- no generator template to update.
+- **Multi-source**: Helm values live in git (`values.yml`) rather than inline in the Application spec. Supporting resources (PDBs, HTTPRoutes, and other CRs) are applied alongside the chart via a kustomize source, keeping everything in one Application.
 - **Self-heal + prune**: Automated sync with `selfHeal: true` and `prune: true` ensures Git remains the single source of truth.
 - **UI**: ArgoCD's web UI provides at-a-glance health status and sync state per app, which is valuable for quick visibility.
 

@@ -10,7 +10,6 @@ MinIO provides S3-compatible object storage within the cluster, serving as the b
 | Repository | <https://charts.min.io> |
 | Version | 5.4.0 |
 | Namespace | `backups` (CreateNamespace=true) |
-| Sync Wave | -2 |
 
 ## Key Configuration
 

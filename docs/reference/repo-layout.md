@@ -62,9 +62,9 @@ homelab/
 │   └── clusters/<cluster>/
 │       ├── infrastructure/           # Platform components
 │       │   ├── vault/
-│       │   │   ├── config.yaml       # App metadata for ApplicationSet
-│       │   │   ├── values.yaml       # Helm values
-│       │   │   ├── kustomization.yaml # Supporting resources list
+│       │   │   ├── config.yml       # App metadata for ApplicationSet
+│       │   │   ├── values.yml       # Helm values
+│       │   │   ├── kustomization.yml # Supporting resources list
 │       │   │   ├── pdb.yml           # Supporting resource
 │       │   │   └── httproute.yml     # Supporting resource
 │       │   ├── external-secrets/
@@ -111,7 +111,7 @@ homelab/
 
 ## Design Decisions
 
-**ApplicationSet with Git File Generator.** A single ApplicationSet discovers `config.yaml` files via a glob pattern and generates an Application per component. Each app has its own `config.yaml` (metadata), `values.yaml` (Helm values), and optionally a `kustomization.yaml` (supporting resources). This gives full per-app control over chart versions, sync options, and namespace targeting while allowing independent syncs -- a broken app never blocks fixes to other apps.
+**ApplicationSet with Git File Generator.** A single ApplicationSet discovers `config.yml` files via a glob pattern and generates an Application per component. Each app has its own `config.yml` (metadata), `values.yml` (Helm values), and optionally a `kustomization.yml` (supporting resources). This gives full per-app control over chart versions, sync options, and namespace targeting while allowing independent syncs -- a broken app never blocks fixes to other apps.
 
 **Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, Cilium Gateway, storage provisioners, monitoring) are deployed before user-facing applications. This separation ensures that shared platform dependencies -- TLS certificates, load balancer IPs, storage classes, and secret decryption -- are healthy before any workload that relies on them attempts to start.
 

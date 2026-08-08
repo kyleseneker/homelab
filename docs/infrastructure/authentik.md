@@ -10,7 +10,6 @@ Authentik is the centralized identity provider for the homelab, handling SSO via
 | Repository | <https://charts.goauthentik.io> |
 | Version | 2026.2.1 |
 | Namespace | `auth` |
-| Sync Wave | 0 |
 
 ## Architecture
 

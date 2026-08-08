@@ -126,7 +126,7 @@ mkdir -p k8s/clusters/<cluster>/{config,infrastructure,apps}
 
 ### 4. Configure ArgoCD ApplicationSet
 
-The ApplicationSet tells ArgoCD where to find `config.yaml` files for the cluster. You have two options:
+The ApplicationSet tells ArgoCD where to find `config.yml` files for the cluster. You have two options:
 
 - **Modify `k8s/bootstrap/applicationsets/cluster-apps.yml`** to update the glob path for the new cluster.
 - **Create a second ApplicationSet** to manage both clusters from the same ArgoCD instance.

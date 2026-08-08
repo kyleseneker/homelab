@@ -10,7 +10,6 @@ HashiCorp Vault provides centralized secrets storage for the cluster. All applic
 | Repository | <https://helm.releases.hashicorp.com> |
 | Version | 0.32.0 |
 | Namespace | `vault` |
-| Sync Wave | -3 |
 
 ## Key Configuration
 

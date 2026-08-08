@@ -54,7 +54,6 @@ Prometheus is deployed via the `kube-prometheus-stack` Helm chart (sync wave -1)
 | Retention | 15 days |
 | Storage | 20Gi PVC (`nfs-client`) |
 | Access | `prometheus.homelab.local` |
-| Sync Wave | -1 |
 
 Prometheus scrapes metrics from:
 
@@ -104,7 +103,6 @@ Loki runs in **single-binary mode**, combining all Loki components (distributor,
 | Retention | 168 hours (7 days) |
 | Storage | 10Gi PVC (`nfs-client`), filesystem backend |
 | Access | Via Grafana data source |
-| Sync Wave | -1 |
 
 !!! info "Filesystem Backend"
     Loki uses the local filesystem (backed by NFS PVC) for chunk and index storage. This avoids the need for an external object store while providing persistence across pod restarts.
@@ -118,7 +116,6 @@ Alloy is Grafana's OpenTelemetry-compatible collector, deployed as a **DaemonSet
 | Deployment | DaemonSet |
 | Source | Pod logs via Kubernetes discovery |
 | Destination | Loki |
-| Sync Wave | 0 |
 
 #### Alloy Pipeline Configuration
 
