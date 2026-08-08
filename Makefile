@@ -165,6 +165,9 @@ k8s-render: ## Render every ApplicationSet manifest locally (same check CI runs)
 k8s-check-alerts: ## Verify every alert selector matches a live Prometheus series
 	./scripts/check-alert-metrics.sh
 
+k8s-crd-schemas: ## Generate kubeconform schemas from the deployed media-operator charts
+	./scripts/gen-crd-schemas.sh
+
 vault-init: ## Initialize Vault and configure ESO integration (one-time)
 	./scripts/vault-init.sh
 

@@ -47,10 +47,14 @@ jobs:
       - run: pip install yamllint
       - run: yamllint -c .yamllint.yml k8s/
       - uses: bmuschko/setup-kubeconform@v1
+      - uses: azure/setup-helm@v4
+      - run: pip install pyyaml
+      - run: ./scripts/gen-crd-schemas.sh
       - run: |
           kubeconform -strict \
             -kubernetes-version 1.31.4 \
             -schema-location default \
+            -schema-location './.crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -skip Kustomization \
             -skip CustomResourceDefinition \
