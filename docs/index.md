@@ -10,7 +10,7 @@ Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures 
 
 | Cluster | Nodes | Purpose |
 |---------|-------|---------|
-| homelabk8s01 | [1 control plane + 2 workers](reference/hardware.md#kubernetes-vms) | *arr media stack, Jellyfin |
+| homelabk8s01 | [1 control plane + 2 workers](reference/hardware.md#vm-allocation) | *arr media stack, Jellyfin |
 
 | Network | Details |
 |---------|---------|

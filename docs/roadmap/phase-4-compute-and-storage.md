@@ -4,7 +4,7 @@
 
 **Goal:** Eliminate the single-host and single-controller dependencies.
 
-**Addresses:** [P4](assessment.md#physical-layer) (single compute host), [K1](assessment.md#kubernetes--software-layer) (single control plane), [K4](assessment.md#kubernetes--software-layer) (Vault standalone)
+**Addresses:** [P4](assessment.md#physical-layer) (single compute host), [K1](assessment.md#kubernetes-software-layer) (single control plane), [K4](assessment.md#kubernetes-software-layer) (Vault standalone)
 
 ---
 

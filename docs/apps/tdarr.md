@@ -50,7 +50,6 @@ GPU limit: `gpu.intel.com/i915: 1`
     | `ffmpegVersion` | `6` |
 
 - Runs with an internal processing node (`internalNode=true`), so no external Tdarr node deployment is required.
-- Ingress annotations set `proxy-read-timeout` and `proxy-send-timeout` to 3600 seconds to prevent nginx from timing out during long transcode operations.
 - Liveness, readiness, and startup probes check the web UI on port 8265. The startup probe allows up to 30 failures at 10-second intervals (5 minutes).
 
 ## Post-Deploy Setup

@@ -4,7 +4,7 @@
 
 **Goal:** Complete the observability trifecta (metrics, logs, traces) and shift from threshold-based alerting to SLO-driven operations.
 
-**Addresses:** [K10, K14, K8](assessment.md#kubernetes--software-layer)
+**Addresses:** [K10, K14, K8](assessment.md#kubernetes-software-layer)
 
 ---
 

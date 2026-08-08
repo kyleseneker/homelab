@@ -114,6 +114,9 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 
 CiliumNetworkPolicies enforce namespace-level ingress isolation. Each application namespace has a default-deny rule for external traffic, with explicit allow rules for the gateway, intra-namespace communication, and Prometheus scraping. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
 
+!!! warning "Ingress isolation only"
+    These policies constrain what can reach a namespace. Egress is largely unrestricted, so a pod can still reach the Proxmox management UI at 192.168.10.2, the NAS admin UI at 192.168.1.158, and any internet destination. See gaps N6 and N7 in the [assessment](../roadmap/assessment.md).
+
 ## VPN Sidecar Architecture
 
 qBittorrent runs alongside a Gluetun VPN container in a shared pod. Both containers share a single network namespace, meaning all egress traffic from qBittorrent routes through the VPN tunnel.

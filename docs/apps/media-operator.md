@@ -6,15 +6,22 @@ A Kubernetes operator that reconciles Sonarr, Radarr, Prowlarr, Jellyfin, and qB
 
 | Property | Value |
 |----------|-------|
-| Charts | `media-operator-servarr`, `media-operator-downloads` |
+| Charts | `media-operator-servarr`, `media-operator-downloads`, `media-operator-mediaservers` |
 | Repository | `ghcr.io/kyleseneker/media-operator` (OCI) |
-| Version | 0.4.0 |
 | Namespace | `arr` |
-| ArgoCD apps | `media-operator`, `media-operator-downloads` |
+| ArgoCD apps | `media-operator`, `media-operator-downloads`, `media-operator-mediaservers` |
 | Watch namespace | `arr` |
 | API group | `media-operator.dev/v1alpha1` |
 
-Two operators are deployed: the servarr operator handles the *arr applications and Jellyfin, the downloads operator handles qBittorrent.
+Three operators are deployed, split by the kind of thing they configure:
+
+| ArgoCD app | Chart | Handles |
+|------------|-------|---------|
+| `media-operator` | `media-operator-servarr` | Sonarr, Radarr, Prowlarr |
+| `media-operator-downloads` | `media-operator-downloads` | qBittorrent |
+| `media-operator-mediaservers` | `media-operator-mediaservers` | Jellyfin |
+
+Chart versions are pinned per app in each `config.yml`.
 
 ## Custom Resources
 

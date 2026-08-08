@@ -4,7 +4,7 @@
 
 **Goal:** Close the software gaps that could cause outages or security incidents under normal operation.
 
-**Addresses:** [K3, K9, K11, K15](assessment.md#kubernetes--software-layer), [N6](assessment.md#network-layer)
+**Addresses:** [K3, K9, K11, K15](assessment.md#kubernetes-software-layer), [N6](assessment.md#network-layer)
 
 ---
 

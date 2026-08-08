@@ -1,5 +1,39 @@
 controllers:
   main:
+    initContainers:
+      seed-webui-password:
+        image:
+          repository: busybox
+          tag: '1.37.0'
+        command:
+          - sh
+          - -c
+          - |
+            CONF=/config/qBittorrent/qBittorrent.conf
+            [ -e "$CONF" ] && exit 0
+            mkdir -p "$(dirname "$CONF")"
+            printf '[Preferences]\nWebUI\\Username=admin\nWebUI\\Password_PBKDF2="%s"\n' "$PBKDF2" > "$CONF"
+        env:
+          - name: PBKDF2
+            valueFrom:
+              secretKeyRef:
+                name: qbittorrent-credentials
+                key: password-pbkdf2
+        securityContext:
+          runAsUser: 977
+          runAsGroup: 988
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 50m
+            memory: 32Mi
     containers:
       gluetun:
         image:
@@ -114,6 +148,8 @@ persistence:
     size: 1Gi
     advancedMounts:
       main:
+        seed-webui-password:
+          - path: /config
         qbittorrent:
           - path: /config
   data:

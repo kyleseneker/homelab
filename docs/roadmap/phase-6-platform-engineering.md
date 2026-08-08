@@ -4,7 +4,7 @@
 
 **Goal:** Build the capabilities that take the homelab from "well-run cluster" to a platform engineering practice.
 
-**Addresses:** [K12, K13](assessment.md#kubernetes--software-layer) (no chaos testing, no supply chain verification)
+**Addresses:** [K12, K13](assessment.md#kubernetes-software-layer) (no chaos testing, no supply chain verification)
 
 ---
 
