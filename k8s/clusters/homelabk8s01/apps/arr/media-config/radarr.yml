@@ -43,13 +43,13 @@ spec:
         - name: host
           value: arr-jellyfin.arr.svc.cluster.local
         - name: port
-          value: "8096"
+          value: 8096
         - name: useSsl
-          value: "false"
+          value: false
         - name: updateLibrary
-          value: "true"
+          value: true
         - name: notify
-          value: "false"
+          value: false
         - name: apiKey
           valueFrom:
             name: jellyfin-credentials
