@@ -308,3 +308,13 @@ spec:
           annotations:
             summary: "Media library capacity metrics missing"
             description: "kubelet_volume_stats for arr-data has not reported for an hour, so the space alerts cannot fire."
+
+        - alert: NodeRootDiskFillingUp
+          expr: |
+            (1 - node_filesystem_avail_bytes{mountpoint="/", fstype!="tmpfs"} / node_filesystem_size_bytes{mountpoint="/", fstype!="tmpfs"}) * 100 > 80
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Root filesystem above 80% on {{ $labels.instance }}"
+            description: "Node {{ $labels.instance }} root filesystem is {{ $value | printf \"%.1f\" }}% full. local-path PVCs live on / and have no quota, so one volume can fill the node."
