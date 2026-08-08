@@ -96,7 +96,7 @@ Bootstrap Jobs and seeded config files, not controller work.
 
 - [x] **Jellyfin** (C5): no Job needed -- `JellyfinConfig` runs the startup wizard, creates the libraries and sets QSV encoding, with the admin credentials sourced from Vault
 - [ ] **Authentik** (C7): blueprints in `/blueprints/custom/` for providers, applications, outposts, flows and groups, with client secrets from `!Env` so Vault becomes the source rather than the destination
-- [ ] **Seerr** (C6): `/api/v1/settings/{jellyfin,radarr,sonarr}` + `initialize`
+- [x] **Seerr** (C6): `SeerrConfig` runs the setup, wires Jellyfin plus Sonarr and Radarr, and enables the discovered libraries; it authenticates with an API key adopted into Vault, because re-authenticating through Jellyfin fails once the admin user exists
 - [x] **qBittorrent** (C6): share-limit policy and categories reconciled by `QBittorrentConfig`; the WebUI account is seeded into `qBittorrent.conf` on a fresh volume from a PBKDF2 hash held in Vault, so deleting the config PVC no longer deadlocks the stack
 - [ ] **Bazarr** (C6): template `/config/config/config.yml` -- the API is too weak to drive
 - [ ] **Tdarr** (C6): export the flow as JSON, commit it, POST via `/api/v2/cruddb`
