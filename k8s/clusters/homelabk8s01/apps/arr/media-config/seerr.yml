@@ -6,6 +6,9 @@ metadata:
 spec:
   connection:
     url: http://arr-seerr.arr.svc.cluster.local:80
+    apiKeySecretRef:
+      name: seerr-api-key
+      key: api-key
   reconcile:
     interval: 15m
     deletionPolicy: orphan
