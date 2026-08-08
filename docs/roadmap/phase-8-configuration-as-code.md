@@ -12,7 +12,7 @@
 
 - [x] Replace `Makefile:126` with `kubectl apply -k k8s/bootstrap/applicationsets/` (K18)
 - [x] Give the media share its own export root -- point `nfs-provisioner/values.yml` at a sibling directory and re-provision (K19)
-- [ ] Replace ArgoCD's literal CA PEM with a trust-manager Bundle or a cert-manager `additionalOutputFormat` (K20)
+- [x] Replace ArgoCD's literal CA PEM with a trust-manager Bundle (K20) -- the `custom-ca-certs` Bundle reads `homelab-ca-secret` and republishes it into `argocd`, so a CA rotation propagates without a commit. argocd-server's mount is `optional: true`, because on a cold rebuild trust-manager does not exist yet and a required mount would deadlock the bootstrap; the pod needs one restart after the CA first appears
 - [x] Repair Recyclarr end to end: version bump, unique instance names, corrected `trash_id`s, required `qualities:` block (K25)
 - [x] Add `- httproute.yml` to `apps/arr/seerr/kustomization.yml` and flip `route.main.enabled` (K26)
 - [x] Set `UN_SONARR_0_PATHS_0` / `UN_RADARR_0_PATHS_0` to `/data/torrents`; change Unpackerr to UID 977 / GID 988 (K27). Its 401s are fixed by 8.2, not here

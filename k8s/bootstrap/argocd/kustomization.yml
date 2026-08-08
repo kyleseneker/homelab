@@ -7,7 +7,6 @@ resources:
   - namespace.yml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.4.6/manifests/install.yaml
   - ingress.yml
-  - custom-ca.yml
   - argocd-notifications-slack-external-secret.yml
 
 patches:
@@ -177,3 +176,4 @@ patches:
               - name: custom-ca
                 configMap:
                   name: custom-ca-certs
+                  optional: true
