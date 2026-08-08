@@ -29,7 +29,7 @@
 - [x] `make arr-keys-adopt`: copy each app's live key into `homelab/apps/arr` without printing it, making Vault the source
 - [x] One `arr-api-keys` ExternalSecret in `apps/arr/prereqs/`, ESO-templated to emit both the `APPNAME__AUTH__APIKEY` env names and the plain keys existing consumers read
 - [x] Add `envFrom.secretRef` alongside the existing `configMapRef: arr-env` in sonarr, radarr and prowlarr `values.yml`
-- [ ] Collapse the duplicate key copies in Vault (`apps/exportarr` and `apps/unpackerr` hold the same Sonarr/Radarr keys)
+- [x] Collapse the duplicate key copies in Vault -- `apps/exportarr` is gone and `apps/unpackerr` keeps only the qBittorrent password; every consumer reads `apps/arr`
 - [ ] Destructive test: delete `arr-prowlarr-config`, let it rebuild, confirm the key is unchanged
 
 | | |
