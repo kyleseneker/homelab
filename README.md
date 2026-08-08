@@ -63,13 +63,16 @@ flowchart LR
 |----------|------------|
 | VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
-| GitOps | ArgoCD, External Secrets Operator, Renovate |
+| GitOps | ArgoCD ApplicationSet, External Secrets Operator, Renovate |
 | Networking | Cilium Gateway API, Cilium L2, cert-manager |
-| Storage | NFS dynamic provisioning |
-| Auth | Authentik SSO (forward-auth + OIDC) |
-| Monitoring | Prometheus, Grafana, Loki, Alertmanager, Exportarr, Uptime Kuma |
-| Backups | Velero, MinIO |
-| Automation | Reloader, Descheduler, Renovate |
+| Storage | NFS dynamic provisioning, local-path (SQLite workloads) |
+| Secrets | HashiCorp Vault (AWS KMS auto-unseal) + External Secrets Operator |
+| Auth | Authentik SSO (OIDC for Grafana and ArgoCD) |
+| Monitoring | Prometheus, Grafana, Loki, Alloy, Alertmanager, Exportarr, NUT Exporter, Uptime Kuma |
+| Backups | Velero (MinIO on-site + AWS S3 offsite), etcd snapshots, SQLite config dumps |
+| Capacity | VPA + Goldilocks (recommend-only) |
+| Policy | Kyverno admission policies |
+| Automation | Reloader, Descheduler, Renovate, Media Operator |
 | Network Security | CiliumNetworkPolicies (namespace isolation) |
 | Hardware | Intel iGPU passthrough |
 
@@ -94,4 +97,6 @@ See the [full quick start guide](docs/getting-started/quick-start.md) for config
 | [Apps](docs/apps/index.md) | Per-app details for the *arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
 | [Infrastructure](docs/infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](docs/runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
-| [Reference](docs/reference/commands.md) | Makefile commands, service URLs, repo layout |
+| [Decisions](docs/decisions/001-kubeadm-cluster-bootstrap.md) | Architecture decision records |
+| [Roadmap](docs/roadmap/index.md) | Assessment of known gaps and the phased plan to close them |
+| [Reference](docs/reference/commands.md) | Makefile commands, service URLs, repo layout, hardware inventory |

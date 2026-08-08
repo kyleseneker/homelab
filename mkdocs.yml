@@ -74,6 +74,8 @@ nav:
       - Tdarr: apps/tdarr.md
       - Unpackerr: apps/unpackerr.md
       - Exportarr: apps/exportarr.md
+      - Media Operator: apps/media-operator.md
+      - Config Backup: apps/config-backup.md
       - FlareSolverr: apps/flaresolverr.md
       - Homepage: apps/homepage.md
       - Uptime Kuma: apps/uptime-kuma.md
@@ -85,12 +87,15 @@ nav:
       - Vault: infrastructure/vault.md
       - External Secrets: infrastructure/external-secrets.md
       - NFS Provisioner: infrastructure/nfs-provisioner.md
+      - Local-Path Provisioner: infrastructure/local-path-provisioner.md
       - Intel GPU: infrastructure/intel-gpu.md
       - kube-prometheus-stack: infrastructure/kube-prometheus-stack.md
       - Loki: infrastructure/loki.md
       - Alloy: infrastructure/alloy.md
+      - NUT Exporter: infrastructure/nut-exporter.md
       - MinIO: infrastructure/minio.md
       - Velero: infrastructure/velero.md
+      - etcd Backup: infrastructure/etcd-backup.md
       - Metrics Server: infrastructure/metrics-server.md
       - Authentik: infrastructure/authentik.md
       - Reloader: infrastructure/reloader.md
@@ -128,6 +133,8 @@ nav:
       - Backup Strategy: decisions/013-backup-strategy.md
       - Kyverno Policies: decisions/014-kyverno-policy-engine.md
       - VPA & Goldilocks: decisions/015-vpa-goldilocks-capacity-planning.md
+      - VLAN Segmentation: decisions/016-vlan-segmentation.md
+      - Intel AMT OOB Management: decisions/017-intel-amt-oob-management.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md

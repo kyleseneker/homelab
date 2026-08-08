@@ -1,6 +1,6 @@
 # Phase 8 -- Configuration as Code
 
-**Status:** Not started
+**Status:** In progress -- 8.1, 8.2 and 8.4--8.6 largely landed; 8.3, 8.7 and 8.8 outstanding
 
 **Goal:** Extend reproducibility past the pod boundary. Today the pipeline rebuilds every layer from bare metal up to running containers and then stops -- every setting *inside* an application is hand-entered in a web UI. Close that gap with a purpose-built Kubernetes operator.
 
@@ -11,12 +11,12 @@
 ## 8.1 Fix the Blocking Defects
 
 - [x] Replace `Makefile:126` with `kubectl apply -k k8s/bootstrap/applicationsets/` (K18)
-- [ ] Give the media share its own export root -- point `nfs-provisioner/values.yml` at a sibling directory and re-provision (K19)
+- [x] Give the media share its own export root -- point `nfs-provisioner/values.yml` at a sibling directory and re-provision (K19)
 - [ ] Replace ArgoCD's literal CA PEM with a trust-manager Bundle or a cert-manager `additionalOutputFormat` (K20)
 - [x] Repair Recyclarr end to end: version bump, unique instance names, corrected `trash_id`s, required `qualities:` block (K25)
 - [x] Add `- httproute.yml` to `apps/arr/seerr/kustomization.yml` and flip `route.main.enabled` (K26)
 - [x] Set `UN_SONARR_0_PATHS_0` / `UN_RADARR_0_PATHS_0` to `/data/torrents`; change Unpackerr to UID 977 / GID 988 (K27). Its 401s are fixed by 8.2, not here
-- [ ] Add a `render` job to `validate.yml`: `kustomize build` per directory, `helm template` per `config.yml` (K22)
+- [x] Add a `render` job to `validate.yml`: `kustomize build` per directory, `helm template` per `config.yml` (K22). It also checks every `config.yml` against the ApplicationSet's key contract, and `gen-crd-schemas.sh` keeps kubeconform aware of the operator's CRDs
 - [x] Add a Renovate `customManager` matching the `chartRepo`/`chartName`/`chartVersion` keys in `config.yml` (K23)
 - [ ] Reconcile `docs/architecture/auth.md` with reality, and decide whether to build Gateway API forward-auth (K21)
 
@@ -26,9 +26,9 @@
 
 ## 8.2 Invert the API-Key Flow
 
-- [ ] `make arr-keys` target: `vault kv put homelab/apps/arr <app>-api-key=$(openssl rand -hex 16)` for all four apps
-- [ ] One `arr-api-keys` ExternalSecret in `apps/arr/prereqs/`, ESO-templated to emit both the `APPNAME__AUTH__APIKEY` env names and the plain keys existing consumers read
-- [ ] Add `envFrom.secretRef` alongside the existing `configMapRef: arr-env` in sonarr, radarr and prowlarr `values.yml`
+- [x] `make arr-keys-adopt`: copy each app's live key into `homelab/apps/arr` without printing it, making Vault the source
+- [x] One `arr-api-keys` ExternalSecret in `apps/arr/prereqs/`, ESO-templated to emit both the `APPNAME__AUTH__APIKEY` env names and the plain keys existing consumers read
+- [x] Add `envFrom.secretRef` alongside the existing `configMapRef: arr-env` in sonarr, radarr and prowlarr `values.yml`
 - [ ] Collapse the duplicate key copies in Vault (`apps/exportarr` and `apps/unpackerr` hold the same Sonarr/Radarr keys)
 - [ ] Destructive test: delete `arr-prowlarr-config`, let it rebuild, confirm the key is unchanged
 
@@ -50,47 +50,45 @@
 | **Why** | Configarr is the maintained successor and covers meaningfully more surface for near-zero migration cost. |
 | **Optional** | Independent of the operator. Taking it removes `RootFolder`, `DownloadClient` and `ArrSettings` from 8.4's scope; skipping it means the operator owns those too. Note the current `recyclarr/configmap.yml` sets only `quality_definition`, `quality_profiles` and `custom_formats`, so naming and Propers/Repacks are hand-clicked today even though Recyclarr already supports them. |
 
-## 8.4 Build the \*arr Operator
+## 8.4 The media-operator
 
-New top-level `operators/arr-operator/`, API group `arr.homelab.local/v1alpha1`, wrapping the `devopsarr` Go SDKs.
+Built in its own repository ([kyleseneker/media-operator](https://github.com/kyleseneker/media-operator)), API group `media-operator.dev/v1alpha1`.
 
-- [ ] Scaffold with kubebuilder v4; **pin controller-runtime to the v0.19.x line**, `controller-gen` v0.16.x, `ENVTEST_K8S_VERSION=1.31.0` -- the cluster is on Kubernetes 1.31.4 and controller-runtime tracks one minor per release
-- [ ] Define the CRD taxonomy: `ArrInstance` (root, one per app, owns base URL + `apiKeySecretRef` + liveness), fine-grained kinds for identity-bearing objects (`Indexer`, `ProwlarrApplication`, `Notification`, `DownloadClient`, `RootFolder`, `ImportList`), and `ArrSettings` as a singleton for the PUT-only config structs that have no identity
-- [ ] Declare indexers **only** against the `prowlarr` instance -- Prowlarr's own sync fans them into Sonarr and Radarr, which removes the largest ordering hazard
-- [ ] Write one generic reconciler parameterised by an `Adapter[S]` interface (`List`/`Get`/`Create`/`Update`/`Delete`/`Render`/`SchemaFor`), ~80 lines per kind on top
-- [ ] Gate children on instance readiness: not-Ready requeues 30s and **returns no error**, so it does not enter exponential backoff
+- [x] Scaffold with kubebuilder v4, against Kubernetes 1.31.4
+- [x] One config CRD per app -- 15 kinds split across seven API groups, each group its own manager and chart, so an app that is not deployed costs nothing
+- [x] Declare indexers **only** against the `prowlarr` instance -- Prowlarr's own sync fans them into Sonarr and Radarr, which removes the largest ordering hazard
+- [x] Gate on app reachability: unreachable requeues without returning an error, so it does not enter exponential backoff
+- [x] Adopt by name, and merge partial field arrays rather than discarding entries the CR omits
+- [x] Finalizers with a per-CR `deletionPolicy` (`orphan`/`delete`) and a 10-minute give-up path, so a dead app cannot wedge `kubectl delete` or an ArgoCD prune
+- [x] Prune only what is recorded in `.status.managedResources`, so anything created outside the operator is never deleted
+- [x] Default `reconcile.interval` to 5m -- these are SQLite-backed apps
+- [x] Emit `app_api_request_duration_seconds`, `app_api_errors_total`, `resources_pruned_total`, `managed_resources` and `config_synced`
 - [ ] Validate against `GET /api/vN/<kind>/schema` before writing, failing fast with the valid field names in the message
-- [ ] **Adopt by name first**, `.status.externalID` second -- the ApplicationSet sets `prune: true` unconditionally and a Velero restore renumbers IDs, both of which break ID-first lookup
-- [ ] Exclude secret-valued fields from read-back diffing (the APIs return `********`); track them via `.status.appliedHash` instead, with an explicit per-CR `driftCheckFields` allowlist
-- [ ] Finalizers with per-kind deletion policy: `Delete` for indexers, clients, notifications and import lists; `Orphan` for `RootFolder`; adoption overrides to `Orphan` unless set explicitly
-- [ ] Give the finalizer a 10-minute give-up path so a dead Sonarr can never wedge `kubectl delete` or an ArgoCD prune
-- [ ] Field index on `.spec.instanceRef.name` plus `.Watches(&ArrInstance{}, ...)` so children requeue the instant an instance goes Ready
-- [ ] Default `reconcileInterval` to 5m, not 1m -- these are SQLite-backed apps
-- [ ] Emit `clapperboard_drift_corrected_total` and a Kubernetes Event on every correction; add a `PrometheusRule` on `increase(...[6h]) > 3`
-- [ ] Provide `driftPolicy: Observe` to record drift without writing
-- [ ] envtest plus an in-memory \*arr fake with recorded `/schema` fixtures
+- [ ] envtest coverage -- the controllers sit at 0% today
+- [ ] Contract tests per app, asserting every spec field maps to a key the target API actually accepts. qBittorrent preferences and Jellyfin library paths were both silently discarded by the receiving API while the CR reported `Synced=True`; only qBittorrent has such a test today
+- [ ] A drift-corrected counter plus a `PrometheusRule` on repeated corrections
+- [ ] `driftPolicy: Observe` to record drift without writing
 
 | | |
 |---|---|
-| **Why** | This is the learning goal, against a problem with real ordering constraints (Sonarr key → Prowlarr application → indexer → tag → proxy) rather than toy CRUD. Informers, work queues, finalizers, status conditions, owner refs, SSA, CEL validation and envtest, on a system in daily use. |
-| **Ordering** | Sync waves cannot help. The applicationset-controller creates Applications directly with no parent syncing them, so waves on a generated Application are inert (K24). Correctness comes from readiness gating in the controller; waves only reduce event noise *within* the `arr-config` Application. |
-| **Effort** | **30--45 focused days.** First Go module in the repo, 8 CRDs, a generics-parameterised adapter, an envtest harness, a hand-built API fake, a secret resolver with a redaction type, and adoption-by-name. Plan for 6--10 weekends. |
+| **Why** | This is the learning goal, against a problem with real ordering constraints (Sonarr key -> Prowlarr application -> indexer -> tag -> proxy) rather than toy CRUD. Informers, work queues, finalizers, status conditions, owner refs, SSA and CEL validation, on a system in daily use. |
+| **Ordering** | Sync waves cannot help. The applicationset-controller creates Applications directly with no parent syncing them, so waves on a generated Application are inert (K24). Correctness comes from readiness gating in the controller. |
+| **Lesson** | An app that accepts an unknown field and returns 2xx makes a wrong payload indistinguishable from a correct one. Three such bugs shipped before anything checked the payload against the receiving API rather than against the CRD. |
 
 ## 8.5 Package and Ship the Operator
 
-- [ ] Two Applications, not one: `arr-operator` (`gitPath k8s/components/arr-operator`, CRDs + manager) and `arr-config` (CRs, `SkipDryRunOnMissingResource=true`)
-- [ ] Add a `kustomization.yml` to `k8s/components/arr-operator/` -- the existing `kyverno-policies/` is flat and has none, and `templatePatch` cannot set `source.directory.recurse`
-- [ ] Generate CRD schemas and add a `-schema-location` for the new kinds, or the first PR fails kubeconform
-- [ ] Make directory creation (C9) a separate one-shot Job -- **not** a `RootFolder.ensureDirectory` field, which would require mounting the 10Ti `arr-data` PV into the manager and whose `chown` is a no-op or `EPERM` against a UID-squashing NAS
+- [x] Seven OCI Helm charts published to GHCR on tag, with CRDs synced into each chart and `make verify-crds` guarding the copy in CI
+- [x] Managers and CRs as separate Applications: `media-operator`, `media-operator-downloads`, `media-operator-mediaservers`, plus `arr-media-config` for the CRs with `SkipDryRunOnMissingResource=true`
+- [x] Generate CRD schemas and add a `-schema-location` for the new kinds -- `scripts/gen-crd-schemas.sh` derives them from the deployed chart versions, so they cannot drift from what is running
+- [x] Label every manager pod `app.kubernetes.io/part-of: media-operator`, so one CiliumNetworkPolicy covers all of them and a new manager needs no policy change
 - [ ] Coerce the OpenClaw webhook `headers` field to JSON -- the deployed payload is an array of `{key, value}` objects, not a string
-- [ ] Add an `instanceRefs` list to fan-out kinds so `Notification` does not need paired CRs that always change together
-- [ ] Keep the app→endpoint table (`sonarr → {8989, v3}`, `radarr → {7878, v3}`, `prowlarr → {9696, v1}`) as one reviewable Go var or ConfigMap, not dispatch logic in a factory
-- [ ] New CI surface: GHCR auth, a tag→deploy flow, and `disallow-latest-tag` (Enforce) applying to the manager's own manifest
+- [ ] Make NAS directory creation (C9) a separate one-shot Job -- **not** a `RootFolder.ensureDirectory` field, which would require mounting the 10Ti `arr-data` PV into the manager and whose `chown` is a no-op or `EPERM` against a UID-squashing NAS
 - [ ] Retire `apps/openclaw/boot-configmap.yml`'s notification reconciliation
+- [ ] Deploy the remaining charts (`requests`, `automation`, `transcode`, `utilities`) as those apps are brought under config-as-code
 
 | | |
 |---|---|
-| **Scope** | The devopsarr provider exposes 81 Sonarr resources. Eight kinds is ~15% of the settings surface and that is the right answer -- it closes roughly 60% of the configuration inventory. Everything else is 8.6. |
+| **Scope** | Fifteen kinds covers the apps in daily use. Everything with no usable write API stays in 8.6. |
 
 ## 8.6 The Long Tail
 

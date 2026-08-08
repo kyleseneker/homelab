@@ -25,6 +25,16 @@ These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). Al
 | OpenClaw | `https://openclaw.homelab.local` |
 | Goldilocks | `https://goldilocks.homelab.local` |
 
+## Outside the Cluster
+
+Not routed by the gateway; these are separate devices with their own certificates.
+
+| Service | URL | Network |
+|---------|-----|---------|
+| Proxmox VE | `https://proxmox.homelab.local:8006` | Homelab VLAN (192.168.10.2) |
+| Intel AMT (MS-01) | `https://192.168.99.5:16993` | Management VLAN -- see [ADR-017](../decisions/017-intel-amt-oob-management.md) |
+| UNAS Pro | `https://192.168.1.158` | Default VLAN |
+
 ## Internal URLs (Kubernetes Service DNS)
 
 Used for app-to-app communication within the cluster. These follow the standard Kubernetes DNS format `<service>.<namespace>.svc.cluster.local:<port>`.
@@ -48,4 +58,6 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | FlareSolverr | `http://arr-flaresolverr.arr.svc.cluster.local:8191` |
 | Unpackerr | `http://arr-unpackerr.arr.svc.cluster.local:5656` |
 | Uptime Kuma | `http://uptime-kuma.monitoring.svc.cluster.local:3001` |
+| NUT Exporter | `http://nut-exporter.monitoring.svc.cluster.local:9199` |
 | Authentik | `http://authentik-server.auth.svc.cluster.local` |
+| Vault | `http://vault.vault.svc.cluster.local:8200` |
