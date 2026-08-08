@@ -32,3 +32,25 @@ spec:
   downloadClientConfig:
     enableCompletedDownloadHandling: true
     autoRedownloadFailed: true
+  notifications:
+    - name: Jellyfin
+      implementation: MediaBrowser
+      configContract: MediaBrowserSettings
+      onDownload: true
+      onUpgrade: true
+      onRename: true
+      fields:
+        - name: host
+          value: arr-jellyfin.arr.svc.cluster.local
+        - name: port
+          value: "8096"
+        - name: useSsl
+          value: "false"
+        - name: updateLibrary
+          value: "true"
+        - name: notify
+          value: "false"
+        - name: apiKey
+          valueFrom:
+            name: jellyfin-credentials
+            key: api-key
