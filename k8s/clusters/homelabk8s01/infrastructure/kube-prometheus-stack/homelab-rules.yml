@@ -277,3 +277,34 @@ spec:
           annotations:
             summary: "Root filesystem almost full on {{ $labels.instance }}"
             description: "Node {{ $labels.instance }} root filesystem is above 90% full (current: {{ $value | printf \"%.1f\" }}%)."
+
+        - alert: MediaLibrarySpaceLow
+          expr: |
+            kubelet_volume_stats_available_bytes{persistentvolumeclaim="arr-data"}
+              / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim="arr-data"} * 100 < 15
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Media library below 15% free"
+            description: "The arr-data volume has {{ $value | printf \"%.1f\" }}% free. Downloads will start failing once it fills."
+
+        - alert: MediaLibraryFillingUp
+          expr: |
+            predict_linear(kubelet_volume_stats_available_bytes{persistentvolumeclaim="arr-data"}[6h], 14 * 24 * 3600) < 0
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Media library projected to fill within 14 days"
+            description: "At the current growth rate the arr-data volume runs out of space within 14 days. Prune the library or add capacity."
+
+        - alert: MediaLibraryMetricsAbsent
+          expr: |
+            absent(kubelet_volume_stats_available_bytes{persistentvolumeclaim="arr-data"})
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Media library capacity metrics missing"
+            description: "kubelet_volume_stats for arr-data has not reported for an hour, so the space alerts cannot fire."
