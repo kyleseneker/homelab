@@ -5,4 +5,5 @@ resources:
   - prowlarr.yml
   - qbittorrent.yml
   - radarr.yml
+  - seerr.yml
   - sonarr.yml
