@@ -1,0 +1,52 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: BazarrConfig
+metadata:
+  name: bazarr
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-bazarr.arr.svc.cluster.local:6767
+    apiKeySecretRef:
+      name: arr-api-keys
+      key: bazarr-api-key
+  reconcile:
+    interval: 15m
+    deletionPolicy: orphan
+  general:
+    useSonarr: true
+    useRadarr: true
+    useScenename: true
+    adaptiveSearching: true
+    multithreading: true
+  languages:
+    enabled:
+      - en
+    profiles:
+      - name: English
+        items:
+          - language: en
+            hi: false
+            forced: false
+  providers:
+    - name: opensubtitlescom
+      enabled: false
+    - name: podnapisi
+      enabled: true
+    - name: tvsubtitles
+      enabled: true
+  sonarrConnection:
+    host: arr-sonarr.arr.svc.cluster.local
+    port: 8989
+    ssl: false
+    apiKeySecretRef:
+      name: arr-api-keys
+      key: sonarr-api-key
+    onlyMonitored: false
+  radarrConnection:
+    host: arr-radarr.arr.svc.cluster.local
+    port: 7878
+    ssl: false
+    apiKeySecretRef:
+      name: arr-api-keys
+      key: radarr-api-key
+    onlyMonitored: false
