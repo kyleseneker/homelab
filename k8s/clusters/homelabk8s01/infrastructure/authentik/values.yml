@@ -2,6 +2,11 @@ global:
   envFrom:
     - secretRef:
         name: authentik-credentials
+  env:
+    - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+      value: "true"
+    - name: AUTHENTIK_ERROR_REPORTING__ENABLED
+      value: "false"
 server:
   replicas: 1
   resources:
@@ -16,10 +21,10 @@ worker:
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 256Mi
     limits:
-      cpu: 200m
-      memory: 512Mi
+      cpu: 500m
+      memory: 1Gi
 postgresql:
   enabled: true
   auth:
@@ -47,22 +52,3 @@ postgresql:
       limits:
         cpu: 200m
         memory: 512Mi
-redis:
-  enabled: true
-  architecture: standalone
-  auth:
-    enabled: true
-    existingSecret: authentik-credentials
-    existingSecretPasswordKey: redis-password
-  master:
-    persistence:
-      enabled: true
-      storageClass: nfs-client
-      size: 1Gi
-    resources:
-      requests:
-        cpu: 25m
-        memory: 32Mi
-      limits:
-        cpu: 50m
-        memory: 128Mi

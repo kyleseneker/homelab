@@ -85,3 +85,5 @@ spec:
         - ports:
             - port: "2049"
               protocol: TCP
+    - toEntities:
+        - kube-apiserver
