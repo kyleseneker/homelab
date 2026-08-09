@@ -1,0 +1,11 @@
+appName: media-operator-subtitles
+namespace: arr
+sourceType: helm
+chartRepo: ghcr.io/kyleseneker/media-operator
+chartName: media-operator-subtitles
+chartVersion: "0.14.0"
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
