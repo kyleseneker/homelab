@@ -16,6 +16,8 @@ spec:
     useSonarr: true
     useRadarr: true
     useScenename: true
+    minimumScore: 90
+    minimumScoreMovie: 70
     adaptiveSearching: true
     multithreading: true
   languages:
