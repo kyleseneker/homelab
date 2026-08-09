@@ -32,7 +32,13 @@ spec:
             forced: false
   providers:
     - name: opensubtitlescom
-      enabled: false
+      enabled: true
+      settings:
+        username: ENV:opensubtitles-credentials:username
+        password: ENV:opensubtitles-credentials:password
+        use_hash: "true"
+        include_ai_translated: "false"
+        include_machine_translated: "false"
     - name: podnapisi
       enabled: true
     - name: tvsubtitles
