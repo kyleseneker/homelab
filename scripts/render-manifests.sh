@@ -111,6 +111,26 @@ print(n)
   fi
 done < <(find k8s/clusters -name config.yml | sort)
 
+echo "==> Validating manifests against CRD and Kubernetes schemas"
+if command -v kubeconform >/dev/null 2>&1; then
+  ./scripts/gen-crd-schemas.sh >/dev/null 2>&1 || echo "  (could not refresh CRD schemas)"
+  if ! out=$(kubeconform -strict -kubernetes-version 1.31.4 \
+      -schema-location default \
+      -schema-location './.crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+      -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+      -skip Kustomization -skip CustomResourceDefinition \
+      -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
+      -ignore-filename-pattern '.*config\.yml$' \
+      -ignore-filename-pattern '.*values\.yml$' \
+      -ignore-filename-pattern '.*slack-app-manifest\.json$' \
+      k8s/ 2>&1); then
+    echo "$out" | grep -v '^$' | head -10 | sed 's/^/  /'
+    fail=$((fail+1))
+  fi
+else
+  echo "  (kubeconform not installed, skipping -- CI still runs it)"
+fi
+
 echo "==> Building every kustomization"
 while IFS= read -r k; do
   d="$(dirname "$k")"
