@@ -5,7 +5,7 @@ chartRepo: ghcr.io/kyleseneker/media-operator
 chartName: media-operator-indexers
 chartVersion: "0.14.0"
 createNamespace: false
-hasResources: false
+hasResources: true
 syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
