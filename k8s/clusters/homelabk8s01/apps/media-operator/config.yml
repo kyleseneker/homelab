@@ -7,6 +7,5 @@ chartVersion: "0.14.0"
 createNamespace: false
 hasResources: false
 syncOptions:
-  - Prune=false
   - ServerSideApply=true
   - ServerSideDiff=true
