@@ -22,7 +22,8 @@ spec:
     enabled:
       - en
     profiles:
-      - name: English
+      - profileId: 1
+        name: English
         items:
           - language: en
             hi: false
