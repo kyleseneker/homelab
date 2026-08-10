@@ -10416,7 +10416,7 @@ spec:
       folder: /data/media/movies
       scanOnStart: false
       folderWatching: true
-      processLibrary: true
+      processLibrary: false
       priority: 1
       flowId: htpX8Ypt1
       variables: &id001
@@ -10428,7 +10428,7 @@ spec:
       folder: /data/media/tv
       scanOnStart: false
       folderWatching: true
-      processLibrary: true
+      processLibrary: false
       priority: 1
       flowId: htpX8Ypt1
       variables: *id001
