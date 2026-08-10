@@ -110,6 +110,12 @@ persistence:
     globalMounts:
       - path: /data/media
         subPath: media
+  work:
+    type: persistentVolumeClaim
+    existingClaim: arr-data
+    globalMounts:
+      - path: /data/tdarr
+        subPath: tdarr
   dri:
     type: hostPath
     hostPath: /dev/dri
