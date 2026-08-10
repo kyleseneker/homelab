@@ -1,0 +1,34 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: TdarrConfig
+metadata:
+  name: tdarr
+  namespace: arr
+spec:
+  connection:
+    url: http://arr-tdarr.arr.svc.cluster.local:8265
+    apiKeySecretRef:
+      name: tdarr-api-key
+      key: api-key
+  reconcile:
+    interval: 15m
+    deletionPolicy: orphan
+  workers:
+    transcodeGPU: 1
+    transcodeCPU: 1
+    healthcheckGPU: 1
+    healthcheckCPU: 1
+  libraries:
+    - id: movies
+      name: Movies
+      folder: /data/media/movies
+      scanOnStart: false
+      folderWatching: true
+      processLibrary: false
+      priority: 1
+    - id: tv
+      name: TV Shows
+      folder: /data/media/tv
+      scanOnStart: false
+      folderWatching: true
+      processLibrary: false
+      priority: 1
