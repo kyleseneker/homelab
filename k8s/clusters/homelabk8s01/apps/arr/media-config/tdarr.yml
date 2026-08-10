@@ -10410,3 +10410,56 @@ spec:
           target: ZOw6a-NGX
           targetHandle: null
           id: bVCkm7n_i
+  libraries:
+    - id: movies
+      name: Movies
+      folder: /data/media/movies
+      scanOnStart: false
+      folderWatching: true
+      processLibrary: true
+      priority: 1
+      flowId: htpX8Ypt1
+      variables:
+        test_mode: 'true'
+        output_dir_done: /data/tdarr/done
+        output_dir_review: /data/tdarr/review
+        v_cq: '20'
+        bitrate_480p: 1250k
+        bitrate_576p: 1400k
+        bitrate_720p: 2000k
+        bitrate_1080p: 2500k
+        bitrate_1440p: 3800k
+        bitrate_4k: 10000k
+        bitrate_4k_hdr: 12500k
+        do_audio_clean: 'true'
+        do_audio_encode: 'false'
+        bitrate_audio: 160k
+        bitrate_audio_cutoff: 192k
+        audio_language: und,un,eng,en
+        disable_video: 'true'
+    - id: tv
+      name: TV Shows
+      folder: /data/media/tv
+      scanOnStart: false
+      folderWatching: true
+      processLibrary: true
+      priority: 1
+      flowId: htpX8Ypt1
+      variables:
+        test_mode: 'true'
+        output_dir_done: /data/tdarr/done
+        output_dir_review: /data/tdarr/review
+        v_cq: '20'
+        bitrate_480p: 1250k
+        bitrate_576p: 1400k
+        bitrate_720p: 2000k
+        bitrate_1080p: 2500k
+        bitrate_1440p: 3800k
+        bitrate_4k: 10000k
+        bitrate_4k_hdr: 12500k
+        do_audio_clean: 'true'
+        do_audio_encode: 'false'
+        bitrate_audio: 160k
+        bitrate_audio_cutoff: 192k
+        audio_language: und,un,eng,en
+        disable_video: 'true'
