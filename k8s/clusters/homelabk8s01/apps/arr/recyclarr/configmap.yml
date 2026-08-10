@@ -9,6 +9,14 @@ data:
       sonarr-main:
         base_url: http://arr-sonarr.arr.svc.cluster.local:8989
         api_key: !secret sonarr_api_key
+        media_naming:
+          series: default
+          season: default
+          episodes:
+            rename: true
+            standard: default
+            daily: default
+            anime: default
         quality_definition:
           type: series
         quality_profiles:
@@ -85,6 +93,11 @@ data:
       radarr-main:
         base_url: http://arr-radarr.arr.svc.cluster.local:7878
         api_key: !secret radarr_api_key
+        media_naming:
+          folder: default
+          movie:
+            rename: true
+            standard: default
         quality_definition:
           type: movie
         quality_profiles:
