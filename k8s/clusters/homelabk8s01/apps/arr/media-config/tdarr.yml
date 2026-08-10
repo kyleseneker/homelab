@@ -10410,25 +10410,3 @@ spec:
           target: ZOw6a-NGX
           targetHandle: null
           id: bVCkm7n_i
-  libraries:
-    - id: movies
-      name: Movies
-      folder: /data/media/movies
-      scanOnStart: false
-      folderWatching: true
-      processLibrary: false
-      priority: 1
-      flowId: htpX8Ypt1
-      variables: &id001
-        do_audio_clean: 'true'
-        do_audio_encode: 'false'
-        audio_language: eng
-    - id: tv
-      name: TV Shows
-      folder: /data/media/tv
-      scanOnStart: false
-      folderWatching: true
-      processLibrary: false
-      priority: 1
-      flowId: htpX8Ypt1
-      variables: *id001
