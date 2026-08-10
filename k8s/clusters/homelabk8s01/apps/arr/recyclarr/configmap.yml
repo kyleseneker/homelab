@@ -97,7 +97,7 @@ data:
           folder: default
           movie:
             rename: true
-            standard: default
+            standard: jellyfin
         quality_definition:
           type: movie
         quality_profiles:
