@@ -94,10 +94,10 @@ data:
         base_url: http://arr-radarr.arr.svc.cluster.local:7878
         api_key: !secret radarr_api_key
         media_naming:
-          folder: default
+          folder: jellyfin-tmdb
           movie:
             rename: true
-            standard: jellyfin
+            standard: jellyfin-tmdb
         quality_definition:
           type: movie
         quality_profiles:
