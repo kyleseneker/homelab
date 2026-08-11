@@ -62,7 +62,7 @@ controllers:
               periodSeconds: 10
 defaultPodOptions:
   annotations:
-    backup.velero.io/backup-volumes-excludes: media,temp,dri
+    backup.velero.io/backup-volumes-excludes: data,temp,dri
   nodeSelector:
     gpu: intel
 service:
@@ -104,18 +104,11 @@ persistence:
     sizeLimit: 100Gi
     globalMounts:
       - path: /temp
-  media:
+  data:
     type: persistentVolumeClaim
     existingClaim: arr-data
     globalMounts:
-      - path: /data/media
-        subPath: media
-  work:
-    type: persistentVolumeClaim
-    existingClaim: arr-data
-    globalMounts:
-      - path: /data/tdarr
-        subPath: tdarr
+      - path: /data
   dri:
     type: hostPath
     hostPath: /dev/dri
