@@ -16,6 +16,7 @@ controllers:
           inContainer: 'true'
           ffmpegVersion: '7'
           nodeName: InternalNode
+          NODE_OPTIONS: --max-old-space-size=4096
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
