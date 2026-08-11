@@ -10414,7 +10414,7 @@ spec:
     - id: movies
       name: Movies
       folder: /data/media/movies
-      scanOnStart: false
+      scanOnStart: true
       folderWatching: true
       processLibrary: true
       priority: 1
@@ -10440,7 +10440,7 @@ spec:
     - id: tv
       name: TV Shows
       folder: /data/media/tv
-      scanOnStart: false
+      scanOnStart: true
       folderWatching: true
       processLibrary: true
       priority: 1
