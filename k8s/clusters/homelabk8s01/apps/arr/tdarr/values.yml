@@ -29,11 +29,11 @@ controllers:
               - FOWNER
         resources:
           requests:
-            cpu: 200m
-            memory: 512Mi
+            cpu: 500m
+            memory: 1Gi
           limits:
-            cpu: 2000m
-            memory: 4Gi
+            cpu: 3000m
+            memory: 6Gi
             gpu.intel.com/i915: 1
         probes:
           liveness:
