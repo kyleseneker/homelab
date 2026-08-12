@@ -122,7 +122,7 @@ spec:
       name: Movies
       folder: /data/media/movies
       scanOnStart: true
-      folderWatching: true
+      folderWatching: false
       processLibrary: true
       priority: 1
       flowId: hevc-qsv
@@ -130,7 +130,7 @@ spec:
       name: TV Shows
       folder: /data/media/tv
       scanOnStart: true
-      folderWatching: true
+      folderWatching: false
       processLibrary: true
       priority: 1
       flowId: hevc-qsv
