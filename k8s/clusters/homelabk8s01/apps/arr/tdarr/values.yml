@@ -16,7 +16,7 @@ controllers:
           inContainer: 'true'
           ffmpegVersion: '7'
           nodeName: InternalNode
-          NODE_OPTIONS: --max-old-space-size=4096
+          NODE_OPTIONS: --max-old-space-size=3072
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -34,7 +34,7 @@ controllers:
             memory: 1Gi
           limits:
             cpu: 3000m
-            memory: 8Gi
+            memory: 4Gi
             gpu.intel.com/i915: 1
         probes:
           liveness:
