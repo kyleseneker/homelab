@@ -129,6 +129,10 @@ spec:
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
       cache: /temp
+      container: mkv
+      processTranscodes: true
+      processHealthChecks: true
+      healthCheckType: thoroughHealthCheck
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -140,3 +144,7 @@ spec:
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
       cache: /temp
+      container: mkv
+      processTranscodes: true
+      processHealthChecks: true
+      healthCheckType: thoroughHealthCheck
