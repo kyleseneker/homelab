@@ -128,6 +128,7 @@ spec:
       flowId: hevc-qsv
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
+      cache: /temp
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -138,3 +139,4 @@ spec:
       flowId: hevc-qsv
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
+      cache: /temp
