@@ -126,6 +126,8 @@ spec:
       processLibrary: true
       priority: 1
       flowId: hevc-qsv
+      containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
+      scannerThreadCount: 1
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -134,3 +136,5 @@ spec:
       processLibrary: true
       priority: 1
       flowId: hevc-qsv
+      containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
+      scannerThreadCount: 1
