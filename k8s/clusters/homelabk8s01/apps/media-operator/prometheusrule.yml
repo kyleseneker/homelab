@@ -1,0 +1,41 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: media-operator
+  namespace: arr
+  labels:
+    app.kubernetes.io/name: media-operator
+spec:
+  groups:
+    - name: media-operator
+      rules:
+        - alert: MediaOperatorDriftNeverSettles
+          expr: |
+            sum by (app, resource_type, name) (
+              increase(media_operator_drift_corrected_total[2h])
+            ) > 6
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: media-operator keeps rewriting {{ $labels.name }}
+            description: >-
+              {{ $labels.app }} {{ $labels.resource_type }} {{ $labels.name }} has been
+              corrected more than six times in two hours, so the write is not settling.
+              Either something outside the operator keeps editing it, or the app is
+              accepting the payload and ignoring it. These apps answer 2xx for a body
+              they never apply, so a correction that never sticks is indistinguishable
+              from a successful one without this alert. Compare the CR against the live
+              value to tell the two apart.
+        - alert: MediaOperatorConfigNotSynced
+          expr: |
+            media_operator_config_synced == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.kind }}/{{ $labels.name }} is not syncing"
+            description: >-
+              {{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} last
+              reconciled unsuccessfully. Check the CR's Synced condition:
+              kubectl -n {{ $labels.namespace }} describe {{ $labels.kind }} {{ $labels.name }}
