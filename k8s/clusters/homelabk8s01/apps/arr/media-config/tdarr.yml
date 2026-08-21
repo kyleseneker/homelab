@@ -14,9 +14,9 @@ spec:
     deletionPolicy: orphan
   workers:
     transcodeGPU: 1
-    transcodeCPU: 1
+    transcodeCPU: 0
     healthcheckGPU: 1
-    healthcheckCPU: 1
+    healthcheckCPU: 0
   flows:
     - id: hevc-qsv
       name: HEVC QSV

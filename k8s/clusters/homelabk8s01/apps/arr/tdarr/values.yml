@@ -102,7 +102,7 @@ persistence:
       - path: /app/server
   temp:
     type: emptyDir
-    sizeLimit: 100Gi
+    sizeLimit: 10Gi
     globalMounts:
       - path: /temp
   data:
