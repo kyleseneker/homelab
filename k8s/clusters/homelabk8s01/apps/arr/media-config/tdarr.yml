@@ -15,8 +15,8 @@ spec:
   workers:
     transcodeGPU: 1
     transcodeCPU: 0
-    healthcheckGPU: 1
-    healthcheckCPU: 0
+    healthcheckGPU: 0
+    healthcheckCPU: 1
   flows:
     - id: hevc-qsv
       name: HEVC QSV
