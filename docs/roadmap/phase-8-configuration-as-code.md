@@ -65,7 +65,7 @@ Built in its own repository ([kyleseneker/media-operator](https://github.com/kyl
 - [x] Emit `app_api_request_duration_seconds`, `app_api_errors_total`, `resources_pruned_total`, `managed_resources` and `config_synced`
 - [ ] Validate against `GET /api/vN/<kind>/schema` before writing, failing fast with the valid field names in the message
 - [ ] envtest coverage -- the controllers sit at 0% today
-- [ ] Contract tests per app, asserting every spec field maps to a key the target API actually accepts. qBittorrent preferences and Jellyfin library paths were both silently discarded by the receiving API while the CR reported `Synced=True`; only qBittorrent has such a test today
+- [ ] Contract tests per app, asserting every spec field maps to a key the target API actually accepts. These apps answer 2xx for a payload they then ignore, so an unmapped field is inert while the CR reports `Synced=True` -- qBittorrent preferences, Jellyfin library paths and Tdarr's library settings have all been silently discarded this way. qBittorrent, SABnzbd and Tdarr have such a test; the remaining kinds do not
 - [ ] A drift-corrected counter plus a `PrometheusRule` on repeated corrections
 - [ ] `driftPolicy: Observe` to record drift without writing
 
