@@ -134,6 +134,7 @@ spec:
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
+      scheduledScanFindNew: true
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -150,3 +151,4 @@ spec:
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
+      scheduledScanFindNew: true
