@@ -63,7 +63,7 @@ Built in its own repository ([kyleseneker/media-operator](https://github.com/kyl
 - [x] Prune only what is recorded in `.status.managedResources`, so anything created outside the operator is never deleted
 - [x] Default `reconcile.interval` to 5m -- these are SQLite-backed apps
 - [x] Emit `app_api_request_duration_seconds`, `app_api_errors_total`, `resources_pruned_total`, `managed_resources` and `config_synced`
-- [ ] Validate against `GET /api/vN/<kind>/schema` before writing, failing fast with the valid field names in the message
+- [x] Validate free-form resource fields against `GET /api/vN/<kind>/schema` before writing, naming the offending field and listing the ones the implementation accepts. An app that does not serve a schema, or an implementation the schema does not describe, skips validation rather than blocking the write
 - [ ] envtest coverage -- the controllers sit at 0% today
 - [x] Contract tests for every hand-written payload builder, asserting each spec field maps to a key the target API actually accepts. These apps answer 2xx for a payload they then ignore, so an unmapped field is inert while the CR reports `Synced=True` -- qBittorrent preferences, Jellyfin library paths and Tdarr's library settings have all been silently discarded this way. Covered: qBittorrent, SABnzbd, Tdarr, Plex, Seerr, Maintainerr. Sonarr, Radarr, Lidarr, Prowlarr and Bazarr derive their keys reflectively from JSON tags, so a field cannot go missing there -- their exposure is a wrong key name, which only a live API can catch (see the schema check above)
 - [ ] A drift-corrected counter plus a `PrometheusRule` on repeated corrections
