@@ -133,6 +133,7 @@ spec:
       processTranscodes: true
       processHealthChecks: true
       healthCheckType: thoroughHealthCheck
+      decisionMode: flows
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -148,3 +149,4 @@ spec:
       processTranscodes: true
       processHealthChecks: true
       healthCheckType: thoroughHealthCheck
+      decisionMode: flows
