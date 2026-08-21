@@ -67,7 +67,7 @@ Built in its own repository ([kyleseneker/media-operator](https://github.com/kyl
 - [ ] envtest coverage -- the controllers sit at 0% today
 - [x] Contract tests for every hand-written payload builder, asserting each spec field maps to a key the target API actually accepts. These apps answer 2xx for a payload they then ignore, so an unmapped field is inert while the CR reports `Synced=True` -- qBittorrent preferences, Jellyfin library paths and Tdarr's library settings have all been silently discarded this way. Covered: qBittorrent, SABnzbd, Tdarr, Plex, Seerr, Maintainerr. Sonarr, Radarr, Lidarr, Prowlarr and Bazarr derive their keys reflectively from JSON tags, so a field cannot go missing there -- their exposure is a wrong key name, which only a live API can catch (see the schema check above)
 - [x] `media_operator_drift_corrected_total{app,resource_type,name}`, incremented whenever a resource's live state differs from the CR and has to be rewritten, with a `PrometheusRule` firing when one resource is corrected more than six times in two hours -- a write that never settles is otherwise indistinguishable from a successful one
-- [ ] `driftPolicy: Observe` to record drift without writing
+- [x] `reconcile.driftPolicy: observe` records drift without writing, so a CR can be adopted and measured before the operator is given write authority. `enforce` remains the default; observe also suppresses pruning, since a prune is the least reversible write
 
 | | |
 |---|---|
