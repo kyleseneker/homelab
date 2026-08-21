@@ -132,8 +132,8 @@ spec:
       container: mkv
       processTranscodes: true
       processHealthChecks: true
-      healthCheckType: thoroughHealthCheck
       decisionMode: flows
+      healthCheckMode: thorough
     - id: tv
       name: TV Shows
       folder: /data/media/tv
@@ -148,5 +148,5 @@ spec:
       container: mkv
       processTranscodes: true
       processHealthChecks: true
-      healthCheckType: thoroughHealthCheck
       decisionMode: flows
+      healthCheckMode: thorough
