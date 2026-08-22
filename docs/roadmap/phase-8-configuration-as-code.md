@@ -129,7 +129,7 @@ Bootstrap Jobs and seeded config files, not controller work.
 
 ## 8.8 Decisions to Record
 
-- [ ] **ADR-018 -- \*arr configuration as code.** The CRD taxonomy and reconcile semantics from 8.4, and why a purpose-built operator over Crossplane + provider-terraform (the fallback reaches fuller coverage without hand-written field mappings, but teaches composition rather than controllers, and Kyverno's `require-resource-limits` in Enforce mode rejects Crossplane's synthesised provider Deployments until `crossplane-system` is excluded)
+- [x] **ADR-018 -- \*arr configuration as code.** The taxonomy is fifteen kinds across nine API groups, one chart and manager per group. Records the reconcile semantics, the Crossplane trade-off, and the three guards against an API that accepts a wrong field and answers 2xx
 - [x] **ADR-019 -- transcode policy.** Resolved M6 in favour of acquiring the best source and keeping it: `processTranscodes` is false on both Tdarr libraries, health checks stay on. Re-encoding manufactured exactly the files the TRaSH profiles score at -10000, and `upgradeAllowed: true` made those files candidates for replacement and re-encoding without end
 - [ ] Amend ADR-010 or `docs/architecture/auth.md` to describe the auth mechanism that actually exists (K21)
 
