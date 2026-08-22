@@ -92,8 +92,9 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-tdarr
-            port: 8265
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 persistence:
   config:
     type: persistentVolumeClaim
