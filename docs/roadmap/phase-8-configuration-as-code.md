@@ -118,7 +118,7 @@ Bootstrap Jobs and seeded config files, not controller work.
 ## 8.8 Decisions to Record
 
 - [ ] **ADR-018 -- \*arr configuration as code.** The CRD taxonomy and reconcile semantics from 8.4, and why a purpose-built operator over Crossplane + provider-terraform (the fallback reaches fuller coverage without hand-written field mappings, but teaches composition rather than controllers, and Kyverno's `require-resource-limits` in Enforce mode rejects Crossplane's synthesised provider Deployments until `crossplane-system` is excluded)
-- [ ] **ADR-019 -- transcode policy.** Resolve M6: whether the library targets x264 acquisition with in-house HEVC re-encoding, or native HEVC. Defensible either way; currently whichever Tdarr flow happens to be enabled decides it
+- [x] **ADR-019 -- transcode policy.** Resolved M6 in favour of acquiring the best source and keeping it: `processTranscodes` is false on both Tdarr libraries, health checks stay on. Re-encoding manufactured exactly the files the TRaSH profiles score at -10000, and `upgradeAllowed: true` made those files candidates for replacement and re-encoding without end
 - [ ] Amend ADR-010 or `docs/architecture/auth.md` to describe the auth mechanism that actually exists (K21)
 
 ---
