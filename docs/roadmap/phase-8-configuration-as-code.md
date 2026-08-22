@@ -1,6 +1,6 @@
 # Phase 8 -- Configuration as Code
 
-**Status:** In progress -- 8.1, 8.2 and 8.4--8.6 largely landed; 8.3, 8.7 and 8.8 outstanding
+**Status:** In progress -- 8.1, 8.2 and 8.4--8.6 landed; 8.3 declined with reasons; 8.7 and 8.8 outstanding
 
 **Goal:** Extend reproducibility past the pod boundary. Today the pipeline rebuilds every layer from bare metal up to running containers and then stops -- every setting *inside* an application is hand-entered in a web UI. Close that gap with a purpose-built Kubernetes operator.
 
@@ -40,14 +40,25 @@
 
 ## 8.3 Adopt Configarr
 
-- [ ] Swap the Recyclarr image; `configmap.yml` transplants nearly verbatim -- same YAML dialect, same `!secret` indirection
-- [ ] Retarget the ExternalSecret at the new `arr-api-keys` source
-- [ ] Extend coverage to root folders, download clients with remote path mappings, `media_naming_api`, delay profiles
-- [ ] Resolve the transcode contradiction before touching profiles (M6, see 8.8)
+**Not adopting.** Configarr's advantage is breadth -- root folders, download clients with remote
+path mappings, delay profiles. The operator already owns `rootFolders`, `downloadClients`,
+`downloadClientConfig` and `notifications` on every PVR instance, so adopting Configarr for that
+surface would put two controllers on the same resources, each reverting the other.
+`media_operator_drift_corrected_total` would show it as a resource that never settles.
+
+What remains once the overlap is removed -- delay profiles and `media_naming_api` -- does not
+justify replacing a sync that runs cleanly every six hours. Recyclarr already covers quality
+definitions, quality profiles, custom formats and media naming, and its last run reported every
+section up to date.
+
+- [x] Resolve the transcode contradiction before touching profiles (M6, see 8.8)
+- [ ] Move the remaining \*arr settings surface into the operator rather than a second sync tool.
+  `downloadPropersAndRepacks` is `preferAndUpgrade` while the Repack/Proper custom formats are
+  scored, which double-handles propers; TRaSH expects `doNotPrefer` when those formats are in use
 
 | | |
 |---|---|
-| **Why** | Configarr is the maintained successor and covers meaningfully more surface for near-zero migration cost. |
+| **Why** | Configarr is the maintained successor, but the surface it adds is surface the operator already reconciles. |
 | **Optional** | Independent of the operator. Taking it removes `RootFolder`, `DownloadClient` and `ArrSettings` from 8.4's scope; skipping it means the operator owns those too. Note the current `recyclarr/configmap.yml` sets only `quality_definition`, `quality_profiles` and `custom_formats`, so naming and Propers/Repacks are hand-clicked today even though Recyclarr already supports them. |
 
 ## 8.4 The media-operator
