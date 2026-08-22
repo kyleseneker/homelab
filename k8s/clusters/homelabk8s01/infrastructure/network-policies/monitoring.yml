@@ -193,9 +193,4 @@ spec:
       app.kubernetes.io/name: prometheus-blackbox-exporter
   egress:
     - toEntities:
-        - host
-        - remote-node
-      toPorts:
-        - ports:
-            - port: "443"
-              protocol: TCP
+        - cluster
