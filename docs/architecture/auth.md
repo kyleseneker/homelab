@@ -1,6 +1,6 @@
 # Authentication & SSO
 
-The homelab uses Authentik as the centralized identity provider. Only applications with native OIDC support currently authenticate against it.
+The homelab uses Authentik as the centralized identity provider. Applications authenticate either through native OIDC or by routing their traffic through Authentik's embedded outpost.
 
 ## Authentication Flows
 
@@ -15,7 +15,10 @@ flowchart TB
     end
 
     User["User"] --> Gateway["Cilium Gateway"]
-    Gateway --> UnprotectedApps["*arr apps, qBittorrent, Tdarr,<br/>Homepage, Vault, OpenClaw,<br/>Goldilocks, Uptime Kuma<br/>(no auth at the edge)"]
+    Gateway --> Outpost["Authentik Outpost"]
+    Outpost --> ProtectedApps["Tdarr, Goldilocks<br/>(auth at the edge)"]
+    Outpost --> AuthentikServer
+    Gateway --> UnprotectedApps["*arr apps, qBittorrent,<br/>Homepage, Vault, OpenClaw,<br/>Uptime Kuma<br/>(no auth at the edge)"]
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
@@ -23,14 +26,14 @@ flowchart TB
 
 Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed -- the task queue lives in PostgreSQL. The `authentik-external-secret.yml` still pulls a `redis-password` from Vault, which nothing consumes.
 
-### Forward Auth -- Not Currently Implemented
+### Proxied Auth
 
-!!! danger "The *arr apps are not behind SSO"
-    Every route is served by the Cilium Gateway, and no authentication runs at the edge. Each app's own login, where it has one, is the only control.
+Tdarr and Goldilocks route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
 
-    **Reachable on the LAN with no edge auth: Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage, Vault, OpenClaw, Goldilocks and Uptime Kuma.** Tdarr serves its API unauthenticated, and the Goldilocks dashboard has no login, so for those two there is no control at any layer.
+Because the outpost originates the proxied request, it needs its own network path to each backend -- ingress on the app's namespace and egress from `auth`. Without both, the browser gets the login redirect and then hangs. See the [runbook](../runbooks/adding-app-to-sso.md).
 
-    Tracked as [K21](../roadmap/assessment.md) in the assessment. Adding it requires an ext_authz path through Cilium's Envoy -- an HTTPRoute has no annotation-based equivalent to a subrequest-style auth hook.
+!!! warning "Most apps are still open on the LAN"
+    **Reachable with no edge auth: Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Homepage, Vault, OpenClaw and Uptime Kuma.** Each has its own login, so the exposure is weaker credentials rather than none. Tracked as [K21](../roadmap/assessment.md).
 
 ### Native OIDC
 
@@ -47,7 +50,6 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 | Service | Reason |
 |---------|--------|
 | *arr apps, qBittorrent, Homepage | No edge auth -- see the warning above. Each has its own login |
-| Tdarr, Goldilocks | No edge auth, and neither enforces a login of its own |
 | Vault | No edge auth; unseal keys and tokens are the only control |
 | OpenClaw | No edge auth; its own webhook routes are the only control |
 | Uptime Kuma | No edge auth; has its own login |

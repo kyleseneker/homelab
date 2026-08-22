@@ -18,7 +18,7 @@
 - [x] Set `UN_SONARR_0_PATHS_0` / `UN_RADARR_0_PATHS_0` to `/data/torrents`; change Unpackerr to UID 977 / GID 988 (K27). Its 401s are fixed by 8.2, not here
 - [x] Add a `render` job to `validate.yml`: `kustomize build` per directory, `helm template` per `config.yml` (K22). It also checks every `config.yml` against the ApplicationSet's key contract, and `gen-crd-schemas.sh` keeps kubeconform aware of the operator's CRDs
 - [x] Add a Renovate `customManager` matching the `chartRepo`/`chartName`/`chartVersion` keys in `config.yml` (K23)
-- [ ] Reconcile `docs/architecture/auth.md` with reality, and decide whether to build Gateway API forward-auth (K21)
+- [x] Reconcile `docs/architecture/auth.md` with reality, and build edge auth on Gateway API (K21). Routing through Authentik's proxy-mode outpost replaces the subrequest hook an HTTPRoute cannot express, so no ext_authz filter is needed. Tdarr and Goldilocks are behind it; the apps that still carry their own login are not yet migrated
 
 | | |
 |---|---|
