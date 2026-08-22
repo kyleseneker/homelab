@@ -3,7 +3,7 @@ namespace: arr
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/media-operator
 chartName: media-operator-transcode
-chartVersion: "0.31.0"
+chartVersion: "0.32.0"
 createNamespace: false
 hasResources: false
 syncOptions:
