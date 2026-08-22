@@ -192,8 +192,9 @@ spec:
     matchLabels:
       app.kubernetes.io/name: prometheus-blackbox-exporter
   egress:
-    - toCIDR:
-        - 192.168.10.201/32
+    - toEntities:
+        - host
+        - remote-node
       toPorts:
         - ports:
             - port: "443"
