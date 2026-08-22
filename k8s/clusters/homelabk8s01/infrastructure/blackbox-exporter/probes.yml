@@ -5,6 +5,7 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/name: blackbox-exporter
+    release: kube-prometheus-stack
 spec:
   jobName: sso-protected
   interval: 60s
@@ -32,6 +33,7 @@ metadata:
   namespace: monitoring
   labels:
     app.kubernetes.io/name: blackbox-exporter
+    release: kube-prometheus-stack
 spec:
   jobName: direct
   interval: 60s
