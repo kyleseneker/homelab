@@ -12,12 +12,13 @@ HEVC releases. Tdarr is deployed against the same library and is capable of re-e
 every file to HEVC.
 
 Run together without a stated policy, the two contradict each other: Tdarr manufactures
-precisely the files the quality profiles reject. Radarr's `HD Bluray + WEB` profile has
-`upgradeAllowed: true`, so a re-encoded file can be scored below its replacement and pulled
-again, re-encoded again, indefinitely.
+precisely the files the quality profiles reject.
 
-The contradiction is not hypothetical. Six of seven films in the library are HEVC while the
-profile that governs them rejects that codec.
+The contradiction is latent rather than active today. Every film is assigned to the `Any`
+profile, which carries no custom format scores and has `upgradeAllowed: false`, so Radarr
+reports nothing cutoff-unmet and will not re-grab a re-encoded file. The -10000 score sits on
+`HD Bluray + WEB`, which no film uses. Moving the library onto the TRaSH profile would make
+the contradiction active, and re-encoded files would then invite their own replacement.
 
 ## Decision
 
@@ -43,15 +44,19 @@ reports corrupt or unplayable files.
   source quality over size. Re-encoding contradicts that decision rather than complementing it.
 - **The loss is permanent, the saving is not scarce.** An x264 Blu-ray re-encoded to HEVC on
   QSV at CQ 20 cannot be undone, and storage is not the binding constraint here.
-- **It removes a feedback loop.** With `upgradeAllowed: true` and a -10000 score, re-encoded
-  files invite their own replacement.
+- **It forecloses a feedback loop.** The TRaSH profile scores these files at -10000 with
+  upgrades allowed. Adopting that profile while re-encoding would have files replaced and
+  re-encoded in turn.
 - **Playback does not need it.** Jellyfin transcodes on the same Intel GPU on demand, so
   client compatibility is not a reason to re-encode at rest.
 
 ## Consequences
 
-- Files already re-encoded stay HEVC and continue to score -10000. They are candidates for
-  replacement on the next upgrade search, which restores the acquired quality.
+- Files already re-encoded stay HEVC. On the `Any` profile nothing re-grabs them, so the loss
+  is taken and settled. They would become replacement candidates if the library moved onto
+  `HD Bluray + WEB`.
+- The TRaSH profiles Recyclarr maintains are not in use: every film is on `Any`. Custom format
+  scoring therefore influences nothing today, which is worth resolving separately.
 - Tdarr's role narrows to health checking. Audio cleanup and container normalisation remain
   available and do not conflict with this decision, but no flow performs them today.
 - Reversing this means removing `x265 (HD)` from the unwanted formats in
