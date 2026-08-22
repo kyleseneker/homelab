@@ -16,9 +16,9 @@ flowchart TB
 
     User["User"] --> Gateway["Cilium Gateway"]
     Gateway --> Outpost["Authentik Outpost"]
-    Outpost --> ProtectedApps["Tdarr, Goldilocks<br/>(auth at the edge)"]
+    Outpost --> ProtectedApps["*arr apps, qBittorrent,<br/>Tdarr, Goldilocks<br/>(auth at the edge)"]
     Outpost --> AuthentikServer
-    Gateway --> UnprotectedApps["*arr apps, qBittorrent,<br/>Homepage, Vault, OpenClaw,<br/>Uptime Kuma<br/>(no auth at the edge)"]
+    Gateway --> UnprotectedApps["Homepage, Vault,<br/>OpenClaw, Uptime Kuma<br/>(no auth at the edge)"]
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
@@ -28,12 +28,14 @@ Authentik runs its server and worker against a bundled PostgreSQL instance. No R
 
 ### Proxied Auth
 
-Tdarr and Goldilocks route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
+Tdarr, Goldilocks, Sonarr, Radarr, Prowlarr, Bazarr and qBittorrent route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
 
 Because the outpost originates the proxied request, it needs its own network path to each backend -- ingress on the app's namespace and egress from `auth`. Without both, the browser gets the login redirect and then hangs. See the [runbook](../runbooks/adding-app-to-sso.md).
 
-!!! warning "Most apps are still open on the LAN"
-    **Reachable with no edge auth: Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Homepage, Vault, OpenClaw and Uptime Kuma.** Each has its own login, so the exposure is weaker credentials rather than none. Tracked as [K21](../roadmap/assessment.md).
+The *arr apps and qBittorrent exempt `/api`, `/feed` and `/ping` from the proxy via `skip_path_regex`, because mobile and scripted clients cannot complete a browser login. Those paths are still guarded by each app's API key, and a request to them returns the app's own `401` rather than a login redirect.
+
+!!! warning "Still open on the LAN"
+    **Reachable with no edge auth: Homepage, Vault, OpenClaw and Uptime Kuma.** Vault is deliberate -- Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal.
 
 ### Native OIDC
 
@@ -49,8 +51,8 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 
 | Service | Reason |
 |---------|--------|
-| *arr apps, qBittorrent, Homepage | No edge auth -- see the warning above. Each has its own login |
-| Vault | No edge auth; unseal keys and tokens are the only control |
+| Homepage | No edge auth; a dashboard of links, no data of its own |
+| Vault | Cannot use Authentik -- Authentik's own secrets come from Vault, so this would be circular. Token auth is the control |
 | OpenClaw | No edge auth; its own webhook routes are the only control |
 | Uptime Kuma | No edge auth; has its own login |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
