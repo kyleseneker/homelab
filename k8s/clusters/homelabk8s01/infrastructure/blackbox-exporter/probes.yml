@@ -25,6 +25,7 @@ spec:
         - https://prometheus.homelab.local
         - https://alertmanager.homelab.local
         - https://grafana.homelab.local
+        - https://jellyfin.homelab.local
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe
@@ -44,5 +45,4 @@ spec:
     staticConfig:
       static:
         - https://argocd.homelab.local
-        - https://jellyfin.homelab.local
         - https://home.homelab.local
