@@ -10,6 +10,8 @@ controllers:
               name: arr-env
           - secretRef:
               name: arr-sonarr-env
+        env:
+          SONARR__AUTH__METHOD: External
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

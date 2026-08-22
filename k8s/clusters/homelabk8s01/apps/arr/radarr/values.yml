@@ -10,6 +10,8 @@ controllers:
               name: arr-env
           - secretRef:
               name: arr-radarr-env
+        env:
+          RADARR__AUTH__METHOD: External
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
