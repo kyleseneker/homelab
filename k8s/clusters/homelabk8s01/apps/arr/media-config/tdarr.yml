@@ -18,9 +18,10 @@ spec:
     healthcheckGPU: 0
     healthcheckCPU: 1
   flows:
-    - id: hevc-qsv
-      name: HEVC QSV
-      description: Transcode non-HEVC video to HEVC using Intel QSV, then replace the original.
+    - id: audio-clean
+      name: Audio Clean
+      description: Drop non-English audio and data streams. Video and remaining audio are copied, not
+        re-encoded.
       flowPlugins:
         - id: n_input
           name: Input File
@@ -33,18 +34,6 @@ spec:
           fpEnabled: true
           inputsDB:
             fileAccessChecks: 'true'
-            pluginOrderPosition: '0'
-        - id: n_codec
-          name: Already HEVC?
-          pluginName: checkVideoCodec
-          sourceRepo: Community
-          version: 1.0.0
-          position:
-            x: 0
-            y: 200
-          fpEnabled: true
-          inputsDB:
-            codec: hevc
         - id: n_start
           name: Begin ffmpeg Command
           pluginName: ffmpegCommandStart
@@ -52,27 +41,35 @@ spec:
           version: 1.0.0
           position:
             x: 0
-            y: 400
+            y: 200
           fpEnabled: true
           inputsDB: {}
-        - id: n_enc
-          name: Set HEVC QSV Encoder
-          pluginName: ffmpegCommandSetVideoEncoder
+        - id: n_lang
+          name: Drop Foreign Audio
+          pluginName: ffmpegCommandRemoveStreamByProperty
+          sourceRepo: Community
+          version: 1.0.0
+          position:
+            x: 0
+            y: 400
+          fpEnabled: true
+          inputsDB:
+            codecType: audio
+            propertyToCheck: tags.language
+            valuesToRemove: eng,und
+            condition: not_includes
+        - id: n_data
+          name: Drop Data Streams
+          pluginName: ffmpegCommandRemoveDataStreams
           sourceRepo: Community
           version: 1.0.0
           position:
             x: 0
             y: 600
           fpEnabled: true
-          inputsDB:
-            outputCodec: hevc
-            hardwareEncoding: 'true'
-            hardwareType: qsv
-            ffmpegPreset: slow
-            ffmpegQuality: '20'
-            enabledFilters: ''
+          inputsDB: {}
         - id: n_exec
-          name: Execute Transcode
+          name: Execute Remux
           pluginName: ffmpegCommandExecute
           sourceRepo: Community
           version: 1.0.0
@@ -95,20 +92,20 @@ spec:
         - id: e1
           source: n_input
           sourceHandle: '1'
-          target: n_codec
-          targetHandle: null
-        - id: e2
-          source: n_codec
-          sourceHandle: '2'
           target: n_start
           targetHandle: null
-        - id: e3
+        - id: e2
           source: n_start
           sourceHandle: '1'
-          target: n_enc
+          target: n_lang
+          targetHandle: null
+        - id: e3
+          source: n_lang
+          sourceHandle: '1'
+          target: n_data
           targetHandle: null
         - id: e4
-          source: n_enc
+          source: n_data
           sourceHandle: '1'
           target: n_exec
           targetHandle: null
@@ -125,12 +122,12 @@ spec:
       folderWatching: false
       processLibrary: true
       priority: 1
-      flowId: hevc-qsv
+      flowId: audio-clean
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
       cache: /temp
       container: mkv
-      processTranscodes: false
+      processTranscodes: true
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
@@ -142,12 +139,12 @@ spec:
       folderWatching: false
       processLibrary: true
       priority: 1
-      flowId: hevc-qsv
+      flowId: audio-clean
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
       cache: /temp
       container: mkv
-      processTranscodes: false
+      processTranscodes: true
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
