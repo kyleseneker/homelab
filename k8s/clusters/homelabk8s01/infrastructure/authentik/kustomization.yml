@@ -6,3 +6,4 @@ resources:
   - authentik-external-secret.yml
   - httproute.yml
   - pdb.yml
+  - blueprints-configmap.yml

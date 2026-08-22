@@ -1,3 +1,6 @@
+blueprints:
+  configMaps:
+    - authentik-blueprints
 global:
   envFrom:
     - secretRef:
