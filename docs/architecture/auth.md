@@ -16,7 +16,7 @@ flowchart TB
 
     User["User"] --> Gateway["Cilium Gateway"]
     Gateway --> Outpost["Authentik Outpost"]
-    Outpost --> ProtectedApps["*arr apps, qBittorrent,<br/>Tdarr, Goldilocks<br/>(auth at the edge)"]
+    Outpost --> ProtectedApps["*arr apps, qBittorrent, Tdarr,<br/>Goldilocks, Prometheus,<br/>Alertmanager<br/>(auth at the edge)"]
     Outpost --> AuthentikServer
     Gateway --> UnprotectedApps["Homepage, Vault,<br/>OpenClaw, Uptime Kuma<br/>(no auth at the edge)"]
 
@@ -28,9 +28,11 @@ Authentik runs its server and worker against a bundled PostgreSQL instance. No R
 
 ### Proxied Auth
 
-Tdarr, Goldilocks, Sonarr, Radarr, Prowlarr, Bazarr and qBittorrent route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
+Tdarr, Goldilocks, Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Prometheus and Alertmanager route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
 
 Because the outpost originates the proxied request, it needs its own network path to each backend -- ingress on the app's namespace and egress from `auth`. Without both, the browser gets the login redirect and then hangs. See the [runbook](../runbooks/adding-app-to-sso.md).
+
+Grafana reads Prometheus and Alertmanager over their in-cluster Services, so proxying their web UIs does not affect scraping or dashboards.
 
 The *arr apps and qBittorrent exempt `/api`, `/feed` and `/ping` from the proxy via `skip_path_regex`, because mobile and scripted clients cannot complete a browser login. Those paths are still guarded by each app's API key, and a request to them returns the app's own `401` rather than a login redirect.
 
@@ -56,8 +58,6 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 | OpenClaw | No edge auth; its own webhook routes are the only control |
 | Uptime Kuma | No edge auth; has its own login |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
-| Prometheus | Internal monitoring; edge auth would break Grafana datasource scraping |
-| Alertmanager | Same as Prometheus |
 | Authentik | Circular dependency |
 
 ## Group-Based Access Control
