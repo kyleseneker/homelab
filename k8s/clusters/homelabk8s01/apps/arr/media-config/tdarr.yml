@@ -130,7 +130,7 @@ spec:
       scannerThreadCount: 1
       cache: /temp
       container: mkv
-      processTranscodes: true
+      processTranscodes: false
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
@@ -147,7 +147,7 @@ spec:
       scannerThreadCount: 1
       cache: /temp
       container: mkv
-      processTranscodes: true
+      processTranscodes: false
       processHealthChecks: true
       decisionMode: flows
       healthCheckMode: thorough
