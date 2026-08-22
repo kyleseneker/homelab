@@ -15,22 +15,22 @@ flowchart TB
     end
 
     User["User"] --> Gateway["Cilium Gateway"]
-    Gateway --> UnprotectedApps["*arr apps<br/>(no auth at the edge)"]
+    Gateway --> UnprotectedApps["*arr apps, qBittorrent, Tdarr,<br/>Homepage, Vault, OpenClaw,<br/>Goldilocks, Uptime Kuma<br/>(no auth at the edge)"]
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
 ```
 
-Authentik runs its server and worker against a bundled PostgreSQL instance. The chart no longer deploys Redis -- the task queue moved to PostgreSQL -- so the `redis:` block still present in `values.yml` is inert.
+Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed -- the task queue lives in PostgreSQL. The `authentik-external-secret.yml` still pulls a `redis-password` from Vault, which nothing consumes.
 
 ### Forward Auth -- Not Currently Implemented
 
 !!! danger "The *arr apps are not behind SSO"
-    Forward auth was previously implemented with nginx-ingress `auth_request` annotations pointing at Authentik's embedded outpost. `ingress-nginx` was removed when every app migrated to Gateway API HTTPRoutes, and no equivalent was put in its place.
+    Every route is served by the Cilium Gateway, and no authentication runs at the edge. Each app's own login, where it has one, is the only control.
 
-    **Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, and Homepage are reachable on the LAN with no authentication at the edge.** Each app's own login (where it has one) is the only control.
+    **Reachable on the LAN with no edge auth: Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage, Vault, OpenClaw, Goldilocks and Uptime Kuma.** Tdarr serves its API unauthenticated, and the Goldilocks dashboard has no login, so for those two there is no control at any layer.
 
-    Tracked as [K21](../roadmap/assessment.md) in the assessment. Re-implementing it requires an ext_authz path through Cilium's Envoy -- HTTPRoutes have no annotation-based equivalent to the nginx auth subrequest.
+    Tracked as [K21](../roadmap/assessment.md) in the assessment. Adding it requires an ext_authz path through Cilium's Envoy -- an HTTPRoute has no annotation-based equivalent to a subrequest-style auth hook.
 
 ### Native OIDC
 
@@ -46,7 +46,11 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 
 | Service | Reason |
 |---------|--------|
-| *arr apps, qBittorrent, Tdarr, Homepage | No edge auth since the Gateway API migration -- see the warning above |
+| *arr apps, qBittorrent, Homepage | No edge auth -- see the warning above. Each has its own login |
+| Tdarr, Goldilocks | No edge auth, and neither enforces a login of its own |
+| Vault | No edge auth; unseal keys and tokens are the only control |
+| OpenClaw | No edge auth; its own webhook routes are the only control |
+| Uptime Kuma | No edge auth; has its own login |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
 | Prometheus | Internal monitoring; edge auth would break Grafana datasource scraping |
 | Alertmanager | Same as Prometheus |
