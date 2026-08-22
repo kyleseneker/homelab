@@ -60,8 +60,9 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-bazarr
-            port: 6767
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 defaultPodOptions:
   annotations:
     backup.velero.io/backup-volumes-excludes: data

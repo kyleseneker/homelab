@@ -99,10 +99,19 @@ spec:
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: arr
-            app.kubernetes.io/name: arr-tdarr
       toPorts:
         - ports:
             - port: "8265"
+              protocol: TCP
+            - port: "8989"
+              protocol: TCP
+            - port: "7878"
+              protocol: TCP
+            - port: "9696"
+              protocol: TCP
+            - port: "6767"
+              protocol: TCP
+            - port: "8080"
               protocol: TCP
     - toEndpoints:
         - matchLabels:

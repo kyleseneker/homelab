@@ -81,8 +81,9 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-sonarr
-            port: 8989
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 defaultPodOptions:
   annotations:
     reloader.stakater.com/auto: 'true'

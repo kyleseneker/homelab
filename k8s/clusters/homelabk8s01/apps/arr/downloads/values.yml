@@ -131,8 +131,9 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-vpn-downloads
-            port: 8080
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 persistence:
   gluetun-config:
     type: persistentVolumeClaim

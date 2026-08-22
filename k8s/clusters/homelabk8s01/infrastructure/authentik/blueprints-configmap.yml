@@ -47,6 +47,121 @@ data:
         attrs:
           name: Goldilocks
           provider: !KeyOf goldilocks-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: sonarr-provider
+        identifiers:
+          name: sonarr-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://sonarr.homelab.local
+          internal_host: http://arr-sonarr.arr.svc.cluster.local:8989
+          internal_host_ssl_validation: false
+          skip_path_regex: |-
+            ^/api/.*
+            ^/feed/.*
+            ^/ping$
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: sonarr
+        attrs:
+          name: Sonarr
+          provider: !KeyOf sonarr-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: radarr-provider
+        identifiers:
+          name: radarr-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://radarr.homelab.local
+          internal_host: http://arr-radarr.arr.svc.cluster.local:7878
+          internal_host_ssl_validation: false
+          skip_path_regex: |-
+            ^/api/.*
+            ^/feed/.*
+            ^/ping$
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: radarr
+        attrs:
+          name: Radarr
+          provider: !KeyOf radarr-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: prowlarr-provider
+        identifiers:
+          name: prowlarr-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://prowlarr.homelab.local
+          internal_host: http://arr-prowlarr.arr.svc.cluster.local:9696
+          internal_host_ssl_validation: false
+          skip_path_regex: |-
+            ^/api/.*
+            ^/feed/.*
+            ^/ping$
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: prowlarr
+        attrs:
+          name: Prowlarr
+          provider: !KeyOf prowlarr-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: bazarr-provider
+        identifiers:
+          name: bazarr-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://bazarr.homelab.local
+          internal_host: http://arr-bazarr.arr.svc.cluster.local:6767
+          internal_host_ssl_validation: false
+          skip_path_regex: |-
+            ^/api/.*
+            ^/feed/.*
+            ^/ping$
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: bazarr
+        attrs:
+          name: Bazarr
+          provider: !KeyOf bazarr-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: qbit-provider
+        identifiers:
+          name: qbit-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://qbit.homelab.local
+          internal_host: http://arr-vpn-downloads.arr.svc.cluster.local:8080
+          internal_host_ssl_validation: false
+          skip_path_regex: |-
+            ^/api/.*
+            ^/feed/.*
+            ^/ping$
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: qbit
+        attrs:
+          name: qBittorrent
+          provider: !KeyOf qbit-provider
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
@@ -55,3 +170,8 @@ data:
             - !Find [authentik_providers_proxy.proxyprovider, [name, homelab-forward-auth]]
             - !KeyOf tdarr-provider
             - !KeyOf goldilocks-provider
+            - !KeyOf sonarr-provider
+            - !KeyOf radarr-provider
+            - !KeyOf prowlarr-provider
+            - !KeyOf bazarr-provider
+            - !KeyOf qbit-provider
