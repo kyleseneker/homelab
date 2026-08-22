@@ -119,7 +119,41 @@ data:
                 qualities:
                   - WEBDL-720p
                   - WEBRip-720p
+          - name: UHD Bluray + WEB
+            reset_unmatched_scores:
+              enabled: true
+            upgrade:
+              allowed: true
+              until_quality: Remux-2160p
+              until_score: 10000
+            qualities:
+              - name: Remux-2160p
+              - name: Bluray-2160p
+              - name: WEB 2160p
+                qualities:
+                  - WEBDL-2160p
+                  - WEBRip-2160p
         custom_formats:
+          # UHD unwanted
+          - trash_ids:
+              - ed38b889b31be83fda192888e2286d83  # BR-DISK
+              - 90a6f9a284dff5103f6346090e6280c8  # LQ
+              - e204b80c87be9497a8a6eaff48f72905  # LQ (Release Title)
+              - b8cd450cbfa689c0259a01d9e29ba3d6  # 3D
+              - bfd8eb01832d646a0a89c4deb46f8564  # Upscaled
+              - 0a3f082873eb454bde444150b70253cc  # Extras
+            assign_scores_to:
+              - name: UHD Bluray + WEB
+          # UHD HDR formats
+          - trash_ids:
+              - e61e28db95d22bedcadf030b8f156d96  # HDR10+
+              - 3a3ff47579026e76d6504ebea39390de  # HDR10
+              - 2a4d9069cc1fe3242ff9bdaebed239bb  # HDR
+              - a3d82cbef5039f8d295478d28a887159  # HDR (undefined)
+              - 08d6d8834ad9ec87b1dc7ec8148e7a1f  # PQ
+              - 9364dd386c9b4a1d635e5a7c361ded25  # HLG
+            assign_scores_to:
+              - name: UHD Bluray + WEB
           # Unwanted
           - trash_ids:
               - ed38b889b31be83fda192888e2286d83  # BR-DISK
