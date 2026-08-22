@@ -1,6 +1,7 @@
 # Tdarr
 
-Tdarr is an automated media transcoding application. It scans media libraries and converts files to a target codec (H.265/HEVC), reducing storage usage while maintaining quality. It uses Intel QuickSync for hardware-accelerated transcoding.
+Tdarr scans the media libraries, verifies files are playable, and normalises their streams. It
+does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 
 ## Details
 
@@ -9,110 +10,81 @@ Tdarr is an automated media transcoding application. It scans media libraries an
 | Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/haveagitgat/tdarr` |
 | Ports | 8265 (web UI), 8266 (server) |
-| HTTPRoute | `tdarr.homelab.local` |
+| HTTPRoute | `tdarr.homelab.local`, proxied through the Authentik outpost |
 | Namespace | `arr` |
 | ArgoCD app | `arr-tdarr` |
 | Internal URL | `http://arr-tdarr.arr.svc.cluster.local:8265` |
+| Configuration | `TdarrConfig` CR, reconciled by the media-operator |
 
 ### Storage
 
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/app/server` | Tdarr server database and configuration |
-| `temp` | PVC (`nfs-client`) | 100Gi | `/temp` | Scratch space for active transcodes |
-| `media` | PVC (existing `arr-data`) | -- | `/data/media` | Shared media library (`subPath: media`) |
-| `dri` | hostPath | -- | `/dev/dri` | Intel GPU device for hardware transcoding |
+| `config` | PVC (`nfs-client`) | 1Gi | `/app/server` | Server database and configuration |
+| `temp` | emptyDir | 10Gi | `/temp` | Transcode cache, sized against the node's free disk |
+| `data` | PVC (existing `arr-data`) | -- | `/data` | Shared media library, mounted whole so cache and media share a filesystem |
+| `dri` | hostPath | -- | `/dev/dri` | Intel GPU device |
 
 ### Resources
 
 | | CPU | Memory |
 |---|-----|--------|
-| Requests | 200m | 512Mi |
-| Limits | -- | 4Gi |
+| Requests | 500m | 1Gi |
+| Limits | 3000m | 4Gi |
 
-GPU limit: `gpu.intel.com/i915: 1`
-
-### Scheduling
-
-- `nodeSelector`: `gpu: intel`
+GPU limit: `gpu.intel.com/i915: 1`. `nodeSelector`: `gpu: intel`.
 
 ## Key Configuration
 
-- Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID) plus application-specific variables:
+Environment from ConfigMap `arr-env` (TZ, PUID, PGID) plus:
 
-    | Variable | Value |
-    |----------|-------|
-    | `serverIP` | `0.0.0.0` |
-    | `serverPort` | `8266` |
-    | `webUIPort` | `8265` |
-    | `internalNode` | `true` |
-    | `inContainer` | `true` |
-    | `ffmpegVersion` | `6` |
+| Variable | Value | Notes |
+|----------|-------|-------|
+| `serverIP` | `0.0.0.0` | |
+| `serverPort` | `8266` | |
+| `webUIPort` | `8265` | |
+| `internalNode` | `true` | No separate node deployment is needed |
+| `inContainer` | `true` | |
+| `ffmpegVersion` | `7` | |
+| `NODE_OPTIONS` | `--max-old-space-size=3072` | Node caps its own heap near 2 GB and exits below the container limit without this |
 
-- Runs with an internal processing node (`internalNode=true`), so no external Tdarr node deployment is required.
-- Liveness, readiness, and startup probes check the web UI on port 8265. The startup probe allows up to 30 failures at 10-second intervals (5 minutes).
+## Configuration as Code
 
-## Post-Deploy Setup
+Libraries, flows and worker counts come from the `TdarrConfig` CR in
+`apps/arr/media-config/tdarr.yml`. Nothing here is set through the web UI.
 
-### 1. Verify the Internal Node
+The libraries run the community One Flow set with `disable_video: true`, so the flow performs
+audio and container work and leaves the video stream untouched.
 
-1. Open `https://tdarr.homelab.local`.
-2. Go to the **Tdarr** tab (main dashboard). The internal node "InternalNode" should appear automatically.
-3. Click the node name, then **Options**. Set workers:
-    - **Transcode CPU workers:** 1 (remuxing is I/O-bound; more workers on NFS won't help)
-    - **Transcode GPU workers:** 0 (not needed for remux/copy operations)
-    - **Health check CPU workers:** 1
-    - **Health check GPU workers:** 0
+Settings that are load-bearing and easy to get wrong:
 
-### 2. Create the Remux Flow
+| Setting | Value | Why |
+|---------|-------|-----|
+| `folderWatching` | `false` | inotify does not work over NFS; the watcher leaks roughly 1.4 GiB/min until the pod is OOM-killed |
+| `scheduledScanFindNew` | `true` | Replaces folder watching -- new files are found on an hourly scan |
+| `containerFilter` | extension list | The scanner matches file extensions against this; an empty filter indexes nothing |
+| `cache` | `/temp` | The cache cleaner throws on every pass when this is unset |
+| `decisionMode` | `flows` | Without it Tdarr builds classic plugin-stack jobs, which produce an empty ffmpeg command |
+| `healthCheckMode` | `thorough` | Quick health checks call HandBrake, which this image does not ship |
 
-Go to the **Flows** tab and click **Flow+** to create a new flow. Build this pipeline using the visual node editor:
+Health checks run on CPU workers. The GPU health-check worker assumes NVIDIA decode and fails
+on this Intel GPU.
 
-1. **Input** (auto-created)
-2. **Check File Medium** (category: `file`) -- ensures it's a video file
-3. **Begin Command** (category: `ffmpegCommand`) -- starts building the ffmpeg command
-4. **Set Container** (category: `ffmpegCommand`) -- set to `mkv`, enable **Force Conform** = true
-5. **Remove Stream By Property** (category: `ffmpegCommand`) -- keep only English audio:
-    - Property To Check: `tags.language`
-    - Values: `eng,und`
-    - Condition: remove streams that do **NOT** match (keeps English + undefined)
-    - Stream type: `audio`
-6. **Remove Subtitles** (category: `ffmpegCommand`) -- removes all embedded subs (Bazarr provides external subs)
-7. **Remove Data Streams** (category: `ffmpegCommand`) -- removes cover art, fonts, attachments
-8. **Custom Arguments** (category: `ffmpegCommand`) -- Output Arguments: `-c copy` (copy all streams, no re-encode)
-9. **Execute** (category: `ffmpegCommand`) -- runs the assembled ffmpeg command
-10. **Replace Original File** (category: `file`) -- moves the processed file from cache back to the source location
+## Operating Notes
 
-Wire Check File Medium's **first output** (video) to Begin Command. This flow remuxes files without re-encoding video or audio. It only strips unwanted streams.
-
-### 3. Add Libraries
-
-Go to the **Libraries** tab and click **Library+** for each:
-
-**Movies:**
-- Source: `/data/media/movies`
-- Transcode cache: `/temp`
-- Containers: `mkv,mp4,avi`
-- Transcode options: select the remux flow created above
-- Source options: enable **Scan on start**, enable **Folder watch**, set **Process Library** to ON
-- Schedule: 24/7 (or limit to off-peak hours)
-
-**TV Shows:**
-- Source: `/data/media/tv`
-- Same settings as Movies
-
-### 4. Start Processing
-
-1. Click **Scan (Fresh)** from the Library Options button to do a full scan.
-2. Monitor the dashboard -- files will move through the queue.
-3. Target status for completed files: "Transcode: Not required".
+- The job queue is built at startup. A configuration change that affects queueing needs a pod
+  restart before it takes effect.
+- Job reports under `/app/server/Tdarr/DB2/JobReports/<footprintId>/` record the actual ffmpeg
+  arguments and exit code, and are the fastest way to diagnose a failing job.
+- `JobsJSONDB` records `workerGenus` per job, which distinguishes a flow job from a classic one.
 
 ## Dependencies
 
 | Dependency | Purpose |
 |------------|---------|
-| Shared media (`arr-data`) | Reads source files and writes transcoded output |
-| Intel GPU node | Required for hardware-accelerated transcoding |
+| Shared media (`arr-data`) | Reads and writes the library |
+| Intel GPU node | Hardware decode for health checks and any future encode work |
+| media-operator | Reconciles libraries, flows and worker counts |
 
 ## Upstream
 

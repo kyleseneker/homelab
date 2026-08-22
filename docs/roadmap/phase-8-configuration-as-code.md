@@ -67,7 +67,7 @@ section up to date.
 Built in its own repository ([kyleseneker/media-operator](https://github.com/kyleseneker/media-operator)), API group `media-operator.dev/v1alpha1`.
 
 - [x] Scaffold with kubebuilder v4, against Kubernetes 1.31.4
-- [x] One config CRD per app -- 15 kinds split across seven API groups, each group its own manager and chart, so an app that is not deployed costs nothing
+- [x] One config CRD per app -- 15 kinds split across nine API groups, each group its own manager and chart, so an app that is not deployed costs nothing
 - [x] Declare indexers **only** against the `prowlarr` instance -- Prowlarr's own sync fans them into Sonarr and Radarr, which removes the largest ordering hazard
 - [x] Gate on app reachability: unreachable requeues without returning an error, so it does not enter exponential backoff
 - [x] Adopt by name, and merge partial field arrays rather than discarding entries the CR omits
