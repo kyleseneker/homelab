@@ -162,6 +162,44 @@ data:
         attrs:
           name: qBittorrent
           provider: !KeyOf qbit-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: prometheus-provider
+        identifiers:
+          name: prometheus-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://prometheus.homelab.local
+          internal_host: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          internal_host_ssl_validation: false
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: prometheus
+        attrs:
+          name: Prometheus
+          provider: !KeyOf prometheus-provider
+      - model: authentik_providers_proxy.proxyprovider
+        id: alertmanager-provider
+        identifiers:
+          name: alertmanager-edge-auth
+        attrs:
+          mode: proxy
+          external_host: https://alertmanager.homelab.local
+          internal_host: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
+          internal_host_ssl_validation: false
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      - model: authentik_core.application
+        identifiers:
+          slug: alertmanager
+        attrs:
+          name: Alertmanager
+          provider: !KeyOf alertmanager-provider
       - model: authentik_outposts.outpost
         identifiers:
           name: authentik Embedded Outpost
@@ -175,3 +213,5 @@ data:
             - !KeyOf prowlarr-provider
             - !KeyOf bazarr-provider
             - !KeyOf qbit-provider
+            - !KeyOf prometheus-provider
+            - !KeyOf alertmanager-provider

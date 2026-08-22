@@ -11,6 +11,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       namespace: goldilocks
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: monitoring
   to:
     - group: ""
       kind: Service
