@@ -3,7 +3,6 @@ defaultPodOptions:
     reloader.stakater.com/auto: 'true'
 controllers:
   main:
-    replicas: 0
     containers:
       main:
         image:
