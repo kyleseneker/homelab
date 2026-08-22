@@ -30,7 +30,7 @@
 - [x] One `arr-api-keys` ExternalSecret in `apps/arr/prereqs/`, ESO-templated to emit both the `APPNAME__AUTH__APIKEY` env names and the plain keys existing consumers read
 - [x] Add `envFrom.secretRef` alongside the existing `configMapRef: arr-env` in sonarr, radarr and prowlarr `values.yml`
 - [x] Collapse the duplicate key copies in Vault -- `apps/exportarr` is gone and `apps/unpackerr` keeps only the qBittorrent password; every consumer reads `apps/arr`
-- [ ] Destructive test: delete `arr-prowlarr-config`, let it rebuild, confirm the key is unchanged
+- [x] Destructive test: delete `arr-prowlarr-config`, let it rebuild, confirm the key is unchanged. Prowlarr regenerated on an empty volume and the Vault key authenticated against it (`200`, where a wrong key gives `401`), so the key is seeded from Vault rather than invented. All five indexers and both applications were restored by the operator. Two obstacles worth knowing: the `arr-config-backup-prowlarr` CronJob pod holds the PVC through `pvc-protection` even when `Completed`, and `kubectl scale` is reverted within seconds by the ApplicationSet controller re-applying the Application spec -- suspending auto-sync does not help, the replica count has to go through git
 
 | | |
 |---|---|
