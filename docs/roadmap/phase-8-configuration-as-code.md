@@ -52,9 +52,10 @@ definitions, quality profiles, custom formats and media naming, and its last run
 section up to date.
 
 - [x] Resolve the transcode contradiction before touching profiles (M6, see 8.8)
-- [ ] Move the remaining \*arr settings surface into the operator rather than a second sync tool.
-  `downloadPropersAndRepacks` is `preferAndUpgrade` while the Repack/Proper custom formats are
-  scored, which double-handles propers; TRaSH expects `doNotPrefer` when those formats are in use
+- [x] Move the remaining \*arr settings surface into the operator rather than a second sync tool.
+  The `mediaManagement` section already existed on both PVR specs, so `downloadPropersAndRepacks`
+  moved from `preferAndUpgrade` to `doNotPrefer` in git -- the Repack/Proper custom formats score
+  propers, and preferring them as well handles the same release twice
 
 | | |
 |---|---|
