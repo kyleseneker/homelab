@@ -21,16 +21,18 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
 | `config` | PVC (`nfs-client`) | 1Gi | `/app/server` | Server database and configuration |
-| `temp` | emptyDir | 10Gi | `/temp` | Transcode cache, sized against the node's free disk |
-| `data` | PVC (existing `arr-data`) | -- | `/data` | Shared media library, mounted whole so cache and media share a filesystem |
+| `data` | PVC (existing `arr-data`) | -- | `/data` | Shared media library and transcode cache, mounted whole so the two share a filesystem |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device |
 
 ### Resources
 
-| | CPU | Memory |
-|---|-----|--------|
-| Requests | 500m | 1Gi |
-| Limits | 3000m | 4Gi |
+| | CPU | Memory | Ephemeral storage |
+|---|-----|--------|-------------------|
+| Requests | 500m | 1Gi | 1Gi |
+| Limits | 3000m | 4Gi | 4Gi |
+
+The ephemeral-storage limit bounds what Tdarr can write to the node's root disk. Without it an
+oversized cache write takes the whole node into `DiskPressure`, which evicts every pod on it.
 
 GPU limit: `gpu.intel.com/i915: 1`. `nodeSelector`: `gpu: intel`.
 
@@ -63,7 +65,7 @@ Settings that are load-bearing and easy to get wrong:
 | `folderWatching` | `false` | inotify does not work over NFS; the watcher leaks roughly 1.4 GiB/min until the pod is OOM-killed |
 | `scheduledScanFindNew` | `true` | Replaces folder watching -- new files are found on an hourly scan |
 | `containerFilter` | extension list | The scanner matches file extensions against this; an empty filter indexes nothing |
-| `cache` | `/temp` | The cache cleaner throws on every pass when this is unset |
+| `cache` | `/data/tdarr/cache` | The cache cleaner throws on every pass when this is unset. It must be on the NFS share: cache holds a full copy of the file being processed, and a UHD remux is larger than a node's root disk |
 | `decisionMode` | `flows` | Without it Tdarr builds classic plugin-stack jobs, which produce an empty ffmpeg command |
 | `healthCheckMode` | `thorough` | Quick health checks call HandBrake, which this image does not ship |
 

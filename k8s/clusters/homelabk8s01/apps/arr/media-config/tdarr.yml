@@ -10685,7 +10685,7 @@ spec:
       flowId: htpX8Ypt1
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
-      cache: /temp
+      cache: /data/tdarr/cache
       container: mkv
       processTranscodes: true
       processHealthChecks: true
@@ -10720,7 +10720,7 @@ spec:
       flowId: htpX8Ypt1
       containerFilter: mkv,mp4,m4v,avi,mov,ts,wmv,flv,webm,mpg,mpeg
       scannerThreadCount: 1
-      cache: /temp
+      cache: /data/tdarr/cache
       container: mkv
       processTranscodes: true
       processHealthChecks: true

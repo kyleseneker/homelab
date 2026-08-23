@@ -24,8 +24,14 @@ the contradiction active, and re-encoded files would then invite their own repla
 
 Acquire the best available source and keep it. Tdarr does not re-encode video.
 
-`processTranscodes` is false on both libraries. Health checks stay enabled, so Tdarr still
-reports corrupt or unplayable files.
+Both libraries run transcode jobs with `disable_video: 'true'`, so the flow copies the video
+stream through untouched and its work is limited to audio cleanup and container
+normalisation. Health checks stay enabled, so Tdarr still reports corrupt or unplayable
+files.
+
+The transcode cache lives on the NFS share, not on node-local storage. Cache holds a full
+copy of the file being worked on, and the largest files in the library are several times the
+size of a node's root disk.
 
 ## Alternatives Considered
 
@@ -57,8 +63,9 @@ reports corrupt or unplayable files.
   `HD Bluray + WEB`.
 - The TRaSH profiles Recyclarr maintains are not in use: every film is on `Any`. Custom format
   scoring therefore influences nothing today, which is worth resolving separately.
-- Tdarr's role narrows to health checking. Audio cleanup and container normalisation remain
-  available and do not conflict with this decision, but no flow performs them today.
+- Tdarr's role narrows to health checking, audio cleanup and container normalisation.
+- Cache traffic crosses the network twice per file, read and written over NFS. That is slower
+  than local cache and is accepted: no node has the capacity to hold a UHD remux.
 - Reversing this means removing `x265 (HD)` from the unwanted formats in
-  `recyclarr/configmap.yml` first, then re-enabling `processTranscodes`. Doing it in the other
-  order recreates the loop.
+  `recyclarr/configmap.yml` first, then setting `disable_video` to `'false'`. Doing it in the
+  other order recreates the loop.

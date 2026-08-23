@@ -32,9 +32,11 @@ controllers:
           requests:
             cpu: 500m
             memory: 1Gi
+            ephemeral-storage: 1Gi
           limits:
             cpu: 3000m
             memory: 4Gi
+            ephemeral-storage: 4Gi
             gpu.intel.com/i915: 1
         probes:
           liveness:
@@ -63,7 +65,7 @@ controllers:
               periodSeconds: 10
 defaultPodOptions:
   annotations:
-    backup.velero.io/backup-volumes-excludes: data,temp,dri
+    backup.velero.io/backup-volumes-excludes: data,dri
   nodeSelector:
     gpu: intel
 service:
@@ -101,11 +103,6 @@ persistence:
     existingClaim: arr-tdarr-config
     globalMounts:
       - path: /app/server
-  temp:
-    type: emptyDir
-    sizeLimit: 10Gi
-    globalMounts:
-      - path: /temp
   data:
     type: persistentVolumeClaim
     existingClaim: arr-data
