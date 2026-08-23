@@ -19,10 +19,12 @@ spec:
     savePath: /data/torrents
     tempPathEnabled: true
     maxRatioEnabled: true
-    maxRatio: "1.0"
+    maxRatio: '1.0'
     maxRatioAction: stop
     maxSeedingTimeEnabled: true
     maxSeedingTime: 1440
+    bypassAuthSubnetWhitelistEnabled: true
+    bypassAuthSubnetWhitelist: 10.0.0.0/16
   categories:
     - name: tv
     - name: movies

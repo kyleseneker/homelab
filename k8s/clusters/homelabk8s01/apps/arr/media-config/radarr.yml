@@ -54,3 +54,5 @@ spec:
           valueFrom:
             name: jellyfin-credentials
             key: api-key
+  mediaManagement:
+    downloadPropersAndRepacks: doNotPrefer

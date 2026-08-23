@@ -248,3 +248,39 @@ If Vault is unsealed but ExternalSecrets are failing to sync, the ESO Kubernetes
 kubectl annotate externalsecret <name> -n <namespace> \
   force-sync=$(date +%s) --overwrite
 ```
+
+### A PVC Stays `Terminating`
+
+A PVC is not released while any pod still references it, including pods that have already
+completed. The `arr-config-backup-*` CronJobs mount each app's config volume, so a `Completed`
+backup pod holds the claim long after the job finished. Scaling the application to zero is not
+enough.
+
+```bash
+kubectl get pods -n <ns> -o json | jq -r \
+  '.items[] | select(.spec.volumes[]?.persistentVolumeClaim.claimName=="<pvc>") | .metadata.name'
+```
+
+Delete every pod that listing returns, then the `pvc-protection` finalizer clears on its own.
+
+### `kubectl scale` Is Reverted Within Seconds
+
+Replica counts are reverted by the ApplicationSet controller re-applying the Application spec,
+not by ArgoCD self-heal. Suspending `syncPolicy.automated` on the Application does not help,
+because the controller restores the whole spec.
+
+Change the replica count in Git instead. This matters when a workload has to be stopped to
+release a volume.
+
+### An ArgoCD Sync Fails on Every Resource at Once
+
+`error validating options: --force cannot be used with --server-side` means a sync was started
+with the force option against an Application that uses `ServerSideApply`. Every resource fails,
+not just the one being changed.
+
+Removing the `operation` field does not stop it, because the original operation keeps retrying.
+Restart the application controller:
+
+```bash
+kubectl -n argocd rollout restart statefulset argocd-application-controller
+```
