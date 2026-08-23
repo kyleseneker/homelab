@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: media-operator-indexers-flaresolverr
+rules:
+  - apiGroups:
+      - media-operator.dev
+    resources:
+      - flaresolverrconfigs
+      - flaresolverrconfigs/status
+      - flaresolverrconfigs/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: media-operator-indexers-flaresolverr
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: media-operator-indexers-flaresolverr
+subjects:
+  - kind: ServiceAccount
+    name: media-operator-indexers
+    namespace: arr
