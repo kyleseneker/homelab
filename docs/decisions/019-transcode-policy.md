@@ -24,6 +24,9 @@ the contradiction active, and re-encoded files would then invite their own repla
 
 Acquire the best available source and keep it. Tdarr does not re-encode video.
 
+Bitrate variables are plain integers; the flow appends the `k` suffix itself when
+it builds ffmpeg arguments.
+
 Both libraries run transcode jobs with `disable_video: 'true'`, so the flow copies the video
 stream through untouched and its work is limited to audio cleanup and container
 normalisation. Health checks stay enabled, so Tdarr still reports corrupt or unplayable

@@ -3,7 +3,7 @@ namespace: arr
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/media-operator
 chartName: media-operator-indexers
-chartVersion: "0.33.0"
+chartVersion: "0.34.0"
 createNamespace: false
 hasResources: true
 syncOptions:

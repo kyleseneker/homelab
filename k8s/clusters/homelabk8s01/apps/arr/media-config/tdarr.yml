@@ -14,7 +14,7 @@ spec:
     deletionPolicy: orphan
   workers:
     transcodeGPU: 1
-    transcodeCPU: 0
+    transcodeCPU: 1
     healthcheckGPU: 0
     healthcheckCPU: 1
   flows:
@@ -10697,17 +10697,17 @@ spec:
         output_dir_done: /data/tdarr/done
         output_dir_review: /data/tdarr/review
         v_cq: '20'
-        bitrate_480p: 1250k
-        bitrate_576p: 1400k
-        bitrate_720p: 2000k
-        bitrate_1080p: 2500k
-        bitrate_1440p: 3800k
-        bitrate_4k: 10000k
-        bitrate_4k_hdr: 12500k
+        bitrate_480p: '1250'
+        bitrate_576p: '1400'
+        bitrate_720p: '2000'
+        bitrate_1080p: '2500'
+        bitrate_1440p: '3800'
+        bitrate_4k: '10000'
+        bitrate_4k_hdr: '12500'
         do_audio_clean: 'true'
         do_audio_encode: 'false'
-        bitrate_audio: 160k
-        bitrate_audio_cutoff: 192k
+        bitrate_audio: '160'
+        bitrate_audio_cutoff: '192'
         audio_language: und,un,eng,en
         disable_video: 'true'
     - id: tv
@@ -10732,16 +10732,16 @@ spec:
         output_dir_done: /data/tdarr/done
         output_dir_review: /data/tdarr/review
         v_cq: '20'
-        bitrate_480p: 1250k
-        bitrate_576p: 1400k
-        bitrate_720p: 2000k
-        bitrate_1080p: 2500k
-        bitrate_1440p: 3800k
-        bitrate_4k: 10000k
-        bitrate_4k_hdr: 12500k
+        bitrate_480p: '1250'
+        bitrate_576p: '1400'
+        bitrate_720p: '2000'
+        bitrate_1080p: '2500'
+        bitrate_1440p: '3800'
+        bitrate_4k: '10000'
+        bitrate_4k_hdr: '12500'
         do_audio_clean: 'true'
         do_audio_encode: 'false'
-        bitrate_audio: 160k
-        bitrate_audio_cutoff: 192k
+        bitrate_audio: '160'
+        bitrate_audio_cutoff: '192'
         audio_language: und,un,eng,en
         disable_video: 'true'
