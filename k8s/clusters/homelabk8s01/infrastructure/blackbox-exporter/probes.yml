@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: sso-protected
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: blackbox-exporter
+    release: kube-prometheus-stack
+spec:
+  jobName: sso-protected
+  interval: 60s
+  module: http_auth_redirect
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter:9115
+  targets:
+    staticConfig:
+      static:
+        - https://sonarr.homelab.local
+        - https://radarr.homelab.local
+        - https://prowlarr.homelab.local
+        - https://bazarr.homelab.local
+        - https://qbit.homelab.local
+        - https://tdarr.homelab.local
+        - https://goldilocks.homelab.local
+        - https://prometheus.homelab.local
+        - https://alertmanager.homelab.local
+        - https://grafana.homelab.local
+        - https://jellyfin.homelab.local
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: direct
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: blackbox-exporter
+    release: kube-prometheus-stack
+spec:
+  jobName: direct
+  interval: 60s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter:9115
+  targets:
+    staticConfig:
+      static:
+        - https://argocd.homelab.local
+        - https://home.homelab.local

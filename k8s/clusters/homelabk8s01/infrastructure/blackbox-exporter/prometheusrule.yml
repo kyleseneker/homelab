@@ -1,0 +1,49 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: blackbox-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: blackbox-exporter
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: blackbox-exporter
+      rules:
+        - alert: EndpointProbeFailing
+          expr: |
+            probe_success == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.instance }} is not answering as expected"
+            description: >-
+              The probe for {{ $labels.instance }} has failed for five minutes. This walks the
+              whole path -- DNS, the Cilium Gateway, the Authentik outpost where the route is
+              proxied, and the backend -- so the failure can be anywhere along it. Compare
+              probe_http_status_code against the module the target uses: proxied routes answer
+              302 toward Authentik, and a direct route answers 200.
+        - alert: EndpointProbeSlow
+          expr: |
+            probe_duration_seconds > 5
+          for: 10m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.instance }} is answering slowly"
+            description: >-
+              {{ $labels.instance }} has taken more than five seconds to answer for ten minutes.
+              A proxied route that stalls rather than redirecting usually means the outpost
+              cannot reach its backend.
+        - alert: EndpointCertificateExpiringSoon
+          expr: |
+            probe_ssl_earliest_cert_expiry - time() < 14 * 24 * 3600
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.instance }} certificate expires within two weeks"
+            description: >-
+              cert-manager renews these automatically, so this firing means renewal is not
+              happening. Check the Certificate resource backing the gateway listener.

@@ -18,8 +18,9 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kube-prometheus-stack-prometheus
-          port: 9090
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: auth
+          port: 9000
           weight: 1
           group: ''
           kind: Service
@@ -70,8 +71,9 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: kube-prometheus-stack-alertmanager
-          port: 9093
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: auth
+          port: 9000
           weight: 1
           group: ''
           kind: Service
