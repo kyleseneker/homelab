@@ -10110,13 +10110,11 @@ spec:
             x: 1302.6241779620027
             y: 1863.0639047595314
           fpEnabled: true
-        - name: File Save - Move To Directory Done ⏳
+        - name: File Save - Replace Original File ⏳
           sourceRepo: Community
-          pluginName: moveToDirectory
-          version: 2.0.0
-          inputsDB:
-            keepRelativePath: 'true'
-            outputDirectory: '{{{args.userVariables.library.output_dir_done}}}'
+          pluginName: replaceOriginalFile
+          version: 1.0.0
+          inputsDB: {}
           id: nSj2dyRzi
           position:
             x: 1708.79024633776
@@ -10282,18 +10280,6 @@ spec:
             x: 1301.31260152972
             y: 1671.2283978477408
           fpEnabled: true
-        - name: Save File - Delete Original File & Empty Folder ⏳
-          sourceRepo: Community
-          pluginName: deleteFile
-          version: 1.0.0
-          inputsDB:
-            fileToDelete: originalFile
-            deleteParentFolderIfEmpty: 'true'
-          id: ff-SxMjZl
-          position:
-            x: 885.692211201201
-            y: 2247.584034882886
-          fpEnabled: true
         - name: Save File - Can't Move File Fail! 🚨🚨
           sourceRepo: Community
           pluginName: failFlow
@@ -10419,11 +10405,6 @@ spec:
           target: seqXRVKsR
           targetHandle: null
           id: ZR7rko0tM
-        - source: ff-SxMjZl
-          sourceHandle: err1
-          target: aH-0hMvAP
-          targetHandle: null
-          id: -3fv3Jybu
         - source: 55e9r2oAv
           sourceHandle: err1
           target: DnbO3Fq5r
@@ -10511,7 +10492,7 @@ spec:
           id: -HNFs7W_2
         - source: u5QtDQOjl
           sourceHandle: '2'
-          target: ff-SxMjZl
+          target: WgX98LQev
           targetHandle: null
           id: kv6PuCFcr
         - source: Xzzidp1G7
@@ -10544,11 +10525,6 @@ spec:
           target: 78CtQZMV7
           targetHandle: null
           id: FMk65ZlIG
-        - source: ff-SxMjZl
-          sourceHandle: '1'
-          target: WgX98LQev
-          targetHandle: null
-          id: rZLF-RVKO
         - source: YshczgnWQ
           sourceHandle: '1'
           target: ko1ZB0KWL

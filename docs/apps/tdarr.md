@@ -68,6 +68,7 @@ Settings that are load-bearing and easy to get wrong:
 | `cache` | `/data/tdarr/cache` | The cache cleaner throws on every pass when this is unset. It must be on the NFS share: cache holds a full copy of the file being processed, and a UHD remux is larger than a node's root disk |
 | `decisionMode` | `flows` | Without it Tdarr builds classic plugin-stack jobs, which produce an empty ffmpeg command |
 | `healthCheckMode` | `thorough` | Quick health checks call HandBrake, which this image does not ship |
+| Save File stage | `replaceOriginalFile` | The stock flow moves output to a `done` folder and deletes the original, which removes the file from the library Radarr and Jellyfin index |
 | `variables` | per library | Flows read these as `args.userVariables.library.<key>`. Tdarr serves them from the `VariablesJSONDB` collection, one document per variable tagged `library:<id>` -- not from a field on the library document. A variable written to the wrong place arrives as `undefined` and fails the flow at the first plugin that parses it |
 
 Health checks run on CPU workers. The GPU health-check worker assumes NVIDIA decode and fails

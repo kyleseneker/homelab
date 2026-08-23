@@ -27,6 +27,13 @@ Acquire the best available source and keep it. Tdarr does not re-encode video.
 Bitrate variables are plain integers; the flow appends the `k` suffix itself when
 it builds ffmpeg arguments.
 
+The flow's Save File stage replaces the original file in place. The community flow ships a
+stage that moves its output to a `done` directory and then deletes the original, which suits
+a staging pipeline but not a library whose paths Radarr and Jellyfin own -- a processed file
+disappears from both. That node is replaced with `replaceOriginalFile` and the delete removed.
+The review branch still moves a copy aside for inspection, which is safe because it never
+deletes the original.
+
 Both libraries run transcode jobs with `disable_video: 'true'`, so the flow copies the video
 stream through untouched and its work is limited to audio cleanup and container
 normalisation. Health checks stay enabled, so Tdarr still reports corrupt or unplayable
