@@ -127,7 +127,7 @@ data:
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
         - Tdarr:
             icon: tdarr.png
-            href: http://tdarr.homelab.local
+            href: https://tdarr.homelab.local
             description: Transcoding
             widget:
               type: tdarr

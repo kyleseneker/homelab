@@ -142,3 +142,13 @@ When rebuilding the cluster from scratch:
 3. Restore Vault data from Velero backup, or re-initialize with `make vault-init`.
 4. If re-initializing, re-populate all secrets from their original sources.
 5. ESO automatically creates all K8s Secrets once Vault is available.
+
+## CA Distribution
+
+ArgoCD trusts the homelab CA through a trust-manager `Bundle` named `custom-ca-certs`, which
+reads `homelab-ca-secret` and republishes it into the `argocd` namespace. A CA rotation therefore
+propagates without a commit.
+
+argocd-server mounts that bundle with `optional: true`. On a cold rebuild trust-manager does not
+exist yet, and a required mount would deadlock the bootstrap. The pod needs one restart after the
+CA first appears.

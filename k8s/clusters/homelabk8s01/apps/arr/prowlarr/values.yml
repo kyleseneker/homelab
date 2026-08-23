@@ -13,6 +13,8 @@ controllers:
               name: arr-env
           - secretRef:
               name: arr-prowlarr-env
+        env:
+          PROWLARR__AUTH__METHOD: External
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -26,7 +28,7 @@ controllers:
             cpu: 50m
             memory: 128Mi
           limits:
-            cpu: 200m
+            cpu: 1000m
             memory: 512Mi
         probes:
           liveness:
@@ -59,8 +61,9 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-prowlarr
-            port: 9696
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 persistence:
   config:
     type: persistentVolumeClaim

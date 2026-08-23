@@ -50,7 +50,7 @@ grafana:
         cpu: 10m
         memory: 64Mi
       limits:
-        cpu: 100m
+        cpu: 300m
         memory: 128Mi
   initChownData:
     enabled: false
@@ -173,7 +173,7 @@ prometheus-node-exporter:
       cpu: 50m
       memory: 32Mi
     limits:
-      cpu: 100m
+      cpu: 500m
       memory: 64Mi
 kubeProxy:
   enabled: false

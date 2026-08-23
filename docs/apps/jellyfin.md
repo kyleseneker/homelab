@@ -65,3 +65,10 @@ GPU limit: `gpu.intel.com/i915: 1`
 ## Upstream
 
 - [https://jellyfin.org](https://jellyfin.org)
+
+## Library Refresh
+
+Jellyfin's own folder watching does not work over NFS, because inotify events do not cross the
+mount. Sonarr and Radarr each hold a `MediaBrowser` notification with `updateLibrary` enabled, so
+an import tells Jellyfin to refresh rather than waiting for a scheduled scan. Both notifications
+are reconciled by the media-operator.
