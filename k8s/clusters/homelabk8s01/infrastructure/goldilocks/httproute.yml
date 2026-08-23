@@ -18,8 +18,9 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: goldilocks-dashboard
-          port: 80
+        - name: ak-outpost-authentik-embedded-outpost
+          namespace: auth
+          port: 9000
           weight: 1
           group: ''
           kind: Service
