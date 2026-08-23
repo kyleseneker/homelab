@@ -135,6 +135,8 @@ nav:
       - VPA & Goldilocks: decisions/015-vpa-goldilocks-capacity-planning.md
       - VLAN Segmentation: decisions/016-vlan-segmentation.md
       - Intel AMT OOB Management: decisions/017-intel-amt-oob-management.md
+      - \*arr Configuration as Code: decisions/018-arr-configuration-as-code.md
+      - Transcode Policy: decisions/019-transcode-policy.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md

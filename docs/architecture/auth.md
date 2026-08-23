@@ -1,6 +1,6 @@
 # Authentication & SSO
 
-The homelab uses Authentik as the centralized identity provider. Only applications with native OIDC support currently authenticate against it.
+The homelab uses Authentik as the centralized identity provider. Applications authenticate either through native OIDC or by routing their traffic through Authentik's embedded outpost.
 
 ## Authentication Flows
 
@@ -15,22 +15,29 @@ flowchart TB
     end
 
     User["User"] --> Gateway["Cilium Gateway"]
-    Gateway --> UnprotectedApps["*arr apps<br/>(no auth at the edge)"]
+    Gateway --> Outpost["Authentik Outpost"]
+    Outpost --> ProtectedApps["*arr apps, qBittorrent, Tdarr,<br/>Goldilocks, Prometheus,<br/>Alertmanager<br/>(auth at the edge)"]
+    Outpost --> AuthentikServer
+    Gateway --> UnprotectedApps["Homepage, Vault,<br/>OpenClaw, Uptime Kuma<br/>(no auth at the edge)"]
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
 ```
 
-Authentik runs its server and worker against a bundled PostgreSQL instance. The chart no longer deploys Redis -- the task queue moved to PostgreSQL -- so the `redis:` block still present in `values.yml` is inert.
+Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed -- the task queue lives in PostgreSQL. The `authentik-external-secret.yml` still pulls a `redis-password` from Vault, which nothing consumes.
 
-### Forward Auth -- Not Currently Implemented
+### Proxied Auth
 
-!!! danger "The *arr apps are not behind SSO"
-    Forward auth was previously implemented with nginx-ingress `auth_request` annotations pointing at Authentik's embedded outpost. `ingress-nginx` was removed when every app migrated to Gateway API HTTPRoutes, and no equivalent was put in its place.
+Tdarr, Goldilocks, Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Prometheus and Alertmanager route through the embedded outpost, which authenticates the browser before proxying to the app. The outpost dispatches on the `Host` header, so one instance serves every protected app. Each app declares a proxy-mode provider in `infrastructure/authentik/blueprints-configmap.yml`.
 
-    **Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, and Homepage are reachable on the LAN with no authentication at the edge.** Each app's own login (where it has one) is the only control.
+Because the outpost originates the proxied request, it needs its own network path to each backend -- ingress on the app's namespace and egress from `auth`. Without both, the browser gets the login redirect and then hangs. See the [runbook](../runbooks/adding-app-to-sso.md).
 
-    Tracked as [K21](../roadmap/assessment.md) in the assessment. Re-implementing it requires an ext_authz path through Cilium's Envoy -- HTTPRoutes have no annotation-based equivalent to the nginx auth subrequest.
+Grafana reads Prometheus and Alertmanager over their in-cluster Services, so proxying their web UIs does not affect scraping or dashboards.
+
+The *arr apps and qBittorrent exempt `/api`, `/feed` and `/ping` from the proxy via `skip_path_regex`, because mobile and scripted clients cannot complete a browser login. Those paths are still guarded by each app's API key, and a request to them returns the app's own `401` rather than a login redirect.
+
+!!! warning "Still open on the LAN"
+    **Reachable with no edge auth: Homepage, Vault, OpenClaw and Uptime Kuma.** Vault is deliberate -- Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal.
 
 ### Native OIDC
 
@@ -46,10 +53,11 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 
 | Service | Reason |
 |---------|--------|
-| *arr apps, qBittorrent, Tdarr, Homepage | No edge auth since the Gateway API migration -- see the warning above |
+| Homepage | No edge auth; a dashboard of links, no data of its own |
+| Vault | Cannot use Authentik -- Authentik's own secrets come from Vault, so this would be circular. Token auth is the control |
+| OpenClaw | No edge auth; its own webhook routes are the only control |
+| Uptime Kuma | No edge auth; has its own login |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
-| Prometheus | Internal monitoring; edge auth would break Grafana datasource scraping |
-| Alertmanager | Same as Prometheus |
 | Authentik | Circular dependency |
 
 ## Group-Based Access Control
