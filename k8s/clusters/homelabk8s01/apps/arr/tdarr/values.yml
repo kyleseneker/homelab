@@ -16,6 +16,7 @@ controllers:
           inContainer: 'true'
           ffmpegVersion: '7'
           nodeName: InternalNode
+          NODE_OPTIONS: --max-old-space-size=3072
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -29,11 +30,13 @@ controllers:
               - FOWNER
         resources:
           requests:
-            cpu: 200m
-            memory: 512Mi
+            cpu: 500m
+            memory: 1Gi
+            ephemeral-storage: 1Gi
           limits:
-            cpu: 2000m
+            cpu: 3000m
             memory: 4Gi
+            ephemeral-storage: 4Gi
             gpu.intel.com/i915: 1
         probes:
           liveness:
@@ -62,7 +65,7 @@ controllers:
               periodSeconds: 10
 defaultPodOptions:
   annotations:
-    backup.velero.io/backup-volumes-excludes: media,temp,dri
+    backup.velero.io/backup-volumes-excludes: data,dri
   nodeSelector:
     gpu: intel
 service:
@@ -91,25 +94,20 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-tdarr
-            port: 8265
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
 persistence:
   config:
     type: persistentVolumeClaim
     existingClaim: arr-tdarr-config
     globalMounts:
       - path: /app/server
-  temp:
-    type: emptyDir
-    sizeLimit: 100Gi
-    globalMounts:
-      - path: /temp
-  media:
+  data:
     type: persistentVolumeClaim
     existingClaim: arr-data
     globalMounts:
-      - path: /data/media
-        subPath: media
+      - path: /data
   dri:
     type: hostPath
     hostPath: /dev/dri
