@@ -13,7 +13,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/unpackerr/unpackerr
-          tag: v0.15.2
+          tag: v0.16.1
         env:
           UN_WEBSERVER_METRICS: 'true'
           UN_SONARR_0_URL: http://arr-sonarr.arr.svc.cluster.local:8989
