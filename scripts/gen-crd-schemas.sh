@@ -5,7 +5,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 OUT="${1:-$ROOT/.crd-schemas}"
-rm -rf "$OUT"
 mkdir -p "$OUT"
 
 work="$(mktemp -d)"
@@ -27,9 +26,16 @@ done < <(grep -rl 'chartRepo: ghcr.io/kyleseneker/media-operator' k8s/clusters/*
 python3 - "$work" "$OUT" <<'PY'
 import glob, json, os, sys, yaml
 
+# Kyverno CRD enums contain a plain '=' scalar, tagged specially by YAML1.1.
+yaml.SafeLoader.add_constructor("tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node))
 work, out = sys.argv[1], sys.argv[2]
 n = 0
-for path in sorted(glob.glob(os.path.join(work, "*", "crds", "*.yaml"))):
+paths = glob.glob(os.path.join(work, "*", "crds", "*.yaml"))
+paths += glob.glob(os.path.join(work, "*", "crds", "*.yml"))
+paths += glob.glob("k8s/components/gateway-api/*.yml")
+if os.environ.get("RENDERED_MANIFESTS_DIR"):
+    paths += glob.glob(os.path.join(os.environ["RENDERED_MANIFESTS_DIR"], "rendered-*.yml"))
+for path in sorted(paths):
     for doc in yaml.safe_load_all(open(path)):
         if not doc or doc.get("kind") != "CustomResourceDefinition":
             continue

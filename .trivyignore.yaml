@@ -1,0 +1,5 @@
+misconfigurations:
+  - id: KSV-0109
+    paths:
+      - clusters/homelabk8s01/apps/homepage/configmap.yml
+    statement: Homepage widget password fields contain environment placeholders, not credentials; path is relative to the k8s scan root.

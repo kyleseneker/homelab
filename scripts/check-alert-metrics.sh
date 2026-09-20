@@ -1,84 +1,209 @@
 #!/usr/bin/env bash
-set -uo pipefail
+# Read-only audit of the current series referenced by local PrometheusRule files.
+set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+exec python3 - "$ROOT" <<'PY'
+"""Audit current selector coverage, not rule correctness or alert delivery.
 
-KUBECONFIG_PATH="${KUBECONFIG:-$ROOT/kubeconfig}"
-PROM_NS="${PROM_NS:-monitoring}"
-PROM_STS="${PROM_STS:-statefulset/prometheus-kube-prometheus-stack-prometheus}"
-TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+Use the running Prometheus parser instead of guessing PromQL with regular
+expressions. Selectors nested inside absent()/absent_over_time() are reported
+separately; their absence is intentional. Other occurrences remain audited.
+Range windows, offsets, joins, thresholds, and notification delivery are outside
+this check. /api/v1/parse_query is experimental: unknown AST shapes fail closed.
+API contract: https://prometheus.io/docs/prometheus/latest/querying/api/
+"""
 
-query() {
-  enc="$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$1")"
-  kubectl --kubeconfig "$KUBECONFIG_PATH" -n "$PROM_NS" exec -c prometheus "$PROM_STS" -- \
-    wget -qO- "http://localhost:9090/api/v1/query?query=$enc" 2>/dev/null
-}
+import json
+import math
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+from urllib.parse import urlencode
 
-if ! query 'vector(1)' | grep -q '"success"'; then
-  echo "cannot reach Prometheus via $PROM_NS/$PROM_STS -- is the cluster reachable?"
-  exit 2
-fi
+import yaml
 
-find k8s -name '*.yml' -print0 | xargs -0 grep -l 'kind: PrometheusRule' 2>/dev/null > "$TMP/files" || true
 
-python3 - "$TMP/files" "$TMP/selectors" <<'PY'
-import yaml, sys, re
-files = [l.strip() for l in open(sys.argv[1]) if l.strip()]
-FUNCS = set('''time vector scalar absent absent_over_time increase rate irate sum max min avg count count_values
-quantile stddev stdvar topk bottomk predict_linear delta idelta deriv changes clamp clamp_max clamp_min round floor
-ceil abs exp ln log2 log10 sqrt histogram_quantile label_replace label_join timestamp sort sort_desc last_over_time
-max_over_time min_over_time avg_over_time sum_over_time count_over_time stddev_over_time quantile_over_time
-group by on without and or unless offset bool group_left group_right ignoring if end'''.split())
-out = []
-for f in files:
-    for doc in yaml.safe_load_all(open(f)):
-        if not doc or doc.get('kind') != 'PrometheusRule':
+class AuditError(Exception):
+    pass
+
+
+class Prometheus:
+    def __init__(self, root):
+        self.command = [
+            "kubectl", "--kubeconfig", os.environ.get("KUBECONFIG", str(root / "kubeconfig")),
+            "-n", os.environ.get("PROM_NS", "monitoring"), "exec", "-c", "prometheus",
+            os.environ.get("PROM_STS", "statefulset/prometheus-kube-prometheus-stack-prometheus"),
+            "--", "wget", "-qO-",
+        ]
+
+    def request(self, endpoint, expression):
+        url = "http://localhost:9090/api/v1/" + endpoint + "?" + urlencode({"query": expression})
+        try:
+            result = subprocess.run(self.command + [url], capture_output=True, text=True, timeout=45)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise AuditError(f"{endpoint}: {error}") from error
+        if result.returncode:
+            detail = result.stderr.strip() or f"kubectl/wget exited {result.returncode}"
+            raise AuditError(f"{endpoint}: {detail}")
+        try:
+            response = json.loads(result.stdout)
+        except json.JSONDecodeError as error:
+            raise AuditError(f"{endpoint}: response was not valid JSON") from error
+        if not isinstance(response, dict) or response.get("status") != "success":
+            detail = response.get("error", "missing success status") if isinstance(response, dict) else "expected object"
+            raise AuditError(f"{endpoint}: {detail}")
+        for key in ("warnings", "infos"):
+            notices = response.get(key, [])
+            if not isinstance(notices, list) or any(not isinstance(item, str) for item in notices):
+                raise AuditError(f"{endpoint}: response has malformed {key}")
+            for notice in notices:
+                print(f"  API NOTICE   {endpoint}: {notice}", file=sys.stderr)
+        if "data" not in response:
+            raise AuditError(f"{endpoint}: response has no data")
+        return response["data"]
+
+
+def selector_text(node):
+    matchers = node.get("matchers")
+    if not isinstance(matchers, list) or not matchers:
+        raise AuditError("parser returned a selector without matchers")
+    if not isinstance(node.get("name"), str):
+        raise AuditError("parser returned a selector without a name field")
+    parts = []
+    for matcher in matchers:
+        if not isinstance(matcher, dict):
+            raise AuditError("parser returned a malformed matcher")
+        name, operator, value = (matcher.get(key) for key in ("name", "type", "value"))
+        if not isinstance(name, str) or not isinstance(value, str) or operator not in ("=", "!=", "=~", "!~"):
+            raise AuditError("parser returned a malformed matcher")
+        label = name if re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", name) else json.dumps(name, ensure_ascii=False)
+        parts.append(label + operator + json.dumps(value, ensure_ascii=False))
+    if node["name"] and not any(m["name"] == "__name__" and m["type"] == "=" and m["value"] == node["name"] for m in matchers):
+        raise AuditError("parser omitted the selector's metric-name matcher")
+    # The AST includes an __name__ matcher for explicit metric names. Keeping all
+    # matchers also supports name-less selectors and recording rules with colons.
+    return "{" + ",".join(sorted(parts)) + "}"
+
+
+def selectors(node, absence=False):
+    """Yield (selector, inside_absence_function) from known expression nodes."""
+    if not isinstance(node, dict):
+        raise AuditError("parser returned a malformed expression node")
+    kind = node.get("type")
+    if kind in ("vectorSelector", "matrixSelector"):
+        yield selector_text(node), absence
+        return
+    if kind in ("numberLiteral", "stringLiteral"):
+        return
+    if kind == "call":
+        function = node.get("func")
+        children = node.get("args")
+        if not isinstance(function, dict) or not isinstance(function.get("name"), str) or not isinstance(children, list):
+            raise AuditError("parser returned a malformed function call")
+        absence = absence or function["name"] in ("absent", "absent_over_time")
+    elif kind == "aggregation":
+        children = [node.get("expr")]
+        if node.get("param") is not None:
+            children.append(node["param"])
+    elif kind == "binaryExpr":
+        children = [node.get("lhs"), node.get("rhs")]
+    elif kind in ("parenExpr", "unaryExpr", "subquery"):
+        children = [node.get("expr")]
+    else:
+        raise AuditError(f"unsupported Prometheus AST node {kind!r}; update the selector audit for this server version")
+    for child in children:
+        yield from selectors(child, absence)
+
+
+def read_rules(root):
+    paths = sorted(path for path in (root / "k8s").rglob("*") if path.suffix in (".yml", ".yaml"))
+    rules, files = [], set()
+    for path in paths:
+        source = path.read_text()
+        if "PrometheusRule" not in source:
             continue
-        for g in doc['spec'].get('groups', []):
-            for r in g.get('rules', []):
-                name = r.get('alert') or r.get('record') or '?'
-                expr = str(r.get('expr', ''))
-                guarded = set()
-                for a in re.finditer(r'absent(?:_over_time)?\(\s*([a-zA-Z_][a-zA-Z0-9_]*(?:\{[^}]*\})?)', expr):
-                    guarded.add(re.sub(r'\s+', '', a.group(1)))
-                for m in re.finditer(r'([a-zA-Z_][a-zA-Z0-9_]*)(\{[^}]*\})?', expr):
-                    metric, lbls = m.group(1), m.group(2) or ''
-                    if metric in FUNCS or metric.isdigit():
-                        continue
-                    if '_' not in metric and not lbls:
-                        continue
-                    if expr[m.end():m.end()+1] == '(':
-                        continue
-                    if re.sub(r'\s+', '', metric + lbls) in guarded:
-                        continue
-                    out.append(f'{name}\t{metric}{lbls}')
-seen, uniq = set(), []
-for o in out:
-    if o not in seen:
-        seen.add(o); uniq.append(o)
-open(sys.argv[2], 'w').write('\n'.join(uniq))
-print(f'extracted {len(uniq)} unique selectors from {len(files)} PrometheusRule files')
+        try:
+            for document in yaml.safe_load_all(source):
+                if not isinstance(document, dict) or document.get("kind") != "PrometheusRule":
+                    continue
+                files.add(path)
+                for group in document["spec"]["groups"]:
+                    for rule in group.get("rules", []):
+                        name = rule.get("alert") or rule.get("record")
+                        expression = rule["expr"]
+                        if not isinstance(name, str) or isinstance(expression, bool) or not isinstance(expression, (str, int, float)):
+                            raise ValueError("rule needs an alert/record name and a PromQL expression")
+                        rules.append((f"{path.relative_to(root)}: {name}", str(expression)))
+        except (yaml.YAMLError, KeyError, TypeError, AttributeError, ValueError) as error:
+            raise AuditError(f"{path}: cannot read PrometheusRule: {error}") from error
+    if not rules:
+        raise AuditError("no local PrometheusRule rules found under k8s")
+    return rules, len(files)
+
+
+def has_series(data):
+    """Validate the result of count(selector), whose empty input returns []."""
+    if not isinstance(data, dict) or data.get("resultType") != "vector" or not isinstance(data.get("result"), list):
+        raise AuditError("query returned an unexpected result shape")
+    result = data["result"]
+    if not result:
+        return False
+    try:
+        if len(result) != 1 or len(result[0]["value"]) != 2:
+            raise ValueError("expected one count sample")
+        count = float(result[0]["value"][1])
+        if not math.isfinite(count) or count < 0 or not count.is_integer():
+            raise ValueError("invalid count")
+    except (KeyError, TypeError, ValueError) as error:
+        raise AuditError("query returned an invalid count sample") from error
+    return count > 0
+
+
+def main(root, client=None):
+    try:
+        rules, file_count = read_rules(root)
+        client = client or Prometheus(root)
+        if not has_series(client.request("query", "vector(1)")):
+            raise AuditError("Prometheus connectivity query returned no result")
+        required, absence_only = set(), set()
+        for name, expression in rules:
+            try:
+                for selector, inside_absence in selectors(client.request("parse_query", expression)):
+                    (absence_only if inside_absence else required).add((name, selector))
+            except AuditError as error:
+                raise AuditError(f"{name}: {error}") from error
+    except (AuditError, OSError) as error:
+        print(f"ERROR: selector audit could not complete: {error}", file=sys.stderr)
+        return 2
+
+    print(f"Auditing {len(required)} rule/selector pairs from {len(rules)} rules in {file_count} local files.")
+    print(f"Skipping {len(absence_only - required)} pairs used only inside absence functions.")
+    print("Scope: current series only; does not verify history, rule logic, deployed rules, or alert delivery.")
+    missing = errors = 0
+    results = {}
+    for name, selector in sorted(required):
+        if selector not in results:
+            try:
+                results[selector] = has_series(client.request("query", f"count({selector})"))
+            except AuditError as error:
+                results[selector] = error
+        result = results[selector]
+        if isinstance(result, AuditError):
+            print(f"  QUERY ERROR  {name} -> {selector}: {result}", file=sys.stderr)
+            errors += 1
+        elif not result:
+            print(f"  NO SERIES    {name} -> {selector}")
+            missing += 1
+    if errors or missing:
+        print(f"AUDIT FAILED: {missing} missing-series pairs, {errors} query-error pairs out of {len(required)} audited.")
+        return 2 if errors else 1
+    print(f"OK: all {len(required)} audited rule/selector pairs currently match at least one series.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(Path(sys.argv[1])))
 PY
-
-fail=0; checked=0
-while IFS="$(printf '\t')" read -r alert sel; do
-  [ -z "${sel:-}" ] && continue
-  checked=$((checked + 1))
-  res="$(query "$sel")"
-  if ! echo "$res" | grep -q '"success"'; then
-    echo "  QUERY ERROR  $alert -> $sel"; fail=$((fail + 1)); continue
-  fi
-  if echo "$res" | grep -q '"result":\[\]'; then
-    echo "  NO SERIES    $alert -> $sel"; fail=$((fail + 1))
-  fi
-done < "$TMP/selectors"
-
-echo
-if [ "$fail" -gt 0 ]; then
-  echo "FAILED: $fail of $checked selectors match no series."
-  echo "An alert whose selector matches nothing can never fire, yet reports health=ok."
-  exit 1
-fi
-echo "OK: all $checked alert selectors match at least one live series"

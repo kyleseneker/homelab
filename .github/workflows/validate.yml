@@ -5,12 +5,15 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   packer:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: hashicorp/setup-packer@main
+      - uses: hashicorp/setup-packer@1aa358be5cf73883762b302a3a03abd66e75b232 # v3.1.0
       - run: packer fmt -check -recursive packer/
       - working-directory: packer/k8s-node
         env:
@@ -46,18 +49,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: pip install yamllint
       - run: yamllint -c .yamllint.yml k8s/
-      - uses: bmuschko/setup-kubeconform@v1
+      - uses: bmuschko/setup-kubeconform@e5d264ec1eafe2314e750c429a9da7639dd5a003 # v1
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
       - run: pip install pyyaml
       - run: ./scripts/gen-crd-schemas.sh
       - run: |
+          kube_version=$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')
           kubeconform -strict \
-            -kubernetes-version 1.31.4 \
+            -kubernetes-version "$kube_version" \
             -schema-location default \
             -schema-location './.crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -skip Kustomization \
-            -skip CustomResourceDefinition \
+            -skip Kustomization,CustomResourceDefinition \
             -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
             -ignore-filename-pattern '.*config\.yml$' \
             -ignore-filename-pattern '.*values\.yml$' \
@@ -70,9 +73,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
-      - run: |
-          curl -sfL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
-          sudo mv kustomize /usr/local/bin/
+      - uses: imranismail/setup-kustomize@2ba527d4d055ab63514ba50a99456fc35684947f # v2.1.0
+        with:
+          kustomize-version: "5.8.1"
+      - uses: bmuschko/setup-kubeconform@e5d264ec1eafe2314e750c429a9da7639dd5a003 # v1
       - run: pip install pyyaml
       - run: ./scripts/render-manifests.sh
 
@@ -88,7 +92,8 @@ jobs:
           severity: CRITICAL,HIGH
           exit-code: "1"
           format: table
-          trivyignores: .trivyignore
+          trivyignores: .trivyignore.yaml
+          version: v0.74.0
 
   ansible:
     runs-on: ubuntu-latest
@@ -98,3 +103,38 @@ jobs:
       - run: ansible-galaxy collection install -r ansible/requirements.yml
       - working-directory: ansible
         run: ansible-lint
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: pip install pyyaml
+      - run: for script in scripts/*.sh; do bash -n "$script"; done
+      - run: python3 -m unittest discover -s tests -v
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: pip install -r docs-requirements.txt
+      - run: mkdocs build --strict
+
+  kyverno:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Test container security policy regressions
+        env:
+          # Match the appVersion of the pinned Kyverno chart.
+          KYVERNO_VERSION: v1.17.1
+          KYVERNO_SHA256: d0c0f52e8fc8d66a3663b63942b131e5f91b63f7644b3e446546f79142d1b7a3
+        run: |
+          cli_dir="$(mktemp -d)"
+          trap 'rm -rf "$cli_dir"' EXIT
+          archive="kyverno-cli_${KYVERNO_VERSION}_linux_x86_64.tar.gz"
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/kyverno/kyverno/releases/download/${KYVERNO_VERSION}/${archive}" \
+            -o "$cli_dir/$archive"
+          printf '%s  %s\n' "$KYVERNO_SHA256" "$cli_dir/$archive" | sha256sum --check -
+          tar -xzf "$cli_dir/$archive" -C "$cli_dir" kyverno
+          "$cli_dir/kyverno" test tests/kyverno --remove-color

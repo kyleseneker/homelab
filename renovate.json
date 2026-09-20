@@ -47,6 +47,30 @@
         "https://raw\\.githubusercontent\\.com/(?<depName>[^/]+/[^/]+)/(?<currentValue>[^/]+)/manifests/"
       ],
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "HTTP Helm charts in ApplicationSet config.yml files",
+      "managerFilePatterns": [
+        "/k8s/clusters/.+/config\\.yml$/"
+      ],
+      "matchStrings": [
+        "chartRepo: *[\\\"\\']?(?<registryUrl>https?://[^\\s\\\"\\']+)[\\\"\\']?\\s+chartName: *[\\\"\\']?(?<depName>[^\\s\\\"\\']+)[\\\"\\']?\\s+chartVersion: *[\\\"\\']?(?<currentValue>[^\\s\\\"\\']+)"
+      ],
+      "datasourceTemplate": "helm"
+    },
+    {
+      "customType": "regex",
+      "description": "OCI Helm charts in ApplicationSet config.yml files",
+      "managerFilePatterns": [
+        "/k8s/clusters/.+/config\\.yml$/"
+      ],
+      "matchStrings": [
+        "chartRepo: *[\\\"\\']?(?<chartRegistry>ghcr\\.io/[^\\s\\\"\\']+)[\\\"\\']?\\s+chartName: *[\\\"\\']?(?<depName>[^\\s\\\"\\']+)[\\\"\\']?\\s+chartVersion: *[\\\"\\']?(?<currentValue>[^\\s\\\"\\']+)"
+      ],
+      "packageNameTemplate": "{{{chartRegistry}}}/{{{depName}}}",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
     }
   ],
   "pinDigests": true,
@@ -118,15 +142,38 @@
     },
     {
       "description": "Ignore linuxserver Ubuntu base image tags for qbittorrent",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["lscr.io/linuxserver/qbittorrent"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/qbittorrent"
+      ],
       "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+$/"
     },
     {
       "description": "Group OpenClaw container images",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["/^ghcr\\.io\\/openclaw\\//"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^ghcr\\.io\\/openclaw\\//"
+      ],
       "groupName": "openclaw"
+    },
+    {
+      "description": "Keep the media-operator CRDs and managers on one release",
+      "matchPackageNames": [
+        "/^ghcr\\.io/kyleseneker/media-operator//"
+      ],
+      "groupName": "media-operator charts",
+      "pinDigests": false
+    },
+    {
+      "description": "etcd backup tooling follows kubeadm; update during a staged Kubernetes upgrade",
+      "matchPackageNames": [
+        "registry.k8s.io/etcd"
+      ],
+      "enabled": false
     }
   ]
 }

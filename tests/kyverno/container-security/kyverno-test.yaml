@@ -1,0 +1,132 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: container-security
+policies:
+  - ../../../k8s/components/kyverno-policies/disallow-latest-tag.yml
+  - ../../../k8s/components/kyverno-policies/require-readonly-rootfs.yml
+  - ../../../k8s/components/kyverno-policies/require-resource-limits.yml
+  - ../../../k8s/components/kyverno-policies/require-run-as-nonroot.yml
+resources:
+  - pods.yaml
+results:
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - valid-no-init
+    kind: Pod
+    result: pass
+  - policy: require-readonly-rootfs
+    rule: validate-readonly-rootfs
+    resources:
+      - valid-no-init
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: validate-resource-limits
+    resources:
+      - valid-no-init
+    kind: Pod
+    result: pass
+  - policy: require-run-as-nonroot
+    rule: run-as-non-root
+    resources:
+      - valid-no-init
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - valid-init
+    kind: Pod
+    result: pass
+  - policy: require-readonly-rootfs
+    rule: validate-readonly-rootfs
+    resources:
+      - valid-init
+    kind: Pod
+    result: pass
+  - policy: require-resource-limits
+    rule: validate-resource-limits
+    resources:
+      - valid-init
+    kind: Pod
+    result: pass
+  - policy: require-run-as-nonroot
+    rule: run-as-non-root
+    resources:
+      - valid-init
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - init-latest
+    kind: Pod
+    result: fail
+  - policy: require-run-as-nonroot
+    rule: run-as-non-root
+    resources:
+      - init-root
+    kind: Pod
+    result: fail
+  - policy: require-readonly-rootfs
+    rule: validate-readonly-rootfs
+    resources:
+      - init-writable
+    kind: Pod
+    result: fail
+  - policy: require-resource-limits
+    rule: validate-resource-limits
+    resources:
+      - init-unlimited
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - ephemeral-latest
+    kind: Pod
+    result: fail
+  - policy: require-run-as-nonroot
+    rule: run-as-non-root
+    resources:
+      - ephemeral-root
+    kind: Pod
+    result: fail
+  - policy: require-readonly-rootfs
+    rule: validate-readonly-rootfs
+    resources:
+      - ephemeral-writable
+    kind: Pod
+    result: fail
+  - policy: require-run-as-nonroot
+    rule: run-as-non-root
+    resources:
+      - init-overrides-pod-nonroot
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - registry-port-without-tag
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - bare-untagged
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - tagged-registry-port
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources:
+      - immutable-digest
+    kind: Pod
+    result: pass

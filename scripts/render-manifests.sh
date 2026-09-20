@@ -10,42 +10,20 @@ rendered=0
 val() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1 | tr -d "'\"" ; }
 
 echo "==> Validating config.yml against the ApplicationSet contract"
-if ! python3 - <<'PY'; then fail=$((fail+1)); fi
-import glob, re, sys, yaml
-
-APPSET = "k8s/bootstrap/applicationsets/cluster-apps.yml"
-GENERATOR = {"path"}
-OPTIONAL = {"annotations"}
-ALWAYS = {"appName", "sourceType", "namespace", "syncOptions", "createNamespace"}
-HELM = {"chartRepo", "chartName", "chartVersion", "hasResources"}
-GIT = {"gitPath"}
-KNOWN = GENERATOR | OPTIONAL | ALWAYS | HELM | GIT
-
-src = open(APPSET).read()
-refs = set()
-for action in re.findall(r"\{\{(.*?)\}\}", src, re.S):
-    refs |= set(re.findall(r"(?<![\w$])\.([A-Za-z][A-Za-z0-9_]*)", action))
-
-bad = 0
-for key in sorted(refs - KNOWN):
-    print(f"  FAIL {APPSET} reads .{key}, which this checker does not know about")
-    print(f"       add it to ALWAYS/HELM/GIT/OPTIONAL in {__file__ or 'render-manifests.sh'}")
-    bad += 1
-
-for cfg in sorted(glob.glob("k8s/clusters/**/config.yml", recursive=True)):
-    data = yaml.safe_load(open(cfg)) or {}
-    source = data.get("sourceType")
-    required = ALWAYS | (HELM if source == "helm" else GIT)
-    for key in sorted(required - set(data)):
-        print(f"  FAIL {cfg} is missing '{key}' -- goTemplateOptions=missingkey=error")
-        print(f"       will freeze every app in the generator, not just this one")
-        bad += 1
-    for key in sorted(set(data) - KNOWN):
-        print(f"  FAIL {cfg} sets '{key}', which the ApplicationSet never reads (typo?)")
-        bad += 1
-
-sys.exit(1 if bad else 0)
-PY
+python3 scripts/check-appset-contract.py || exit 1
+[[ "${1:-}" == "--contract-only" ]] && exit 0
+for tool in helm kustomize kubeconform; do
+  command -v "$tool" >/dev/null || { echo "Required tool missing: $tool" >&2; exit 1; }
+done
+work="$(mktemp -d)"
+schema_work="$(mktemp -d)"
+if [[ "${KEEP_RENDERED:-false}" == true ]]; then
+  echo "Rendered output directory: $work"
+  echo "Generated schema directory: $schema_work"
+else
+  trap 'rm -rf "$work" "$schema_work"' EXIT
+fi
+kube_version="$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')"
 
 echo "==> Rendering apps from config.yml"
 while IFS= read -r cfg; do
@@ -68,11 +46,15 @@ while IFS= read -r cfg; do
       chart_args=("oci://${repo}/${name}")
     fi
     if out=$(helm template "$app" "${chart_args[@]}" --version "$ver" \
-               --namespace "$ns" -f "$dir/values.yml" 2>&1); then
+               --namespace "$ns" --kube-version "$kube_version" --include-crds \
+               --api-versions monitoring.coreos.com/v1 --api-versions monitoring.coreos.com/v1/ServiceMonitor \
+               --api-versions gateway.networking.k8s.io/v1 --api-versions gateway.networking.k8s.io/v1/HTTPRoute \
+               -f "$dir/values.yml" 2>"$work/tool.log"); then
       rendered=$((rendered+1))
+      printf '%s\n' "$out" > "$work/rendered-$rendered.yml"
     else
       echo "  FAIL $app -- helm template failed"
-      echo "$out" | tail -5 | sed 's/^/        /'
+      { printf '%s\n' "$out"; cat "$work/tool.log"; } | tail -5 | sed 's/^/        /'
       fail=$((fail+1))
     fi
   else
@@ -86,11 +68,11 @@ while IFS= read -r cfg; do
       fail=$((fail+1)); continue
     fi
     if [ -f "$path/kustomization.yml" ] || [ -f "$path/kustomization.yaml" ]; then
-      if out=$(kustomize build "$path" 2>&1); then
+      if out=$(kustomize build "$path" 2>"$work/tool.log"); then
         rendered=$((rendered+1))
       else
         echo "  FAIL $app -- kustomize build $path failed"
-        echo "$out" | tail -5 | sed 's/^/        /'
+        { printf '%s\n' "$out"; cat "$work/tool.log"; } | tail -5 | sed 's/^/        /'
         fail=$((fail+1))
       fi
     else
@@ -100,75 +82,62 @@ n=0
 for f in sorted(glob.glob('$path/*.yml')):
     list(yaml.safe_load_all(open(f))); n+=1
 print(n)
-" 2>&1); then
+" 2>"$work/tool.log"); then
         rendered=$((rendered+1))
       else
         echo "  FAIL $app -- unparseable YAML in $path"
-        echo "$out" | tail -5 | sed 's/^/        /'
+        { printf '%s\n' "$out"; cat "$work/tool.log"; } | tail -5 | sed 's/^/        /'
         fail=$((fail+1))
       fi
     fi
   fi
 done < <(find k8s/clusters -name config.yml | sort)
 
-echo "==> Validating manifests against CRD and Kubernetes schemas"
-if command -v kubeconform >/dev/null 2>&1; then
-  ./scripts/gen-crd-schemas.sh >/dev/null 2>&1 || echo "  (could not refresh CRD schemas)"
-  if ! out=$(kubeconform -strict -kubernetes-version 1.31.4 \
+echo "==> Building every kustomization"
+while IFS= read -r k; do
+  d="$(dirname "$k")"
+  if out=$(kustomize build "$d" 2>"$work/tool.log"); then
+    rendered=$((rendered+1))
+    printf '%s\n' "$out" > "$work/rendered-$rendered.yml"
+  else
+    echo "  FAIL kustomize build $d"
+    { printf '%s\n' "$out"; cat "$work/tool.log"; } | tail -5 | sed 's/^/        /'
+    fail=$((fail+1))
+  fi
+done < <(find k8s \( -name kustomization.yml -o -name kustomization.yaml \) | sort)
+
+echo "==> Validating source and rendered manifests against schemas"
+if ! RENDERED_MANIFESTS_DIR="$work" ./scripts/gen-crd-schemas.sh "$schema_work"; then
+  echo "  FAIL could not generate schemas from pinned CRDs"
+  fail=$((fail+1))
+else
+  if ! kubeconform -strict -kubernetes-version "$kube_version" \
       -schema-location default \
-      -schema-location './.crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+      -schema-location "$schema_work/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" \
       -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-      -skip Kustomization -skip CustomResourceDefinition \
+      -skip Kustomization,CustomResourceDefinition \
       -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
       -ignore-filename-pattern '.*config\.yml$' \
       -ignore-filename-pattern '.*values\.yml$' \
       -ignore-filename-pattern '.*slack-app-manifest\.json$' \
-      k8s/ 2>&1); then
-    echo "$out" | grep -v '^$' | head -10 | sed 's/^/  /'
+      -summary k8s/ "$work/"; then
     fail=$((fail+1))
   fi
-else
-  echo "  (kubeconform not installed, skipping -- CI still runs it)"
-fi
-
-echo "==> Building every kustomization"
-while IFS= read -r k; do
-  d="$(dirname "$k")"
-  if out=$(kustomize build "$d" 2>&1); then
-    rendered=$((rendered+1))
-  else
-    echo "  FAIL kustomize build $d"
-    echo "$out" | tail -5 | sed 's/^/        /'
-    fail=$((fail+1))
-  fi
-done < <(find k8s -name kustomization.yml | sort)
-
-echo "==> Checking bootstrap drift (not reconciled by ArgoCD)"
-if kubectl --kubeconfig "${KUBECONFIG:-$ROOT/kubeconfig}" version >/dev/null 2>&1; then
-  for d in k8s/bootstrap/*/; do
-    [ -f "$d/kustomization.yml" ] || continue
-    n=$(kubectl --kubeconfig "${KUBECONFIG:-$ROOT/kubeconfig}" diff -k "$d" 2>/dev/null | grep -c '^[+-]' || true)
-    if [ "${n:-0}" -gt 0 ]; then
-      echo "  DRIFT $d has $n changed lines vs the cluster -- run: kubectl apply -k $d"
-      fail=$((fail+1))
-    fi
-  done
-else
-  echo "  (cluster unreachable, skipping drift check)"
 fi
 
 echo "==> Checking for orphaned manifests"
 while IFS= read -r k; do
   d="$(dirname "$k")"
-  for f in "$d"/*.yml; do
+  for f in "$d"/*.yml "$d"/*.yaml; do
+    [[ -f "$f" ]] || continue
     b="$(basename "$f")"
-    case "$b" in kustomization.yml|config.yml|values.yml) continue ;; esac
+    case "$b" in kustomization.yml|kustomization.yaml|config.yml|values.yml) continue ;; esac
     if ! grep -qE "^[[:space:]]*-[[:space:]]+$b\$" "$k"; then
       echo "  FAIL $f is not referenced by $k -- it will never be applied"
       fail=$((fail+1))
     fi
   done
-done < <(find k8s -name kustomization.yml | sort)
+done < <(find k8s \( -name kustomization.yml -o -name kustomization.yaml \) | sort)
 
 echo
 if [ "$fail" -gt 0 ]; then
