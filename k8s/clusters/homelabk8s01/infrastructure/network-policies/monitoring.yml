@@ -46,6 +46,8 @@ spec:
   ingress:
     - fromEntities:
         - kube-apiserver
+        # API-server calls can use the control-plane node's CiliumInternalIP.
+        - remote-node
       toPorts:
         - ports:
             - port: "10250"
