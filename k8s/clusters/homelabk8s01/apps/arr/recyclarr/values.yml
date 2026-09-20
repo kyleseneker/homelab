@@ -9,6 +9,7 @@ controllers:
     type: cronjob
     cronjob:
       schedule: 0 */6 * * *
+      concurrencyPolicy: Forbid
       successfulJobsHistory: 1
       failedJobsHistory: 3
     containers:
@@ -35,6 +36,17 @@ controllers:
           - configMapRef:
               name: arr-env
 persistence:
+  state:
+    type: persistentVolumeClaim
+    storageClass: nfs-client
+    accessMode: ReadWriteMany
+    size: 256Mi
+    globalMounts:
+      - path: /config
+  tmp:
+    type: emptyDir
+    globalMounts:
+      - path: /tmp
   config:
     type: configMap
     name: recyclarr-config

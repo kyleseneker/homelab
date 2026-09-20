@@ -38,3 +38,8 @@ spec:
                   limits:
                     memory: "?*"
                     cpu: "?*"
+            =(initContainers):
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"

@@ -3,6 +3,9 @@ crds:
 prometheus:
   prometheusSpec:
     retention: 15d
+    # local-path PVC size is not a quota. Bound persisted blocks and leave
+    # headroom for the WAL/head, which this retention limit does not cap.
+    retentionSize: 15GB
     resources:
       requests:
         cpu: 200m

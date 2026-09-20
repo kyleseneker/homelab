@@ -11,5 +11,9 @@ spec:
     configMap:
       key: homelab-ca.crt
     namespaceSelector:
-      matchLabels:
-        kubernetes.io/metadata.name: argocd
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - argocd
+            - monitoring

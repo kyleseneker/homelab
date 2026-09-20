@@ -23,8 +23,8 @@ spec:
     maxRatioAction: stop
     maxSeedingTimeEnabled: true
     maxSeedingTime: 1440
-    bypassAuthSubnetWhitelistEnabled: true
-    bypassAuthSubnetWhitelist: 10.0.0.0/16
+    # All callers, including pods, authenticate with qbittorrent-credentials.
+    bypassAuthSubnetWhitelistEnabled: false
   categories:
     - name: tv
     - name: movies

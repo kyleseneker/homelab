@@ -1,6 +1,4 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - configmap.yml
-  - recyclarr-external-secret.yml
-  - state-holder.yml
+  - argocd-notifications-slack-external-secret.yml

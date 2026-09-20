@@ -9,7 +9,7 @@ podSecurityContext:
   runAsNonRoot: true
   runAsUser: 1000
   runAsGroup: 1000
-containerSecurityContext:
+securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
@@ -17,6 +17,13 @@ containerSecurityContext:
       - ALL
 serviceMonitor:
   enabled: false
+  selfMonitor:
+    enabled: true
+extraConfigmapMounts:
+  - name: homelab-ca
+    mountPath: /etc/homelab-ca
+    configMap: custom-ca-certs
+    readOnly: true
 config:
   modules:
     http_2xx:
@@ -28,7 +35,7 @@ config:
         follow_redirects: false
         preferred_ip_protocol: ip4
         tls_config:
-          insecure_skip_verify: true
+          ca_file: /etc/homelab-ca/homelab-ca.crt
     http_auth_redirect:
       prober: http
       timeout: 10s
@@ -37,5 +44,8 @@ config:
         valid_status_codes: [302]
         follow_redirects: false
         preferred_ip_protocol: ip4
+        fail_if_header_not_matches:
+          - header: Location
+            regexp: '^(/outpost\.goauthentik\.io/start|https://[^/]+/outpost\.goauthentik\.io/start|https://auth\.homelab\.local/application/o/authorize/)'
         tls_config:
-          insecure_skip_verify: true
+          ca_file: /etc/homelab-ca/homelab-ca.crt

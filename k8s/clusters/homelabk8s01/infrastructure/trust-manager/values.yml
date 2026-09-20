@@ -1,6 +1,14 @@
 app:
   trust:
     namespace: cert-manager
+defaultPackage:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
 resources:
   requests:
     cpu: 10m

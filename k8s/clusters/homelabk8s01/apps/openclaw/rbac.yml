@@ -1,31 +1,28 @@
-# Claw — full operational access + read-everything for auditing
+# Read-only diagnosis. Mutations are restricted by the namespaced scale Role below.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: openclaw
 rules:
-  # Operational: pod management
+  # Read-only: pods
   - apiGroups: [""]
     resources: ["pods"]
-    verbs: ["get", "list", "watch", "delete"]
+    verbs: ["get", "list", "watch"]
   - apiGroups: [""]
     resources: ["pods/log"]
     verbs: ["get"]
-  - apiGroups: [""]
-    resources: ["pods/exec"]
-    verbs: ["create"]
-  # Operational: workload rollout restart
+  # Read-only: workload status
   - apiGroups: ["apps"]
     resources: ["deployments", "statefulsets", "daemonsets", "replicasets"]
-    verbs: ["get", "list", "watch", "patch"]
-  # Operational: job/cronjob cleanup
+    verbs: ["get", "list", "watch"]
+  # Read-only: job/cronjob status
   - apiGroups: ["batch"]
     resources: ["jobs", "cronjobs"]
-    verbs: ["get", "list", "watch", "delete"]
-  # Operational: node management
+    verbs: ["get", "list", "watch"]
+  # Read-only: node status
   - apiGroups: [""]
     resources: ["nodes"]
-    verbs: ["get", "list", "watch", "patch"]
+    verbs: ["get", "list", "watch"]
   # Read-only: core resources
   - apiGroups: [""]
     resources: ["namespaces", "services", "endpoints", "events", "configmaps",
@@ -75,6 +72,32 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: openclaw
+subjects:
+  - kind: ServiceAccount
+    name: openclaw
+    namespace: openclaw
+---
+# Scale only: no pod deletion, exec, workload-template patch, Secrets, or node writes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openclaw-remediation
+  namespace: arr
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    resourceNames: ["arr-flaresolverr", "homepage"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openclaw-remediation
+  namespace: arr
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openclaw-remediation
 subjects:
   - kind: ServiceAccount
     name: openclaw

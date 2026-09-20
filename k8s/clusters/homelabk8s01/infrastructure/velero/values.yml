@@ -51,6 +51,7 @@ schedules:
         - arr
         - monitoring
         - auth
+        - openclaw
       defaultVolumesToFsBackup: true
       ttl: 168h0m0s
       storageLocation: default
@@ -76,7 +77,8 @@ schedules:
         - arr
         - monitoring
         - auth
-        - backups
+        - openclaw
+        # MinIO is itself a backup store; do not copy its archives into S3 again.
         - argocd
         - vault
         - external-secrets

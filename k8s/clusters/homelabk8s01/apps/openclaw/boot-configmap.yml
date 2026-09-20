@@ -27,10 +27,12 @@ data:
 
     ## Cron jobs
 
-    Register with `openclaw cron add`. Verify they exist on every boot.
+    Inspect `openclaw cron list` first. Add only missing named jobs and
+    update existing jobs when necessary; never duplicate them on restart.
 
-    **nightly-cleanup** — every day at 2:00 AM
-    Clean up failed/evicted pods and completed jobs. Diagnose crashloops.
+    **nightly-diagnosis** — every day at 2:00 AM
+    Inspect failed/evicted pods and completed jobs. Diagnose crashloops;
+    recovery is limited to the two Deployment scale targets in SOUL.md.
 
     **morning-briefing** — every day at 8:00 AM
     Node headroom, firing alerts, PVC usage. Post only if something needs attention.
@@ -41,7 +43,8 @@ data:
     against actual cluster state — PR any drift. Post report to #ops.
 
     **media-health** — every 12 hours
-    Health-check arr services. Restart downloads stalled >6 hours.
+    Health-check arr services. Diagnose downloads stalled >6 hours and
+    propose a recovery; do not delete downloads or restart arbitrary pods.
 
     **disk-check** — every day at 8:00 AM
     Media volume usage. Post to #media only if any >85%.
@@ -54,40 +57,16 @@ data:
     What was added to the library this week. Friendly tone — this is
     for the household, not an incident report.
 
-    ## Heartbeat config
+    ## Declarative configuration
 
-    ```sh
-    openclaw config set heartbeat.every "30m"
-    openclaw config set heartbeat.lightContext true
-    openclaw config set heartbeat.isolatedSession true
-    openclaw config set heartbeat.ackMaxChars 200
-    ```
+    Heartbeat, hooks, Slack pairing, model, and skills are reconciled from
+    openclaw-config at pod startup. Verify them with `openclaw config get`.
+    Propose configuration changes in Git; do not overwrite hooks.mappings
+    at boot (it must retain Sonarr, Radarr, and Alertmanager together).
+    If a transform is absent, report the init-container failure.
 
-    ## Webhook setup
+    ## Arr notification registration (idempotent)
 
-    You receive Sonarr/Radarr events via HTTP webhooks. Two pieces
-    must be in place:
-
-    ### 1. Gateway hooks config (persisted on PVC)
-
-    Verify hooks are enabled: `openclaw config get hooks.enabled`
-
-    If not configured, set up:
-    ```sh
-    openclaw config set hooks.enabled true
-    openclaw config set hooks.token "$OPENCLAW_HOOKS_TOKEN"
-    openclaw config set hooks.path "/webhook"
-    openclaw config set hooks.defaultSessionKey "hook:ingress"
-    openclaw config set hooks.allowedAgentIds '["main"]'
-    openclaw config set hooks.mappings '[{"match":{"path":"sonarr"},"action":"agent","agentId":"main","deliver":true,"transform":{"module":"arr-webhook.js"}},{"match":{"path":"radarr"},"action":"agent","agentId":"main","deliver":true,"transform":{"module":"arr-webhook.js"}}]'
-    openclaw config set hooks.transformsDir "$HOME/.openclaw/hooks/transforms"
-    ```
-
-    The transform at `~/.openclaw/hooks/transforms/arr-webhook.js`
-    converts raw arr payloads into agent messages. If it's missing,
-    recreate it (ESM default export returning `{message: string}`).
-
-    ### 2. Arr notification registration (idempotent)
 
     For each service (Sonarr, Radarr), ensure a "Claw" webhook
     notification exists via the `/api/v3/notification` endpoint:

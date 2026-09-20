@@ -9,4 +9,3 @@ hasResources: true
 syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
-  - SkipHooks=true

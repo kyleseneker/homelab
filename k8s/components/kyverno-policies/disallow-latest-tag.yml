@@ -8,7 +8,7 @@ metadata:
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
       Container images must not use the ':latest' tag or omit a tag entirely.
-      Images should be pinned to a specific version for reproducibility.
+      Images should use a specific tag or SHA-256 digest for reproducibility. A registry port does not count as an image tag.
 spec:
   validationFailureAction: Enforce
   background: true
@@ -28,8 +28,15 @@ spec:
                 - argocd
                 - cilium-test-*
       validate:
-        message: "Container images must specify a tag and cannot use ':latest'."
-        pattern:
-          spec:
-            containers:
-              - image: "!*:latest & *:*"
+        message: "Container images must specify a non-latest tag or a SHA-256 digest."
+        foreach:
+          - list: "request.object.spec.[containers, initContainers, ephemeralContainers][]"
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^([^@]+@sha256:[a-fA-F0-9]{64}|[^@]+:[^/:@]+)$', element.image) }}"
+                    operator: Equals
+                    value: false
+                  - key: "{{ ends_with(element.image, ':latest') }}"
+                    operator: Equals
+                    value: true

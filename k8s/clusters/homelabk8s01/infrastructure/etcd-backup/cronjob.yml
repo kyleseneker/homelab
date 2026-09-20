@@ -5,10 +5,14 @@ metadata:
   namespace: backups
 spec:
   schedule: "0 2 * * *"
+  timeZone: Etc/UTC
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: etcd-backup
     spec:
       backoffLimit: 2
       template:
@@ -22,12 +26,15 @@ spec:
             - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
           restartPolicy: OnFailure
+          automountServiceAccountToken: false
           securityContext:
+            fsGroup: 1000
             seccompProfile:
               type: RuntimeDefault
           initContainers:
             - name: snapshot
-              image: registry.k8s.io/etcd:3.7.1-0
+              # Match kubeadm v1.31.4; update with the control-plane minor upgrade.
+              image: registry.k8s.io/etcd:3.5.15-0
               command:
                 - etcdctl
                 - snapshot
@@ -44,7 +51,7 @@ spec:
                       fieldPath: status.hostIP
               securityContext:
                 runAsUser: 0
-                runAsGroup: 0
+                runAsGroup: 1000
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 capabilities:
@@ -68,16 +75,19 @@ spec:
               args:
                 - |
                   set -eu
+                  umask 077
                   TIMESTAMP=$(date +%Y%m%d-%H%M%S)
                   mv /snapshots/latest.db "/snapshots/snapshot-${TIMESTAMP}.db"
                   echo "Backing up control plane PKI"
                   tar czf "/snapshots/pki-${TIMESTAMP}.tar.gz" -C /etc/kubernetes pki
+                  # etcdctl creates 0600 files. Grant only the uploader group read access.
+                  chmod 0640 "/snapshots/snapshot-${TIMESTAMP}.db" "/snapshots/pki-${TIMESTAMP}.tar.gz"
                   echo "Pruning old snapshots (keeping 7)"
                   ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
                   ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
               securityContext:
                 runAsUser: 0
-                runAsGroup: 0
+                runAsGroup: 1000
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 capabilities:

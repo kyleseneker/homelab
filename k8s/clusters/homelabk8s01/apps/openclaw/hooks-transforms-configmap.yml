@@ -5,7 +5,7 @@ metadata:
   namespace: openclaw
 data:
   arr-webhook.js: |
-    export default function transform(payload) {
+    export default function transform({ payload = {} }) {
       const event = payload.eventType || "unknown";
       const service = payload.instanceName || "arr";
       const title =
@@ -16,7 +16,7 @@ data:
       return { message: `[${service}] ${event}: ${title}` };
     }
   alertmanager-webhook.js: |
-    export default function transform(payload) {
+    export default function transform({ payload = {} }) {
       const alerts = payload.alerts || [];
       const status = payload.status || "unknown";
       if (!alerts.length) {

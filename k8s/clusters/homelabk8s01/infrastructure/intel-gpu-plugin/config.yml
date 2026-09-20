@@ -5,6 +5,8 @@ chartRepo: https://intel.github.io/helm-charts
 chartName: intel-device-plugins-gpu
 chartVersion: 0.35.0
 createNamespace: true
+annotations:
+  argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
 syncOptions:
   - SkipDryRunOnMissingResource=true
   - ServerSideApply=true

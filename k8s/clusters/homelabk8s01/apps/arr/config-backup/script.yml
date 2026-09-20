@@ -11,6 +11,8 @@ data:
     import pathlib
     import shutil
     import sys
+    import time
+    import zipfile
 
     app = os.environ["APP_NAME"]
     source = pathlib.Path(os.environ["SOURCE_DIR"])
@@ -27,6 +29,14 @@ data:
         sys.exit(1)
 
     newest = archives[-1]
+    if time.time() - newest.stat().st_mtime > 48 * 60 * 60:
+        print(f"{app}: newest native archive is over 48 hours old", file=sys.stderr)
+        sys.exit(1)
+    with zipfile.ZipFile(newest) as archive:
+        if archive.testzip() is not None:
+            print(f"{app}: native archive failed its CRC check", file=sys.stderr)
+            sys.exit(1)
+
     destination = target / "latest.zip"
     staged = target / "latest.zip.tmp"
     shutil.copy2(newest, staged)
@@ -61,7 +71,7 @@ data:
         destination.parent.mkdir(parents=True, exist_ok=True)
         staged = destination.with_name(destination.name + ".tmp")
         try:
-            src = sqlite3.connect(f"file:{db}", uri=True)
+            src = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
             dst = sqlite3.connect(staged)
             with dst:
                 src.backup(dst)

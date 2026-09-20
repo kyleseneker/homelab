@@ -7,7 +7,6 @@ resources:
   - namespace.yml
   - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.0/manifests/install.yaml
   - ingress.yml
-  - argocd-notifications-slack-external-secret.yml
 
 patches:
   - target:
@@ -45,10 +44,6 @@ patches:
         resource.customizations.ignoreDifferences.batch_CronJob: |
           jqPathExpressions:
             - .spec.jobTemplate.spec.template.spec.hostUsers
-        resource.customizations.ignoreDifferences.deviceplugin.intel.com_GpuDevicePlugin: |
-          jqPathExpressions:
-            - .spec
-            - .metadata.annotations
         resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
           jqPathExpressions:
             - .spec.conversion

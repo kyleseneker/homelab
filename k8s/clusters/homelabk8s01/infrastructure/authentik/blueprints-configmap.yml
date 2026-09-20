@@ -205,7 +205,6 @@ data:
           name: authentik Embedded Outpost
         attrs:
           providers:
-            - !Find [authentik_providers_proxy.proxyprovider, [name, homelab-forward-auth]]
             - !KeyOf tdarr-provider
             - !KeyOf goldilocks-provider
             - !KeyOf sonarr-provider

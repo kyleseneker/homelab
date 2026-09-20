@@ -1,0 +1,7 @@
+appName: argocd-notifications
+namespace: argocd
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/infrastructure/argocd-notifications
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true

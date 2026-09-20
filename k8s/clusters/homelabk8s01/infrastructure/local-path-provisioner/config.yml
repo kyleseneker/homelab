@@ -1,6 +1,6 @@
 appName: local-path-provisioner
 namespace: local-path-storage
-sourceType: kustomize
+sourceType: git
 gitPath: k8s/clusters/homelabk8s01/infrastructure/local-path-provisioner
 createNamespace: false
 syncOptions:

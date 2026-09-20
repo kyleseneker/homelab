@@ -1,4 +1,4 @@
-# Claw — Claude Sonnet 4.6 for complex reasoning
+# Declarative settings for the pinned OpenClaw release. Runtime token stays on the PVC.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -7,59 +7,96 @@ metadata:
 data:
   config.json5: |
     {
-      provider: "anthropic",
-      model: "claude-sonnet-4-6",
-      channels: {
-        slack: {
-          enabled: true,
-          mode: "socket",
-          dmPolicy: "open",
-          allowFrom: ["*"],
-        },
+      "agents": {
+        "defaults": {
+          "model": {
+            "primary": "anthropic/claude-sonnet-4-6"
+          },
+          "heartbeat": {
+            "every": "30m",
+            "ackMaxChars": 200
+          }
+        }
       },
-      gateway: {
-        mode: "local",
-        bind: "lan",
-        port: 18789,
-        auth: {
-          mode: "token",
-        },
-        controlUi: {
-          allowedOrigins: ["https://openclaw.homelab.local"],
-        },
+      "channels": {
+        "slack": {
+          "enabled": true,
+          "mode": "socket",
+          "dmPolicy": "pairing",
+          "groupPolicy": "disabled"
+        }
       },
-      hooks: {
-        enabled: true,
-        path: "/webhook",
-        token: "${OPENCLAW_HOOKS_TOKEN}",
-        defaultSessionKey: "hook:ingress",
-        allowedAgentIds: ["main"],
-        transformsDir: "~/.openclaw/hooks/transforms",
-        mappings: [
-          {
-            match: { path: "sonarr" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-            transform: { module: "arr-webhook.js" },
-          },
-          {
-            match: { path: "radarr" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-            transform: { module: "arr-webhook.js" },
-          },
-          {
-            match: { path: "alertmanager" },
-            action: "agent",
-            agentId: "main",
-            deliver: true,
-            transform: { module: "alertmanager-webhook.js" },
-          },
+      "gateway": {
+        "mode": "local",
+        "bind": "lan",
+        "port": 18789,
+        "auth": {
+          "mode": "token"
+        },
+        "controlUi": {
+          "allowedOrigins": [
+            "https://openclaw.homelab.local"
+          ]
+        }
+      },
+      "hooks": {
+        "enabled": true,
+        "path": "/webhook",
+        "token": "${OPENCLAW_HOOKS_TOKEN}",
+        "defaultSessionKey": "hook:ingress",
+        "allowedAgentIds": [
+          "main"
         ],
+        "transformsDir": "~/.openclaw/hooks/transforms",
+        "internal": {
+          "enabled": true,
+          "entries": {
+            "boot-md": {
+              "enabled": true
+            }
+          }
+        },
+        "mappings": [
+          {
+            "match": {
+              "path": "sonarr"
+            },
+            "action": "agent",
+            "agentId": "main",
+            "deliver": true,
+            "transform": {
+              "module": "arr-webhook.js"
+            }
+          },
+          {
+            "match": {
+              "path": "radarr"
+            },
+            "action": "agent",
+            "agentId": "main",
+            "deliver": true,
+            "transform": {
+              "module": "arr-webhook.js"
+            }
+          },
+          {
+            "match": {
+              "path": "alertmanager"
+            },
+            "action": "agent",
+            "agentId": "main",
+            "deliver": true,
+            "transform": {
+              "module": "alertmanager-webhook.js"
+            }
+          }
+        ]
       },
-      skills: {
-        paths: ["/skills"],
-      },
+      "skills": {
+        "load": {
+          "extraDirs": [
+            "/skills"
+          ]
+        }
+      }
     }

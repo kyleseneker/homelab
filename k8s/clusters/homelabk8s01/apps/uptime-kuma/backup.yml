@@ -47,7 +47,7 @@ data:
         destination.parent.mkdir(parents=True, exist_ok=True)
         staged = destination.with_name(destination.name + ".tmp")
         try:
-            src = sqlite3.connect(f"file:{db}", uri=True)
+            src = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
             dst = sqlite3.connect(staged)
             with dst:
                 src.backup(dst)

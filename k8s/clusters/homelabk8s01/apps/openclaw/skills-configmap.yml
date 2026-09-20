@@ -37,8 +37,8 @@ data:
     |----------|----------|--------|
     | P1 Critical | Multiple services down, data loss risk | DM Kyle + #ops |
     | P2 High | Critical infra down (Vault, ArgoCD, Cilium) | DM Kyle + #ops |
-    | P3 Medium | Single app down, degraded performance | Handle autonomously, post #ops |
-    | P4 Low | Non-critical, cosmetic, minor drift | Handle autonomously, post #ops |
+    | P3 Medium | Single app down, degraded performance | Diagnose; recover only SOUL.md targets, post #ops |
+    | P4 Low | Non-critical, cosmetic, minor drift | Diagnose; recover only SOUL.md targets, post #ops |
 
     Post-incident: P1/P2 get a prevention PR. Recurring P3s get root-cause fix.
     If a merged PR causes ArgoCD sync failure or new alerts within 15min,
@@ -162,8 +162,9 @@ data:
 
     | Schedule | When | Scope | Retention |
     |----------|------|-------|-----------|
-    | daily-stateful | 03:00 UTC daily | arr, monitoring, auth | 7 days |
-    | weekly-full-cluster | 04:00 UTC Sundays | all namespaces (except kube-system/public) | 30 days |
+    | daily-stateful | 03:00 UTC daily | arr, monitoring, auth, openclaw | 7 days |
+    | weekly-full-cluster | 04:00 UTC Sundays | all except kube-system, kube-public, nfs-provisioner, backups | 30 days |
+    | weekly-offsite | 05:00 UTC Sundays | arr, monitoring, auth, openclaw, argocd, vault, external-secrets | 30 days |
 
     Backend: MinIO in `backups` namespace (S3-compatible, 50Gi NFS).
 
@@ -178,9 +179,9 @@ data:
 
     ## Monthly Test Restores
 
-    Pick a non-critical app (e.g., uptime-kuma). Restore its Velero
-    backup to a temp namespace. Verify it works. Delete temp namespace.
-    Report results to #ops.
+    Propose a restore drill for a non-critical app (e.g., uptime-kuma)
+    following the backup runbook. Kyle performs the restore and cleanup;
+    your role is to inspect results. RBAC does not grant restore mutations.
 
     ## Blast Radius Awareness
 
@@ -190,14 +191,15 @@ data:
     - **Cilium down** → All networking breaks (including Gateway API)
     - **ArgoCD down** → No new deployments (existing services keep running)
     - **cert-manager down** → TLS certs stop renewing (30 day buffer)
-    - **Kyverno down** → Policy enforcement stops → new pods bypass PSS/RBAC checks
+    - **Kyverno down** → Admission follows each webhook failurePolicy;
+      requests may fail closed. Kubernetes PSS and RBAC remain independent.
     - **Authentik down** → SSO fails for Grafana, ArgoCD (local auth still works)
     - **Intel GPU operator down** → Jellyfin falls back to CPU transcoding (slow)
 
     ## Node Failure
 
     1. Wait 5 min — might be a network blip
-    2. If persistent, cordon the node
+    2. If persistent, report the affected node; do not cordon or drain it
     3. Verify workloads rescheduled (Jellyfin needs GPU node)
     4. Alert Kyle in #ops
 
@@ -225,6 +227,10 @@ data:
     Media pipeline: requests → indexing → downloads → transcoding →
     subtitles → playback. See TOOLS.md for arr service URLs.
     See WEBHOOKS.md for real-time event handling.
+
+    Only paired Slack users can request actions. API keys still grant
+    application-level writes; do not delete media or alter operator-owned
+    settings. Kubernetes RBAC does not constrain those API credentials.
 
     ## Fulfilling Requests
 
@@ -256,8 +262,9 @@ data:
 
     1. **Indexer down** → Prowlarr, then FlareSolverr.
     2. **Download stuck** → qBittorrent stalled torrents. Re-search if no seeds.
-    3. **Extraction stuck** → Unpackerr logs. Restart if hung.
+    3. **Extraction stuck** → Unpackerr logs. Propose a restart if hung.
     4. **Import failed** → Sonarr/Radarr activity logs.
     5. **Transcode failing** → Tdarr logs. Corrupt source → re-download.
     6. **Missing from Jellyfin** → Library scan. Check NFS permissions.
-    7. **Service unreachable** → Restart the pod.
+    7. **Service unreachable** → Diagnose. Only recover the two scale
+       targets in SOUL.md; propose a PR or operator action for other apps.

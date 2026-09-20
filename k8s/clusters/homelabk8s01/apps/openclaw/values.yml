@@ -21,25 +21,71 @@ controllers:
           - /bin/sh
           - -c
         args:
-          - "set -e\n# Download kubectl \u2014 alpine has wget built in\nwget -qO\
-            \ /tools/kubectl \\\n  \"https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl\"\
-            \nchmod +x /tools/kubectl\n# Download kubeconform\nwget -qO- \\\n  \"\
-            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz\"\
-            \ \\\n  | tar xz -C /tools kubeconform\n# Copy workspace files into persistent\
-            \ state dir\nmkdir -p /state/workspace\ncp /boot/BOOT.md /state/workspace/BOOT.md\
-            \ 2>/dev/null || true\nfor f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md\
-            \ WEBHOOKS.md; do\n  cp /workspace-src/$f /state/workspace/$f 2>/dev/null\
-            \ || true\ndone\n# Copy webhook transform modules\nmkdir -p /state/hooks/transforms\n\
-            for f in /hooks-transforms-src/*.js; do\n  cp \"$f\" /state/hooks/transforms/\
-            \ 2>/dev/null || true\ndone\n"
+          - |
+            set -eu
+            # Verify the pinned kubectl artifact before making it executable.
+            wget -qO /tools/kubectl https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl
+            wget -qO /tools/kubectl.sha256 https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl.sha256
+            printf '%s  /tools/kubectl\n' "$(cat /tools/kubectl.sha256)" | sha256sum -c -
+            chmod +x /tools/kubectl
+            wget -qO /tools/kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+            wget -qO /tools/CHECKSUMS https://github.com/yannh/kubeconform/releases/download/v0.6.7/CHECKSUMS
+            cd /tools
+            grep '  kubeconform-linux-amd64.tar.gz$' CHECKSUMS | sha256sum -c -
+            tar xzf kubeconform-linux-amd64.tar.gz kubeconform
+            mkdir -p /state/workspace /state/hooks/transforms
+            cp /boot/BOOT.md /state/workspace/BOOT.md
+            for f in IDENTITY.md SOUL.md USER.md TOOLS.md HEARTBEAT.md WEBHOOKS.md; do
+              cp "/workspace-src/$f" "/state/workspace/$f"
+            done
+            cp /hooks-transforms-src/*.js /state/hooks/transforms/
         securityContext:
           allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
           capabilities:
             drop:
               - ALL
         resources:
           requests:
             cpu: 100m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+      config:
+        image:
+          repository: ghcr.io/openclaw/openclaw
+          tag: 2026.7.1
+        command: [node, -e]
+        args:
+          - |
+            const fs = require('node:fs');
+            const crypto = require('node:crypto');
+            const path = '/state/openclaw.json';
+            const desired = JSON.parse(fs.readFileSync('/config/config.json5', 'utf8'));
+            let previous = {};
+            if (fs.existsSync(path)) {
+              // Preserve the original once for migration rollback; never print credentials.
+              previous = JSON.parse(fs.readFileSync(path, 'utf8'));
+              if (!fs.existsSync(path + '.pre-gitops')) {
+                fs.copyFileSync(path, path + '.pre-gitops', fs.constants.COPYFILE_EXCL);
+                fs.chmodSync(path + '.pre-gitops', 0o600);
+              }
+            }
+            const token = previous.gateway?.auth?.token;
+            desired.gateway.auth.token = typeof token === 'string' && token.trim()
+              ? token : crypto.randomBytes(32).toString('hex');
+            fs.writeFileSync(path + '.tmp', JSON.stringify(desired, null, 2) + '\n', {mode: 0o600});
+            fs.chmodSync(path + '.tmp', 0o600);
+            fs.renameSync(path + '.tmp', path);
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: [ALL]
+        resources:
+          requests:
+            cpu: 25m
             memory: 64Mi
           limits:
             cpu: 200m
@@ -51,7 +97,7 @@ controllers:
           tag: 2026.7.1
         env:
           TZ: America/Chicago
-          OPENCLAW_CONFIG: /config/config.json5
+          OPENCLAW_CONFIG_PATH: /home/node/.openclaw/openclaw.json
           OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: '1'
           PATH: /usr/local/bin/tools:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
         envFrom:
@@ -148,6 +194,8 @@ persistence:
     size: 2Gi
     advancedMounts:
       main:
+        config:
+          - path: /state
         tooling:
           - path: /state
         main:

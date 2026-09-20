@@ -3,10 +3,10 @@ alloy:
     content: |
       discovery.kubernetes "pods" {
         role = "pod"
-      }
-
-      discovery.kubernetes "nodes" {
-        role = "node"
+        selectors {
+          role  = "pod"
+          field = "spec.nodeName=" + sys.env("HOSTNAME")
+        }
       }
 
       discovery.relabel "pod_logs" {
@@ -104,3 +104,19 @@ controller:
         hostPath:
           path: /var/log/kubernetes/audit
           type: DirectoryOrCreate
+rbac:
+  # The configured pipeline only discovers pods/namespaces and reads API logs.
+  # Chart defaults also grant access to every Secret in the cluster.
+  rules:
+    - apiGroups: [""]
+      resources: ["pods"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: [""]
+      resources: ["pods/log"]
+      verbs: ["get"]
+  clusterRules:
+    - apiGroups: [""]
+      resources: ["namespaces"]
+      verbs: ["get", "list", "watch"]
+serviceMonitor:
+  enabled: true

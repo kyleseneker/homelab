@@ -20,7 +20,7 @@ spec:
             description: "Deployment {{ $labels.deployment }} in namespace {{ $labels.namespace }} has been down for more than 5 minutes."
 
         - alert: GluetunVPNDown
-          expr: kube_pod_container_status_ready{namespace="arr", container="gluetun"} == 0
+          expr: kube_pod_init_container_status_ready{namespace="arr", container="gluetun"} == 0
           for: 10m
           labels:
             severity: warning
@@ -61,6 +61,15 @@ spec:
             summary: "Certificate {{ $labels.name }} expiring soon"
             description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} expires in less than 14 days."
 
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="True"} == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.name }} is not ready"
+            description: "Certificate {{ $labels.name }} in namespace {{ $labels.namespace }} has not been Ready for 15 minutes. Inspect CertificateRequest and issuer conditions; an unissued certificate may have no expiry metric."
+
         - alert: LokiDown
           expr: |
             up{job=~".*loki.*", namespace="monitoring"} == 0
@@ -73,13 +82,14 @@ spec:
 
         - alert: AlloyDown
           expr: |
-            (kube_daemonset_status_number_available{namespace="monitoring", daemonset=~".*alloy.*"} == 0)
+            kube_daemonset_status_desired_number_scheduled{namespace="monitoring", daemonset=~".*alloy.*"}
+            - kube_daemonset_status_number_available{namespace="monitoring", daemonset=~".*alloy.*"} > 0
           for: 5m
           labels:
             severity: warning
           annotations:
-            summary: "Alloy log collector is down"
-            description: "No Alloy pods are available. Logs are not being collected from cluster nodes."
+            summary: "Alloy log collection is incomplete"
+            description: "{{ $value }} expected Alloy collectors are unavailable. With node-scoped discovery, those nodes have no pod log collection."
 
         - alert: MinIODown
           expr: |

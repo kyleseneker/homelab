@@ -1,0 +1,47 @@
+# Keep state mounted between CronJobs so Velero file-system backup can capture it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arr-recyclarr-state-holder
+  namespace: arr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: arr-recyclarr-state-holder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: arr-recyclarr-state-holder
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: holder
+          image: registry.k8s.io/pause:3.10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: state
+              mountPath: /state
+              readOnly: true
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: arr-recyclarr

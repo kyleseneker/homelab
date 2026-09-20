@@ -20,8 +20,8 @@ spec:
             summary: "{{ $labels.instance }} is not answering as expected"
             description: >-
               The probe for {{ $labels.instance }} has failed for five minutes. This walks the
-              whole path -- DNS, the Cilium Gateway, the Authentik outpost where the route is
-              proxied, and the backend -- so the failure can be anywhere along it. Compare
+              DNS, TLS trust, the Cilium Gateway, and the Authentik outpost where the route is
+              proxied. A login redirect does not exercise the protected backend. Compare
               probe_http_status_code against the module the target uses: proxied routes answer
               302 toward Authentik, and a direct route answers 200.
         - alert: EndpointProbeSlow
@@ -34,8 +34,27 @@ spec:
             summary: "{{ $labels.instance }} is answering slowly"
             description: >-
               {{ $labels.instance }} has taken more than five seconds to answer for ten minutes.
-              A proxied route that stalls rather than redirecting usually means the outpost
-              cannot reach its backend.
+              Check DNS, the gateway, and the responding service. The login-redirect probe
+              does not establish whether the outpost can reach its backend.
+        - alert: EndpointProbeScrapeFailed
+          expr: |
+            up{job=~"sso-protected|direct"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Probe scrape failed for {{ $labels.instance }}"
+            description: "Prometheus cannot collect this probe. Inspect the exporter and scrape errors; probe_success may be absent."
+        - alert: EndpointProbeMetricsAbsent
+          expr: |
+            absent(probe_success{job="sso-protected"})
+            or absent(probe_success{job="direct"})
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Endpoint probe metrics missing for {{ $labels.job }}"
+            description: "A configured Probe group has no results. Check Probe discovery, exporter readiness, and Prometheus scrape configuration."
         - alert: EndpointCertificateExpiringSoon
           expr: |
             probe_ssl_earliest_cert_expiry - time() < 14 * 24 * 3600
