@@ -1,94 +1,116 @@
 # Phase 3 -- Network
 
-**Status:** Not started
+**Status:** In progress. WireGuard, Teleport, and management-VLAN access are implemented; 10G networking and DNS automation remain planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
-**Addresses:** [P3](assessment.md#physical-layer) (GbE bottleneck), [N3, N4, N5](assessment.md#network-layer)
+**Addresses:** P3, P6, N1–N8, and M2 in the [assessment](assessment.md).
 
 ---
 
 ## 3.1 Enable 10G Networking
 
 - [ ] Choose a 10G switch option (see below)
-- [ ] Connect the MS-01's SFP+ ports to the new switch via DAC cables
+- [ ] Connect the MS-01's SFP+ ports to the new switch via compatible DAC cables
+- [ ] Connect the NAS at 10G after verifying its exact model and interface
 - [ ] Verify link negotiation at 10 Gbps
-- [ ] Reconfigure Proxmox networking for the new interface
-- [ ] Benchmark NFS throughput before and after
+- [ ] Reconfigure Proxmox networking for the new interface, preserving VLANs and management access
+- [ ] Benchmark NFS throughput and backup transfers before and after
+- [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md) and [hardware inventory](../reference/hardware.md)
 
 | | |
 |---|---|
-| **Why** | The MS-01 has 2x 10G SFP+ ports unused. Everything runs over a single 1 GbE connection. NFS throughput, backup speed, and future live migration are all bottlenecked. |
+| **Why** | The MS-01 has two unused 10G SFP+ ports. Its current GbE path limits NFS transfers, backups, and traffic to a future second host. |
 
 **Options:**
 
-| Option | Device | Cost | Pros | Cons |
-|--------|--------|------|------|------|
-| A | MikroTik CRS305-1G-4S+ | ~$150 | 4x SFP+, cheapest 10G option, small form factor | Non-UniFi, separate management interface |
-| B | USW-Aggregation | ~$300 | 8x SFP+, UniFi-native, single management pane | More expensive, overkill for current needs |
-| C | DAC cable direct to NAS | ~$20 | Cheapest, zero config | Only benefits NFS traffic, no switch for future hosts |
+| Option | Device | Pros | Cons |
+|--------|--------|------|------|
+| A | [MikroTik CRS305-1G-4S+IN](https://mikrotik.com/product/crs305_1g_4s_in) | Four SFP+ ports, compact, fanless | Separate management interface; limited ports for expansion |
+| B | [USW-Aggregation](https://techspecs.ui.com/unifi/switching/usw-aggregation) | Eight SFP+ ports, UniFi-native, room for additional hosts | Larger initial investment and 1U rack space |
+| C | DAC cable direct to NAS | No additional switch; dedicated storage link | Requires compatible NAS interface and explicit addressing/routing; no switch for future hosts |
 
-**Recommendation:** Option A. Connect both MS-01 SFP+ ports. When a second host is added (Phase 4.1), it connects at 10G immediately.
+**Planned starting point:** Option A. Budget ports for the NAS and the second host in Phase 4.1 before deciding whether to connect both MS-01 ports. Option B provides more room for dual links and a third host.
 
 ## 3.2 Configure WireGuard VPN
 
-- [ ] Create WireGuard client profiles on the Dream Router 7 (phone, laptop)
-- [ ] Configure split-tunnel routing (only homelab traffic through VPN)
-- [ ] Grant VPN access to the Homelab VLAN (192.168.10.0/24)
-- [ ] Grant VPN access to the Management VLAN (192.168.99.0/24)
-- [ ] Test access to homelab services from an external network
+- [x] Enable WireGuard on the Dream Router 7
+- [x] Enable UniFi Teleport
+- [x] Grant the VPN zone access to the Homelab VLAN (192.168.10.0/24)
+- [x] Grant the VPN zone access to the Management VLAN (192.168.99.0/24)
+- [ ] Record client profiles and split-tunnel routes for phone and laptop
+- [ ] Record an off-LAN test of DNS, TLS, application login, and management access
 
-| | |
-|---|---|
-| **Why** | No way to reach the homelab off-site. Blocks remote management, media streaming, and dashboard access. The Dream Router 7 already has WireGuard enabled. |
+The VPN is implemented. The remaining tasks document client configuration and verification of the existing remote-access path.
 
 ## 3.3 Automate Internal DNS
 
 - [ ] Choose a DNS approach (see below)
-- [ ] Deploy and configure
-- [ ] Migrate existing `*.homelab.local` entries
-- [ ] Update [network infrastructure docs](../architecture/network-infrastructure.md)
-- [ ] Write an ADR
+- [ ] Deploy and configure the chosen service with a recovery path available when Kubernetes is down
+- [ ] Migrate existing `*.homelab.local` entries and verify client lookups
+- [ ] Test record creation, updates, and deletion if using external-dns
+- [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md)
 
 | | |
 |---|---|
-| **Why** | DNS is manual static entries in the UniFi console. Every new service requires a manual edit. |
+| **Why** | DNS uses static entries in the UniFi console. Every new service requires a manual edit. |
 
 **Options:**
 
 | Option | Approach | Automation | Bonus |
 |--------|----------|------------|-------|
-| A | external-dns + CoreDNS/Pi-hole (RFC2136) | Full -- watches HTTPRoutes, auto-creates records | DNS automation end-to-end |
-| B | Pi-hole or AdGuard Home on K8s | Manual entries, but centralized | Ad-blocking, DNS query dashboard |
-| C | Stay with UniFi static entries | None | No new components |
+| A | external-dns + an authoritative DNS service with a supported update API | Watches supported Kubernetes resources and manages records | DNS automation end-to-end |
+| B | Pi-hole or AdGuard Home | Centralized manual entries unless separately integrated with a supported updater | Ad-blocking and a DNS query dashboard |
+| C | Stay with UniFi static entries | Manual | No new components |
 
-**Recommendation:** Option B as a middle ground. Provides a DNS dashboard and ad-blocking. Layer external-dns on top later if full automation is needed.
+Pi-hole or AdGuard Home remains an option for centralized DNS and ad-blocking. Full record automation requires a supported provider/API; it does not follow automatically from deploying either service. Any migration away from `.local` also needs a plan for service URLs, certificates, and clients.
 
 ## 3.4 Plan External Access for Jellyfin
 
 - [ ] Choose an external access approach (see below)
-- [ ] Implement and test
-- [ ] Write an ADR
+- [ ] Implement and test on the intended client devices
+- [ ] Test long playback sessions, seeking, subtitles, and authentication
+- [ ] Keep administrative UIs private
 
 | | |
 |---|---|
-| **Why** | Streaming media while traveling. VPN (3.2) works for personal devices. Sharing with friends/family needs something that doesn't require VPN setup on their end. |
+| **Why** | VPN supports streaming while traveling on personal devices. Sharing with friends and family may need an access path that does not require a VPN client. |
 
 **Options:**
 
 | Option | Approach | Pros | Cons |
 |--------|----------|------|------|
-| A | VPN-only | Simplest, most secure, no public exposure | Requires VPN client on every device |
-| B | Cloudflare Tunnel | Zero-trust, no port forwarding, free tier, WAF/DDoS protection | Requires a domain (~$10/year) |
-| C | Tailscale Funnel | Simple setup, no port forwarding | Tailscale manages TLS and routing |
+| A | VPN-only | Existing private access path | Requires a VPN client on every device |
+| B | Cloudflare Tunnel | No inbound port forwarding | Requires a public domain and verification that the selected service's current terms support media streaming |
+| C | Tailscale Funnel | No inbound port forwarding; managed TLS | Verify current bandwidth limits and client suitability for media streaming |
 
-**Recommendation:** Start with VPN-only (A) for personal use. Add Cloudflare Tunnel (B) for Jellyfin when sharing with others becomes a priority.
+**Planned starting point:** VPN-only for personal use. Select and test a public access method when enabling sharing with friends and family.
+
+## 3.5 Complete Intel AMT Connectivity
+
+- [ ] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
+- [ ] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
+- [ ] Test remote power control and console access with the host OS unavailable
+- [ ] Update the hardware and port inventory
+
+AMT is configured in firmware. This completes the physical management connection described in [ADR-017](../decisions/017-intel-amt-oob-management.md).
+
+## 3.6 Verify Management Isolation and Address Planning
+
+- [ ] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads
+- [ ] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
+- [ ] Inventory Cilium pod allocations, the Kubernetes service range and routed/VPN networks; the configured `10.0.0.0/8` pool contains the `10.96.0.0/12` service range
+- [ ] Rehearse a non-overlapping address plan in the isolated lab and document the migration procedure before changing the running cluster
+- [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
 
 ---
 
 ## Definition of Done
 
 - [ ] 10G link between MS-01 and at least one other device
-- [ ] WireGuard VPN functional for remote access
-- [ ] DNS centralized (automated or in a dedicated server)
+- [x] WireGuard VPN configured for remote Homelab and Management access
+- [ ] Remote client verification recorded
+- [ ] DNS centralized or automated through the chosen approach
 - [ ] External access path chosen and implemented for Jellyfin
+- [ ] Intel AMT connected and remote management tested
+- [ ] Management reachability and pod/service/VPN address boundaries verified

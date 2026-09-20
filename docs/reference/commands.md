@@ -14,7 +14,7 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | Command | Description |
 |---------|-------------|
 | `make deps` | Install Ansible Galaxy collections |
-| `make vault-create` | Create an empty vault.yml and encrypt it |
+| `make vault-create` | Create an empty vault.yml ready to edit and encrypt |
 | `make vault-edit` | Edit vault.yml (decrypts in-place, re-encrypts on save) |
 | `make vault-encrypt` | Encrypt vault.yml |
 | `make vault-decrypt` | Decrypt vault.yml (for manual editing) |
@@ -42,9 +42,9 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-plan` | Preview K8s VM changes |
 | `make k8s-infra` | Provision K8s VMs on Proxmox |
 | `make k8s-configure` | Bootstrap K8s cluster via Ansible |
-| `make k8s-deploy` | Full deploy: VMs + cluster + ArgoCD |
+| `make k8s-deploy` | Ordered deploy: VMs + cluster + kubeconfig + ArgoCD |
 | `make k8s-destroy` | Tear down all K8s VMs |
-| `make k8s-bootstrap` | Install ArgoCD and the ApplicationSet (one-time) |
+| `make k8s-bootstrap` | Install or update ArgoCD and the ApplicationSet |
 | `make k8s-backup` | Trigger an on-demand Velero backup |
 | `make k8s-backup-status` | Show Velero backup and schedule status |
 | `make k8s-restore` | List available Velero backups for restore |
@@ -56,8 +56,10 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 
 | Command | Description |
 |---------|-------------|
-| `make k8s-render` | Render every ApplicationSet manifest locally and diff `k8s/bootstrap/` against the cluster -- the same check CI runs |
-| `make k8s-check-alerts` | Verify every alert selector matches a live Prometheus series |
+| `make k8s-render` | Render Helm/Kustomize resources and validate their schemas without contacting the cluster |
+| `make k8s-bootstrap-drift` | Compare manually managed bootstrap resources with the live cluster; differences and API errors fail |
+| `make k8s-crd-schemas` | Generate schemas from pinned media-operator charts and vendored Gateway CRDs |
+| `make k8s-check-alerts` | Audit current series referenced by local alert and recording rules |
 
 Run `make k8s-render` before pushing any change under `k8s/`. It is the only check that exercises `config.yml` and `values.yml`, which kubeconform skips.
 
@@ -66,7 +68,7 @@ Run `make k8s-render` before pushing any change under `k8s/`. It is the only che
 | Command | Description |
 |---------|-------------|
 | `make vault-init` | Initialize Vault and configure ESO integration (one-time) |
-| `make vault-put-secret` | Write a secret to Vault (`SECRET_PATH=... KEY=... VAL=...`) |
+| `make vault-put-secret` | Patch one Vault field safely (`SECRET_PATH=... KEY=...`, export `VAL`) |
 | `make vault-status` | Show Vault seal status |
 | `make arr-keys-adopt` | Copy each *arr app's live API key into Vault at `homelab/apps/arr` (never prints the key) |
 
@@ -88,3 +90,20 @@ Override the default host or cluster by passing variables to `make`:
 make PVE_HOST=homelabpve02 pve-configure
 make CLUSTER=homelabk8s02 k8s-deploy
 ```
+
+## Credentials and context
+
+Make defaults `KUBECONFIG` to the repository's kubeconfig. Set it explicitly when using another cluster; `CLUSTER` selects Terraform/inventory paths but does not verify the API server identity. The ordered deployment fetches its kubeconfig before applying bootstrap resources.
+
+Vault helper commands own and clean up their port-forward. If port 8200 is occupied they fail without stopping the other process; set `VAULT_PORT` to an available local port. Export the token and secret value without placing them in shell history, for example:
+
+```bash
+read -rs VAL
+export VAL
+make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword
+unset VAL
+```
+
+The helper patches existing KV v2 data. Its create fallback uses CAS 0 and cannot overwrite an existing secret after a failed patch. A concurrent change or insufficient permissions fails explicitly.
+
+The alert audit uses Prometheus's experimental `parse_query` endpoint and fails explicitly on unsupported responses. It skips selectors used only inside absence functions, while checking the same selector used outside them. It checks current presence, not historical coverage, thresholds, joins, deployed-rule drift or notification delivery. Exit 1 means missing series; exit 2 means a parsing/API/query error.

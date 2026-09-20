@@ -10,7 +10,7 @@ The cluster runs 15+ Helm charts and container images that receive regular upstr
 
 ## Decision
 
-Use the free Mend Renovate GitHub App to scan the repository on a weekly schedule (Saturday mornings) and open pull requests for dependency updates. All updates require manual review — automerge is disabled. Custom regex managers detect container image tags and Helm chart versions in ArgoCD Application manifests and bjw-s app-template values files.
+Use the free Mend Renovate GitHub App to scan the repository on a weekly schedule (Saturday mornings) and open pull requests for dependency updates. All updates require manual review — automerge is disabled. Custom regex managers detect container references in manifests and Helm values, plus HTTP and OCI Helm chart versions in ApplicationSet `config.yml` files.
 
 ## Alternatives Considered
 
@@ -24,7 +24,7 @@ Use the free Mend Renovate GitHub App to scan the repository on a weekly schedul
 - **Grouping strategy**: Related updates are grouped into single PRs to reduce noise: all bjw-s app-template consumers, all linuxserver images, Grafana stack charts (Loki + Alloy), and Intel GPU charts each produce one PR instead of many.
 - **No automerge**: Every update goes through manual review. This is deliberate — Helm chart major versions and container image updates can introduce breaking changes that automated tests cannot fully validate in this environment.
 - **Dependency dashboard**: Renovate maintains a GitHub issue as a dashboard listing all pending updates, their status, and any errors. Provides visibility without checking individual PRs.
-- **Digest pinning**: Container images are pinned to digests for reproducibility. Renovate tracks both tag and digest updates.
+- **Digest pinning**: Renovate proposes digest pins for container images and tracks both tag and digest updates, allowing reviewed image versions to be reproduced.
 - **Scheduling**: Saturday morning runs batch updates into a predictable window, avoiding mid-week disruption.
 
 ## Consequences

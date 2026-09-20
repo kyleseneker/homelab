@@ -1,67 +1,33 @@
 # Media Operator
 
-A Kubernetes operator that reconciles Sonarr, Radarr, Prowlarr, Jellyfin, and qBittorrent configuration from custom resources. It moves the *arr stack's runtime state -- root folders, download clients, indexers, quality settings -- out of each app's SQLite database and into Git.
+Seven operators reconcile eight media application configurations from Git. They manage root folders, download clients, indexers, libraries, request integration, subtitles, and transcode flows through application APIs. Runtime databases still hold users, libraries, histories, and other state that is not represented by these custom resources.
 
-## Details
+| ArgoCD app | Chart | Custom resources |
+|------------|-------|------------------|
+| `media-operator` | `media-operator-pvr` | SonarrConfig, RadarrConfig |
+| `media-operator-indexers` | `media-operator-indexers` | ProwlarrConfig |
+| `media-operator-downloads` | `media-operator-downloads` | QBittorrentConfig |
+| `media-operator-mediaservers` | `media-operator-mediaservers` | JellyfinConfig |
+| `media-operator-requests` | `media-operator-requests` | SeerrConfig |
+| `media-operator-subtitles` | `media-operator-subtitles` | BazarrConfig |
+| `media-operator-transcode` | `media-operator-transcode` | TdarrConfig |
 
-| Property | Value |
-|----------|-------|
-| Charts | `media-operator-servarr`, `media-operator-downloads`, `media-operator-mediaservers` |
-| Repository | `ghcr.io/kyleseneker/media-operator` (OCI) |
-| Namespace | `arr` |
-| ArgoCD apps | `media-operator`, `media-operator-downloads`, `media-operator-mediaservers` |
-| Watch namespace | `arr` |
-| API group | `media-operator.dev/v1alpha1` |
+Charts come from `ghcr.io/kyleseneker/media-operator`; each `config.yml` pins its version. All watch `arr`, with metrics and ServiceMonitors enabled. The API group is `media-operator.dev/v1alpha1`. Custom resources live under `apps/arr/media-config/` and deploy as the `arr-media-config` Application.
 
-Three operators are deployed, split by the kind of thing they configure:
+## Ownership and reconciliation
 
-| ArgoCD app | Chart | Handles |
-|------------|-------|---------|
-| `media-operator` | `media-operator-servarr` | Sonarr, Radarr, Prowlarr |
-| `media-operator-downloads` | `media-operator-downloads` | qBittorrent |
-| `media-operator-mediaservers` | `media-operator-mediaservers` | Jellyfin |
+Each resource declares its service endpoint, credential Secret references, reconciliation interval, and `deletionPolicy: orphan`. Removing the CR leaves application settings intact. Prowlarr owns indexer sync to Sonarr/Radarr; Recyclarr owns quality profiles and custom-format scores. Avoid managing the same settings through multiple controllers or manual edits.
 
-Chart versions are pinned per app in each `config.yml`.
+Application APIs must be reachable and credentials valid before reconciliation succeeds. Inspect CR status and operator logs for failed reconciliation, including HTTP 401s. `make arr-keys-adopt` transfers generated keys into Vault at `homelab/apps/arr`; ESO then reconciles `arr-api-keys`. Jellyfin, qBittorrent, Seerr, Tdarr, and provider credentials have their own Secret references. qBittorrent clients authenticate even from the pod network.
 
-## Custom Resources
+## Cold-start gaps
 
-The CRs live in `k8s/clusters/homelabk8s01/apps/arr/media-config/`, deployed as the `arr-media-config` Application.
+The repository does not yet demonstrate a fully unattended rebuild. Generated API keys, initial account setup, and restored database state must agree with Vault. Run the adoption step after application initialization or restore, then verify all eight CRs become ready.
 
-| Kind | Configures |
-|------|-----------|
-| `SonarrConfig` | Root folders, download clients, download-client behaviour |
-| `RadarrConfig` | Root folders, download clients, download-client behaviour |
-| `ProwlarrConfig` | Indexers, applications to sync to, indexer proxies |
-| `JellyfinConfig` | Libraries and server settings |
-| `QBittorrentConfig` | Categories, save paths, connection settings |
+Seerr currently references Sonarr/Radarr quality profile ID `7` with names `WEB-1080p` and `HD Bluray + WEB`. IDs belong to each application's database and may differ after a clean initialization. First run Recyclarr, query each app's `/api/v3/qualityprofile`, and confirm the IDs match the names before enabling household requests. Do not replace an ID with a guess; name-based resolution in the operator is the preferred follow-up.
 
-Each CR points at its application's in-cluster service and reads that application's API key from the `arr-api-keys` Secret:
+The Bazarr English profile ID and Prowlarr application profile IDs also require validation during a clean rebuild. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-```yaml
-spec:
-  connection:
-    url: http://arr-sonarr.arr.svc.cluster.local:8989
-    apiKeySecretRef:
-      name: arr-api-keys
-      key: sonarr-api-key
-  reconcile:
-    interval: 5m
-    deletionPolicy: orphan
-```
+## Upstream
 
-## Reconciliation
-
-The operator polls each application's API on the configured `interval` and applies any drift. `deletionPolicy: orphan` means deleting a CR leaves the configuration in place rather than tearing it down -- deliberate, so an accidental `kubectl delete` cannot wipe a working *arr setup.
-
-Because reconciliation runs against a live API, the target application must be up and its API key must be valid. A rotated key that has not been re-adopted into Vault causes silent 401s.
-
-!!! note "API keys still flow the wrong way"
-    Each *arr app generates its own API key on first boot; the operator consumes it. `make arr-keys-adopt` copies the live keys into Vault at `homelab/apps/arr`, from where ESO syncs them into `arr-api-keys`. A cold rebuild therefore still needs a human to visit each web UI once before the operator can do anything.
-
-## Metrics
-
-Both operators expose Prometheus metrics with a ServiceMonitor enabled.
-
-## Upstream Documentation
-
-<https://github.com/kyleseneker/media-operator>
+[Media Operator](https://github.com/kyleseneker/media-operator)

@@ -22,7 +22,8 @@ Reconcile application configuration with a purpose-built Kubernetes operator,
 group `media-operator.dev/v1alpha1`.
 
 Configuration is declared in CRs beside the manifests that deploy the app, and a controller
-converges the app's live state toward them.
+converges the app's live state toward them. Recyclarr owns quality definitions, profiles, custom
+formats and naming; the operator owns application wiring and its other declared settings.
 
 ### Taxonomy
 
@@ -78,12 +79,12 @@ assumed.
   this cluster exists for, and Kyverno's `require-resource-limits` in Enforce mode rejects
   Crossplane's synthesised provider Deployments until `crossplane-system` is excluded --
   weakening an admission policy to install a tool is a poor trade.
-- **Recyclarr and Configarr alone.** Both sync TRaSH guide data well and Recyclarr is retained
-  for exactly that. Neither models root folders, download clients or library definitions, and
-  running one of them across the surface the operator owns would put two controllers on the
-  same resources.
+- **Recyclarr and Configarr alone.** Recyclarr is retained for TRaSH-based quality and naming
+  configuration. Configarr covers some additional application settings, but neither replaces
+  the operator's broader media-service coverage. Using overlapping reconciliation for the same
+  settings would create conflicting owners.
 - **Init containers or Jobs posting to each API.** No reconciliation, no drift detection, no
-  adoption semantics. Every failure is silent and every change is a fresh script.
+  adoption semantics. They can fail visibly when well instrumented, but do not provide continuous reconciliation without an additional scheduling and drift-handling design.
 
 ## Consequences
 

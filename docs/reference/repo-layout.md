@@ -11,7 +11,7 @@ homelab/
 ├── docs/                            # Documentation source
 ├── scripts/
 │   ├── vault-init.sh                # One-time Vault init + ESO K8s auth setup
-│   ├── render-manifests.sh          # Render every ApplicationSet manifest; diff bootstrap
+│   ├── render-manifests.sh          # Render every ApplicationSet manifest offline
 │   ├── check-alert-metrics.sh       # Verify alert selectors match live Prometheus series
 │   └── gen-crd-schemas.sh           # Generate kubeconform schemas from media-operator charts
 ├── packer/
@@ -37,6 +37,7 @@ homelab/
 │   ├── ansible.cfg                  # Ansible configuration
 │   ├── requirements.yml             # Galaxy collections
 │   ├── playbooks/
+│   │   ├── group_vars -> ../group_vars # Load shared vars for both playbooks
 │   │   ├── pve-host.yml             # Proxmox host setup
 │   │   └── k8s-cluster.yml          # K8s cluster bootstrap
 │   ├── inventory/
@@ -159,4 +160,4 @@ The file extension is load-bearing: the generator matches `config.yml`, not `con
 
 **Namespace strategy.** Single-app namespaces use `CreateNamespace=true` on the Application, requiring no separate namespace manifest. The shared `arr` namespace is owned by a dedicated `arr/prereqs` Application that manages the namespace, shared PV, and shared ConfigMap.
 
-**`k8s/bootstrap/` is outside GitOps.** It is applied with `kubectl apply -k` by `make k8s-bootstrap` and is not reconciled by ArgoCD, so it can drift from git undetected. `scripts/render-manifests.sh` runs `kubectl diff -k` over it and fails on drift. The ApplicationSet CRD requires `--server-side`; it exceeds the last-applied-configuration annotation limit.
+**`k8s/bootstrap/` is outside GitOps.** It is applied with `kubectl apply -k` by `make k8s-bootstrap` and is not reconciled by ArgoCD, so it can drift from git undetected. `make k8s-bootstrap-drift` runs an explicit live comparison; the offline renderer validates manifests without requiring access to a cluster. The ApplicationSet CRD requires `--server-side`; it exceeds the last-applied-configuration annotation limit.

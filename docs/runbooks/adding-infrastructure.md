@@ -28,10 +28,9 @@ Use this procedure when introducing a new physical machine running Proxmox VE.
     make PVE_HOST=<pve-host> pve-configure
     ```
 
-    This configures IOMMU, creates a cloud-init VM template, and generates a Proxmox API token for Terraform.
+    This configures IOMMU and the host services selected in the inventory, creates a cloud-init VM template, and provisions the dedicated Terraform API identity.
 
-!!! warning
-    Save the API token printed at the end of the playbook run. It is required for Terraform to provision VMs on this host.
+The API token is not printed in Ansible output. The role saves it in `/root/.terraform-api-token` on the Proxmox host with mode `0600`. Retrieve it through the administrator SSH session and store it as the sensitive `proxmox_api_token` HCP Terraform workspace variable.
 
 ## Adding a New Worker Node
 
@@ -95,10 +94,15 @@ Use this procedure to stand up an entirely new Kubernetes cluster alongside the 
 ### 1. Create Terraform Configuration
 
 ```bash
-cp -r terraform/hosts/homelabk8s01 terraform/hosts/<cluster>
+mkdir -p terraform/hosts/<cluster>
+# Export tracked files only: do not copy state, .terraform, or local credentials.
+git archive HEAD terraform/hosts/homelabk8s01 | \
+  tar -x -C terraform/hosts/<cluster> --strip-components=3
+cp terraform/hosts/<cluster>/terraform.tfvars.example \
+  terraform/hosts/<cluster>/terraform.tfvars
 ```
 
-Edit `terraform/hosts/<cluster>/terraform.tfvars`:
+Review the tracked Terraform configuration before initialization. Give the new cluster its own backend workspace/state and credentials; copying configuration must never reuse the existing cluster's state. Then edit `terraform/hosts/<cluster>/terraform.tfvars`:
 
 - Update the cluster name
 - Set new VM IP addresses (must not overlap with existing clusters)
@@ -128,8 +132,8 @@ mkdir -p k8s/clusters/<cluster>/{config,infrastructure,apps}
 
 The ApplicationSet tells ArgoCD where to find `config.yml` files for the cluster. You have two options:
 
-- **Modify `k8s/bootstrap/applicationsets/cluster-apps.yml`** to update the glob path for the new cluster.
-- **Create a second ApplicationSet** to manage both clusters from the same ArgoCD instance.
+- **For an ArgoCD instance in the new cluster**, give it a cluster-specific generator glob and bootstrap manifest. Do not replace the existing cluster's tracked generator to stand up a second cluster.
+- **For a shared ArgoCD instance**, register the second destination cluster and create a second ApplicationSet with that destination and unique Application names. The current template uses the local cluster API endpoint.
 
 ### 5. Deploy
 
@@ -137,7 +141,7 @@ The ApplicationSet tells ArgoCD where to find `config.yml` files for the cluster
 make CLUSTER=<cluster> k8s-deploy
 ```
 
-This runs the full provisioning pipeline: Terraform VM creation, Ansible cluster bootstrap, and ArgoCD installation.
+The current Makefile selects Terraform and Ansible by `CLUSTER`, but its Kubernetes bootstrap paths are shared and still target the existing cluster layout. Adapt that bootstrap first and review the selected kubeconfig; this repository is not yet a turnkey multi-cluster installer. Run `make CLUSTER=<cluster> k8s-plan` and Ansible syntax checks before the mutating deploy command.
 
 ### 6. Post-Deployment
 

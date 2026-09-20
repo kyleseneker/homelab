@@ -20,9 +20,9 @@ Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments
 
 ## How It Works
 
-When a ConfigMap or Secret changes, Reloader detects the update and triggers a rolling restart of any workload that references it. This is particularly useful with External Secrets Operator -- when a secret is rotated in Vault, ESO syncs the updated value to the K8s Secret, and Reloader automatically restarts the affected pods to pick up the new values.
+When a ConfigMap or Secret changes, Reloader detects the update and triggers a rolling restart of an opted-in workload that references it. This is particularly useful with External Secrets Operator -- when a secret is rotated in Vault, ESO syncs the updated value to the K8s Secret, and Reloader automatically restarts the affected pods to pick up the new values.
 
-No per-workload annotations are required when `watchGlobally` is enabled. Reloader tracks all resource references automatically.
+`watchGlobally` controls namespace scope, not opt-in. Workload metadata must include `reloader.stakater.com/auto: "true"` (or a specific Secret/ConfigMap reload annotation). `autoReloadAll` is not enabled. Several application charts already set this annotation; infrastructure workloads without it require their own reload mechanism or an explicit rollout after credential rotation. Verify the rendered Deployment/StatefulSet annotation, not just a Helm value.
 
 ## Upstream Documentation
 

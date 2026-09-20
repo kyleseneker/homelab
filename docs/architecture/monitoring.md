@@ -31,7 +31,7 @@ flowchart LR
 
 | Component | Purpose | Deployment | Storage |
 |-----------|---------|-----------|---------|
-| Prometheus | Metrics collection, storage, and rule evaluation | StatefulSet | 20Gi PVC (`local-path`), 15d retention |
+| Prometheus | Metrics collection, storage, and rule evaluation | StatefulSet | 20Gi PVC (`local-path`), 15d/15GB block retention |
 | Grafana | Dashboards and visualization for metrics and logs | Deployment | 2Gi PVC (`nfs-client`) |
 | Alertmanager | Alert routing, grouping, and notification | StatefulSet | Ephemeral |
 | Node Exporter | Host-level hardware and OS metrics | DaemonSet | None |
@@ -40,6 +40,7 @@ flowchart LR
 | Alloy | Pod log collection and shipping | DaemonSet | None (streams to Loki) |
 | Exportarr | Prometheus metrics exporter for *arr apps | Multi-Deployment (one per target) | None |
 | NUT Exporter | UPS metrics from the CyberPower unit via NUT | Deployment | None |
+| Blackbox exporter | Git-managed HTTP/TLS endpoint probes | Deployment | None |
 | Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`local-path`) |
 | VPA Recommender | Per-workload CPU/memory right-sizing recommendations | Deployment | None |
 | Goldilocks | Auto-creates VPA CRs, provides recommendation dashboard | Deployment (controller + dashboard) | None |
@@ -52,7 +53,7 @@ Prometheus is deployed via the `kube-prometheus-stack` Helm chart and serves as 
 
 | Setting | Value |
 |---------|-------|
-| Retention | 15 days |
+| Retention | 15 days or 15GB of persisted blocks, whichever is reached first |
 | Storage | 20Gi PVC (`local-path`) |
 | Access | `prometheus.homelab.local` |
 
@@ -64,10 +65,14 @@ Prometheus scrapes metrics from:
 - **Exportarr** -- *arr application metrics (queue depth, library size, missing episodes) via ServiceMonitors
 - **NUT Exporter** -- UPS load, battery charge, runtime, and input voltage
 - **Velero** -- backup and schedule status via its own ServiceMonitor
-- **Application metrics** -- Any pods with Prometheus scrape annotations
+- **Application metrics** -- Targets declared by ServiceMonitor or PodMonitor resources; scrape annotations alone are not a configured discovery mechanism
 
 !!! warning "Prometheus storage is node-pinned and unbacked"
-    The TSDB lives on a `local-path` volume, so it is tied to whichever node first bound it, has no size cap, and is excluded from Velero (Kopia cannot read `hostPath`). Losing that node loses all metrics history. This is a deliberate trade against the query performance and corruption risk of running a TSDB over NFS.
+    The TSDB lives on a `local-path` volume, so it is tied to whichever node first bound it, has no filesystem quota, and is excluded from Velero (Kopia cannot read `hostPath`). Losing that node loses all metrics history. This is a deliberate trade against the query performance and corruption risk of running a TSDB over NFS. Size retention limits persisted blocks to 15GB; the WAL and in-memory head persisted on disk still need additional space, so node disk alerts remain necessary.
+
+### Endpoint Probes
+
+Blackbox `Probe` resources verify trusted HTTPS against direct health endpoints and the expected Authentik login redirect for protected routes. trust-manager supplies the CA in `monitoring`. A redirect proves DNS/TLS/gateway/outpost reachability, not backend health; keep application and workload metrics alongside it. Probe failure, exporter scrape failure and absent group metrics have separate alerts.
 
 ### Alertmanager
 
@@ -157,13 +162,15 @@ The audit policy (`/etc/kubernetes/audit/audit-policy.yml`) defines what gets lo
 
 | Event Category | Audit Level | Examples |
 |---------------|-------------|---------|
-| Secret mutations | RequestResponse | create, update, delete, patch on secrets |
+| Credential-bearing requests | Metadata | Secrets, service-account tokens and TokenReviews; bodies are excluded |
 | RBAC changes | RequestResponse | Changes to roles, clusterroles, and bindings |
-| Auth events | RequestResponse | Token reviews, certificate signing requests |
+| Certificate requests | RequestResponse | Certificate signing requests |
 | Infrastructure mutations | RequestResponse | Namespace, node, and PV changes |
 | All other mutations | Metadata | Any create, update, delete, patch |
 | Read operations | Metadata | Remaining get requests |
 | Noise (filtered out) | None | Health checks, watches, lists, lease heartbeats |
+
+The previous policy recorded Secret and TokenReview bodies. Changing the policy prevents future copies but does not remove historical host logs, Loki data or backups. Treat existing copies as credential-bearing and follow the remediation tracked in the roadmap.
 
 ### Log Rotation
 
@@ -180,7 +187,7 @@ In Grafana Explore, query Loki with:
 - `{job="kubernetes-audit"}` -- all audit events
 - `{job="kubernetes-audit", verb="delete"}` -- all delete operations
 - `{job="kubernetes-audit", user="system:serviceaccount:argocd:argocd-server"}` -- events from a specific service account
-- `{job="kubernetes-audit", level="RequestResponse"} |= "secrets"` -- secret access with full request/response bodies
+- `{job="kubernetes-audit", level="Metadata"} | json | objectRef_resource="secrets"` -- secret access metadata without credential bodies
 
 ## Grafana
 
@@ -212,9 +219,9 @@ The cluster includes a capacity planning layer that surfaces resource right-sizi
 
 The Vertical Pod Autoscaler (VPA) recommender analyzes historical CPU and memory usage for each workload and computes right-sizing recommendations. Goldilocks automatically creates a VPA CR for every Deployment and StatefulSet in the cluster, eliminating manual VPA object management.
 
-- **VPA Recommender**: Runs in `kube-system`, computes target/lower-bound/upper-bound recommendations, exposes `vpa_status_recommendation` Prometheus metrics
+- **VPA Recommender**: Runs in `kube-system`, computes target/lower-bound/upper-bound recommendations, writes recommendations to VPA status; custom recommendation metrics are not configured in this repository
 - **Goldilocks Controller**: Watches all namespaces (except `kube-node-lease`, `kube-public`) and creates `VerticalPodAutoscaler` CRs with `updateMode: "Off"`
-- **Goldilocks Dashboard**: Web UI for browsing per-workload recommendations (access via `kubectl port-forward`)
+- **Goldilocks Dashboard**: Web UI for browsing per-workload recommendations at `goldilocks.homelab.local`, protected by the Authentik outpost
 
 VPA runs in recommend-only mode -- no pods are ever mutated. Recommendations are advisory and applied through manual manifest updates.
 
@@ -250,7 +257,7 @@ flowchart TD
 
     ne -->|"host metrics"| prom
     ksm -->|"k8s object metrics"| prom
-    appPods -->|"scrape annotations"| prom
+    appPods -->|"ServiceMonitor / PodMonitor"| prom
     appPods -->|"stdout/stderr"| alloyDs
     auditLog -->|"audit events"| alloyDs
     alloyDs -->|"labeled logs"| loki

@@ -18,7 +18,7 @@ Prowlarr is a centralized indexer manager for the *arr stack. Add torrent tracke
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/config` |
+| `config` | PVC (`local-path`) | 1Gi | `/config` |
 
 Prowlarr does not require the shared `arr-data` volume because it does not interact with media files directly.
 
@@ -35,20 +35,9 @@ Prowlarr does not require the shared `arr-data` volume because it does not inter
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-1. Open `https://prowlarr.homelab.local` and set authentication (Settings > General).
-2. Add indexers (Indexers > Add Indexer):
-    - Add torrent trackers (public or private).
-3. Connect to Sonarr and Radarr (Settings > Apps > Add Application):
-    - **Prowlarr Server**: `http://arr-prowlarr.arr.svc.cluster.local:9696`
-    - **Sonarr**: `http://arr-sonarr.arr.svc.cluster.local:8989` + Sonarr API key
-    - **Radarr**: `http://arr-radarr.arr.svc.cluster.local:7878` + Radarr API key
-4. Enable **Sync App Indexers** so that indexers added to Prowlarr are automatically pushed to connected apps.
-5. Add FlareSolverr as an indexer proxy (Settings > Indexers > + > FlareSolverr):
-    - **Host**: `http://arr-flaresolverr.arr.svc.cluster.local:8191`
-    - **Tag**: `flaresolverr`
-    - Assign the `flaresolverr` tag to any indexer that requires Cloudflare solving.
+`ProwlarrConfig` owns indexers, Sonarr/Radarr app sync, and the FlareSolverr proxy. Initialize authentication as needed, run `make arr-keys-adopt`, then verify indexer tests and application sync. Make persistent setting changes in the CR. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

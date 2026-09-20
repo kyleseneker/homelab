@@ -67,14 +67,16 @@ Velero uses the AWS plugin to communicate with MinIO over the S3 API. File syste
 | Credentials | ExternalSecrets `velero-cloud-credentials` and `velero-offsite-credentials` |
 
 !!! info "Why Kopia?"
-    Velero's file system backup (formerly Restic, now Kopia) copies PVC data at the file level. This works with any storage backend, including NFS, without requiring volume snapshot support from the storage provider.
+    Velero's file system backup (formerly Restic, now Kopia) copies PVC data at the file level. This works with supported mounted volumes, including NFS, without requiring volume snapshot support from the storage provider.
 
 !!! danger "Kopia cannot read local-path volumes"
     File-system backup skips `hostPath` volumes, which is what the `local-path` provisioner creates. Every *arr config PVC, the Prometheus TSDB, and Uptime Kuma's database are captured as objects holding **no data**, and Velero records this as a warning rather than an error -- so the backup reports `Completed`.
 
-    Those workloads are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. See [Storage](storage.md#local-path-provisioner).
+    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; live Vault/PostgreSQL volume copies still need a proven consistent restore. See [Storage](storage.md#local-path-provisioner).
 
     Kopia also only reads volumes attached to a **running** pod. Each backup volume is kept mounted by a holder Deployment; without it the mechanism silently captures nothing.
+
+All schedule times below are UTC. Offsite excludes `backups` to avoid copying MinIO's local archives; etcd snapshots already have a separate S3 upload. OpenClaw state is included in daily and offsite schedules.
 
 ## Backup Schedules
 
@@ -83,7 +85,7 @@ Three schedules cover granular daily recovery, broad on-site disaster recovery, 
 ```mermaid
 flowchart TD
     subgraph daily["Daily Stateful (3:00 AM)"]
-        dailyTarget["arr, monitoring, auth"]
+        dailyTarget["arr, monitoring, auth, openclaw"]
         dailyRetention["Retention: 7 days"]
     end
 
@@ -93,7 +95,7 @@ flowchart TD
     end
 
     subgraph offsite["Weekly Offsite (Sunday 5:00 AM)"]
-        offsiteTarget["arr, monitoring, auth, backups,\nargocd, vault, external-secrets"]
+        offsiteTarget["arr, monitoring, auth, openclaw,\nargocd, vault, external-secrets"]
         offsiteRetention["Retention: 30 days"]
     end
 
@@ -106,9 +108,9 @@ flowchart TD
 
 | Schedule | Frequency | Time | Namespaces | Retention | Location |
 |----------|-----------|------|-----------|-----------|----------|
-| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth` | 7 days | `default` |
+| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth`, `openclaw` | 7 days | `default` |
 | `weekly-full-cluster` | Every Sunday | 4:00 AM | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | `default` |
-| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `backups`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
+| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `openclaw`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
 
 The daily backup targets the namespaces with the most frequently changing state. The weekly full backup captures everything on-site; `backups` is excluded from it because backing MinIO up into itself is circular. The offsite backup narrows to what is needed to rebuild from nothing.
 
@@ -159,14 +161,14 @@ sequenceDiagram
 
 ```bash
 # Backup specific namespaces
-velero backup create manual-arr-backup \
+velero --namespace backups backup create manual-arr-backup \
   --include-namespaces arr \
   --default-volumes-to-fs-backup \
   --ttl 168h
 
 # Backup everything (except kube-system, kube-public)
-velero backup create manual-full-backup \
-  --exclude-namespaces kube-system,kube-public \
+velero --namespace backups backup create manual-full-backup \
+  --exclude-namespaces kube-system,kube-public,nfs-provisioner,backups \
   --default-volumes-to-fs-backup \
   --ttl 720h
 ```
@@ -175,27 +177,27 @@ velero backup create manual-full-backup \
 
 ```bash
 # List all backups
-velero backup get
+velero --namespace backups backup get
 
 # Describe a specific backup
-velero backup describe manual-arr-backup --details
+velero --namespace backups backup describe manual-arr-backup --details
 
 # View backup logs
-velero backup logs manual-arr-backup
+velero --namespace backups backup logs manual-arr-backup
 ```
 
 ### Restore from Backup
 
 ```bash
 # Restore an entire backup
-velero restore create --from-backup manual-arr-backup
+velero --namespace backups restore create --from-backup manual-arr-backup
 
 # Restore specific namespaces from a backup
-velero restore create --from-backup manual-full-backup \
+velero --namespace backups restore create --from-backup manual-full-backup \
   --include-namespaces arr
 
 # Restore specific resources
-velero restore create --from-backup manual-full-backup \
+velero --namespace backups restore create --from-backup manual-full-backup \
   --include-namespaces monitoring \
   --include-resources persistentvolumeclaims,persistentvolumes
 ```
@@ -204,31 +206,20 @@ velero restore create --from-backup manual-full-backup \
 
 ```bash
 # List restores
-velero restore get
+velero --namespace backups restore get
 
 # Describe a specific restore
-velero restore describe <restore-name> --details
+velero --namespace backups restore describe <restore-name> --details
 
 # View restore logs
-velero restore logs <restore-name>
+velero --namespace backups restore logs <restore-name>
 ```
 
-!!! warning "Restore Considerations"
-    When restoring, Velero will not overwrite existing resources by default. If resources already exist in the cluster, delete them first or use the `--existing-resource-policy=update` flag. For PVC data, the file system restore writes data back to the PVC volumes.
+!!! warning "Restore considerations"
+    Restore into empty, isolated targets and review PV mappings first. Updating an existing Kubernetes object is not equivalent to restoring its database files. Follow [Backup & Restore](../runbooks/backup-and-restore.md) for local-path dumps and WAL handling.
 
 ## Disaster Recovery Procedure
 
-In the event of a full cluster rebuild:
+Follow the [staged disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild). It resolves the Vault/ESO/backup-credential bootstrap cycle and separates restoring the old control plane from rebuilding a new cluster. `Retain` preserves NFS directories but does not bind new PVCs to them automatically.
 
-1. **Rebuild the cluster** using Terraform and Ansible
-2. **Deploy ArgoCD** and the ApplicationSet
-3. **Wait for MinIO** to come up with its NFS-backed data intact
-4. **Wait for Velero** to come up and connect to MinIO
-5. **Verify backups** are visible: `velero backup get`
-6. **Restore** the required namespaces from the most recent backup
-7. **Verify** application health and data integrity
-
-If the NAS is also lost, restore from the `offsite` location instead -- see the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild), which covers creating the offsite credentials by hand before ESO is available.
-
-!!! tip "NFS Data Survives Cluster Rebuilds"
-    Because MinIO stores backup data on an NFS PVC (backed by the Unifi NAS), backup data persists even if the entire Kubernetes cluster is destroyed and rebuilt. The NFS provisioner uses the `Retain` reclaim policy, preserving data on the NAS.
+A green backup status is not a restore test. Record an isolated application restore, database integrity, file freshness, and external credential availability before marking recovery work complete.

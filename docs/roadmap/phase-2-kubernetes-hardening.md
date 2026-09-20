@@ -1,73 +1,39 @@
-# Phase 2 -- Kubernetes Hardening
+# Phase 2 — Kubernetes Hardening
 
-**Status:** In progress
+**Status:** In progress. Enforce-mode Kyverno policies, selected Cilium policies, resource limits and operational alerts already exist.
 
-**Goal:** Close the software gaps that could cause outages or security incidents under normal operation.
+**Goal:** Run a supported and maintainable cluster with explicit access and capacity boundaries. Addresses K2, K3, K9, K11, K15, K34 and K42–K49 in the [assessment](assessment.md).
 
-**Addresses:** [K3, K9, K11, K15](assessment.md#kubernetes-software-layer), [N6](assessment.md#network-layer)
+## 2.1 Upgrade the unsupported platform
 
----
+The cluster and provisioning configuration use Kubernetes 1.31.4. Kubernetes 1.31 reached end of life on 2025-11-11. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/1.31/).
 
-## 2.1 Add ResourceQuotas and LimitRanges
+- [ ] Inventory running Kubernetes, kubeadm/kubelet, containerd, Cilium, Gateway CRDs and etcd versions.
+- [ ] Select a supported destination and verify the complete compatibility matrix against primary release documentation.
+- [ ] Rehearse each intermediate minor upgrade with an isolated restore and a rollback/rebuild path.
+- [ ] Upgrade one minor at a time; retain and test compatible etcd backup/restore tooling.
+- [ ] Update Packer, Ansible, CLI pins, schema target and runbooks together. Demonstrate both an upgrade and a fresh node join.
 
-- [ ] Define a default `LimitRange` for every namespace (default CPU/memory requests and limits)
-- [ ] Define a `ResourceQuota` per namespace (hard ceiling on total resource consumption)
-- [ ] Use Goldilocks/VPA recommendations to inform initial values
-- [ ] Deploy via Kustomize components or per-namespace manifests
-- [ ] Start generous, tighten based on observed usage
+## 2.2 Make least privilege real
 
-| | |
-|---|---|
-| **Why** | A single misbehaving pod can consume all node memory and cascade-kill neighbors. On 56 GB total worker RAM, one pod can cause a cluster-wide outage. |
+- [ ] Deploy the audit/Alloy fixes and confirm secret and token payloads no longer enter new logs. Assess access to retained historical logs separately.
+- [ ] Test allowed and rejected OpenClaw operations: named companion Deployment scaling should work; arbitrary exec, node mutation and workload-template writes should fail.
+- [ ] Exercise each Kyverno rule with violating regular and init containers, plus legitimate privileged infrastructure exceptions.
+- [ ] Replace blanket namespace exceptions incrementally where workloads actually conform; do not enable enforcement by breaking essential controllers.
+- [ ] Measure egress and management reachability before tightening policies in working namespaces.
+- [ ] Inventory provisioning API-token permissions, endpoint TLS trust and floating tool/runtime versions; reduce broad credentials and replace trust bypasses with configured CA trust.
+- [ ] Verify Secret rotation updates dependent workloads, including reloads or restarts where required.
+- [ ] Evaluate an image registry allowlist after enumerating the current image sources. A permitted registry is not proof of trustworthy provenance.
 
-## 2.2 Add Pod Topology Spread Constraints
+## 2.3 Budget resources and maintenance
 
-- [ ] Add `topologySpreadConstraints` to: Authentik, Grafana, Prometheus, ArgoCD, Vault
-- [ ] Use `whenUnsatisfiable: ScheduleAnyway` (soft constraint) to avoid blocking on a 3-node cluster
-- [ ] Verify pods distribute across nodes after rollout
-
-| | |
-|---|---|
-| **Why** | Without topology hints, the scheduler may co-locate critical services on one node. A single node failure could take out auth, monitoring, and GitOps simultaneously. |
-
-## 2.3 Add Image Registry Allowlist
-
-- [ ] Create a Kyverno `ClusterPolicy` restricting image pulls to trusted registries
-- [ ] Allowlist: `docker.io`, `ghcr.io`, `quay.io`, `registry.k8s.io`, `lscr.io`, and any others in use
-- [ ] Verify all existing workloads pass the new policy before enforcing
-
-| | |
-|---|---|
-| **Why** | Currently any registry is allowed. A typo or malicious upstream could pull from an untrusted source. |
-
-## 2.4 cert-manager Health Alerting
-
-- [ ] Add PrometheusRules for cert-manager pod readiness
-- [ ] Add PrometheusRules for certificate renewal failures (`certmanager_certificate_ready_status == 0`)
-- [ ] Add PrometheusRules for issuer errors
-
-| | |
-|---|---|
-| **Why** | Existing alerts fire when a certificate is 14 days from expiry. But if cert-manager is dead, renewals silently stop and the alert only fires when expiry is imminent. |
-
-## 2.5 Restrict Pod Egress to Known Destinations
-
-- [ ] Audit current pod egress patterns (DNS, NFS, external APIs, container registries)
-- [ ] Add CiliumNetworkPolicy `egressDeny` or implicit-deny rules per namespace
-- [ ] Allowlist required destinations: DNS (kube-dns), NFS (192.168.1.158), and service-specific external endpoints
-- [ ] Verify all workloads function after applying policies
-
-| | |
-|---|---|
-| **Why** | A compromised pod can reach any external destination. Restricting egress limits the blast radius of a container breakout or supply chain attack. |
-| **Approach** | Use Cilium's implicit deny model (allow specific egress, deny all else). Do **not** combine `egressDeny` world CIDRs with `egress` allow rules on the same policy -- this causes silent drops due to Cilium policy evaluation order. |
-
----
+- [ ] Use at least a representative workload cycle of VPA/Prometheus and OOM history to set namespace budgets.
+- [ ] Add measured ResourceQuotas and selected LimitRanges with room for upgrade surge, Jobs and recovery. Avoid arbitrary limits on all system namespaces.
+- [ ] Add root-disk headroom and local-path directory visibility; PVC capacity declarations do not enforce a directory quota.
+- [ ] Document singleton `minAvailable:1` PDB handling for a planned drain. It can block eviction but cannot keep a failed singleton available.
+- [ ] Apply topology spread to multi-replica stateless services when placement can improve availability. Respect node affinity and local storage.
+- [ ] Verify certificate readiness, expiry and missing metrics alerts independently.
 
 ## Definition of Done
 
-- [ ] Every namespace has a ResourceQuota and LimitRange
-- [ ] Critical pods spread across nodes
-- [ ] Only trusted registries allowed
-- [ ] cert-manager failures trigger alerts
-- [ ] Pod egress restricted to known destinations per namespace
+The cluster is on a supported, tested version combination; denied operations are proven; a worker can be drained and returned with a documented downtime expectation; capacity alerts correspond to actual storage and memory constraints.

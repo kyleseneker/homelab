@@ -18,7 +18,7 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/config` |
+| `config` | PVC (`local-path`) | 1Gi | `/config` |
 | `data` | PVC (existing `arr-data`) | -- | `/data` |
 
 ### Resources
@@ -34,20 +34,9 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 - Liveness, readiness, and startup probes are enabled.
 - The shared `arr-data` volume is mounted at `/data` so Bazarr can read media files and write subtitle files alongside them.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-1. Open `https://bazarr.homelab.local`.
-2. Connect to Sonarr (Settings > Sonarr):
-    - Host: `arr-sonarr.arr.svc.cluster.local`
-    - Port: `8989`
-    - API Key: *(from Sonarr > Settings > General)*
-3. Connect to Radarr (Settings > Radarr):
-    - Host: `arr-radarr.arr.svc.cluster.local`
-    - Port: `7878`
-    - API Key: *(from Radarr > Settings > General)*
-4. Add subtitle providers (Settings > Providers):
-    - OpenSubtitles.com (account required)
-    - Additional providers as desired
+`BazarrConfig` declares Sonarr/Radarr connections, English subtitles, and providers. Populate `opensubtitles-credentials` and the API-key Secret, then verify the CR is ready and download a representative subtitle. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

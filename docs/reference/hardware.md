@@ -128,7 +128,7 @@ Wi-Fi 6 access points deployed throughout the house. Plug into a standard wall o
 | Drive bays | 4 (3.5" SATA) |
 | Installed | 1x WD80EFPX (WD Red Plus 8 TB, 5640 RPM, 256 MB cache, CMR) |
 | Pool | Single drive |
-| Export | NFS at `192.168.1.158:/mnt/media` |
+| Export | NFS at `192.168.1.158` using the UniFi volume UUID path recorded in `ansible/inventory/homelabk8s01/group_vars/all.yml` |
 | Network | GbE RJ45 to USW-16-PoE |
 
 Serves all NFS-backed PersistentVolumes for the Kubernetes cluster via the `nfs-client` StorageClass.

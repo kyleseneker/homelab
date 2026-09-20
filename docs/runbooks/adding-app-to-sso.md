@@ -2,7 +2,7 @@
 
 How to protect a new application behind Authentik SSO.
 
-## Forward Auth (apps without native SSO)
+## Proxy Mode (apps without native SSO)
 
 An HTTPRoute has no annotation that triggers an auth subrequest, so protection comes from routing traffic *through* Authentik's embedded outpost instead. The outpost is an ordinary Service: the HTTPRoute points at it, it authenticates the browser, then proxies to the app. It dispatches on the `Host` header, so one outpost serves every protected app.
 
@@ -42,7 +42,7 @@ A time near the timeout means a policy is still blocking the path.
 
 ## Native OIDC (apps with built-in support)
 
-For apps that support OAuth2/OIDC natively (e.g., Grafana, ArgoCD, Seerr).
+For apps that support OAuth2/OIDC natively (for example, Grafana and ArgoCD).
 
 ### 1. Create OIDC Provider in Authentik
 
@@ -66,10 +66,10 @@ Add the OIDC configuration to the app's Helm values or configuration, using:
 - **`token_url`** (server-to-server): `http://authentik-server.auth.svc.cluster.local/application/o/token/`
 - **`api_url`** (server-to-server): `http://authentik-server.auth.svc.cluster.local/application/o/userinfo/`
 
-The split between external and internal URLs avoids TLS trust issues with the homelab CA for server-to-server communication.
+This split is used by Grafana and requires Cilium egress to Authentik and ingress on the server's port. ArgoCD discovers endpoints from its external HTTPS issuer instead; mount the homelab CA through trust-manager and retain TLS verification. Prefer HTTPS with verified trust when the application supports it.
 
 ## When NOT to Add SSO
 
 - **Media clients** (Jellyfin) -- Roku, Apple TV, and mobile apps can't do browser-based SSO
-- **Monitoring backends** (Prometheus, Alertmanager) -- edge auth would break internal scraping from Grafana datasources
+- **Internal metrics traffic** -- keep Grafana and scrapers on in-cluster Services; their public Prometheus and Alertmanager web routes are already proxy-protected
 - **Authentik itself** -- circular dependency

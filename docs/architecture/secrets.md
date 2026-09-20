@@ -28,37 +28,44 @@ flowchart LR
 |-----------|-----------|---------|
 | Vault | `vault` | Secrets backend (KV v2 engine, standalone mode, file storage) |
 | External Secrets Operator | `external-secrets` | Syncs Vault secrets into K8s Secret objects |
-| ClusterSecretStore | `external-secrets` | Cluster-wide connection config for Vault |
+| ClusterSecretStore | Cluster-scoped | Cluster-scoped connection config for Vault |
 | ExternalSecret | Various | Per-secret declaration of what to sync from Vault |
 
 ## Vault Path Structure
 
 All secrets live under the `homelab` KV v2 mount, organized by layer:
 
-| Vault Path | K8s Secret | Namespace |
-|------------|------------|-----------|
+| Vault path (under `homelab/`) | Target Secret | Namespace |
+|---|---|---|
+| `infrastructure/argocd-notifications-slack` | `argocd-notifications-secret` | `argocd` |
+| `infrastructure/argocd-oidc` | `argocd-secret` | `argocd` |
+| `apps/arr` | `arr-api-keys` | `arr` |
+| `apps/arr` | `arr-prowlarr-env` | `arr` |
+| `apps/arr` | `arr-radarr-env` | `arr` |
+| `apps/arr` | `arr-sonarr-env` | `arr` |
+| `apps/arr` | `exportarr-secrets` | `arr` |
+| `apps/homepage` | `homepage-secrets` | `arr` |
+| `apps/jellyfin` | `jellyfin-credentials` | `arr` |
+| `apps/opensubtitles` | `opensubtitles-credentials` | `arr` |
+| `apps/qbittorrent`, `apps/unpackerr` | `qbittorrent-credentials` | `arr` |
+| `apps/arr` | `recyclarr-secrets` | `arr` |
+| `apps/seerr` | `seerr-api-key` | `arr` |
+| `apps/tdarr` | `tdarr-api-key` | `arr` |
+| `apps/arr`, `apps/unpackerr` | `unpackerr-secrets` | `arr` |
+| `apps/vpn` | `vpn-credentials` | `arr` |
+| `infrastructure/authentik` | `authentik-credentials` | `auth` |
+| `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
 | `infrastructure/minio` | `minio-credentials` | `backups` |
 | `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
 | `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
-| `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
-| `infrastructure/authentik` | `authentik-credentials` | `auth` |
-| `infrastructure/argocd-oidc` | `argocd-secret` (merge) | `argocd` |
-| `infrastructure/argocd-notifications-slack` | `argocd-notifications-secret` (merge) | `argocd` |
+| `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |
+| `apps/openclaw` | `alertmanager-openclaw-hooks-token` | `monitoring` |
+| `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
-| `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
-| `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |
-| `apps/vpn` | `vpn-credentials` | `arr` |
-| `apps/arr` | `arr-sonarr-env`, `arr-radarr-env` | `arr` |
-| `apps/arr` | `exportarr-secrets` | `arr` |
-| `apps/arr`, `apps/unpackerr` | `unpackerr-secrets` | `arr` |
-| `apps/recyclarr` | `recyclarr-secrets` | `arr` |
-| `apps/homepage` | `homepage-secrets` | `arr` |
-| `apps/openclaw` | `openclaw-secrets` | `openclaw` |
-| `apps/openclaw` | `alertmanager-openclaw-hooks-token` | `monitoring` |
+| `apps/arr`, `apps/openclaw` | `openclaw-secrets` | `openclaw` |
 
-!!! note "`apps/arr` holds the *arr API keys"
-    Sonarr, Radarr, Prowlarr and Bazarr each generate their own API key into `/config/config.xml` on first boot, so Vault is downstream of the apps rather than upstream. `make arr-keys-adopt` copies each live key into `homelab/apps/arr` without printing it. Everything that talks to an *arr API -- Exportarr, Unpackerr, Recyclarr, Homepage, the Media Operator -- reads from that one path.
+The manifests define the complete property-level contract. Sonarr, Radarr and Prowlarr accept the shared API keys from Vault through injected environment variables. Bazarr and other first-boot generated credentials still require a tested adoption/bootstrap path. `make arr-keys-adopt` can adopt existing application keys without printing them or overwriting sibling fields.
 
 ## Workflow
 
@@ -108,7 +115,7 @@ vault kv put homelab/apps/vpn \
   OPENVPN_PASSWORD=new_password
 
 # ESO picks up the change at the next refresh interval (1h default)
-# Reloader automatically restarts affected pods
+# Reloader restarts only workloads that explicitly opt in; otherwise roll out deliberately
 ```
 
 !!! warning
@@ -125,23 +132,11 @@ kubectl annotate externalsecret -n arr vpn-credentials \
 
 ### Vault Backup
 
-Vault data is stored on a PVC backed by NFS. Velero backs up all PVCs on schedule, so Vault data is included in cluster backups.
+Vault file storage is on NFS. Weekly cluster/offsite schedules include Vault, but copying a live data directory does not prove application-consistent recovery. Test a supported consistent backup and restore. The KMS key unlocks existing encrypted data; it does not recreate lost secrets.
 
-### Vault Unsealing
+Keep KMS credentials, recovery keys, backup-store credentials and required administrator access outside Vault. A restore cannot depend on ESO reading secrets from the Vault instance that is not yet restored. Reconnect or restore the correct data directory before starting recovery; initialize a new Vault only when intentionally creating a new backend.
 
-Vault is configured with AWS KMS auto-unseal. On every pod restart, Vault contacts AWS KMS to decrypt the master key automatically -- no manual intervention is required.
-
-The AWS credentials used for auto-unseal are stored in the `vault-aws-kms` Kubernetes Secret in the `vault` namespace. This Secret is **never committed to Git** and must be recreated manually after a full cluster rebuild.
-
-### Cluster Rebuild
-
-When rebuilding the cluster from scratch:
-
-1. **Before** running `make k8s-bootstrap`, create the `vault-aws-kms` Secret in the `vault` namespace with the AWS credentials and KMS key ID. See the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild) for the exact procedure.
-2. Deploy Vault and ESO via ArgoCD (automatic from Git) -- Vault will auto-unseal via KMS.
-3. Restore Vault data from Velero backup, or re-initialize with `make vault-init`.
-4. If re-initializing, re-populate all secrets from their original sources.
-5. ESO automatically creates all K8s Secrets once Vault is available.
+See the [disaster recovery runbook](../runbooks/disaster-recovery.md) for the ordered procedure and the [backup runbook](../runbooks/backup-and-restore.md) for data-coverage limitations. Terraform state may also contain sensitive AWS access keys even though its outputs are marked sensitive; protect the state backend.
 
 ## CA Distribution
 

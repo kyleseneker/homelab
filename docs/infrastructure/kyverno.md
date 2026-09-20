@@ -25,13 +25,15 @@ Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Applica
 
 | Policy | What It Checks | Excluded Namespaces |
 |--------|----------------|---------------------|
-| `require-resource-limits` | All containers have CPU and memory limits | backups |
-| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` | arr, auth, backups, intel-gpu-operator, monitoring, nfs-provisioner |
-| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` | arr, auth, backups, monitoring, nfs-provisioner |
-| `disallow-latest-tag` | Images use a specific tag, not `:latest` | |
+| `require-resource-limits` | All containers have CPU and memory limits | backups, local-path-storage |
+| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` | arr, auth, backups, intel-gpu-operator, monitoring, nfs-provisioner, local-path-storage |
+| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` | arr, auth, backups, monitoring, nfs-provisioner, local-path-storage |
+| `disallow-latest-tag` | Images use a non-latest tag or SHA-256 digest | |
 | `require-labels` | Pods have the `app.kubernetes.io/name` label | backups, intel-gpu-operator, nfs-provisioner |
 
 All policies also exclude the base system namespaces: kube-system, kyverno, argocd, and cilium-test-*.
+
+Image tags and security contexts are checked on regular, init and ephemeral containers. Resource limits apply to regular and init containers; Kubernetes does not permit resources on ephemeral containers. Namespace exclusions also exempt unrelated workloads sharing those namespaces and should be narrowed after a rendered-workload audit.
 
 ### Namespace Exclusions
 
@@ -42,6 +44,16 @@ Exclusions exist for workloads where compliance is not feasible:
 - **intel-gpu-operator**: GPU device plugin DaemonSet requires host-level access
 - **monitoring**: Alloy requires root for reading host log files
 - **nfs-provisioner**: Requires host-level access for NFS mounts
+
+### Local Regression Checks
+
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag. Run with the Kyverno CLI matching the chart application version (currently 1.17.1):
+
+```bash
+kyverno test tests/kyverno/container-security
+```
+
+Before enabling stronger checks, also apply the policies locally to rendered workload manifests with their destination namespaces. Include init containers from dependency charts; admission failures can otherwise block upgrades. Helm test hooks are a separate test execution concern.
 
 ### Checking Policy Reports
 

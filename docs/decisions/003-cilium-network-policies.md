@@ -10,13 +10,13 @@ With multiple applications sharing a cluster, a compromised or misconfigured pod
 
 ## Decision
 
-Use CiliumNetworkPolicy resources with a default-deny ingress posture per namespace. Each namespace declares explicit allow rules for the traffic it needs. Egress is controlled via Cilium's implicit deny model: once any egress rule is defined for a namespace, all other egress is denied without requiring an explicit deny rule.
+Use CiliumNetworkPolicy resources to define permitted ingress and egress for selected pods. Policies select workloads by namespace and component labels. Once a policy enables enforcement in a direction, traffic in that direction must match an allow rule.
 
 Policies are managed as a single git directory with one YAML file per namespace.
 
 ## Alternatives Considered
 
-- **Standard Kubernetes NetworkPolicy**: Portable across CNIs but limited expressiveness. No support for entity-based selectors (`world`, `cluster`, `ingress`, `host`, `kube-apiserver`), no FQDN-based egress rules, and no implicit deny model — requires explicit default-deny policies per namespace.
+- **Standard Kubernetes NetworkPolicy**: Portable across CNIs and supports isolation of selected pods, but lacks Cilium's entity-based selectors (`world`, `cluster`, `ingress`, `host`, `kube-apiserver`) and FQDN-based egress rules.
 - **Calico NetworkPolicy**: Rich policy model comparable to Cilium's, but would require running Calico alongside or instead of Cilium (ADR-002). Running two CNI policy engines adds complexity.
 - **No network policies**: Simpler to operate but provides no blast-radius containment. Any pod can reach any other pod and any external endpoint.
 
@@ -25,7 +25,7 @@ Policies are managed as a single git directory with one YAML file per namespace.
 - **Entity-based selectors**: Cilium entities like `ingress`, `cluster`, `kube-apiserver`, and `world` express intent more clearly than raw IP ranges or namespace label selectors. For example, allowing a metrics collector to scrape a namespace is `fromEndpoints: [{matchLabels: {kubernetes.io/metadata.name: monitoring}}]` rather than maintaining IP lists.
 - **Implicit egress deny**: Defining any egress rule on a CiliumNetworkPolicy automatically denies all other egress for matched pods. This avoids the error-prone pattern of maintaining separate default-deny policies that must stay in sync.
 - **Per-component egress rules**: Pod-level label selectors allow fine-grained egress control within a namespace, giving each component only the external access it needs rather than granting blanket egress to the entire namespace.
-- **Consistent pattern**: Every namespace follows the same structure — default deny ingress from `world`, then explicit allow rules for gateway access, intra-namespace communication, and any namespace-specific integrations.
+- **Consistent pattern**: Namespace policies share a structure of explicit ingress and egress rules, with component-specific exceptions expressed through pod labels.
 - **Common rules across namespaces**: DNS egress (kube-dns on port 53) and storage access appear in every namespace that needs them, following a repeatable template.
 
 ## Policy Posture by Namespace Category

@@ -1,32 +1,42 @@
 # Roadmap
 
-A phased plan for evolving the homelab into a more resilient, production-grade platform. Each phase builds on the previous one -- earlier phases address foundational risks, later phases add capabilities.
+A plan for evolving the homelab as a household media platform and an infrastructure learning environment. The phases group related work; they are not a required execution order. Choose projects by their actual dependencies and available capacity.
 
-For current infrastructure details, see [Hardware Inventory](../reference/hardware.md), [Network Infrastructure](../architecture/network-infrastructure.md), and [Architecture Overview](../architecture/overview.md).
+See the [hardware inventory](../reference/hardware.md), [network infrastructure](../architecture/network-infrastructure.md), and [architecture overview](../architecture/overview.md) for the current setup.
+
+## Start Here
+
+**First software project: build an isolated rebuild and restore lab.** Use disposable VMs, a separate kubeconfig, distinct credentials and separate writable storage paths. Build from the Packer template, bootstrap Kubernetes and ArgoCD, then restore one application from offsite backup and verify login and retained state. The deliverable is a repeatable procedure with measured recovery time. Start with [recovery verification](phase-1-foundations.md#12-verify-recovery); this lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
+
+**Next, upgrade Kubernetes to a supported release.** Use that lab to rehearse each minor-version step, check Cilium/chart compatibility and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
+
+**Hardware is a separate workstream.** The [NAS mirror](phase-1-foundations.md#11-add-nas-drive-redundancy), [10G links](phase-3-network.md#31-enable-10g-networking) and [second MS-01](phase-4-compute-and-storage.md#41-add-a-second-compute-host) remain planned purchases. None is a prerequisite for starting the software lab on available capacity. Keep their design and migration tasks in their respective phases and pick them up when the hardware is available.
+
+Completed checkboxes describe implemented configuration or a completed task. Restore, upgrade and user-facing acceptance checks remain open until demonstrated.
 
 ## Phases
 
 | Phase | Focus | Status |
-|-------|-------|--------|
-| [1 -- Foundations](phase-1-foundations.md) | ~~UPS~~, NAS redundancy, ~~offsite backups~~, ~~etcd snapshots~~ | In progress |
-| [2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Policy enforcement, resource quotas, registry allowlist, cert-manager alerting, egress filtering | In progress |
-| [3 -- Network](phase-3-network.md) | 10G, management VLAN, WireGuard VPN, DNS automation, external access | Not started |
-| [4 -- Compute & Storage](phase-4-compute-and-storage.md) | Second host, HA control plane, Vault HA, NAS expansion | Not started |
-| [5 -- Observability](phase-5-observability.md) | Distributed tracing, dashboards-as-code, SLO alerting, synthetic monitoring | Not started |
-| [6 -- Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos engineering, supply chain security, vPro AMT | Not started |
-| [7 -- Long-Term Vision](phase-7-long-term-vision.md) | Third host, Crossplane, multi-cluster GitOps, dedicated GPU, full 10G | Not started |
-| [8 -- Configuration as Code](phase-8-configuration-as-code.md) | \*arr config-as-code, custom controller, Authentik blueprints, media platform gaps | Not started |
+|---|---|---|
+| [1 — Foundations](phase-1-foundations.md) | UPS, NAS drive redundancy, offsite backups, etcd snapshots and recovery | In progress; backup mechanisms implemented, mirror and restore checks remain |
+| [2 — Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Supported upgrades, policy coverage, quotas, certificate alerts and egress controls | In progress; enforcement and alerting implemented |
+| [3 — Network](phase-3-network.md) | 10G switch and DAC links, management VLAN, WireGuard, DNS automation and external access | In progress; WireGuard/Teleport implemented, 10G upgrade planned |
+| [4 — Compute & Storage](phase-4-compute-and-storage.md) | Second MS-01, three control planes, Vault Raft and NAS expansion | Planned |
+| [5 — Observability](phase-5-observability.md) | Distributed tracing, dashboards as code, SLO alerting and synthetic monitoring | In progress; dashboards and Blackbox probes implemented |
+| [6 — Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos testing, supply-chain verification and scoped automation | In progress; CI validation and scoped OpenClaw configuration implemented |
+| [7 — Long-Term Vision](phase-7-long-term-vision.md) | Third host, Crossplane, multi-cluster management, dedicated GPU and full 10G fabric | Planned |
+| [8 — Configuration as Code](phase-8-configuration-as-code.md) | Media application configuration, Authentik blueprints and media-platform improvements | In progress; operators and blueprints implemented, fresh-install checks remain |
 
 ## Assessment
 
-See [Assessment](assessment.md) for the full analysis of current strengths and identified gaps that drive this roadmap.
+The [assessment](assessment.md) is the current inventory of capabilities, constraints and remaining work. Each finding points to its implementation phase; completed fixes belong in the code and runbooks, with their history in Git.
 
 ## Principles
 
-1. **Protect data before optimizing performance.** UPS, drive redundancy, and offsite backups come before 10G networking or HA control planes.
-2. **Eliminate SPOFs in order of blast radius.** NAS (all data) > compute host (all VMs) > control plane (cluster management) > individual services.
-3. **Graduate from audit to enforce.** Policies that only report are policies that get ignored.
-4. **Prefer boring solutions.** Backblaze B2 over a self-hosted S3 cluster. ResourceQuotas over custom admission webhooks. WireGuard over a bespoke proxy chain.
-5. **Hardware purchases should unlock capabilities, not just add capacity.** A second host unlocks HA, live migration, and rolling upgrades. 10G unlocks the SFP+ ports already in the MS-01.
-6. **Every significant change gets an ADR.** The documentation standard is a strength worth maintaining.
-7. **Use the homelab to learn, not just host.** Tracing, SLOs, chaos engineering, Falco, and supply chain security are career-relevant skills worth building even when a 3-node cluster doesn't strictly require them.
+1. **Protect data first.** UPS protection, redundant NAS drives and offsite backups cover different failures. Keep restore testing alongside those improvements.
+2. **Reduce single points of failure.** Add the planned storage redundancy and independent compute capacity. Distinguish VM redundancy from physical-host redundancy when designing control-plane and Vault placement.
+3. **Enforce incrementally.** Existing admission policies are enforced. Validate coverage and workload compatibility as new policies and resource budgets are introduced.
+4. **Prefer maintainable solutions.** Build on the existing Proxmox, NFS, GitOps and AWS backup setup when it meets the requirement.
+5. **Hardware unlocks capabilities.** A second host enables staging, workload distribution and maintenance flexibility; 10G improves the storage path. Three quorum members across two physical hosts still cannot survive either host failing.
+6. **Document architecture decisions.** ADRs record a chosen architecture, its alternatives and consequences. Task status and changes to the plan belong in the roadmap.
+7. **Keep learning as a goal.** Tracing, SLOs, chaos engineering, runtime security and supply-chain verification are worthwhile projects at homelab scale.

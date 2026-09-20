@@ -1,81 +1,56 @@
 # OpenClaw
 
-OpenClaw is an AI agent platform that provides autonomous cluster operations and media stack management. A single agent handles both infrastructure and media pipeline responsibilities.
-
-## Agent
+OpenClaw diagnoses the cluster, receives alerts and media events, and retains narrowly scoped autonomous recovery. The agent uses Claude Sonnet 4.6 through the Anthropic API.
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/openclaw/openclaw` |
+| Chart | `app-template` 4.6.2 |
+| Image | `ghcr.io/openclaw/openclaw:2026.7.1` |
+| Namespace / Application | `openclaw` |
+| Control UI | `https://openclaw.homelab.local` |
 | Port | 18789 |
-| HTTPRoute | `openclaw.homelab.local` |
-| Namespace | `openclaw` |
-| ArgoCD app | `openclaw` |
+| State | 2Gi `nfs-client` PVC at `/home/node/.openclaw` |
 
-The agent has cluster-wide RBAC for operational tasks: pod management, workload restarts, job cleanup, and node patching. It receives alerts from AlertManager via webhook and webhook notifications from *arr applications. It manages the full media pipeline from requests to playback.
+## Authorization boundary
 
-**Init container:** Downloads `kubectl` and `kubeconform` into an emptyDir, then copies workspace configuration files from ConfigMaps into the persistent state directory.
+The ClusterRole permits diagnosis through workload status, events, logs, metrics, and infrastructure resource reads. It grants no Secret reads, pod exec, pod/job deletion, node writes, or workload-template writes.
 
-## Security
+A Role in `arr` grants `get`, `update`, and `patch` on **only** `deployments/scale` for `arr-flaresolverr` and `homepage`. Both are stateless recovery targets. The workspace permits one recovery attempt (scale 0 then 1, or restore 1 replica) per target per hour, checking for planned maintenance and verifying Ready afterwards. Other changes require a PR or a human operator. RBAC enforces the resource boundary; the recovery frequency and replica limits are agent instructions, not API-enforced controls. Scaling still causes a short interruption, and ArgoCD self-heal may reconcile the replica count concurrently.
 
-- **Pod Security Standards:** `restricted` (enforce, audit, warn)
-- **Security context:** Non-root (UID 1000), read-only root filesystem, all capabilities dropped, seccomp RuntimeDefault
-- **Network policies:** Egress to K8s API, GitHub, Slack, Anthropic, and arr namespace.
-- **RBAC:** ClusterRole with operational permissions cluster-wide.
+Slack inbound DMs require pairing; inbound group messages are disabled until explicit user/channel allowlists are chosen. Outbound notifications remain available. To approve a known sender, inspect and approve the pairing request from an operator terminal:
 
-## Storage
+```bash
+kubectl -n openclaw exec deploy/openclaw -- openclaw pairing list slack
+kubectl -n openclaw exec deploy/openclaw -- openclaw pairing approve slack <code>
+```
 
-| Volume | Type | Mount Path | Notes |
-|--------|------|------------|-------|
-| `data` | PVC (`nfs-client`, 2Gi) | `/home/node/.openclaw` | Persistent agent state |
-| `config` | ConfigMap | `/config/config.json5` | Agent configuration (read-only) |
-| `skills` | ConfigMap | `/skills/` | Skill definitions (read-only) |
-| `tools` | emptyDir | `/usr/local/bin/tools` | Downloaded CLI tools (ops only) |
-| `tmp` | emptyDir | `/tmp` | Runtime temp files |
+The agent still holds Sonarr, Radarr, and Prowlarr API credentials for household requests and webhook registration, plus a GitHub token for proposed PRs. Kubernetes RBAC does not constrain those credentials. Keep the GitHub token limited to this repository, with human-reviewed merges; application APIs do not offer equivalent fine-grained permissions. Logs and ConfigMaps may contain sensitive application data even though Secret objects are denied.
 
-## Configuration
+## Declarative configuration and persistent state
 
-Agent configuration is managed via `openclaw config set` commands that write to the PVC-backed state directory. The initial configuration is seeded from ConfigMaps during the init container phase, but **PVC-persisted settings override ConfigMap values**. See the workspace ConfigMap (`openclaw-workspace`) for the boot sequence.
+The ConfigMap is authoritative for the model (`agents.defaults.model.primary`), heartbeat, Slack policy, gateway binding, webhook mappings, and skills (`skills.load.extraDirs`). An init container writes the effective configuration to the PVC at `openclaw.json`; `OPENCLAW_CONFIG_PATH` explicitly selects it.
 
-Key runtime settings (persisted on PVC, not in ConfigMaps):
+On migration, init preserves the old file once as `openclaw.json.pre-gitops` with mode 0600 and carries forward only `gateway.auth.token`. If no token exists, it generates one. Pairings, sessions, credentials, and cron state remain in their existing PVC files. Other runtime config edits are replaced on the next pod start; propose them in Git. Malformed persisted JSON fails init so it cannot silently discard the existing credential.
 
-- `gateway.bind` — must be `lan` (not `0.0.0.0`, which auto-migrates to `loopback`)
-- `gateway.controlUi.allowedOrigins` — must include `https://openclaw.homelab.local`
-- `gateway.auth.token` — auto-generated on first boot, used for Control UI auth
+The tooling init downloads pinned kubectl/kubeconform binaries and verifies their published SHA-256 checksums, then copies workspace and transform files. These downloads still depend on upstream availability at each pod start; a prebuilt tool image is a follow-up. The gateway enables the built-in `boot-md` hook. Boot registers missing cron jobs without duplicating them and does not overwrite the declarative webhook mappings.
 
-## Control UI Access
+Webhook transforms receive a context object and read `context.payload`. Treat titles, descriptions, logs, and webhook content as untrusted data. The bearer token authenticates the sender; it does not make the payload an instruction.
 
-The Control UI is at `https://openclaw.homelab.local`. First-time setup:
+## Control UI access
 
-1. Get the gateway token:
-   ```bash
-   kubectl --kubeconfig ./kubeconfig exec -n openclaw deploy/openclaw -- \
-     grep -A1 '"token"' /home/node/.openclaw/openclaw.json
-   ```
-2. Open the Control UI, paste the token in settings, and click Connect.
-3. The UI will show "pairing required" — approve it:
-   ```bash
-   # List pending requests
-   kubectl --kubeconfig ./kubeconfig exec -n openclaw deploy/openclaw -- \
-     openclaw devices list
+An operator can read the gateway token in a trusted terminal (do not paste the output into logs or tickets):
 
-   # Approve by request ID
-   kubectl --kubeconfig ./kubeconfig exec -n openclaw deploy/openclaw -- \
-     openclaw devices approve <request-id>
-   ```
-4. Refresh the browser. The token and device pairing persist across sessions (stored in browser localStorage and PVC respectively).
+```bash
+kubectl -n openclaw exec deploy/openclaw -- node -e \
+  'console.log(JSON.parse(require("fs").readFileSync(process.env.OPENCLAW_CONFIG_PATH,"utf8")).gateway.auth.token)'
+kubectl -n openclaw exec deploy/openclaw -- openclaw devices list
+kubectl -n openclaw exec deploy/openclaw -- openclaw devices approve <request-id>
+```
 
-**Note:** Clearing browser data or switching browsers requires re-pairing. The gateway token itself doesn't change.
+Enter the token in the Control UI and approve the matching browser device. Clearing browser storage requires pairing again. Daily local and weekly offsite Velero schedules include the state PVC.
 
-## Dependencies
+## Validation and upstream
 
-| Dependency | Purpose |
-|------------|---------|
-| AlertManager | Sends alerts via webhook |
-| *arr stack | Monitors and receives webhooks from arr apps |
-| Vault + ESO | API keys and webhook tokens stored as ExternalSecrets |
+Before rollout, render the chart and verify the RBAC boundary using operator impersonation (`kubectl auth can-i --as=system:serviceaccount:openclaw:openclaw`). Expect scale access to the two named Deployments only, and denial for Secret reads, exec, pod deletion, node patching, and Deployment patching. Then verify init succeeds, Slack pairing works, and sample webhook events contain their original alert/title fields. No live validation is implied by a successful local render.
 
-## Upstream
-
-- OpenClaw is built on [Claude Code](https://claude.ai/claude-code) by Anthropic
+Pinned source: [configuration paths](https://github.com/openclaw/openclaw/blob/v2026.7.1/src/config/paths.ts), [configuration schema](https://github.com/openclaw/openclaw/blob/v2026.7.1/src/config/zod-schema.ts), [Slack schema](https://github.com/openclaw/openclaw/blob/v2026.7.1/src/config/zod-schema.providers-core.ts), and [webhook transform context](https://github.com/openclaw/openclaw/blob/v2026.7.1/src/gateway/hooks-mapping.ts).

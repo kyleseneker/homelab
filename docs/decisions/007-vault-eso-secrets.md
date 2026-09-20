@@ -22,12 +22,14 @@ Use HashiCorp Vault as the secrets backend with External Secrets Operator (ESO) 
 
 - **Separation of concerns**: Vault stores secrets externally; ESO syncs them declaratively. Secret values never appear in Git.
 - **Kubernetes auth**: ESO authenticates to Vault via ServiceAccount tokens. No static credentials to manage.
-- **AWS KMS auto-unseal**: Vault automatically unseals on pod restart without manual intervention, which is critical for unattended cluster rebuilds.
-- **Rotation without Git commits**: Secrets can be rotated via `vault kv put` without touching any manifest. ESO picks up changes on its refresh interval.
-- **Audit trail**: Vault logs all secret access, providing visibility into who accessed what and when.
+- **AWS KMS auto-unseal**: Vault automatically unseals an initialized data backend on pod restart, allowing unattended restarts.
+- **Rotation without Git commits**: Secret values are updated in Vault, and ESO picks up changes on its refresh interval without manifest changes.
+- **Audit capability**: Vault supports dedicated audit devices for recording secret access.
 
 ## Consequences
 
 - Vault is a stateful service that must be backed up as part of the cluster backup strategy.
+- Auto-unseal depends on an initialized Vault database; recovery of a lost database requires restoring its backup.
+- Secret-access auditing requires an explicitly enabled Vault audit device.
 - AWS KMS dependency means the `vault-aws-kms` Secret must be manually created during cluster bootstrapping before Vault can start.
 - More moving parts than Sealed Secrets (Vault + ESO + ClusterSecretStore + ExternalSecret per app).

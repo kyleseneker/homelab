@@ -26,7 +26,7 @@ The recommender watches pods that have a corresponding `VerticalPodAutoscaler` C
 1. Collects CPU and memory usage from the Metrics API
 2. Computes target, lower bound, and upper bound recommendations using percentile-based algorithms
 3. Writes recommendations to the VPA object's `.status.recommendation` field
-4. Exposes `vpa_status_recommendation` Prometheus metrics
+4. Makes those recommendations available to Goldilocks; custom VPA recommendation metrics are not configured
 
 Recommendations stabilize after several hours of usage data. Initial values should be treated as preliminary.
 
@@ -38,7 +38,7 @@ VPA CRs are not managed manually. [Goldilocks](goldilocks.md) automatically crea
 
 VPA recommendations are advisory. To act on them:
 
-1. Check the Goldilocks dashboard or query `vpa_status_recommendation` in Grafana
+1. Check the Goldilocks dashboard or inspect `kubectl get vpa -A -o yaml`
 2. Compare the VPA target with the current request in the workload's `values.yml`
 3. Update the manifest and let ArgoCD sync the change
 

@@ -18,6 +18,8 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 
 | Volume | Type | Mount Path | Notes |
 |--------|------|------------|-------|
+| `state` | PVC (`nfs-client`, 256Mi) | `/config` | Writable state and downloaded resources; holder keeps it mounted for Velero |
+| `tmp` | emptyDir | `/tmp` | Required with read-only root filesystem |
 | `config` | ConfigMap (`recyclarr-config`) | `/config/recyclarr.yml` | Quality profile and custom format definitions |
 | `secrets` | Secret (`recyclarr-secrets`) | `/config/secrets.yml` | Sonarr and Radarr API keys |
 
@@ -65,15 +67,7 @@ Radarr also receives:
 
 ## Post-Deploy Setup
 
-1. Store Sonarr and Radarr API keys in Vault:
-
-    ```bash
-    vault kv put homelab/apps/recyclarr \
-      secrets.yml="sonarr_api_key: your_key\nradarr_api_key: your_key"
-    # ESO syncs it to K8s automatically via recyclarr-external-secret.yml
-    ```
-
-    The `secrets.yml` file should follow the Recyclarr secrets format with keys for each instance.
+1. Run `make arr-keys-adopt` after Sonarr/Radarr initialization or restore. ESO reads `sonarr-api-key` and `radarr-api-key` from `homelab/apps/arr` and templates `recyclarr-secrets`; do not create an unrelated Vault `apps/recyclarr` secret.
 
 2. Trigger a manual sync to verify the configuration:
 
@@ -97,3 +91,5 @@ Radarr also receives:
 ## Upstream
 
 - [https://recyclarr.dev](https://recyclarr.dev)
+
+The writable volumes follow [Recyclarr's read-only container requirements](https://recyclarr.dev/guide/installation/docker/). CronJobs use `Forbid` concurrency so scheduled runs cannot race over the state volume. Avoid launching a manual sync while a scheduled one is active. The `arr-recyclarr-state-holder` must stay running for file-system backups between jobs.

@@ -47,3 +47,5 @@ The dependency graph the retry loop is resolving:
 - **Consumers**: Alloy ships to Loki; Goldilocks needs the VPA CRDs. These settle last.
 
 This converges reliably but not deterministically. A cold bootstrap shows a period of failed Applications before everything goes green, which is expected rather than a fault.
+
+The [trust-manager](trust-manager.md) distributes internal CA trust, and [Blackbox Exporter](blackbox-exporter.md) owns Git-managed endpoint probes. ArgoCD notification credentials are reconciled by the `argocd-notifications` Application after ESO is available, separate from initial bootstrap.

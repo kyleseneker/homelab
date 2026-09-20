@@ -16,7 +16,7 @@ A machine running **Proxmox VE** with:
 A **Unifi NAS** (or compatible NFS server) with:
 
 - NFS enabled
-- A `/data` share created and exported to the subnet your K8s nodes will use
+- An NFS export allowed from the K8s node subnet, with its actual export path recorded consistently in Ansible and Kubernetes (the current UniFi export includes a volume UUID)
 
 ## Credentials
 
@@ -52,13 +52,8 @@ Install the following tools on the machine you will run deployments from:
 !!! tip
     Run `make deps` to install the required Ansible Galaxy collections. All other tools listed above must be installed manually.
 
-## What You Do NOT Need to Set Up Manually
+## Bootstrap dependencies
 
-Everything else is automated by `make pve-configure`, including:
+Before `make pve-configure`, configure the host inventory, an HCP Terraform agent token, and a private UPS monitor password in Ansible Vault. The playbook configures IOMMU, host networking, UPS shutdown, the agent, and the Proxmox API token. Host networking changes and IOMMU reboots need a maintenance window and working console access.
 
-- Cloning the required repositories to the Proxmox host
-- Enabling IOMMU / PCI passthrough
-- Creating the cloud-init VM template
-- Generating a Proxmox API token for Terraform
-
-You only need a fresh Proxmox VE install with root SSH access to get started.
+Packer builds template `9000` separately with `make packer-build`. Authenticate to HCP Terraform and configure its two workspaces before provisioning. The private Proxmox workspace needs the configured agent pool; AWS credentials and the KMS bootstrap Secret must exist before Vault can start. See the [Quick Start](quick-start.md).

@@ -17,7 +17,7 @@ The stack is split into two ArgoCD Applications:
 
 ### Intel Device Plugins Operator
 
-Installs the operator that manages GPU device plugin lifecycle. Uses a retry policy of limit 30 with exponential backoff (10s to 5m) and `SkipDryRunOnMissingResource=true` to handle CRD creation timing.
+Installs the operator that manages GPU device plugin lifecycle. Uses the shared ApplicationSet retry policy of limit 10 with exponential backoff (10s to 3m) and `SkipDryRunOnMissingResource=true` to handle CRD creation timing.
 
 ### Intel Device Plugins GPU
 
@@ -25,7 +25,7 @@ Deploys the `GpuDevicePlugin` custom resource that the operator reconciles into 
 
 - **sharedDevNum**: `5` -- up to 5 pods can share the same GPU simultaneously.
 - **nodeFeatureRule**: `false`
-- **ignoreDifferences**: The `.spec` field of `GpuDevicePlugin` is excluded from ArgoCD diff detection because the operator actively manages the spec after initial creation.
+- **Diff handling**: Server-side diff includes mutation webhooks for this Application. The whole `GpuDevicePlugin.spec` is not ignored: image, sharing and scheduling changes must remain visible to GitOps. The operator defaults a missing image and reconciles a DaemonSet; it does not own arbitrary changes to the desired CR spec.
 
 Both applications share the same retry policy and `SkipDryRunOnMissingResource` setting.
 
@@ -39,14 +39,9 @@ nodeSelector:
 resources:
   limits:
     gpu.intel.com/i915: "1"
-volumeMounts:
-  - name: dev-dri
-    mountPath: /dev/dri
-volumes:
-  - name: dev-dri
-    hostPath:
-      path: /dev/dri
 ```
+
+The device plugin injects the allocated device into the container. Do not add a broad `/dev/dri` hostPath merely to request a GPU; the resource limit is the allocation boundary. Confirm the worker has the labels selected by the plugin and workload.
 
 !!! note "PCI Passthrough"
     The physical iGPU is passed through to the Kubernetes node VMs at the Terraform/Proxmox layer via the `pci_mappings` field in `terraform.tfvars`, which references a Proxmox PCI device mapping. The Intel GPU plugin only handles the in-cluster device advertisement.

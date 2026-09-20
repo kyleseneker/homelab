@@ -18,7 +18,7 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/config` |
+| `config` | PVC (`local-path`) | 5Gi | `/config` |
 | `data` | PVC (existing `arr-data`) | -- | `/data` |
 
 ### Resources
@@ -34,13 +34,9 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-1. Open `https://sonarr.homelab.local` and set authentication to **Forms** (Settings > General > Authentication).
-2. Add root folder: `/data/media/tv` (Settings > Media Management > Root Folders).
-3. Add download clients (Settings > Download Clients):
-    - **qBittorrent** -- host: `arr-vpn-downloads.arr.svc.cluster.local`, port: `8080`, category: `tv`
-4. Note the API key from Settings > General -- it is required by Prowlarr, Recyclarr, Bazarr, Seerr, and Homepage.
+`SonarrConfig` owns `/data/media/tv`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make arr-keys-adopt`, and verify the CR and a test import. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

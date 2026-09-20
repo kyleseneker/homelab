@@ -14,15 +14,17 @@ These layers require two separate backup mechanisms. Velero operates at the Kube
 
 Two backup pipelines, both storing data locally on the NAS for fast recovery and offsite in AWS S3 for disaster recovery:
 
-**Velero** handles application-layer backups. It uses the AWS plugin for S3-compatible storage, Kopia for file-system PVC backup, and two storage targets: standalone MinIO on an NFS-backed PVC for local backups, and an S3 bucket (`velero-offsite-homelab`) in us-east-1 for offsite copies. Three schedules run nightly: daily stateful namespaces (7-day retention), weekly full-cluster (30-day retention), and weekly offsite (30-day retention).
+**Velero** handles application-layer backups. It uses the AWS plugin for S3-compatible storage, Kopia for file-system PVC backup, and two storage targets: standalone MinIO on an NFS-backed PVC for local backups, and an S3 bucket (`velero-offsite-homelab`) in us-east-1 for offsite copies. Schedules run daily for stateful namespaces (7-day retention), weekly for broader cluster resources (30-day retention), and weekly offsite (30-day retention). The offsite BSL uses a `velero/` prefix separate from `etcd-snapshots/`.
 
 **A CronJob** handles etcd snapshots. It runs `etcdctl snapshot save` daily at 2:00 AM on the control plane node, stores snapshots on an NFS-backed PVC with 7-snapshot retention, and uploads each snapshot to the same S3 bucket under an `etcd-snapshots/` prefix.
+
+Application backup Jobs export local-path configuration through SQLite backups or supported native archives onto NFS. Holder Deployments keep those NFS volumes mounted for Velero's file-system backup. Prometheus TSDB is excluded because its metrics history is diagnostic and can be recreated.
 
 ## Alternatives Considered
 
 - **NFS snapshots only**: Covers data but not Kubernetes resource state (Secrets, ConfigMaps, RBAC). Restoration requires manual re-creation of all cluster resources.
 - **Restic/Kopia standalone**: Can back up PVC data but doesn't handle Kubernetes resource backup or integrate with `kubectl`-style restore workflows.
-- **Backblaze B2**: Cheaper storage ($0.006/GB/month) but adds another vendor dependency. AWS was chosen because the account and IAM infrastructure already exist for Vault KMS auto-unseal.
+- **Backblaze B2**: Another offsite object-store option, but adds a vendor dependency. AWS was chosen because the account and IAM infrastructure already exist for Vault KMS auto-unseal.
 - **Longhorn/Rook volume snapshots**: Require distributed storage (see ADR-006). Not applicable with NFS.
 - **Kasten K10**: Can orchestrate both Velero-style and etcd backups via Kanister blueprints. Heavyweight and commercial — overkill for a homelab.
 - **Velero for etcd**: Not possible. Velero requires a running API server and cannot snapshot or restore etcd. Confirmed by upstream maintainers.
@@ -32,10 +34,10 @@ Two backup pipelines, both storing data locally on the NAS for fast recovery and
 
 - **Two pipelines by design**: etcd snapshots solve "the cluster is dead" scenarios; Velero solves "I deleted a namespace" scenarios. These are fundamentally different recovery paths that cannot be unified without fragility.
 - **Every layer local + offsite**: Both Velero and etcd snapshots land on the NAS (fast restore) and S3 (disaster recovery). Consistent storage strategy across both pipelines.
-- **In-cluster S3 via MinIO**: Provides S3-compatible storage without cloud dependency. Velero's AWS plugin works unmodified against MinIO. NFS-backed PVC with Retain policy ensures backup data survives cluster rebuilds.
+- **In-cluster S3 via MinIO**: Provides S3-compatible storage without cloud dependency. Velero's AWS plugin works unmodified against MinIO. An NFS-backed PVC with Retain policy preserves data on an intact NAS, but a rebuild must deliberately reconnect the original backup directory.
 - **Resource + volume data**: Velero backs up Kubernetes manifests and `nfs-client` PVC data via Kopia file-system backup. Kopia cannot read `hostPath` volumes, so `local-path` PVC data is outside this pipeline (see ADR-006).
 - **Three Velero schedules**: Daily backups for stateful namespaces catch frequent changes. Weekly full-cluster and offsite backups provide broader coverage with longer retention.
-- **AWS S3 Standard-IA lifecycle**: Objects transition from S3 Standard to Standard-IA after 30 days. Noncurrent versions expire after 90 days. Cost is ~$1/month.
+- **AWS S3 Standard-IA lifecycle**: Objects transition from S3 Standard to Standard-IA after 30 days. Noncurrent versions expire after 90 days, limiting retained object versions and storage costs.
 - **Selective restore**: Velero supports namespace-scoped and resource-scoped restores, allowing targeted recovery without affecting the rest of the cluster.
 - **Reuse existing AWS account**: The account, IAM patterns, and Terraform module already exist for Vault KMS auto-unseal. Adding an S3 bucket and IAM user follows the same pattern.
 
@@ -46,6 +48,6 @@ Two backup pipelines, both storing data locally on the NAS for fast recovery and
 - AWS credentials are stored in Vault and synced via ExternalSecret. During a DR rebuild where Vault is not yet available, credentials must be manually created from a password manager.
 - Velero restore may conflict with ArgoCD's desired state. ArgoCD sync should be verified after any restore.
 - The `vault-aws-kms` Secret is not backed up by Velero and must be manually created before Vault can start during disaster recovery.
-- The seven *arr config volumes, the Prometheus TSDB, and Uptime Kuma's database sit on `local-path` and are therefore absent from every Velero backup. Their SQLite databases require an application-level dump onto an `nfs-client` volume to enter the pipeline; a file-level copy of a live SQLite database can capture a torn write even where Kopia can read it.
+- Local-path backup coverage depends on each application's export process. Restore drills must cover both database contents and required configuration files; a database export alone does not capture the entire PVC.
 - The etcd-backup CronJob requires `hostPath` access to `/etc/kubernetes/pki/` and connects to etcd via the node IP (downward API).
 - The CronJob backs up the full control plane PKI alongside each etcd snapshot. Both are required for disaster recovery on a replacement node.

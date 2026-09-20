@@ -24,10 +24,10 @@ kubeadm initializes the cluster with Kubernetes 1.31.4, skipping the `addon/kube
 ## Rationale
 
 - **Full control**: kubeadm provides a standard Kubernetes cluster without vendor abstractions. Every component (CNI, CSI, ingress) is explicitly chosen rather than bundled.
-- **GPU passthrough**: Packer's cloud-init and Terraform's PCI passthrough configuration enable Intel iGPU assignment to specific VMs for hardware transcoding. k3s and Talos make this harder due to their opinionated node setup.
-- **Reproducibility**: Packer → Terraform → Ansible is fully idempotent. A cluster can be torn down and rebuilt from zero by re-running the pipeline.
+- **GPU passthrough**: Packer's cloud-init and Terraform's PCI passthrough configuration enable Intel iGPU assignment to specific VMs for hardware transcoding. Ubuntu provides direct access to host configuration and drivers for hardware experimentation.
+- **Reproducibility**: Packer → Terraform → Ansible separates reusable node images, VM resources and cluster configuration into repeatable provisioning stages.
 - **Learning value**: Operating kubeadm exposes real Kubernetes internals (etcd, API server audit policy, kubelet configuration) that abstracted distributions hide.
-- **Audit logging**: The kubeadm configuration template includes a custom audit policy (RequestResponse for secrets/RBAC/auth, Metadata for mutations) baked into the control plane from day one.
+- **Audit logging**: The kubeadm configuration template includes a custom audit policy (Metadata for Secret/token/authentication requests and ordinary mutations; RequestResponse only for selected non-credential resources) baked into the control plane from day one.
 
 ## Consequences
 

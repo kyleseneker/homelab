@@ -14,7 +14,7 @@ Use Authentik as the centralized identity provider with two authentication mecha
 
 ## Alternatives Considered
 
-- **Authelia**: Lightweight authenticating proxy. Simpler than Authentik but limited to proxying -- no native OIDC provider capability without external dependencies.
+- **Authelia**: An authenticating proxy with a [native OpenID Connect provider](https://www.authelia.com/configuration/identity-providers/introduction/). Authentik's outpost model and blueprint configuration fit the chosen routing and configuration approach.
 - **Keycloak**: Enterprise-grade identity provider. Feature-rich but heavyweight (Java-based, higher resource consumption). More complexity than a homelab needs.
 - **No SSO**: Each app manages its own auth. Workable but tedious with 15+ applications.
 
@@ -28,7 +28,7 @@ Use Authentik as the centralized identity provider with two authentication mecha
 
 ## Consequences
 
-- If Authentik is unavailable, every proxied application becomes inaccessible at the edge, because the outpost is in the request path rather than beside it. OIDC-integrated apps fall back to their own login. In-cluster traffic is unaffected, so the operator, Prowlarr's sync and Grafana's datasources keep working.
+- If Authentik is unavailable, every proxied application becomes inaccessible at the edge because the outpost is in the request path. OIDC-integrated apps need a separately configured and tested local login for emergency access. In-cluster traffic is unaffected, so the operator, Prowlarr's sync and Grafana's datasources keep working.
 - The outpost originates the proxied request, so each protected app needs a network path from the `auth` namespace as well as from the gateway. Missing either direction produces a login redirect followed by a hang rather than a clear error.
 - Vault is deliberately excluded: Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal. Jellyfin is excluded because media clients cannot complete a browser login.
 - Emergency bypass procedure is documented in a dedicated runbook for SSO lockout scenarios.

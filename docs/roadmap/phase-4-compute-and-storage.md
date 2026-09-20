@@ -2,76 +2,87 @@
 
 **Status:** Not started
 
-**Goal:** Eliminate the single-host and single-controller dependencies.
+**Goal:** Expand compute and storage capacity, distribute workloads across hosts, and remove single-instance control-plane and Vault dependencies.
 
-**Addresses:** [P4](assessment.md#physical-layer) (single compute host), [K1](assessment.md#kubernetes-software-layer) (single control plane), [K4](assessment.md#kubernetes-software-layer) (Vault standalone)
+**Addresses:** P4, K1, and K4 in the [assessment](assessment.md).
 
 ---
 
 ## 4.1 Add a Second Compute Host
 
 - [ ] Purchase a second Minisforum MS-01 (or equivalent)
-- [ ] Install in the rack, connect SFP+ to the 10G switch (Phase 3.1)
+- [ ] Install in the rack and connect SFP+ to the 10G switch ([Phase 3.1](phase-3-network.md#31-enable-10g-networking))
 - [ ] Add to Proxmox as a cluster node
 - [ ] Add the new host to the Ansible inventory and run `pve-host.yml`
-- [ ] Redistribute Kubernetes VMs across both hosts in Terraform
-- [ ] Update [hardware inventory](../reference/hardware.md)
-- [ ] Write an ADR
+- [ ] Redistribute Kubernetes VMs across both hosts in Terraform with explicit per-host placement
+- [ ] Account for node-local disks and GPU passthrough when planning VM moves and host maintenance
+- [ ] Configure quorum, fencing, and accessible VM storage if enabling Proxmox HA
+- [ ] Update the [hardware inventory](../reference/hardware.md)
 
 | | |
 |---|---|
-| **Why** | All VMs run on one machine. Hardware failure means total cluster loss with no recovery until hardware is replaced. |
-| **Unlocks** | Proxmox HA (automatic VM failover), rolling Proxmox upgrades, rolling K8s upgrades without downtime, proper pod anti-affinity. |
-| **Sizing** | A matching MS-01 with 64 GB RAM is ideal. A smaller node (32 GB) is sufficient for one worker and one control plane node. |
-| **IaC** | The existing Terraform module and Ansible inventory are parameterized. Adding a host means a new `target_node` and rebalancing VM placement. |
+| **Why** | All VMs currently run on one machine. A second host adds capacity and lets workloads move off a host for planned maintenance. |
+| **Sizing** | A matching MS-01 with 64 GB RAM is the target. A smaller 32 GB node is an alternative for one worker and one control-plane node. |
+| **IaC** | Add host-specific Ansible inventory and Terraform placement, then rebalance the VM allocation. |
+| **Availability** | Automatic VM failover also requires reliable quorum, fencing, and accessible VM data. See the [Proxmox HA requirements](https://pve.proxmox.com/pve-docs/chapter-ha-manager.html). GPU passthrough and node-local disks constrain migration. |
 
 ## 4.2 Expand to 3 Control Plane Nodes
 
-- [ ] Provision 2 additional control plane VMs (spread across both hosts)
-- [ ] Deploy a load balancer in front of the API server (kube-vip or HAProxy)
-- [ ] Join new nodes with `kubeadm join --control-plane`
-- [ ] Add a `k8s_control_plane_join` Ansible role (or conditional in existing role)
-- [ ] Verify etcd quorum with `etcdctl member list`
-- [ ] Update kubeconfig to use the load balancer endpoint
-- [ ] Write an ADR
+- [ ] Provision two additional control-plane VMs, initially spread across both hosts
+- [ ] Deploy a stable API endpoint with kube-vip or HAProxy and test endpoint failover
+- [ ] Join new nodes with `kubeadm join --control-plane`, including certificate distribution
+- [ ] Add a `k8s_control_plane_join` Ansible role or conditional in the existing role
+- [ ] Verify etcd membership with `etcdctl member list` and cluster health
+- [ ] Update kubeconfig and node bootstrap configuration to use the API endpoint
+- [ ] Update etcd backup and replacement procedures for the three-member cluster
+- [ ] Test loss of one control-plane VM and document behavior when each physical host is unavailable
 
 | | |
 |---|---|
-| **Why** | Single control plane means API server, etcd, and scheduler are all SPOFs. 3 nodes across 2 hosts survives any single failure. |
-| **Prerequisites** | Second compute host (4.1). Load balancer for API server. |
-| **Resource cost** | ~2 vCPU and 4-8 GB RAM per control plane node. With 128 GB across 2 hosts, easily accommodated. |
+| **Why** | Three control-plane nodes remove the single-VM dependency for the API server, etcd, and scheduler. |
+| **Prerequisites** | Second compute host (4.1) and a stable API endpoint. |
+| **Resource cost** | Approximately 2 vCPU and 4–8 GB RAM per additional control-plane node, within the planned 128 GB across two matching hosts. |
+| **Failure tolerance** | Three etcd members survive loss of one member. With a 2+1 placement across two hosts, losing the host carrying two members loses quorum. Distribute one member per host when adding the [third host](phase-7-long-term-vision.md); a Proxmox quorum device does not vote in etcd. |
 
 ## 4.3 Migrate Vault to HA (Raft)
 
-- [ ] Switch Vault from standalone file storage to integrated Raft storage (3 replicas)
-- [ ] Move Vault PVCs from `nfs-client` to `local-path` (Raft needs local disk)
+- [ ] Back up standalone Vault and rehearse the data migration to integrated Raft storage
+- [ ] Configure three Vault replicas using integrated Raft storage
+- [ ] Move Vault from NFS to durable local storage, with peer discovery and TLS configured
+- [ ] Spread Raft voters across the available physical hosts; use one voter per host when the third host is added
 - [ ] Verify AWS KMS auto-unseal works for all replicas
-- [ ] Verify ESO can reach Vault through a Vault service (not a specific pod)
-- [ ] Test failover: kill the Raft leader, confirm a new leader is elected
-- [ ] Write an ADR
+- [ ] Verify ESO reaches Vault through the Vault service
+- [ ] Implement Raft snapshots and verify restoration
+- [ ] Test leader failover and document whole-host failure behavior for the deployed placement
 
 | | |
 |---|---|
-| **Why** | Vault is a single pod. If it crashes or NFS stalls, every ExternalSecret stops refreshing. New deployments and secret rotations fail immediately. |
-| **Approach** | Vault's integrated Raft replicates data across replicas without a separate etcd or Consul cluster. All replicas use the same KMS key for auto-unseal. |
+| **Why** | Vault is a single pod on NFS. A pod or storage outage interrupts secret refreshes, new secret-dependent deployments, and rotations. |
+| **Approach** | Integrated Raft replicates Vault data without a separate etcd or Consul cluster. All replicas use the same KMS key for auto-unseal. |
+| **Migration** | Changing replica count or StorageClass does not migrate the existing file-storage backend. Migrate the data and replace file backups with Raft snapshots. |
+| **Failure tolerance** | Three voters tolerate one voter failure. As with etcd, surviving either physical host's loss requires a third independent host. |
 
 ## 4.4 Expand NAS Storage
 
-- [ ] Add 2 more drives to the UNAS Pro (4 total)
-- [ ] Reconfigure as RAID 10 (16 TB usable, redundancy + read performance)
-- [ ] Verify NFS exports and Kubernetes PVCs
-- [ ] Update [hardware inventory](../reference/hardware.md)
+- [ ] Add two more 8 TB CMR drives to the NAS after the [Phase 1.1 mirror](phase-1-foundations.md#11-add-nas-drive-redundancy), for four installed drives total
+- [ ] Confirm the exact UNAS model/firmware supports the intended four-drive RAID 10 layout and determine its migration procedure
+- [ ] Take and verify an independent backup before changing the pool
+- [ ] Expand to the planned 16 TB usable capacity with RAID 10; use backup/recreation/restore if an in-place transition is unsupported
+- [ ] Verify NFS exports, paths, ownership, and Kubernetes PVCs after migration
+- [ ] Update the [hardware inventory](../reference/hardware.md)
 
 | | |
 |---|---|
-| **Why** | With the Phase 1.2 mirror, usable capacity is 8 TB. RAID 10 doubles usable space and improves read performance. |
-| **Timing** | Flexible. Monitor with the existing `NFSStorageLow` PrometheusRule alert. |
+| **Why** | The Phase 1.1 mirror provides 8 TB usable capacity. Four 8 TB drives in RAID 10 target 16 TB usable before filesystem overhead, retaining drive redundancy. |
+| **Timing** | Flexible. Track available capacity with the existing `NFSStorageLow` PrometheusRule alert. |
 
 ---
 
 ## Definition of Done
 
-- [ ] Kubernetes VMs distributed across 2 physical hosts
-- [ ] 3 control plane nodes with etcd quorum, surviving single node failure
-- [ ] Vault running in HA mode with Raft storage
-- [ ] NAS storage expanded
+- [ ] Kubernetes VMs distributed across two physical hosts
+- [ ] Three control-plane nodes with etcd quorum, surviving a single control-plane VM failure
+- [ ] Stable API endpoint tested during control-plane failover
+- [ ] Vault running with three Raft replicas, leader failover and snapshot recovery verified
+- [ ] NAS expanded to the planned capacity with redundant storage
+- [ ] Physical-host failure limitations recorded for the deployed two-host topology

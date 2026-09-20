@@ -72,6 +72,8 @@ nodes = {
 }
 ```
 
+The configured backend is HCP Terraform (`kyleseneker/homelab-homelabk8s01`). Store `proxmox_api_token` as a sensitive workspace variable. A locally ignored `.tfvars` file is useful for local CLI configuration; remote runs need the corresponding workspace variables and an agent pool with network access to Proxmox. `ssh_public_key` contains the key text, not a filesystem path.
+
 The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a worker node for hardware transcoding in Jellyfin and Tdarr. The `pci_mappings` value references a Proxmox PCI device mapping created by the `pve-configure` playbook.
 
 ## Ansible
@@ -94,7 +96,9 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 | `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.31` |
 
 !!! note "Pod CIDR"
-    `k8s_control_plane_pod_network_cidr` is what kubeadm records, but Cilium is installed with its default `cluster-pool` IPAM and allocates pod IPs from `10.0.0.0/8` regardless. The kubeadm value is not what pods actually get.
+    `k8s_control_plane_pod_network_cidr` is what kubeadm records, but Cilium is installed with explicit `cluster-pool` IPAM in `ansible/roles/k8s_control_plane/files/cilium-values.yml` and allocates pod IPs from the existing `10.0.0.0/8` pool. Bootstrap and `make cilium-upgrade` share that file; do not change the pool in place on a populated cluster. The kubeadm value is not what pods actually get.
+
+Playbooks load these global variables through `ansible/playbooks/group_vars -> ../group_vars`. Use the provided playbooks or pass the equivalent vars explicitly when writing a new playbook outside that directory.
 
 ### Inventory Files
 
@@ -102,7 +106,7 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 |------|--------------|
 | `ansible/inventory/homelabpve01/hosts.yml` | Proxmox host IP address |
 | `ansible/inventory/homelabk8s01/hosts.yml` | K8s node IPs (must match the values in `terraform.tfvars`) |
-| `ansible/inventory/homelabk8s01/group_vars/all.yml` | `nas_ip`, `nas_export_path`, `nfs_mount_path` |
+| `ansible/inventory/homelabk8s01/group_vars/all.yml` | `nas_ip`, `nfs_nas_export_path`, `nfs_mount_path` |
 
 !!! note
     The node IPs in the Ansible inventory **must** match the IPs defined in `terraform.tfvars`. A mismatch will cause Ansible to fail when it tries to connect to the provisioned VMs.
@@ -123,13 +127,21 @@ The following manifest files contain environment-specific values that must be ed
 | `k8s/bootstrap/applicationsets/cluster-apps.yml` | Git repository URL for ArgoCD (appears three times) |
 
 !!! warning "The NAS export path contains a volume UUID"
-    `shared-data-pv.yml` hardcodes a UniFi volume UUID that will be different on any replacement NAS. The same path is set independently in `ansible/inventory/<cluster>/group_vars/all.yml` as `nas_export_path`; both must agree.
+    `shared-data-pv.yml` hardcodes a UniFi volume UUID that will be different on any replacement NAS. The same path is set independently in `ansible/inventory/<cluster>/group_vars/all.yml` as `nfs_nas_export_path`; both must agree.
+
+### Proxmox bootstrap secrets and template ownership
+
+Store `vault_tfc_agent_token` and `vault_pve_ups_upsmon_password` in `ansible/inventory/homelabpve01/group_vars/all/vault.yml` using Ansible Vault. Use at least 16 letters, digits, underscores or hyphens for the UPS credential. The UPS server listens on the host LAN address for monitoring; a public/default primary-monitor password is unsafe.
+
+Packer creates template `9000`. The raw cloud-image role is optional (`pve_cloud_init_enabled=true`) and uses `9001`; its clones need `packer_template=false` so Ansible installs the base packages and Kubernetes prerequisites. It must never overwrite the Packer template. Host package distribution upgrades require explicit `pve_repos_upgrade_packages=true` during a maintenance window.
 
 ## AWS
 
 **Directory:** `terraform/aws`
 
 Provisions the KMS key that backs Vault's auto-unseal and the IAM user Velero uses for offsite backups. Copy `terraform.tfvars.example` and run `make aws-init && make aws-apply`. The resulting key ID and access keys go into the `vault-aws-kms` Secret and into Vault at `infrastructure/velero-offsite` and `infrastructure/etcd-backup`.
+
+The KMS key and backup bucket have Terraform `prevent_destroy` guards. Removing their resource blocks or changing state bypasses that guard; it is not a substitute for tested recovery or cloud-side retention. The bucket denies requests over plaintext HTTP. Generated IAM access-key secrets are present in sensitive Terraform state, so protect HCP Terraform access and bootstrap credentials.
 
 !!! tip
     After editing these files, commit the changes to your Git repository. ArgoCD will pick up the new configuration on its next sync cycle.

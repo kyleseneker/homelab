@@ -43,11 +43,8 @@ Each exporter runs as a separate Deployment (one app-template controller per tar
 2. Write the API keys to Vault:
 
     ```bash
-    vault kv put homelab/apps/exportarr \
-      sonarr-api-key=your_key \
-      radarr-api-key=your_key \
-      prowlarr-api-key=your_key \
-      bazarr-api-key=your_key
+    # Adopt the running application keys into the shared Vault path.
+    make arr-keys-adopt
     ```
 
 3. Verify targets appear in Prometheus: `https://prometheus.homelab.local/targets`

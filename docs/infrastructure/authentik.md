@@ -1,6 +1,6 @@
 # Authentik
 
-Authentik is the centralized identity provider for the homelab, handling SSO via forward-auth (for arr apps and Homepage) and native OIDC (for Grafana and ArgoCD).
+Authentik provides identity for native OIDC clients and authenticates browser traffic through its proxy outpost.
 
 ## Details
 
@@ -13,82 +13,55 @@ Authentik is the centralized identity provider for the homelab, handling SSO via
 
 ## Architecture
 
-Authentik uses two authentication mechanisms depending on the application:
+The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This chart deploys no Redis. A single PostgreSQL instance and the outpost are availability dependencies; a PodDisruptionBudget does not make them redundant.
 
-### Forward Auth (Domain-Level)
+### Proxy Authentication
 
-Apps that lack native SSO support are protected via Authentik's embedded outpost using forward-auth. When a user visits a protected app, the gateway checks the session with Authentik before allowing access.
+The public HTTPRoute points to `ak-outpost-authentik-embedded-outpost` in `auth` on port 9000. The outpost authenticates the browser and forwards the request to the provider's internal Service URL:
 
+```text
+Browser -> Cilium Gateway -> Authentik outpost -> backend Service
+                                  |
+                             Authentik login
 ```
-User -> Cilium Gateway -> forward-auth -> Authentik outpost
-                       |                        |
-                       |<-- 200 (authenticated) -|
-                       |-> proxy to backend app
-```
 
-**Protected apps:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Homepage
+**Protected web routes:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Goldilocks, Prometheus and Alertmanager.
 
-### Native OIDC
+`blueprints-configmap.yml` declares one provider in `proxy` mode and one application for each route, and owns the complete provider assignment on the existing outpost. Forward-auth mode expects an auth subrequest from the gateway and is not used here. The blueprint must not depend on a manually created `homelab-forward-auth` provider.
 
-Apps with built-in OAuth2/OIDC support authenticate directly with Authentik as an identity provider.
+The *arr and qBittorrent proxy providers exempt API/feed/ping paths from browser login. Their native authentication must remain enabled. The outpost is still in their network path. A successful login redirect proves the auth entry point is reachable; it does not prove the backend is healthy.
 
-**OIDC apps:** Grafana, ArgoCD
+Cross-namespace HTTPRoutes require `referencegrant.yml`. Cilium must permit both outpost egress and backend ingress. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
 
-### Unprotected (with rationale)
+### Native OIDC and Direct Routes
 
-- **Jellyfin** -- has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO
-- **Prometheus/Alertmanager** -- internal monitoring; forward-auth would break Grafana datasource scraping
+Grafana and ArgoCD authenticate with dedicated OIDC providers. Grafana accesses token/userinfo endpoints over the internal Service; ArgoCD uses the external HTTPS issuer with the homelab CA. Both retain local administrator login for recovery.
 
-## Key Configuration
-
-- PostgreSQL persistence via `nfs-client` (5Gi)
-- Redis in standalone mode with `nfs-client` persistence (1Gi)
-- HTTPRoute at `auth.homelab.local` via the `homelab-gateway` with TLS via `homelab-ca-issuer`
-- Outpost cookie domain: `.homelab.local` (enables cross-subdomain SSO sessions)
-- Forward-auth uses the embedded outpost's internal service URL (`http://ak-outpost-authentik-embedded-outpost.auth.svc.cluster.local:9000/...`)
+Jellyfin and Seerr use their media login flow. Homepage, Vault, OpenClaw and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
 
 ## Secrets
 
 | Secret | Namespace | Keys |
 |--------|-----------|------|
-| `authentik-credentials` | `auth` | `secret-key`, `postgresql-password`, `bootstrap-password`, `bootstrap-token` |
+| `authentik-credentials` | `auth` | Authentik environment variables and PostgreSQL credentials; see the ExternalSecret manifest |
 | `grafana-oidc-secret` | `monitoring` | `GRAFANA_OIDC_CLIENT_SECRET` |
 | `argocd-secret` (merge) | `argocd` | `oidc.authentik.clientSecret` |
 
-All managed via External Secrets Operator (synced from Vault). See the corresponding `*-external-secret.yml` manifests for the full key structure.
+External Secrets Operator syncs these from Vault. Bootstrap credentials initialize the first account; changing a bootstrap environment variable does not serve as an ongoing password rotation mechanism.
 
 ## Post-Deploy Setup
 
-Prerequisites: Authentik pods running in `auth` namespace, `auth.homelab.local` DNS configured in UniFi gateway, secrets populated in Vault.
+Prerequisites: Authentik pods running in `auth`, DNS configured, and credentials populated in Vault.
 
-1. Navigate to `https://auth.homelab.local/if/flow/initial-setup/` and set the `akadmin` password.
-2. Log in to the admin interface at `https://auth.homelab.local/if/admin/`.
-3. Create a **Kubernetes Service-Connection** in System > Outpost Integrations (name: `local-cluster`, leave kubeconfig empty).
-4. Edit the **authentik Embedded Outpost** -- set integration to `local-cluster`. In Advanced settings, set `authentik_host` to `https://auth.homelab.local` and `authentik_host_browser` to `https://auth.homelab.local`.
-5. Create a **Proxy Provider** (Applications > Providers):
-    - Name: `homelab-forward-auth`
-    - Mode: **Forward auth (domain level)**
-    - External host: `https://auth.homelab.local`
-    - Cookie domain: `homelab.local`
-6. Create an **Application** (name: `Homelab Forward Auth`, provider: `homelab-forward-auth`).
-7. Edit the embedded outpost, add the `Homelab Forward Auth` application.
-8. Create **OAuth2/OpenID Provider** for Grafana (client ID: `grafana`, redirect URI: `https://grafana.homelab.local/login/generic_oauth`). Write the client secret to Vault:
+1. Sign in to `https://auth.homelab.local/if/admin/` with the bootstrapped administrator account. Use the initial setup flow only if the installation has not initialized an account.
+2. Confirm the `edge-auth.yaml` blueprint applies successfully and all nine providers exist in proxy mode. ConfigMap data keys must end in `.yaml`.
+3. Verify the outpost integration and the Service referenced by the routes exist. Set its browser-facing Authentik URL to `https://auth.homelab.local` and verify the blueprint's provider assignments. The repository does not yet declare the integration setup or outpost host configuration.
+4. Create or verify the Grafana OAuth2 provider (`client_id: grafana`, redirect URI `https://grafana.homelab.local/login/generic_oauth`) and ArgoCD provider (`client_id: argocd`, redirect URI `https://argocd.homelab.local/auth/callback`). These OIDC provider definitions are not yet part of the blueprint.
+5. Store each client secret at its corresponding Vault path using `make vault-put-secret`; the ExternalSecret manifests identify the paths and keys. Ensure token claims contain the `authentik Admins` group expected by both clients.
+6. Test a fresh browser login, native OIDC role mapping, an unauthenticated API request, and backend reachability separately. The [SSO runbook](../runbooks/adding-app-to-sso.md) gives the network checks.
 
-    ```bash
-    vault kv put homelab/infrastructure/grafana-oidc \
-      GRAFANA_OIDC_CLIENT_SECRET=your_client_secret
-    ```
+## Recovery and Backups
 
-9. Create **OAuth2/OpenID Provider** for ArgoCD (client ID: `argocd`, redirect URI: `https://argocd.homelab.local/auth/callback`). Write the client secret to Vault:
+The `auth` namespace is included in daily stateful and weekly full-cluster Velero schedules. A filesystem copy of running PostgreSQL is not a tested database restore; track database-consistent backup and restore drills in the roadmap.
 
-    ```bash
-    vault kv put homelab/infrastructure/argocd-oidc \
-      oidc.authentik.clientSecret=your_client_secret
-    ```
-
-10. The built-in `authentik Admins` group maps to Grafana Admin and ArgoCD `role:admin`. Ensure your user is a member.
-12. Create additional user accounts in Directory > Users as needed.
-
-## Backups
-
-The `auth` namespace is included in the Velero daily stateful backup schedule. The weekly full-cluster backup (`"*"`) also covers it.
+During an Authentik outage, proxy routes can fail. Use the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for local admin login and loopback port-forwarding without changing public routes.

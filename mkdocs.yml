@@ -84,6 +84,8 @@ nav:
       - infrastructure/index.md
       - Cilium Gateway: infrastructure/cilium-gateway.md
       - cert-manager: infrastructure/cert-manager.md
+      - trust-manager: infrastructure/trust-manager.md
+      - Blackbox Exporter: infrastructure/blackbox-exporter.md
       - Vault: infrastructure/vault.md
       - External Secrets: infrastructure/external-secrets.md
       - NFS Provisioner: infrastructure/nfs-provisioner.md
@@ -137,6 +139,10 @@ nav:
       - Intel AMT OOB Management: decisions/017-intel-amt-oob-management.md
       - \*arr Configuration as Code: decisions/018-arr-configuration-as-code.md
       - Transcode Policy: decisions/019-transcode-policy.md
+      - CA Trust Distribution: decisions/020-ca-trust-distribution.md
+      - Authentik Blueprints: decisions/021-authentik-blueprints.md
+      - Synthetic Monitoring: decisions/022-synthetic-monitoring-and-delivery.md
+      - Scoped Autonomous Operations: decisions/023-scoped-autonomous-operations.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md

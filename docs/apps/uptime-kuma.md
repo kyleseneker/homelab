@@ -17,7 +17,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `data` | PVC (`nfs-client`) | 1Gi | `/app/data` |
+| `data` | PVC (`local-path`) | 1Gi | `/app/data` |
 
 ### Resources
 
@@ -28,14 +28,14 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 
 ## Key Configuration
 
-- **Database**: SQLite (`UPTIME_KUMA_DB_TYPE: sqlite`), stored on the NFS-backed PVC.
-- Authentik forward-auth protects the web UI (same pattern as other arr apps).
+- **Database**: SQLite (`UPTIME_KUMA_DB_TYPE: sqlite`), stored on the local-path PVC; the SQLite backup job stages a consistent dump onto NFS.
+- The HTTPRoute goes directly to Uptime Kuma; protect its administration with native authentication.
 - Startup probe allows up to 30 failures at 5-second intervals to account for initial database setup.
 
 ## Post-Deploy Setup
 
 1. Add `status.homelab.local` to DNS (if not using a wildcard record).
-2. Create an Authentik application and proxy provider for `status.homelab.local`.
+2. Confirm the direct route and intended visibility of the public status page.
 3. Open `https://status.homelab.local` and create an admin account.
 4. Add HTTP monitors for each service:
 
@@ -58,10 +58,10 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | ArgoCD | `https://argocd.homelab.local` |
     | Vault | `https://vault.homelab.local` |
     | Authentik | `https://auth.homelab.local` |
-| Homepage | `https://home.homelab.local` |
+    | Homepage | `https://home.homelab.local` |
 
 !!! note
-    Uptime Kuma monitors from within the cluster. For TLS checks to work against `*.homelab.local` endpoints using the internal CA, the monitors should be configured to accept self-signed certificates (or use HTTP checks against the internal service URLs instead).
+    Uptime Kuma monitors from within the cluster. Install the homelab CA before relying on HTTPS validation; do not treat checks that ignore certificate errors as TLS coverage. The CA-backed Blackbox probes provide separate route/TLS checks. Internal HTTP checks can diagnose service reachability but do not test the gateway.
 
 ## Dependencies
 

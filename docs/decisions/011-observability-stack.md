@@ -28,11 +28,12 @@ Use the kube-prometheus-stack Helm chart (Prometheus, Grafana, Alertmanager, Nod
 - **Alloy as log collector**: Grafana's recommended replacement for Promtail. Provides Kubernetes pod log discovery with automatic label enrichment (namespace, pod, container) and JSON parsing for structured audit logs.
 - **Unified Grafana**: One UI for metrics (Prometheus datasource) and logs (Loki datasource). Grafana is pre-configured with both datasources and Authentik SSO (ADR-010).
 - **Alertmanager → Slack**: Alert routing sends severity warning+ alerts to Slack with grouping by alertname and namespace. Critical alerts suppress corresponding warnings via inhibition rules.
-- **Retention sizing**: Prometheus retains 15 days of metrics in 20Gi on local-path storage. Loki retains 7 days of logs in 10Gi on NFS. These provide enough history for troubleshooting.
+- **Retention sizing**: Prometheus retains up to 15 days of metrics, with a 15GB block-size cap and a 20Gi local-path claim. The size cap leaves room for the WAL and head block. Loki retains 7 days of logs in 10Gi on NFS.
 
 ## Consequences
 
-- Prometheus stores data on a local-path PVC, tying it to a specific node. If that node fails, metrics history is lost until restored from backup. Acceptable -- metrics are diagnostic, not archival.
+- Prometheus stores data on a local-path PVC, tying it to a specific node. Its diagnostic history is not backed up; recovery from volume loss starts with an empty TSDB.
+- Local-path claim sizes do not enforce filesystem quotas. Prometheus retention limits and node disk alerts manage storage growth.
 - Loki stores data on an NFS-backed PVC, subject to the same latency and SPOF considerations as application storage (ADR-006).
 - Single-binary Loki cannot be horizontally scaled. If log volume outgrows a single instance, migration to distributed mode with an object store backend would be required.
 - Some kube-prometheus-stack default scrape targets are disabled (kubeProxy, kubeEtcd, kubeControllerManager, kubeScheduler) because kubeadm's control plane configuration does not expose their metrics endpoints by default.

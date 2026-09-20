@@ -1,6 +1,6 @@
 # GitOps with ArgoCD
 
-ArgoCD manages the entire cluster lifecycle declaratively. Every infrastructure component and application is defined as an ArgoCD `Application` custom resource in Git. Changes flow from a `git push` to live cluster state without manual intervention.
+ArgoCD reconciles discovered cluster infrastructure and applications declaratively. Terraform and Ansible own the VM and Kubernetes bootstrap, while ArgoCD itself and the root ApplicationSet are installed manually by `make k8s-bootstrap`. Every infrastructure component and application is defined as an ArgoCD `Application` custom resource in Git. Changes flow from a `git push` to live cluster state without manual intervention.
 
 ## ApplicationSet Pattern
 
@@ -58,7 +58,7 @@ Each app directory contains up to three files consumed by the ApplicationSet:
 
 **Git-directory apps** (`sourceType: git` -- network-policies, gateway, gateway-api, kyverno-policies, etcd-backup, arr-prereqs, arr-media-config, arr-config-backup) produce single-source Applications pointing to a git path.
 
-**Kustomize apps** (`sourceType: kustomize` -- local-path-provisioner) also produce single-source Applications; ArgoCD detects the `kustomization.yml` in the target directory and builds it.
+All directory sources use `sourceType: git`, including local-path-provisioner. ArgoCD detects `kustomization.yml` in the target directory and builds it.
 
 !!! warning "The `.yml` extension is load-bearing"
     The generator glob is `k8s/clusters/homelabk8s01/**/config.yml`. A file named `config.yaml` is not discovered, no Application is generated, and nothing reports an error -- the component simply never deploys.
@@ -69,14 +69,16 @@ Each Application syncs independently. ApplicationSet-generated apps have no cros
 
 The cost of that independence is that **there is no ordering mechanism at all**. `argocd.argoproj.io/sync-wave` orders resources *within* one Application's sync; it does nothing between Applications, because the applicationset-controller creates them directly with no parent Application syncing them. Any wave annotation on a generated Application -- there is still one in `local-path-provisioner/config.yml` -- is inert.
 
-Ordering emerges from failure and retry instead. An app targeting the `arr` namespace before `arr-prereqs` has created it fails, backs off, and succeeds on a later attempt. With `retry: limit 10` and backoff from 10s to 3m, a cold bootstrap converges in a few minutes with a visible period of failed Applications along the way.
+Ordering emerges from failure and retry instead. An app targeting the `arr` namespace before `arr-prereqs` has created it fails, backs off, and succeeds on a later attempt. With `retry: limit 10` and backoff from 10s to 3m, dependencies can converge after transient failures. Convergence is not guaranteed: missing secret material, Vault initialization or dependencies that outlive the retry budget require intervention and a new sync.
 
 ## Namespace Strategy
 
 Two patterns based on whether a namespace is shared:
 
-- **Single-app namespaces** (auth, vault, monitoring, cert-manager, etc.): `CreateNamespace=true` on the Application. No separate namespace manifest.
+- **Chart-created namespaces:** `CreateNamespace=true` ensures namespaces exist. Some Applications additionally own namespace manifests for labels or annotations; check their Kustomize resources. Monitoring is shared by several Applications.
 - **Shared namespace** (arr): A dedicated `arr/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
+
+Bootstrap resources are outside this ApplicationSet. After changing `k8s/bootstrap`, use `make k8s-bootstrap-drift` to review drift and explicitly reconcile the bootstrap manifests. Changes there do not deploy through an ordinary application sync.
 
 ## Git Push to Cluster State
 
@@ -122,3 +124,5 @@ To add a new application to the cluster:
 
 !!! tip "No Registration Required"
     The ApplicationSet's Git File Generator automatically discovers new `config.yml` files. There is no need to modify the ApplicationSet definition or any parent manifest.
+
+ArgoCD notification credentials are reconciled separately by the `argocd-notifications` Application. The initial `k8s/bootstrap/argocd` resources must not require ESO APIs: ESO is installed only after the ApplicationSet is created. This avoids a missing-CRD bootstrap cycle on a fresh cluster.

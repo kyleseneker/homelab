@@ -1,48 +1,39 @@
 # Network Policies
 
-CiliumNetworkPolicies provide namespace-level ingress isolation. Each application namespace has a default-deny rule for external traffic, with explicit allow rules for legitimate communication paths.
+CiliumNetworkPolicies control ingress and egress in `arr`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno`, `backups` and `openclaw`. This is partial namespace coverage, not cluster-wide default deny.
 
-## Policy Overview
+## Allowed Paths
 
-| Namespace | Policies | Allows Ingress From |
-|-----------|----------|---------------------|
-| `arr` | 4 | gateway (ingress), arr (internal), monitoring, openclaw |
-| `auth` | 4 | gateway (ingress), auth (internal), monitoring, cluster-wide |
-| `monitoring` | 4 | gateway (ingress), monitoring (internal), cluster-wide (Prometheus) |
-| `kyverno` | 3 | cluster, kube-apiserver, host |
-| `backups` | 3 | backups (internal), monitoring |
+| Namespace | Principal ingress paths | Principal egress paths |
+|-----------|-------------------------|------------------------|
+| `arr` | Gateway, same namespace, monitoring, OpenClaw, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS, OpenClaw; VPN workload has broader internet access |
+| `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
+| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions |
+| `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |
+| `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
+| `kyverno` | Cluster/API/host | DNS, same namespace, API |
+| `backups` | Same namespace, monitoring | DNS, API, NFS and configured backup endpoints |
+| `openclaw` | See the application policy and [OpenClaw](../apps/openclaw.md) | Scoped application endpoints and external integrations |
 
-## Design
+The manifests in `infrastructure/network-policies/` are the detailed source of truth. Rules select pod labels and **pod target ports**, which may differ from Service ports.
 
-Each namespace follows the same pattern:
+## Enforcement Model
 
-1. **Default deny from world** -- blocks unsolicited external ingress.
-2. **Allow from gateway (ingress entities)** -- permits traffic routed through the Cilium Gateway (web UIs).
-3. **Allow internal** -- permits pod-to-pod communication within the same namespace.
-4. **Allow from monitoring** -- permits Prometheus to scrape metrics endpoints.
+The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
 
-The `monitoring` namespace has an additional rule allowing cluster-wide ingress to Prometheus, which is necessary for Grafana queries and federation.
+Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The proxy needs both egress from `auth` and ingress on each backend's namespace. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
 
-The `backups` namespace does not need gateway access because MinIO is accessed only via internal service URLs.
+## Remaining Boundaries
 
-The `openclaw` namespace has granular egress rules: the agent gets egress to the K8s API, GitHub, Slack, Anthropic, monitoring stack, and arr namespace.
+`kube-system`, `argocd`, `cert-manager`, `goldilocks`, `intel-gpu-operator`, storage provisioners and other namespaces have no policies here. Same-namespace access and several infrastructure cluster allowances remain broad. HTTPS access to `world` is not an external-host allowlist and should not be treated as management-network isolation. Network firewalls and Cilium connection tests are required before claiming that boundary is enforced.
 
-### What Is Not Restricted
+## Verification
 
-- **kube-system** namespace has no policies applied, as restricting it could break cluster-wide functionality.
-
-## Troubleshooting
-
-If a service becomes unreachable after policy deployment, check whether the traffic source namespace is allowed:
+Inspect the effective policies and flow verdicts rather than deleting protection to test connectivity:
 
 ```bash
-kubectl get ciliumnetworkpolicies -n <namespace>
+kubectl get ciliumnetworkpolicies -A
+hubble observe --namespace <namespace> --verdict DROPPED
 ```
 
-To temporarily remove a policy blocking traffic:
-
-```bash
-kubectl delete ciliumnetworkpolicy <policy-name> -n <namespace>
-```
-
-Since policies are managed by ArgoCD, deleted policies will be re-created on the next sync. To permanently remove a policy, delete the corresponding YAML from `k8s/clusters/homelabk8s01/infrastructure/network-policies/`.
+Test both the expected path and a forbidden path, including an unrelated pod attempting PostgreSQL on 5432, before and after rollout. A successful auth redirect does not test the protected backend. ArgoCD restores out-of-band policy changes; permanent policy changes belong in Git.

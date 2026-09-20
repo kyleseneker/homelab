@@ -40,7 +40,7 @@ The ExternalSecret syncs `alertmanager-slack-webhook` from Vault into the `monit
 | Repeat interval | 4h |
 | Inhibition | Critical suppresses warning for same alert+namespace |
 
-The `Watchdog` alert (a dead-man's-switch from the default rules) is routed to a null receiver to avoid noise.
+The `Watchdog` alert is sent every minute to the heartbeat URL from Vault. The external heartbeat service must be configured to notify on missing pings and tested by interrupting delivery. `InfoInhibitor` goes to the null receiver. Warning and critical alerts also go to OpenClaw after Slack routing.
 
 ## Custom Homelab Rules
 
@@ -58,16 +58,17 @@ Defined in `kube-prometheus-stack/homelab-rules.yml` as a standalone `Prometheus
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
 | `AuthentikDown` | critical | 5m | Authentik server deployment has 0 replicas |
-| `LokiDown` | critical | 5m | Loki deployment has 0 available replicas |
+| `LokiDown` | critical | 5m | Loki scrape target is unreachable |
 | `NFSStorageLow` | warning | 15m | Any PVC usage above 85% |
 | `CertificateExpiringSoon` | warning | 1h | cert-manager certificate expires within 14 days |
+| `CertificateNotReady` | warning | 15m | Certificate Ready condition is false, including failed initial issuance |
 
 ### Backup Health
 
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
 | `VeleroBackupFailed` | critical | -- | Backup failure in the last 24h |
-| `VeleroBackupMissing` | warning | 1h | No successful backup for a schedule in 25h |
+| `VeleroBackupMissing` | warning | 1h | Daily schedule has no successful backup in 25h (weekly/offsite schedules use 8 days) |
 | `VeleroBackupPartialFailure` | warning | -- | Partial failure in the last 24h |
 
 Requires Velero metrics to be enabled (`metrics.serviceMonitor.enabled: true` in the Velero Helm values).

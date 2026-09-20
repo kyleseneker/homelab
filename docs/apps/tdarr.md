@@ -20,7 +20,7 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/app/server` | Server database and configuration |
+| `config` | PVC (`local-path`) | 5Gi | `/app/server` | Server database and configuration |
 | `data` | PVC (existing `arr-data`) | -- | `/data` | Shared media library and transcode cache, mounted whole so the two share a filesystem |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device |
 

@@ -1,6 +1,6 @@
 # Config Backup
 
-Nightly SQLite dumps of every *arr application's configuration database onto an NFS volume that Velero can actually read.
+Nightly SQLite dumps for six applications and a native Tdarr archive are staged onto NFS for Velero. These are database backups, not copies of every application file.
 
 ## Details
 
@@ -9,13 +9,13 @@ Nightly SQLite dumps of every *arr application's configuration database onto an 
 | Type | CronJobs + holder Deployment (`sourceType: git`) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-config-backup` |
-| Image | `python:3.13-alpine` |
+| Image | `python:3.14-alpine` |
 | Target PVC | `arr-config-backups` (`nfs-client`, 2Gi) |
-| Schedules | Staggered, 01:30--01:36 daily |
+| Schedules | Staggered, 01:30--01:36 UTC daily |
 
 ## Why It Exists
 
-Every *arr config PVC lives on `local-path`, which provisions `hostPath` volumes. Velero's Kopia file-system backup cannot read `hostPath`, so those PVCs are captured as objects containing **no data** -- and Velero records that as a warning, not an error, so the backup still reports `Completed`. A restore would recreate them empty.
+The seven database-backed media application config PVCs live on `local-path`, which provisions `hostPath` volumes. Velero's Kopia file-system backup cannot read `hostPath`, so those PVCs are captured as objects containing **no data** -- and Velero records that as a warning, not an error, so the backup still reports `Completed`. A restore would recreate them empty.
 
 Copying the raw SQLite file is not a fix either: a live WAL-mode database copied byte-for-byte is not guaranteed consistent. Each job instead uses SQLite's online backup API, which produces a consistent snapshot of a database that is being written to.
 
@@ -31,7 +31,7 @@ Copying the raw SQLite file is not a fix either: a live WAL-mode database copied
 | Sonarr | `35 1 * * *` | SQLite online backup |
 | Tdarr | `36 1 * * *` | Tdarr's own native archive |
 
-Tdarr is the exception: it ships its own backup format, which is consistent by construction, so the job copies that rather than reaching into its database.
+Tdarr uses its native ZIP archive. The copy job verifies ZIP integrity and rejects an archive older than 48 hours so a stale source cannot report a successful fresh backup. Native backup scheduling must therefore produce an archive at least daily; confirm its restore behavior in a drill.
 
 Uptime Kuma is covered separately by `uptime-kuma-backup`, which does the same for `kuma.db`.
 
@@ -54,4 +54,4 @@ The third alert covers the failure mode that would otherwise be silent: everythi
 
 ## Restoring
 
-The dumps are plain SQLite files on the `arr-config-backups` volume. Restore by stopping the target application, copying the dump over its `/config` database, and starting it again.
+The dumps are plain SQLite files on the `arr-config-backups` volume. Follow [Backup & Restore](../runbooks/backup-and-restore.md#restoring-local-path-application-databases), including stopping writers, preserving/removing old WAL sidecars, restoring ownership, and validating data. Settings XML/JSON, plugins, artwork, and other non-database files are not captured by the SQLite dump. qBittorrent config uses NFS and follows the ordinary Velero path.

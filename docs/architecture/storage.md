@@ -173,4 +173,4 @@ Each application has its own PVC for configuration and database storage. Every *
 | Authentik | PostgreSQL PVC | `nfs-client` | 5Gi | Identity provider database |
 | Vault | Vault data PVC | `nfs-client` | 1Gi | KV v2 secret storage |
 
-Prometheus is on `local-path` because heavy random TSDB I/O over NFS degrades queries and risks corruption. The trade-off is that it is pinned to a single node, unbounded in size, and -- like every local-path volume -- outside the backup path.
+Prometheus is on `local-path` because heavy random TSDB I/O over NFS degrades queries and risks corruption. The trade-off is that it is pinned to a single node and outside the data backup path. Persisted TSDB blocks have 15GB size retention as well as the 15-day time limit; the WAL/head need additional space and the PVC size is not a filesystem quota.

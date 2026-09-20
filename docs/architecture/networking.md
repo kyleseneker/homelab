@@ -112,10 +112,10 @@ All services use the `*.homelab.local` domain pattern. DNS resolution is handled
 
 ## Network Policies
 
-CiliumNetworkPolicies enforce namespace-level ingress isolation. Each application namespace has a default-deny rule for external traffic, with explicit allow rules for the gateway, intra-namespace communication, and Prometheus scraping. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
+CiliumNetworkPolicies enforce ingress and egress isolation in the namespaces that have policies. Rules explicitly allow the gateway, same-namespace traffic and required cross-namespace paths; coverage is not universal. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
 
-!!! warning "Ingress isolation only"
-    These policies constrain what can reach a namespace. Egress is largely unrestricted, so a pod can still reach the Proxmox management UI at 192.168.10.2, the NAS admin UI at 192.168.1.158, and any internet destination. See gaps N6 and N7 in the [assessment](../roadmap/assessment.md).
+!!! warning "Policy coverage and management-network boundaries"
+    Selected namespaces use an implicit egress-deny model with explicit DNS, API, NFS and application exceptions. Some exceptions still allow `world` on HTTPS or broad cluster access, and namespaces without policies remain unrestricted. This does not substitute for firewall isolation of Proxmox and NAS management. Verify positive and negative connection tests before tightening those boundaries.
 
 ## VPN Sidecar Architecture
 

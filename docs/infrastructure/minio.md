@@ -16,8 +16,7 @@ MinIO provides S3-compatible object storage within the cluster, serving as the b
 - **Mode**: `standalone` (single-node, single-drive)
 - **Credentials**: Sourced from the ExternalSecret `minio-credentials` (synced from Vault, keys: `rootUser`, `rootPassword`)
 - **Storage**: 50Gi PVC using the `nfs-client` StorageClass
-- **Pre-created buckets**:
-    - `velero` (policy: `none`, purge: `false`)
+- **Bucket bootstrap**: `create-velero-bucket` Job creates `velero` without replacing it
 - **Console ingress**: Disabled
 - **Resources**:
     - Requests: 100m CPU, 256Mi memory
@@ -31,7 +30,7 @@ Velero connects to MinIO as its S3-compatible backup storage location at:
 http://minio.backups.svc.cluster.local:9000
 ```
 
-The `velero` bucket is automatically created during MinIO startup via the `buckets` Helm value, ensuring the backup target exists before Velero begins scheduling backups.
+The idempotent `create-velero-bucket` Job runs as an Argo CD `PostSync` hook after MinIO is healthy. Argo CD replaces the previous Job before each run and removes successful Jobs; failed Jobs remain available for inspection. This allows changes to the immutable Job template without a manual deletion. Inspect the Application's sync result and BackupStorageLocation status; Helm values do not configure bucket creation.
 
 !!! info "Why MinIO?"
     Running an in-cluster S3-compatible store avoids dependency on external cloud storage for backups while keeping the Velero configuration standard. The backup data itself is stored on the NFS share via the `nfs-client` PVC, providing a layer of separation from the cluster's ephemeral storage.
@@ -39,3 +38,5 @@ The `velero` bucket is automatically created during MinIO startup via the `bucke
 ## Upstream Documentation
 
 <https://min.io>
+
+MinIO shares the NAS failure domain with application storage. Retained NFS directories need explicit rebinding after a cluster rebuild. The offsite schedule excludes `backups` so MinIO archives are not copied into S3 a second time.

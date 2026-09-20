@@ -64,7 +64,7 @@ Vault, cert-manager, and the External Secrets Operator form the bootstrap layer 
 
 ## Backup
 
-Vault data lives on an NFS-backed PVC. Velero backs up all PVCs on schedule, covering Vault's file storage automatically.
+Vault data lives on an NFS-backed PVC and is included in the weekly cluster/offsite schedules. A copy of a live Vault file backend is not proof of consistent recovery. Rehearse data restoration with KMS and backup-store credentials available outside Vault; see the backup and disaster-recovery runbooks.
 
 ## Upstream Documentation
 

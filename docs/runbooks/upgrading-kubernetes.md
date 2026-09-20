@@ -1,138 +1,116 @@
 # Upgrading Kubernetes
 
-This runbook covers the procedure for upgrading the kubeadm-managed Kubernetes cluster. This is a manual process -- the Ansible roles handle initial cluster setup but do not automate version upgrades.
+The Ansible roles bootstrap nodes; changing their version variables does **not** perform a cluster upgrade. Use a maintenance window and upgrade the control plane, then each worker. Update the repository pins and rebuild the Packer template only after the running cluster passes verification.
 
-!!! warning
-    Always upgrade one minor version at a time (e.g., 1.30 to 1.31, not 1.30 to 1.32). Skipping minor versions is not supported by kubeadm.
+The repository still records Kubernetes **1.31.4**, an unsupported release. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
 
-## Pre-Upgrade Checklist
+## Before each minor upgrade
 
-Before starting the upgrade:
+- Confirm the live versions with `kubectl get nodes -o wide` and `kubectl version`; do not infer them from Git.
+- Verify a recent off-host etcd snapshot, `/etc/kubernetes/pki` backup, and application data backup can be restored. A completed Velero backup alone does not establish this. Follow [Backup and Restore](backup-and-restore.md).
+- Check the installed Cilium release's compatibility with both the current and next Kubernetes minor, plus Gateway API CRDs, containerd, Kyverno, and other admission webhooks. Use the [Cilium compatibility documentation](https://docs.cilium.io/en/stable/network/kubernetes/compatibility/) for the actual installed release.
+- Verify node readiness, ArgoCD health, storage mounts, and backup jobs. Review the target release's removed APIs and [version skew rules](https://kubernetes.io/releases/version-skew-policy/).
+- Inspect `kubectl get pdb -A` and workloads on the node to be drained. Local-path volumes stay on their original node; the sole GPU worker cannot transfer GPU workloads to another node. Plan downtime and resolve any PDB that blocks maintenance before proceeding. Do not use `--disable-eviction` to bypass it.
 
-- [ ] Verify a recent Velero backup exists: `velero backup get`
-- [ ] Check current cluster version: `kubectl version`
-- [ ] Check the [Cilium compatibility matrix](https://docs.cilium.io/en/stable/network/kubernetes/compatibility/) to confirm the target Kubernetes version is supported by the installed Cilium version
-- [ ] Review the [Kubernetes changelog](https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/README.md) for the target version
-- [ ] Ensure all nodes are in `Ready` state: `kubectl get nodes`
-- [ ] Ensure all ArgoCD applications are synced and healthy
+## Configure the package repository on each node
 
-## Upgrade Procedure
-
-### 1. Upgrade the Control Plane
-
-On the control plane node, update the `kubeadm` package to the target version:
+Select an exact patch and Debian package version for the **next** minor. Run this on the control plane first and later on each worker. Replace the values below before using them:
 
 ```bash
+TARGET_MINOR='1.32'
+TARGET_VERSION='1.32.REPLACE_ME'
+TARGET_PACKAGE="${TARGET_VERSION}-1.1"
+
+sudo install -d -m 0755 /etc/apt/keyrings
+curl -fsSL "https://pkgs.k8s.io/core:/stable:/v${TARGET_MINOR}/deb/Release.key" \
+  | sudo tee "/etc/apt/keyrings/kubernetes-v${TARGET_MINOR}.asc" >/dev/null
+printf 'deb [signed-by=/etc/apt/keyrings/kubernetes-v%s.asc] https://pkgs.k8s.io/core:/stable:/v%s/deb/ /\n' \
+  "$TARGET_MINOR" "$TARGET_MINOR" \
+  | sudo tee /etc/apt/sources.list.d/kubernetes-upgrade.list
 sudo apt-get update
-sudo apt-get install -y kubeadm=<version>-*
+apt-cache madison kubeadm
 ```
 
-Verify the upgrade plan:
+Verify `TARGET_PACKAGE` exists in the output. The previous minor's repository may remain during the transition; remove its obsolete entry after completing that minor upgrade. Update `TARGET_PACKAGE` if the published package suffix differs.
+
+## Upgrade the control plane
+
+On the control plane:
 
 ```bash
+sudo apt-mark unhold kubeadm
+sudo apt-get install -y "kubeadm=${TARGET_PACKAGE}"
+sudo apt-mark hold kubeadm
 sudo kubeadm upgrade plan
+sudo kubeadm upgrade apply "v${TARGET_VERSION}"
 ```
 
-Apply the upgrade:
+From the administrator machine, drain the control plane before upgrading its kubelet. The cluster has one control plane, so API availability during maintenance is limited:
 
 ```bash
-sudo kubeadm upgrade apply v<version>
+kubectl drain homelabk8s01-node-1 --ignore-daemonsets --delete-emptydir-data
 ```
 
-Upgrade `kubelet` and `kubectl` on the control plane node:
+On the control plane:
 
 ```bash
-sudo apt-get install -y kubelet=<version>-* kubectl=<version>-*
+sudo apt-mark unhold kubelet kubectl
+sudo apt-get install -y "kubelet=${TARGET_PACKAGE}" "kubectl=${TARGET_PACKAGE}"
+sudo apt-mark hold kubelet kubectl
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 ```
 
-### 2. Upgrade Worker Nodes
+From the administrator machine:
 
-Upgrade each worker node one at a time to maintain availability.
+```bash
+kubectl uncordon homelabk8s01-node-1
+kubectl wait --for=condition=Ready node/homelabk8s01-node-1 --timeout=300s
+kubectl get --raw='/readyz?verbose'
+```
 
-**From your local machine**, drain the worker node:
+## Upgrade each worker
+
+Complete all steps and verify workloads on one worker before starting the next. From the administrator machine:
 
 ```bash
 kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
 ```
 
-**On the worker node**, update packages:
+On that worker, configure the same target package repository and variables as above, then run:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y kubeadm=<version>-*
+sudo apt-mark unhold kubeadm
+sudo apt-get install -y "kubeadm=${TARGET_PACKAGE}"
+sudo apt-mark hold kubeadm
 sudo kubeadm upgrade node
-sudo apt-get install -y kubelet=<version>-* kubectl=<version>-*
+sudo apt-mark unhold kubelet kubectl
+sudo apt-get install -y "kubelet=${TARGET_PACKAGE}" "kubectl=${TARGET_PACKAGE}"
+sudo apt-mark hold kubelet kubectl
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 ```
 
-**From your local machine**, uncordon the node:
+From the administrator machine:
 
 ```bash
 kubectl uncordon <node-name>
+kubectl wait --for=condition=Ready node/<node-name> --timeout=300s
 ```
 
-Wait for the node to return to `Ready` state before proceeding to the next worker:
+## Verify and record the completed step
 
-```bash
-kubectl get nodes -w
-```
+Check node versions, system pods, Cilium status, DNS, Gateway routes, a GPU transcode, NFS access, ArgoCD application health, and a new backup. Confirm the kubeadm-selected etcd image with `sudo kubeadm config images list --kubernetes-version v<version>` and update the etcd backup tooling to the corresponding etcd version. A Kubernetes minor upgrade can change etcd too.
 
-Repeat for each remaining worker node.
+Record the verified Kubernetes version consistently in:
 
-### 3. Post-Upgrade Verification
+- `ansible/group_vars/all/vars.yml` and the `k8s_prereqs` / `k8s_control_plane` role defaults
+- Packer defaults and the Packer variable example (plus your ignored local variable file)
+- CI schema validation versions and any rendered-manifest validation default
+- The etcd backup image, documentation, and roadmap evidence
 
-1. Verify all nodes are running the new version:
+Rebuild and boot-test a clone of the updated Packer template before using it for replacement workers. Repeat the entire process for the next minor until reaching the supported destination.
 
-    ```bash
-    kubectl get nodes
-    ```
+## If an upgrade fails
 
-2. Check that all system pods are healthy:
-
-    ```bash
-    kubectl get pods -n kube-system
-    ```
-
-3. Verify ArgoCD applications are still synced:
-
-    ```bash
-    kubectl get applications -n argocd
-    ```
-
-4. Confirm workloads are running:
-
-    ```bash
-    kubectl get pods --all-namespaces
-    ```
-
-## Troubleshooting
-
-### Upgrade Plan Fails
-
-If `kubeadm upgrade plan` reports errors, check that:
-
-- The `kubeadm` package version matches the target version
-- The cluster is healthy (`kubectl get cs` or `kubectl get pods -n kube-system`)
-- etcd is running and responsive
-
-### Node Fails to Rejoin
-
-If a worker node does not return to `Ready` after upgrade:
-
-1. Check kubelet logs on the node: `sudo journalctl -u kubelet -f`
-2. Verify the kubelet version matches: `kubelet --version`
-3. Restart kubelet: `sudo systemctl restart kubelet`
-
-### Cilium Issues After Upgrade
-
-If networking breaks after a Kubernetes upgrade, check Cilium pod status:
-
-```bash
-kubectl get pods -n kube-system -l k8s-app=cilium
-kubectl logs -n kube-system -l k8s-app=cilium
-```
-
-A Cilium upgrade may be required. Check the [Cilium upgrade guide](https://docs.cilium.io/en/stable/operations/upgrade/) for instructions.
+Keep the affected node cordoned. Inspect `journalctl -u kubelet`, `kubectl get pods -n kube-system`, Cilium logs, and `/readyz?verbose`. Do not rerun the bootstrap playbook as an upgrade repair or blindly downgrade packages/etcd data. Use the target release's kubeadm recovery guidance and the verified backups. Escalate storage and PDB failures as maintenance issues rather than forcing deletion of stateful pods.

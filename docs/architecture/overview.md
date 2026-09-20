@@ -4,7 +4,7 @@ This document provides a high-level view of the homelab infrastructure, covering
 
 ## Provisioning Pipeline
 
-The homelab is provisioned through a multi-stage pipeline that takes bare-metal hardware to a fully operational Kubernetes cluster running production-grade workloads.
+The homelab is provisioned through a multi-stage pipeline that takes bare-metal hardware to a fully operational Kubernetes cluster running the homelab workloads. Recovery and availability claims require the verification described in the roadmap.
 
 ```mermaid
 flowchart LR
@@ -65,7 +65,7 @@ flowchart LR
 | Loki | Log aggregation (single-binary mode) | `monitoring` |
 | Velero | Cluster and volume backup/restore | `backups` |
 | Alloy | DaemonSet log collector | `monitoring` |
-| Authentik | SSO provider (forward-auth + OIDC) | `auth` |
+| Authentik | SSO provider (proxy outpost + OIDC) | `auth` |
 | NUT Exporter | UPS metrics for Prometheus | `monitoring` |
 | Reloader | Automatic pod restarts on ConfigMap/Secret changes | `kube-system` |
 | Kyverno | Kubernetes policy engine (admission control) | `kyverno` |

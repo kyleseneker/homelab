@@ -22,10 +22,11 @@ Thanks for your interest in this project! While this is a personal homelab repo,
 3. Ensure pre-commit hooks pass (yamllint, trailing whitespace, gitleaks, terraform fmt)
 4. Validate Kubernetes manifests:
    ```bash
-   # CI runs kubeconform automatically, but you can test locally:
-   kubeconform -strict -kubernetes-version 1.32.0 k8s/
+   make k8s-render
+   python3 -m unittest discover -s tests -v
    ```
-5. Open a pull request against `main`
+5. Build documentation with `mkdocs build --strict` when editing docs.
+6. Open a pull request against `main`. Record what was verified locally and which deployment/recovery checks remain.
 
 ## Conventions
 

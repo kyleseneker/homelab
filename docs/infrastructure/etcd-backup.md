@@ -8,7 +8,7 @@ Velero backs up Kubernetes API resources, not etcd itself. This CronJob takes a 
 |-------|-------|
 | Type | CronJob (`sourceType: git`) |
 | Namespace | `backups` |
-| Schedule | `0 2 * * *` (2:00 AM daily) |
+| Schedule | `0 2 * * *` (02:00 UTC daily) |
 | Concurrency | `Forbid` |
 | Local target | `etcd-snapshots` PVC (`nfs-client`, 1Gi) |
 | Offsite target | `s3://velero-offsite-homelab/etcd-snapshots/` |
@@ -18,8 +18,9 @@ Velero backs up Kubernetes API resources, not etcd itself. This CronJob takes a 
 
 The job runs three containers in sequence, pinned to the control-plane node with a matching toleration:
 
-1. **`snapshot`** -- `etcdctl snapshot save` against the local etcd endpoint using the kubeadm PKI mounted read-only from the host. Runs as root because the PKI is root-owned.
+1. **`snapshot`** -- `etcdctl snapshot save` against the host IP on port 2379 over pod networking using the kubeadm PKI mounted read-only from the host. Runs as root because the PKI is root-owned.
 2. **`prepare`** -- timestamps the snapshot and tars `/etc/kubernetes/pki`. A snapshot without the matching CA material cannot rebuild a control plane, so the two are always produced together.
+   The snapshot and archive are mode 0640 in group 1000; this lets the non-root uploader read them without exposing PKI to other users. Snapshot tooling is pinned to kubeadm 1.31.4's etcd 3.5.15-0.
 3. **`upload-offsite`** -- `aws s3 cp` of both artifacts to the S3 prefix.
 
 !!! warning "The S3 prefix matters to Velero"

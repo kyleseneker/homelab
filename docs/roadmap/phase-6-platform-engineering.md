@@ -1,66 +1,64 @@
-# Phase 6 -- Platform Engineering
+# Phase 6 — Platform Engineering
 
-**Status:** Not started
+**Status:** In progress. CI renders manifests, validates schemas and tests tooling; scoped OpenClaw remediation is configured. Staging, Falco, chaos testing and admission-time signature verification remain planned.
 
-**Goal:** Build the capabilities that take the homelab from "well-run cluster" to a platform engineering practice.
+**Goal:** Build a platform engineering practice with repeatable promotion, runtime security, failure experiments and supply-chain verification.
 
-**Addresses:** [K12, K13](assessment.md#kubernetes-software-layer) (no chaos testing, no supply chain verification)
-
----
+**Addresses:** K12, K13, K18, K22, K23 and K47 in the [assessment](assessment.md), alongside upgrade and recovery validation.
 
 ## 6.1 Staging Cluster
 
-- [ ] Provision a second Kubernetes cluster (1 CP + 1 worker) on the second host
-- [ ] Configure ArgoCD ApplicationSet with a separate overlay or branch for staging
-- [ ] Establish a promotion workflow: staging &rarr; production
-- [ ] Use staging for all Kubernetes upgrades and Cilium bumps before production
-- [ ] Write an ADR
+- [ ] Provision a second Kubernetes cluster (one control plane and one worker) on the second host from Phase 4.1.
+- [ ] Configure ArgoCD ApplicationSet discovery with a separate staging overlay or branch.
+- [ ] Establish a staging → production promotion workflow.
+- [ ] Use staging for Kubernetes upgrades and Cilium version changes before production.
+- [ ] Rehearse bootstrap, worker replacement and application restores.
+- [ ] Give staging distinct credentials, application endpoints and writable storage paths.
 
-| | |
-|---|---|
-| **Why** | Every infrastructure change is currently tested directly in production. A staging cluster allows validating changes safely and practicing DR procedures without risk. |
-| **Prerequisites** | Second compute host (Phase 4.1). |
+The second host provides capacity for a persistent staging cluster. Start the [rebuild and restore lab](phase-1-foundations.md#12-verify-recovery) on disposable VMs while that hardware work is underway, and carry its bootstrap and acceptance checks into staging.
 
 ## 6.2 Runtime Security with Falco
 
-- [ ] Deploy Falco as a DaemonSet
-- [ ] Deploy Falcosidekick to route alerts to Alertmanager
-- [ ] Tune default rules to reduce noise for homelab workloads
-- [ ] Verify alerts appear in Slack via existing Alertmanager pipeline
-- [ ] Write an ADR
+- [ ] Deploy Falco as a DaemonSet in staging, then production.
+- [ ] Deploy Falcosidekick to route alerts to Alertmanager.
+- [ ] Tune rules for homelab workloads, including expected shells and maintenance operations.
+- [ ] Verify unexpected shell execution, sensitive-file access and other supported detections reach Slack through the existing alerting path.
 
-| | |
-|---|---|
-| **Why** | Current security controls operate at admission time (Kyverno) and network time (Cilium). Nothing monitors what happens inside a running container. Falco detects: shell spawned in container, sensitive file read, unexpected network connection, privilege escalation. |
+Falco adds runtime behavior detection alongside admission policies and network controls.
 
 ## 6.3 Chaos Engineering
 
-- [ ] Deploy Litmus or Chaos Mesh
-- [ ] Create experiments: pod kills, node cordons, NFS interruptions, DNS failures
-- [ ] Schedule weekly experiments during low-traffic hours
-- [ ] Document results and any gaps discovered
-- [ ] Write an ADR
+- [ ] Select Litmus or Chaos Mesh and deploy it in staging.
+- [ ] Start with pod-kill experiments and verify expected recovery.
+- [ ] Add node cordon/drain, NFS interruption and DNS failure experiments with defined scope and abort criteria.
+- [ ] Schedule weekly experiments during low-traffic hours after validating them manually.
+- [ ] Document results and feed recovery gaps back into runbooks and implementation work.
 
-| | |
-|---|---|
-| **Why** | DR runbooks exist but are never automatically validated. Chaos experiments prove the cluster recovers as documented and expose gaps before real incidents find them. |
-| **Cadence** | Start with pod-kill experiments. Escalate to node-drain and network-partition tests. |
+Use staging for destructive experiments. Expand production experiments only when the affected workloads, recovery behavior and acceptable interruption are understood.
 
 ## 6.4 Supply Chain Security
 
-- [ ] Add a Kyverno policy requiring cosign signature verification for deployed images
-- [ ] Optionally deploy Harbor as a pull-through registry cache with vulnerability scanning
-- [ ] Write an ADR
+- [x] Validate rendered manifests and CRD schemas in CI.
+- [x] Add Renovate extraction coverage for HTTP and OCI charts and regression tests for tooling.
+- [ ] Confirm the next Renovate run discovers the intended chart and image dependencies.
+- [ ] Scan relevant workload images as well as source manifests, keeping exceptions scoped.
+- [ ] Add Kyverno cosign verification for images with supported publisher identities and signatures; define treatment of unsigned dependencies before enforcement.
+- [ ] Evaluate Harbor as a pull-through registry cache with vulnerability scanning.
 
-| | |
-|---|---|
-| **Why** | Renovate pins digests (preventing tag mutation), but no verification that images were built by trusted parties. cosign ensures images are signed by their maintainers. Harbor adds scanning and caching. |
+Signature verification establishes provenance from a configured signer. Scanning and dependency updates address separate supply-chain concerns.
 
----
+## 6.5 Scoped Autonomous Operations
+
+- [x] Configure [OpenClaw's named scaling permissions](../decisions/023-scoped-autonomous-operations.md), Slack pairing and authenticated webhooks.
+- [ ] Verify allowed scaling and denied exec, Secret reads, node writes and arbitrary workload changes with the deployed ServiceAccount.
+- [ ] Verify Slack pairing and webhook authentication independently.
+- [ ] Record remediation target, reason, before/after state and outcome.
+- [ ] Review write-capable media API credentials separately from Kubernetes permissions.
 
 ## Definition of Done
 
-- [ ] Staging cluster operational, used for all upgrades before production
-- [ ] Falco alerting on anomalous runtime behavior
-- [ ] Weekly chaos experiments running without manual intervention
-- [ ] Image signatures verified at admission
+- [ ] The staging cluster is used for upgrades and promotion before production.
+- [ ] Falco alerts on tested anomalous runtime behavior.
+- [ ] Weekly scoped chaos experiments run and record recovery results.
+- [ ] Image signatures are verified at admission for the defined image set.
+- [ ] Autonomous remediation has verified access limits and recorded outcomes.

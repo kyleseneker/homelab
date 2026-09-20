@@ -64,11 +64,11 @@ flowchart LR
 | VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
 | GitOps | ArgoCD ApplicationSet, External Secrets Operator, Renovate |
-| Networking | Cilium Gateway API, Cilium L2, cert-manager |
+| Networking | Cilium Gateway API, Cilium L2, cert-manager, trust-manager |
 | Storage | NFS dynamic provisioning, local-path (SQLite workloads) |
 | Secrets | HashiCorp Vault (AWS KMS auto-unseal) + External Secrets Operator |
 | Auth | Authentik SSO (OIDC for Grafana and ArgoCD) |
-| Monitoring | Prometheus, Grafana, Loki, Alloy, Alertmanager, Exportarr, NUT Exporter, Uptime Kuma |
+| Monitoring | Prometheus, Grafana, Loki, Alloy, Alertmanager, Exportarr, NUT Exporter, Blackbox Exporter, Uptime Kuma |
 | Backups | Velero (MinIO on-site + AWS S3 offsite), etcd snapshots, SQLite config dumps |
 | Capacity | VPA + Goldilocks (recommend-only) |
 | Policy | Kyverno admission policies |

@@ -15,8 +15,8 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 ### Prometheus
 
-- **Retention**: 15 days
-- **Storage**: 20Gi PVC using the `nfs-client` StorageClass
+- **Retention**: 15 days or 15GB of persisted blocks, whichever limit is reached first (WAL/head need extra space)
+- **Storage**: 20Gi PVC using the `local-path` StorageClass; node-pinned and without a filesystem quota
 - **Ingress**: `prometheus.homelab.local`
 - **Service discovery**: `serviceMonitorSelector` and `podMonitorSelector` are configured to match all monitors across all namespaces, not just those created by the Helm chart.
 
@@ -52,11 +52,11 @@ Two capacity planning dashboards are provisioned via sidecar ConfigMaps (label `
 | Cluster Capacity Overview | CPU/memory requested vs allocatable vs used, utilization gauges, pod count, namespace pie charts |
 | Namespace Resource Breakdown | Per-namespace tables with requests, limits, usage, efficiency %, stacked usage timeseries |
 
-These complement the 34 built-in kube-prometheus-stack dashboards, which focus on detailed drill-down views rather than high-level capacity planning.
+These complement the built-in kube-prometheus-stack dashboards, which focus on detailed drill-down views rather than high-level capacity planning.
 
 ### Disabled Components
 
-The following components are disabled because they are either not applicable or not accessible in a kubeadm-based cluster:
+The following scrapes are disabled. kube-proxy is absent because Cilium replaces it; etcd, scheduler and controller-manager need explicit secure scrape configuration, which remains a monitoring gap:
 
 - `kubeProxy`
 - `kubeEtcd`
@@ -67,7 +67,7 @@ The following components are disabled because they are either not applicable or 
 
 The monitoring stack is the central observability platform. Applications expose metrics via `ServiceMonitor` or `PodMonitor` resources, which Prometheus automatically discovers. Grafana provides visualization dashboards and integrates with Loki for log correlation.
 
-The stack depends on the NFS provisioner for its PVCs and on cert-manager for the Gateway certificate.
+The stack depends on local-path for Prometheus and NFS for Grafana and on cert-manager for the Gateway certificate.
 
 ## Upstream Documentation
 

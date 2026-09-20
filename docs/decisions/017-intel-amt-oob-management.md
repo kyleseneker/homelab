@@ -27,7 +27,7 @@ The MS-01 has two 2.5G RJ45 NICs with different Intel controllers:
 
 AMT binds to the I226-LM (nic1), not the I226-V (nic0). The "LM" variant includes the vPro manageability features. AMT's ME has its own network stack that operates independently of the host OS on this NIC.
 
-AMT cannot share a NIC that is a Linux bridge port -- the bridge intercepts DHCP responses before the ME sees them, preventing AMT from obtaining an IP address. A dedicated cable from nic1 to a separate switch port is required.
+Use a dedicated cable and switch port for the AMT-capable nic1, separating management connectivity from the host's Linux bridge.
 
 ### AMT Configuration
 
@@ -46,7 +46,7 @@ AMT cannot share a NIC that is a Linux bridge port -- the bridge intercepts DHCP
 
 Two switch ports are required for the MS-01:
 
-1. **nic0 port** (Proxmox host): Native VLAN = Homelab (10), tagged VLAN = Management (99). Disable STP on this port to prevent STP state flapping caused by the Linux bridge.
+1. **nic0 port** (Proxmox host): Native VLAN = Homelab (10), tagged VLAN = Management (99).
 2. **nic1 port** (AMT): Access port on Management VLAN (99). No trunking needed -- AMT sends only untagged traffic.
 
 ### MEBx Setup Steps
@@ -110,16 +110,15 @@ No additional firewall rules are needed. AMT is unreachable from the Default VLA
 - **Proxmox watchdog timer only**: A software watchdog can reboot a hung host automatically, but cannot help with kernel panics, boot failures, BIOS issues, or situations requiring interactive console access. AMT covers all of these.
 - **Smart plug for remote power cycle**: The USP PDU Pro already provides remote outlet switching, which can force a power cycle. However, this is a blunt instrument -- it cannot distinguish between a hung OS and a kernel panic, cannot provide console access for debugging, and a cold power cut risks filesystem corruption. AMT provides graceful shutdown and interactive console.
 - **Dedicated IPMI/BMC add-in card**: Provides similar functionality but requires the PCIe x16 slot, adds cost, and duplicates capabilities the CPU already has via vPro.
-- **Shared NIC with VLAN-aware bridge**: AMT and the host could share nic0 if the Linux bridge were VLAN-aware and the switch port's native VLAN carried AMT's untagged traffic. In practice, the Linux bridge intercepts AMT's DHCP responses, preventing the ME from obtaining an address. A dedicated NIC is the only reliable approach.
+- **Shared AMT-capable NIC**: Host networking and AMT could share nic1, with the switch's native VLAN carrying AMT's untagged traffic. A dedicated connection keeps emergency management independent of the host bridge configuration.
 
 ## Rationale
 
-- **Static IP over DHCP**: AMT's ME cannot reliably receive DHCP responses when the NIC is shared with a Linux bridge. Even on a dedicated NIC, a static IP avoids dependency on the DHCP server and makes the AMT address predictable for emergency access.
-- **Dedicated NIC**: The I226-LM (nic1) is the vPro-capable NIC and must have its own cable and switch port. The I226-V (nic0) does not support AMT.
+- **Static IP over DHCP**: A static IP avoids dependency on the DHCP server and makes the AMT address predictable for emergency access.
+- **Dedicated NIC**: The I226-LM (nic1) supports vPro management and has its own cable and switch port. The I226-V (nic0) carries host traffic.
 - **TLS only**: CSME 16.1+ (13th gen Raptor Lake) permanently disables insecure ports. TLS is the only option on this hardware, which is the desired state regardless.
 - **No Storage Redirection**: Storage Redirection allows mounting ISO images remotely for OS reinstallation. This is useful for initial setup but not for day-to-day management. It can be enabled temporarily if a Proxmox reinstall is needed.
 - **No user consent requirement**: AMT can require a user physically present at the console to approve remote KVM sessions. This defeats the purpose of out-of-band management for a single-admin homelab.
-- **Disable STP on the host switch port**: The Linux bridge with `bridge-stp off` causes STP state flapping alerts on the UniFi switch. Disabling STP on the port eliminates the alert. There is no loop risk -- the host is an endpoint, not a switch.
 
 ## Consequences
 

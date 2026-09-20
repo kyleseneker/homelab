@@ -1,15 +1,16 @@
 # Authentik Emergency Bypass
 
-What to do when Authentik goes down and OIDC logins stop working.
+What to do when Authentik goes down and proxy routes or OIDC logins stop working.
 
 ## Impact Assessment
 
-Only Grafana and ArgoCD depend on Authentik. Nothing sits behind edge authentication -- see [Auth & SSO](../architecture/auth.md) for why -- so no app becomes *unreachable* when Authentik is down.
+The embedded outpost proxies protected browser traffic. An outage can affect the full route, including paths that skip login. In-cluster Service access remains available if the backend is healthy.
 
 | App Type | Impact |
 |----------|--------|
 | OIDC apps (Grafana, ArgoCD) | **SSO login fails** -- fall back to local admin credentials, below |
-| *arr apps, qBittorrent, Tdarr, Homepage | **Unaffected** -- no edge auth |
+| *arr apps, qBittorrent, Tdarr, Goldilocks, Prometheus, Alertmanager | **Public route fails** if the proxy outpost is unavailable; use local port forwarding during recovery |
+| Homepage, Vault, OpenClaw, Uptime Kuma | **No edge dependency** -- native authentication still applies where configured |
 | Jellyfin | **Unaffected** -- has its own auth, no SSO dependency |
 
 ## Fallback: Local Admin Logins
@@ -36,8 +37,19 @@ kubectl -n monitoring get secret grafana-admin \
 
 Log in at `https://grafana.homelab.local` using the "sign in with username" link below the OAuth button.
 
-!!! warning "Both fallbacks depend on Vault and ESO"
-    If Vault is also down, ESO cannot refresh `grafana-admin` -- but the existing Kubernetes Secret persists, so the credential above still resolves. A cluster rebuild is a different matter; see [Disaster Recovery](disaster-recovery.md).
+!!! warning "Recover credentials before rebuilding"
+    Existing Kubernetes Secrets survive a Vault outage, so Grafana's current credential can still be retrieved. ArgoCD's local admin credential is independent of Vault. A cluster rebuild is a different matter; see [Disaster Recovery](disaster-recovery.md).
+
+## Scoped Access to a Proxy-Protected Backend
+
+Bind a port-forward to loopback while recovering Authentik. For example:
+
+```bash
+kubectl -n monitoring port-forward --address 127.0.0.1 \
+  svc/kube-prometheus-stack-prometheus 9090:9090
+```
+
+Open `http://127.0.0.1:9090`. For an *arr application, forward its Service and port and use its local login. Stop the port-forward when finished. This requires an administrator's Kubernetes credentials; the proxy is not involved. Keep public HTTPRoutes pointed at the outpost so recovery does not publish an unauthenticated service to the LAN.
 
 ## Debugging Authentik
 

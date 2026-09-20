@@ -18,7 +18,7 @@ Seerr is a media request management application (the unified successor to Jellys
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `config` | PVC (`nfs-client`) | 1Gi | `/app/config` |
+| `config` | PVC (`local-path`) | 5Gi | `/app/config` |
 
 Seerr does not require the shared `arr-data` volume because it interacts with media through the Sonarr/Radarr and Jellyfin APIs rather than the filesystem.
 
@@ -37,22 +37,11 @@ Seerr does not require the shared `arr-data` volume because it interacts with me
 
 ### Authentication
 
-Seerr authenticates through **Jellyfin** directly. Native OIDC support is not yet available ([seerr-team/seerr#2715](https://github.com/seerr-team/seerr/pull/2715)).
+Seerr authenticates through **Jellyfin** directly. The deployed configuration enables Jellyfin and local login; it does not configure OIDC.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-1. Open `https://seerr.homelab.local` and start the setup wizard.
-2. Sign in with Jellyfin:
-    - Jellyfin server URL: `http://arr-jellyfin.arr.svc.cluster.local:8096`
-    - Use a Jellyfin admin account to authenticate.
-3. Add Sonarr (Settings > Sonarr):
-    - URL: `http://arr-sonarr.arr.svc.cluster.local:8989`
-    - API Key: *(from Sonarr > Settings > General)*
-    - Select quality profile and root folder (`/data/media/tv`).
-4. Add Radarr (Settings > Radarr):
-    - URL: `http://arr-radarr.arr.svc.cluster.local:7878`
-    - API Key: *(from Radarr > Settings > General)*
-    - Select quality profile and root folder (`/data/media/movies`).
+`SeerrConfig` declares Jellyfin authentication and Sonarr/Radarr integrations. Verify the credentials and initial setup, then confirm the configured quality profile IDs match the profiles Recyclarr created before testing a request. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

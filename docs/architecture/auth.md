@@ -24,7 +24,7 @@ flowchart TB
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
 ```
 
-Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed -- the task queue lives in PostgreSQL. The `authentik-external-secret.yml` still pulls a `redis-password` from Vault, which nothing consumes.
+Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed; the task queue lives in PostgreSQL.
 
 ### Proxied Auth
 
@@ -34,28 +34,28 @@ Because the outpost originates the proxied request, it needs its own network pat
 
 Grafana reads Prometheus and Alertmanager over their in-cluster Services, so proxying their web UIs does not affect scraping or dashboards.
 
-The *arr apps and qBittorrent exempt `/api`, `/feed` and `/ping` from the proxy via `skip_path_regex`, because mobile and scripted clients cannot complete a browser login. Those paths are still guarded by each app's API key, and a request to them returns the app's own `401` rather than a login redirect.
+The *arr apps and qBittorrent exempt `/api/`, `/feed/` and `/ping` from the proxy via `skip_path_regex`, because mobile and scripted clients cannot complete a browser login. These paths depend on each application's own authentication. The *arr APIs use API keys; qBittorrent uses its Web API session authentication. Verify unauthorized access fails per application rather than assuming every endpoint returns `401`.
 
 !!! warning "Still open on the LAN"
-    **Reachable with no edge auth: Homepage, Vault, OpenClaw and Uptime Kuma.** Vault is deliberate -- Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal.
+    **Reachable with no edge auth: Homepage, Vault, OpenClaw and Uptime Kuma.** Their native controls remain the access boundary. Vault keeps an independent recovery login because Authentik's credentials also depend on Vault and External Secrets.
 
 ### Native OIDC
 
 Apps with built-in OAuth2/OIDC support authenticate directly with Authentik. Each gets its own OAuth2 provider and application in Authentik, with a dedicated client ID and secret.
 
-- **Grafana** -- `auth.generic_oauth` with role mapping (`admin` group -> Admin role)
+- **Grafana** -- `auth.generic_oauth` with role mapping (`authentik Admins` group -> Admin role)
 - **ArgoCD** -- native OIDC via `oidc.config` in `argocd-cm` with RBAC group mapping
-- **Seerr** -- OIDC not yet supported ([seerr-team/seerr#2715](https://github.com/seerr-team/seerr/pull/2715)); authenticates via Jellyfin
+- **Seerr** -- the deployed configuration authenticates via Jellyfin
 
-Server-to-server URLs (token, userinfo) use the internal service URL. Browser-facing URLs (authorize) use the external hostname.
+Grafana's token and userinfo URLs use the internal Service over HTTP, with Cilium policies controlling reachability. Its browser authorization URL uses the external hostname. ArgoCD uses the external HTTPS issuer and the CA distributed by trust-manager; it does not use Grafana's split URL configuration.
 
 ### Unprotected Services
 
 | Service | Reason |
 |---------|--------|
-| Homepage | No edge auth; a dashboard of links, no data of its own |
+| Homepage | No edge auth; exposes service links and operational widget data to the LAN |
 | Vault | Cannot use Authentik -- Authentik's own secrets come from Vault, so this would be circular. Token auth is the control |
-| OpenClaw | No edge auth; its own webhook routes are the only control |
+| OpenClaw | Uses its own gateway and webhook authentication; see the [OpenClaw configuration](../apps/openclaw.md) |
 | Uptime Kuma | No edge auth; has its own login |
 | Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
 | Authentik | Circular dependency |
@@ -65,10 +65,10 @@ Server-to-server URLs (token, userinfo) use the internal service URL. Browser-fa
 | Group | Grafana Role | ArgoCD Role |
 |-------|-------------|-------------|
 | `authentik Admins` | Admin | `role:admin` |
-| (default) | Viewer | Read-only |
+| (default) | Viewer | No default role explicitly granted in this repository |
 
 ## Resilience
 
-Because no app depends on Authentik at the edge, an Authentik outage does not make any service inaccessible. Grafana and ArgoCD fall back to their own login pages. See the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for recovery procedures.
+An Authentik server, outpost or PostgreSQL outage can make every proxy-protected route unavailable. The outpost is part of the request path even for API paths exempted from login. Grafana and ArgoCD retain local login accounts; direct-route services retain their own authentication. See the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for scoped port-forward access during recovery.
 
 The `auth` namespace is included in Velero's daily stateful backup and the weekly full-cluster backup.

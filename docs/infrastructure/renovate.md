@@ -1,68 +1,27 @@
 # Renovate
 
-Renovate automatically tracks dependency versions across the homelab repo and opens pull requests when updates are available. It runs via the free [Mend Renovate GitHub App](https://github.com/apps/renovate) -- no self-hosted infrastructure required.
+Renovate scans through the installed GitHub App and proposes reviewed dependency updates on Saturday mornings. Configuration lives in `renovate.json`; it does not deploy bootstrap resources or upgrade an existing Kubernetes node.
 
-## What Gets Tracked
+## Discovery
 
-| Category | Manager | Count | Examples |
-|----------|---------|-------|---------|
-| Helm charts | `argocd` (built-in) | 15 | kube-prometheus-stack, app-template, loki, alloy |
-| Container images | `regex` (custom) | 11 | linuxserver/sonarr, gethomepage/homepage, gluetun |
-| ArgoCD install URL | `regex` (custom) | 1 | argoproj/argo-cd v3.3.4 in kustomization.yml |
-| GitHub Actions | `github-actions` (built-in) | 4 | actions/checkout, actions/setup-python |
+| Dependency | Mechanism |
+|---|---|
+| HTTP Helm charts | Custom regex reads `chartRepo`, `chartName`, `chartVersion` in ApplicationSet `config.yml` |
+| OCI media-operator charts | Custom regex maps the registry/chart to the Docker datasource with semantic chart versions |
+| Application images | Custom regex reads `repository`/`tag` and inline `image` references |
+| ArgoCD installation | Custom regex reads the pinned raw GitHub manifest URL |
+| GitHub Actions and Terraform | Built-in ecosystem managers |
 
-### How Each Manager Works
+The built-in ArgoCD manager cannot discover arbitrary metadata files merely because they live under `k8s/`. The custom chart managers close that gap. A regression test checks every current Helm config is extracted once with the correct unquoted chart version.
 
-**ArgoCD manager**: Built into Renovate. Detects `targetRevision` in ArgoCD `Application` manifests and checks the Helm repo (`repoURL`) for newer chart versions. Configured via `fileMatch` to scan all `k8s/**/*.yml` files.
+Related packages are grouped, including app-template consumers, monitoring components, backup components and all media-operator charts. The operator group must keep CRDs and managers on one release. Container digest pinning is configured; audit actual references before claiming every image is pinned.
 
-**Container image regex**: Two custom patterns handle the two image reference styles in the repo:
+The etcd backup image is excluded from independent updates because it follows kubeadm's etcd version. Update it deliberately with the [Kubernetes upgrade procedure](../runbooks/upgrading-kubernetes.md).
 
-- `repository` + `tag` on separate lines (bjw-s app-template pattern)
-- Inline `image: name:tag` (e.g., Velero init containers)
+## Review and verification
 
-**ArgoCD install URL regex**: Matches the version in the raw GitHub URL used to install ArgoCD itself (`https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.4/manifests/install.yaml`).
+Run `make k8s-render` and the relevant regression checks before merging. Review upstream migration/compatibility notes for platform changes. After a Renovate configuration change, verify the next extraction/dependency dashboard and generated PRs; local regex tests do not exercise the hosted service.
 
-## Schedule and Behavior
+ArgoCD bootstrap updates require an explicit `make k8s-bootstrap` and subsequent drift check. Application changes require a post-deployment health check; a successful version PR does not prove application API behavior, backup compatibility or recovery.
 
-| Setting | Value |
-|---------|-------|
-| Schedule | Weekly, Saturday mornings |
-| Automerge | Disabled (all updates require manual merge) |
-| Dependency Dashboard | Enabled (GitHub issue tracking all pending updates) |
-| Semantic commits | Enabled (e.g., `chore(deps): update ...`) |
-
-## Grouping
-
-Related dependencies are grouped into single PRs to reduce noise:
-
-| Group | Packages |
-|-------|----------|
-| app-template chart | All 14 apps using the bjw-s app-template Helm chart |
-| linuxserver images | All `lscr.io/linuxserver/*` container images |
-| grafana stack | Loki + Alloy Helm charts |
-| intel gpu | GPU device plugin + operator Helm charts |
-
-Everything else gets individual PRs.
-
-## Reviewing PRs
-
-1. Renovate PRs include a changelog summary and compatibility notes
-2. Check the ArgoCD diff after merging -- ArgoCD will show the pending sync
-3. For Helm chart major version bumps, review the chart's migration guide before merging
-4. For infrastructure charts (cert-manager, kube-prometheus-stack, loki), test in a maintenance window
-
-## Adding New Dependencies
-
-When adding a new ArgoCD Application with a Helm chart, Renovate picks it up automatically via the `argocd` manager (no config changes needed).
-
-For new container images using the `repository` + `tag` pattern (bjw-s app-template), the existing regex handles them automatically.
-
-For non-standard version patterns, add a new entry to `customManagers` in `renovate.json`.
-
-## Configuration
-
-The full configuration lives in `renovate.json` at the repo root.
-
-## Upstream Documentation
-
-<https://docs.renovatebot.com/>
+See [ADR-012](../decisions/012-renovate-dependency-management.md) and [Renovate custom regex managers](https://docs.renovatebot.com/modules/manager/regex/).

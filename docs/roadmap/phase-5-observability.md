@@ -1,79 +1,59 @@
-# Phase 5 -- Observability
+# Phase 5 — Observability
 
-**Status:** Not started
+**Status:** In progress. Metrics, Loki/Alloy logs, capacity and Exportarr dashboards, Blackbox probes and an external heartbeat are implemented. Tracing and SLO-based alerting remain planned.
 
-**Goal:** Complete the observability trifecta (metrics, logs, traces) and shift from threshold-based alerting to SLO-driven operations.
+**Goal:** Complete metrics, logs and traces, make dashboards reproducible, and add SLO-driven operations alongside tested alert delivery.
 
-**Addresses:** [K10, K14, K8](assessment.md#kubernetes-software-layer)
-
----
+**Addresses:** K10, K14, K15, K30–K32, K35, K37 and K42 in the [assessment](assessment.md).
 
 ## 5.1 Add Distributed Tracing
 
-- [ ] Deploy OpenTelemetry Collector as a DaemonSet (OTLP receiver)
-- [ ] Deploy Grafana Tempo for trace storage
-- [ ] Add Tempo as a Grafana datasource
-- [ ] Instrument the request path: Cilium Gateway, Authentik forward-auth, application backends
-- [ ] Verify traces appear in Grafana and correlate with metrics and logs
-- [ ] Write an ADR
+- [ ] Configure OpenTelemetry collection for the request path. Evaluate the existing Alloy deployment and a dedicated OpenTelemetry Collector for the required receivers and processors.
+- [ ] Deploy Grafana Tempo for trace storage and add it as a Grafana datasource.
+- [ ] Instrument supported portions of the Cilium Gateway, Authentik proxy and application request path; document propagation gaps where a component lacks tracing support.
+- [ ] Verify traces appear in Grafana and correlate with metrics and logs.
+- [ ] Define retention and resource budgets for the trace pipeline.
 
-| | |
-|---|---|
-| **Why** | Metrics tell you *what* is broken. Logs tell you *where*. Traces tell you *why* by showing the full request lifecycle across services. Debugging slow Jellyfin loads or intermittent auth failures currently requires manually correlating timestamps. |
-| **Stack** | OpenTelemetry Collector (DaemonSet) &rarr; Grafana Tempo (storage) &rarr; Grafana (visualization). |
+Tracing provides a way to investigate request latency across services and practice OpenTelemetry instrumentation. The planned storage and visualization path is Tempo → Grafana; collector placement remains an implementation choice to evaluate.
 
-## 5.2 Grafana Dashboards-as-Code
+## 5.2 Grafana Dashboards as Code
 
-- [ ] Export existing Grafana dashboards to JSON
-- [ ] Store in Git under the kube-prometheus-stack component
-- [ ] Enable the Grafana sidecar to load dashboards from labeled ConfigMaps
-- [ ] Deploy via ArgoCD
-- [ ] Verify dashboards survive a full Grafana PVC wipe
-
-| | |
-|---|---|
-| **Why** | Dashboards are created in the Grafana UI and stored in the PVC. A DR event loses dashboards created between the last backup and the failure. Dashboards-as-code makes them reproducible and reviewable. |
-| **Approach** | kube-prometheus-stack already supports `sidecar.dashboards.enabled`. ConfigMaps with a specific label are auto-loaded. |
+- [x] Provision cluster-capacity, namespace-resource and Exportarr dashboards from Git.
+- [x] Load labeled dashboard ConfigMaps through the Grafana sidecar.
+- [ ] Export remaining useful UI-created dashboards to Git under kube-prometheus-stack and remove duplicates.
+- [ ] Verify provisioned dashboards survive an empty Grafana database in staging.
+- [ ] Add views for synthetic probe status, backup age and node disk headroom.
 
 ## 5.3 SLO-Based Alerting
 
-- [ ] Choose a tool: Pyrra or Sloth
-- [ ] Define SLOs for critical services (see below)
-- [ ] Generate Prometheus recording rules and multi-window burn rate alerts
-- [ ] Add SLO dashboards to Grafana
-- [ ] Write an ADR
+- [ ] Define service-level indicators and targets for Jellyfin playback/reachability, Authentik login and ArgoCD reconciliation.
+- [ ] Evaluate Pyrra or Sloth for generating Prometheus recording rules and multi-window burn-rate alerts.
+- [ ] Add SLO dashboards to Grafana.
+- [ ] Validate missing-data behavior and notification delivery before relying on the alerts.
 
-| | |
-|---|---|
-| **Why** | Current alerts fire on fixed thresholds (CPU > 85%, restarts > 5/hr). These are guesses that cause alert fatigue or fire too late. SLO-based alerting fires when users are impacted, measured by error budget burn rate. |
+Set targets from household needs and observed behavior. Application availability, successful login and GitOps reconciliation measure different outcomes; use an indicator appropriate to each service.
 
-**Example SLOs:**
+## 5.4 Prometheus-Native Synthetic Monitoring
 
-| Service | SLO | Error Budget |
-|---------|-----|-------------|
-| Jellyfin | 99.5% availability | ~3.6 hours/month |
-| Authentik | 99.9% availability | ~43 minutes/month |
-| ArgoCD | 99% sync success rate | ~7.3 hours/month |
+- [x] Deploy Blackbox Exporter with Git-managed Probe resources.
+- [x] Add probe failure, missing-series and exporter alerts.
+- [x] Configure an external Watchdog heartbeat.
+- [ ] Check the probe inventory against every HTTPRoute endpoint and its expected response.
+- [ ] Verify Blackbox rejects untrusted or expired certificates.
+- [ ] Add an authenticated request/playback check. A login redirect only establishes that the authentication edge is responding.
+- [ ] Confirm the external heartbeat alarms when the monitoring or delivery path disappears.
+- [ ] Evaluate Uptime Kuma's status page and separate integrations alongside the Prometheus probes.
 
-## 5.4 Upgrade Synthetic Monitoring to Prometheus-Native Probes
+## 5.5 Verify Log and Alert Delivery
 
-Uptime Kuma already provides synthetic monitoring and a status page. This task upgrades to Blackbox Exporter for tighter Prometheus integration and SLO-compatible metrics.
-
-- [ ] Deploy Blackbox Exporter
-- [ ] Configure probes for every HTTPRoute endpoint
-- [ ] Add PrometheusRules for probe failure and response time thresholds
-- [ ] Add a Grafana dashboard for probe status
-- [ ] Evaluate whether Uptime Kuma remains valuable alongside Blackbox Exporter (status page, external notifications) or should be retired
-
-| | |
-|---|---|
-| **Why** | Uptime Kuma validates endpoint reachability but its metrics are not in Prometheus. Blackbox Exporter tests the full request path (DNS &rarr; Gateway &rarr; TLS &rarr; Authentik forward-auth &rarr; backend) and feeds directly into SLO burn-rate alerts (5.3). |
-
----
+- [ ] Verify one log record is ingested once after the Alloy node-filter changes.
+- [ ] Exercise exporter failure, missing metrics, certificate readiness failure and a failed backup through notification delivery.
+- [ ] Exercise receiver downtime and confirm the intended fallback or independent detection path.
 
 ## Definition of Done
 
-- [ ] Request traces visible in Grafana for auth-gated flows
-- [ ] All Grafana dashboards versioned in Git, deployed via ArgoCD
-- [ ] SLOs defined for Jellyfin, Authentik, and ArgoCD with burn-rate alerts
-- [ ] Synthetic probes testing every HTTPS endpoint
+- [ ] Request traces are visible in Grafana with documented instrumentation coverage.
+- [ ] Retained dashboards are versioned in Git and reproducible on an empty Grafana database.
+- [ ] Service objectives have recording rules, burn-rate alerts and dashboards.
+- [ ] Synthetic probes cover HTTPS endpoints with clear expected responses.
+- [ ] Log collection, alert delivery and the external heartbeat are tested.

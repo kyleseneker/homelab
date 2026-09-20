@@ -1,138 +1,95 @@
 # Assessment
 
-Analysis of the homelab's current strengths and gaps, used to prioritize the [roadmap phases](index.md).
+The homelab supports a household media platform and a practical infrastructure learning environment. This assessment tracks the current capabilities, constraints and remaining work behind the [roadmap](index.md).
 
-## Strengths
+Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles application and infrastructure resources; Vault supplies secrets; and metrics, logs, backups and media configuration are managed in Git. The next step is to prove that these pieces rebuild and restore together, then use that environment to upgrade the platform.
 
-**Full IaC pipeline.** Every layer from Proxmox host configuration through application deployment is codified and reproducible. `make k8s-deploy` rebuilds from zero. This matches how production infrastructure teams operate and is rare in homelabs.
+**Status convention:** Implemented means the configuration exists in the repository. A restore, upgrade or application outcome is complete only after its acceptance check succeeds. Operational checks remain open where evidence is still needed.
 
-**GitOps discipline.** ApplicationSet with Git File Generator for automatic app discovery, automated sync with prune and self-heal, Renovate with digest pinning on a weekly schedule. No manual `kubectl apply` for day-2 operations.
+A read-only cluster check on 2026-09-20 found all three nodes Ready, ArgoCD Applications Synced/Healthy, and no pod or workload-controller readiness exceptions. ExternalSecrets and certificates were Ready, and all PVCs were Bound. Scheduled backup jobs had succeeded and both Velero locations were Available; completed Velero backups still contained warnings, so recovery remains the first acceptance project.
 
-**Externalized secrets.** Vault with AWS KMS auto-unseal and ESO using Kubernetes auth is the industry-standard pattern. No secrets in Git, no static credentials.
+## Physical Layer
 
-**Layered security.** Cilium network policies (default-deny per namespace), Kyverno admission policies, non-root security contexts with dropped capabilities, gitleaks + Trivy in CI. Multiple independent controls at different layers -- though edge authentication is absent (K21) and the Kyverno exclusions are shaped around existing violations (K2).
+The additional drives, 10G equipment and compute hosts are planned purchases. They remain valuable projects but do not block the immediate software work.
 
-**Complete observability.** Metrics, logs, alerting, audit logging, capacity planning (VPA/Goldilocks), and synthetic monitoring (Uptime Kuma). Custom PrometheusRules for app health, infrastructure, backups, and node resources.
+| IDs | Current assessment | Next step |
+|---|---|---|
+| P1, P7 | UPS/NUT configuration and monitoring are implemented. | Verify USB stability, alert delivery and orderly shutdown in [Phase 1](phase-1-foundations.md) |
+| P2 | The NAS has one documented data drive. Active NFS data, local backup copies and media share that failure domain. | Planned hardware: add the [two-drive mirror](phase-1-foundations.md#11-add-nas-drive-redundancy) and prove an independent restore |
+| P3 | The MS-01's 10G SFP+ ports are available; its current GbE path limits storage and inter-host transfers. | [Phase 3](phase-3-network.md): 10G switch and DAC links |
+| P4 | All three Kubernetes VMs share one Proxmox host. | [Phase 4](phase-4-compute-and-storage.md): second MS-01 and workload distribution |
+| P5 | The MS-01's PCIe slot is available for expansion. | [Phase 7](phase-7-long-term-vision.md): dedicated GPU, subject to fit, power and cooling |
+| P6 | Intel AMT is provisioned in firmware; the management-port connection remains a task. | Complete the connection and test access with the host OS unavailable in [Phase 3](phase-3-network.md#35-complete-intel-amt-connectivity) |
 
-**Thorough documentation.** 17 ADRs, architecture docs for every subsystem, runbooks for DR/upgrades/troubleshooting, auto-published MkDocs site. Accuracy is the weak point rather than coverage -- docs describing removed components have survived several migrations (K21, K33).
+## Network Layer
 
-**Clean operational interface.** Makefile targets for every operational task. Reloader for config-driven restarts. Descheduler for pod rebalancing. Low operator toil.
+| IDs | Current assessment | Next step |
+|---|---|---|
+| N1, N7 | VLAN 99 and management access are configured. Management-service isolation still needs an endpoint-by-endpoint check. | Test Proxmox, NAS and AMT reachability from management clients and ordinary workloads; close unintended paths |
+| N2 | A dedicated IoT VLAN is planned for smart home devices. | [Phase 7](phase-7-long-term-vision.md), when those devices are added |
+| N3 | Internal DNS records and Gateway address allocations are manual. | Record recoverable allocations and select a supported DNS automation path in [Phase 3](phase-3-network.md#33-automate-internal-dns) |
+| N4 | WireGuard and Teleport are implemented with Homelab and Management access. | Record an off-LAN DNS, TLS, login and management-access check |
+| N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#34-plan-external-access-for-jellyfin) |
+| N6 | Cilium egress policies cover selected namespaces and destinations. | Inventory coverage and required traffic before tightening policies |
+| N8 | The configured Cilium pool, `10.0.0.0/8`, contains the Kubernetes service range, `10.96.0.0/12`. | Inventory allocated pod/service ranges and routed networks, then rehearse an overlap-free address plan in the isolated lab |
 
-## Gaps
+## Kubernetes / Software Layer
 
-### Physical Layer
+| IDs | Current assessment | Next step |
+|---|---|---|
+| K1, K4 | One control plane and standalone Vault are single-instance dependencies. | [Phase 4](phase-4-compute-and-storage.md): three members and tested failover; a 2+1 placement across two hosts cannot survive loss of either host |
+| K2, K34 | Kyverno policies enforce regular/init-container requirements, with explicit infrastructure exceptions. | Verify rendered-workload coverage, real admission outcomes and necessary exceptions in [Phase 2](phase-2-kubernetes-hardening.md) |
+| K3, K9 | Namespace budgets are not measured; singleton PDBs and node-local state constrain maintenance. | Size quotas from observed demand, document singleton drain procedures and spread eligible multi-replica services |
+| K5, K16, K29, K31, K36 | Etcd snapshots and local/offsite Velero schedules are implemented, including distinct S3 prefixes and control-plane node-agent coverage. | Inspect backup warnings and excluded volumes, prove recovery from S3 without the original NAS, and test backup-age/failure alerts in [Phase 1](phase-1-foundations.md) |
+| K6, K21, K26 | Authentik uses PostgreSQL; proxy/OIDC configuration and application routes are represented in Git. | Verify empty-database login and the documented emergency-access procedure |
+| K7, K17, K37 | Prometheus uses local-path with time/size retention; Loki has explicit retention. Prometheus history is disposable. | Measure disk headroom including Prometheus WAL/head data outside the block-retention ceiling |
+| K8, K10, K12, K13 | HPA, tracing, chaos tooling and admission-time signature verification remain planned. | [Phases 5](phase-5-observability.md), [6](phase-6-platform-engineering.md) and [7](phase-7-long-term-vision.md) |
+| K11 | Images are drawn from multiple registries without an admission allowlist. | Inventory dependencies and introduce a tested registry policy in [Phase 2](phase-2-kubernetes-hardening.md) |
+| K14 | Capacity, namespace and Exportarr dashboards are in Git; chart dashboards are provisioned. | Export useful remaining UI-created dashboards and verify an empty Grafana database |
+| K15, K32, K35, K43 | Certificate readiness/expiry, missing metrics, external heartbeat, OOM and slow-restart alerts are implemented. | Test failure and missing-series cases through external delivery in [Phase 5](phase-5-observability.md) |
+| K18 | Shared provisioning variables, template sanitization, Cilium prerequisites and ordered bootstrap are encoded. Packer owns the default Kubernetes template. | Build a fresh clone and isolated cluster; prove host identity, node join and bootstrap without preexisting resources |
+| K19 | The media PV mounts a library subdirectory outside the dynamic-storage directories. | Verify NAS export permissions and directory ownership independently |
+| K20 | A long-lived CA and trust-manager distribute public CA trust to in-cluster consumers. | Rehearse CA restoration/rotation and verify client reload behavior |
+| K22 | CI validates ApplicationSet contracts, rendered manifests, pinned CRD schemas, admission fixtures and operational scripts. | Use the same checks for the isolated rebuild; runtime behavior remains an acceptance check |
+| K23 | Renovate extracts HTTP and OCI chart versions from ApplicationSet configuration files. | Confirm scheduled discovery and resulting update PRs |
+| K24, K39 | ArgoCD Applications reconcile independently. Bootstrap ArgoCD/ApplicationSet resources are manually applied; generated Application sync waves do not order their workloads. | Use the explicit bootstrap/drift commands and prove convergence from an empty cluster |
+| K25, K27 | Recyclarr and Unpackerr use shared API-key references; their configuration includes writable state, download paths and NAS-compatible identity. | Verify successful configuration sync and processing against fresh and restored application state |
+| K30 | Slack/webhook delivery and an external heartbeat are configured. | Exercise receiver downtime and confirm independent detection of a failed delivery path |
+| K33, K41 | SQLite/native dumps bridge local-path application data into mounted NFS volumes for Velero. Recovery procedures include etcd tool compatibility and Vault/NFS bootstrap dependencies. | Inventory every application's data, test database/native archive consistency and restore retained state; set explicit recovery-point and recovery-time targets |
+| K38 | Retained NFS PV directories can be reused by claim name. | Map each directory to all current PV references before reclaiming storage; a Released PV alone does not establish unused data |
+| K40 | Gateway TLS depends on Cilium's propagation of the referenced certificate Secret. | Test certificate replacement and confirm the certificate actually served to clients |
+| K42 | Local-path PVC sizes do not enforce quotas or expose the same capacity series as CSI/NFS volumes. | Add per-directory usage visibility and node-disk headroom alerts |
+| K44 | Memory limits need peak-demand, OOM and node-headroom evidence. | Tune from representative workloads; avoid blanket increases based on percentage-of-limit alone |
+| K45 | The cluster and provisioning configuration use Kubernetes 1.31.4, an unsupported release line. | After the rebuild/restore lab, rehearse sequential minor upgrades and a fresh node join using [Phase 2](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform) |
+| K46 | Sensitive API audit events are metadata-only; Alloy has pod-log permissions and node-scoped discovery. | Verify new logs omit credential bodies, records are collected once, and retained logs have appropriate access controls |
+| K47 | OpenClaw has read access without Secrets/exec and named Deployment-scale permissions for autonomous remediation. | Verify the deployed identity's allowed/denied operations, Slack pairing and authenticated hooks in [Phase 6](phase-6-platform-engineering.md#65-scoped-autonomous-operations) |
+| K48 | Vault helpers use CAS-protected secret creation and own their port-forward processes; regression tests cover failures and literal values. | Exercise the helpers during isolated credential bootstrap and rotation |
+| K49 | Provisioning and backup credentials, TLS trust and floating tool/runtime versions need a complete inventory. S3 versioning and Terraform deletion guards do not make backups immutable. | Reduce broad credentials, establish trusted provisioning endpoints and choose backup retention/deletion controls |
 
-| # | Gap | Risk | Severity |
-|---|-----|------|----------|
-| P1 | **No UPS** | Power event corrupts NVMe mid-write, kills NAS mid-IO, or causes unclean Proxmox/etcd shutdown. | Resolved |
-| P2 | **Single NAS drive** | One drive failure loses all NFS-backed data: media, app configs, Prometheus, Loki, Vault, Velero backups. | Critical |
-| P3 | **Running at GbE when 10G is available** | MS-01 has 2x 10G SFP+ unused. NFS throughput and future live migration bottlenecked at 1 Gbps. USW-16-PoE has 1G SFP only. | Low |
-| P4 | **Single compute host** | All VMs on one machine. Hardware failure means total cluster loss. | High |
-| P5 | **Unused PCIe x16 slot** | Half-height PCIe 4.0 x16 available for a dedicated GPU, HBA, or NIC. | Informational |
-| P6 | **No IPMI/remote management** | Intel AMT is activated in firmware (ME reports Enterprise mode, provisioning state POST, AMT 16.1.25), but the dedicated AMT NIC is patched into the wrong switch port, so `nic1` has no link and nothing answers on VLAN 99. The fix is repatching to the correct port, not new cabling. Out-of-band management is unavailable until then. | Medium |
-| P7 | **UPS USB driver flaps ~35 times a day** | The UPS itself is real and the shutdown path is verified working, but `usbhid-ups` loses the device ~35 times daily (1094 events in 30 days), leaving it unmonitored 1.63% of the time. Nothing alerts if the flapping becomes permanent. | Low |
+## Configuration Layer
 
-### Network Layer
+Seven media-operator chart configurations and eight media Config resources are present, alongside Recyclarr and Authentik blueprints. Remaining work is to prove initial configuration, secret dependencies and restoration of valuable runtime state.
 
-| # | Gap | Risk | Severity |
-|---|-----|------|----------|
-| N1 | **No dedicated management VLAN** | VLAN 99 exists and its inbound firewall works, but the management services it was meant to protect were never moved onto it. Any unprivileged pod can still reach the Proxmox hypervisor UI and SSH at 192.168.10.2 and the NAS admin UI at 192.168.1.158. The original risk is substantially unmitigated. | High |
-| N2 | **No IoT VLAN** | Smart home devices (if any) share the default VLAN with household devices and the NAS. | Low |
-| N3 | **DNS is manual static entries** | Adding a service requires a manual UniFi console edit. | Medium |
-| N4 | **WireGuard VPN not configured** | Resolved -- the WireGuard server and UniFi Teleport are both enabled on the Dream Router 7, landing in the `Vpn` firewall zone, which is permitted into Homelab and Management. | Resolved |
-| N5 | **No external access path** | No reverse proxy, Cloudflare Tunnel, or Tailscale Funnel for sharing services externally. | Low |
-| N6 | **Unrestricted internet egress from Homelab VLAN** | A compromised pod can reach any external destination. | Low |
-| N7 | **Management planes reachable from the pod network** | Any unprivileged pod can reach the Proxmox UI/SSH at 192.168.10.2 and the NAS admin UI at 192.168.1.158. VLAN 99 exists but the management services were never moved behind it. | High |
+| IDs | Current assessment | Next step |
+|---|---|---|
+| C1 | Sonarr/Radarr/Prowlarr API-key injection and shared Vault references are implemented. Bazarr and other first-boot credentials need a tested adoption/bootstrap path. | Rebuild without preexisting application databases |
+| C2, C3 | Prowlarr indexers, application sync and secret references are declared. | Escrow tracker secrets and prove reconciliation after restore |
+| C4 | Sonarr/Radarr root folders and download wiring are declared. | Prepare NAS directories and resolve quality-profile identity on a fresh database |
+| C5 | Jellyfin admin bootstrap, libraries and QSV encoding are declared. | Verify initial setup, permissions and actual hardware-assisted playback |
+| C6 | Bazarr, Seerr, qBittorrent and Tdarr Config resources are implemented. | Test generated payloads and secret dependencies against the pinned applications |
+| C7 | Authentik providers, applications and outpost associations are blueprinted. | Bootstrap the administrator and secrets, then test OIDC/proxy login on an empty database |
+| C8 | Blackbox Probe resources provide a Git-managed monitor inventory. Uptime Kuma retains separate UI/status state. | Verify synthetic checks and back up retained status-page configuration |
+| C9 | NAS paths and volume identity are site-specific inputs; host and application NFS mounts serve different purposes. | Rehearse directory preparation and path migration on replacement storage |
 
-### Kubernetes / Software Layer
+See [Phase 8](phase-8-configuration-as-code.md) for the bootstrap and media acceptance tasks.
 
-| # | Gap | Risk | Severity |
-|---|-----|------|----------|
-| K1 | **Single control plane** | API server, etcd, and scheduler are a single point of failure. | High |
-| K2 | **Kyverno audit-mode policies not enforced** | All five ClusterPolicies are genuinely Enforce and do reject violating workloads at admission. But every one of the 100+ existing violations sits in a namespace excluded from the policy it violates, the two securityContext policies cover only ~10% of pods, and argocd and kube-system are exempt from all five. Exclusions were shaped around what already violated. | Medium |
-| K3 | **No ResourceQuotas or LimitRanges** | A runaway pod can OOM an entire node and cascade-kill neighbors. | Medium |
-| K4 | **Vault standalone, no HA** | Single Vault pod on NFS. Pod failure loses secret access cluster-wide. | Medium |
-| K5 | **No offsite backup copy** | Regressed silently for 126 days and has been repaired. The etcd-snapshot CronJob added in `56c1704` wrote `etcd-snapshots/` to the root of the same S3 bucket; Velero rejects buckets with unknown top-level directories, so the offsite BSL went Unavailable on 2026-04-05 and 18 consecutive weekly backups hit FailedValidation with zero bytes written. Fixed by giving the offsite BSL a `velero` prefix; a verification backup then completed 1883/1883 items and 22.1 GiB to S3. | Resolved |
-| K6 | **Authentik Redis unauthenticated** | The exposure is genuinely gone, but not for the documented reason: the authentik chart dropped Redis entirely in favour of a Postgres task queue. The `redis.auth` setting the claim rests on is dead YAML that Helm ignores and that never governed a running Redis. | Resolved |
-| K7 | **Prometheus TSDB on NFS** | Heavy random I/O on NFS degrades query performance and risks TSDB corruption. | Resolved |
-| K8 | **No HPA** | Nothing scales horizontally under load. | Low |
-| K9 | **No pod topology spread constraints** | Scheduler may co-locate critical services on one node. | Medium |
-| K10 | **No distributed tracing** | Debugging cross-service request flows requires manual log correlation. | Low |
-| K11 | **No image registry allowlist** | Any registry allowed. No protection against pulls from untrusted sources. | Low |
-| K12 | **No chaos testing** | DR runbooks exist but are never automatically validated. | Low |
-| K13 | **No supply chain verification** | No cosign signature verification or SBOM generation. | Low |
-| K14 | **Grafana dashboards are click-ops** | Dashboards not stored in Git. DR event could lose custom dashboards. | Medium |
-| K15 | **No cert-manager health alerting** | cert-manager pod failures or renewal errors are not monitored. | Low |
-| K16 | **No etcd snapshot schedule** | Single control plane with no dedicated etcd backup. Velero backs up API resources but an etcd corruption or quorum loss requires a snapshot to restore. | Resolved |
-| K17 | **No Loki retention policy** | Logs grow unbounded on NFS. No compaction or retention limits configured. | Resolved |
-| K18 | **`make k8s-bootstrap` applied a deleted file** | The target ran `kubectl apply -f k8s/bootstrap/root-app.yml`, removed in `7742cb0`, so nothing applied `k8s/bootstrap/applicationsets/` and the documented rebuild path failed on its first command. Fixed: the target now applies `k8s/bootstrap/argocd/` and `k8s/bootstrap/applicationsets/` with `kubectl apply -k --server-side`. | Resolved |
-| K19 | **Media share and cluster storage share were the same NFS export** | Every *arr container mounted the export root, so qBittorrent could read and write Vault's storage, the MinIO bucket holding Velero backups, Loki, Prometheus and Authentik's database. Fixed by moving the media tree into a `library/` subdirectory and repointing the `arr-data` PV at it; container paths are unchanged, and the dynamic PVC directories are now outside the mount. The provisioner root is deliberately left at `.data` so existing PVs keep their immutable paths. | Resolved |
-| K20 | **Root CA rotated every 90 days, silently breaking client trust** | The `homelab-ca` Certificate specified no `duration`, so cert-manager applied its 90-day default to a *root* CA. It rotated on 2026-07-21, every leaf was re-signed by a CA no client had imported, and all UIs failed at once while cert-manager reported `Ready=True` throughout. Separately, `k8s/bootstrap/argocd/custom-ca.yml` pinned a literal PEM that had expired on 2026-06-21. Fixed: CA is now `duration: 87600h` with `rotationPolicy: Never` (valid to 2036), leaves re-signed and verified on the wire, and the pinned PEM refreshed. | Resolved |
-| K21 | ~~**The \*arr apps are not behind SSO, and the docs say they are**~~ **Resolved.** Routing through Authentik's proxy-mode outpost replaces the subrequest hook an HTTPRoute cannot express. Sonarr, Radarr, Prowlarr, Bazarr, qBittorrent, Tdarr, Goldilocks, Prometheus and Alertmanager are behind it; `/api` paths stay exempt so scripted clients keep working. See [ADR-010](../decisions/010-authentik-sso.md). | Resolved |
-| K22 | **CI never rendered manifests** | `validate.yml` ran kubeconform over individual files but ignored `config.yml` and `values.yml` -- the only two file types the ApplicationSet consumes -- and never ran `kustomize build` or `helm template`. K18, K23 and K26 would all have been caught by a render job. Fixed: `validate.yml` now has a `render` job running `scripts/render-manifests.sh`, which does `helm template` per Helm app, `kustomize build` per resource directory, and `kubectl diff -k` over `k8s/bootstrap/`. Also available locally as `make k8s-render`. | Resolved |
-| K23 | **Renovate proposes no Helm chart bumps** | Renovate's `argocd` manager only reads YAML whose `kind` is `Application`/`ApplicationSet`. Since the ApplicationSet migration, chart versions live in schema-less `config.yml` files no manager matches. ~30 chart versions are silently hand-maintained. | High |
-| K24 | **No dependency ordering between Applications** | The applicationset-controller creates Application objects directly with no parent Application syncing them, so `argocd.argoproj.io/sync-wave` on a generated Application is inert -- including the one in `local-path-provisioner/config.yml`. Ordering is `retry: limit 10` plus luck. | Medium |
-| K25 | **Recyclarr had never synced** | Both the Sonarr and Radarr instance were named `main`; Recyclarr v8 requires instance names unique *across* services and silently discards the whole file, exiting 0. Compounding it: 33 fabricated `trash_id`s (valid-looking, wrong suffixes; several cross-wired to the wrong streaming service), a missing `qualities:` block that v8 requires when creating a profile, and a stale API key. Sonarr and Radarr now hold 31 and 43 custom formats and both quality profiles exist. | Resolved |
-| K28 | **The control-plane node could not create new pods** | systemd on `homelabk8s01-node-1` had lost its D-Bus name registration, so every pod sandbox failed with `Failed to activate service 'org.freedesktop.systemd1': timed out` and `sshd` was dead. `systemctl` and `SIGTERM` to PID 1 both failed to recover it; the node had been up 122 days and a cluster of core units had restarted on 2026-05-29. Resolved by a hard power-cycle via Proxmox after taking an etcd snapshot; etcd came back clean and the cluster settled in 50s. | Resolved |
-| K29 | **etcd backups stopped for 61 days and nothing surfaced it** | The CronJob is pinned to the control plane and could not schedule (K28). `EtcdBackupStale` fired correctly throughout, but Alertmanager could deliver nothing (K30), so no human saw it. Backups resumed 2026-08-02. The lesson stands: K16 was marked Resolved while the mechanism was silently dead for two months. | Resolved |
-| K30 | **Alertmanager delivery was silently broken** | Every notification failed with `connect: operation not permitted` to the `openclaw` webhook receiver. Not a policy denial: Cilium's socket-LB returns `EPERM` when a ClusterIP has zero ready backends, and OpenClaw was CrashLoopBackOff (its image needed a writable `/home/node/.npm`). Because that receiver sits in the shared route tree, its retry exhaustion suppressed delivery for every alert. Both integrations were failing at ~99.8% for 121 days. Now fixed, with an external healthchecks.io heartbeat receiving the Watchdog alert every minute, so a future delivery outage surfaces from outside the cluster. Critical alerts also repeat hourly instead of 4-hourly. | Resolved |
-| K26 | **Seerr's HTTPRoute was dead code** | `apps/arr/seerr/httproute.yml` was in Git and passed CI but was listed in no `kustomization.yml`, and `values.yml` sets `route.main.enabled: false`, so nothing created the route. Fixed by adding it to `seerr/kustomization.yml`; the standalone route is now the one that serves `seerr.homelab.local`. | Resolved |
-| K27 | **Unpackerr is a silent no-op** | It has been returning `401` from both Sonarr and Radarr continuously for 16+ weeks -- the API keys in `unpackerr-secrets` no longer match the ones the apps generated, which is C1 manifesting in production. Separately, `UN_SONARR_0_PATHS` / `UN_RADARR_0_PATHS` are unset and default to `/downloads`, a path the pod does not mount, and it runs as UID 1000 against a share that squashes to 977:988. All three must be fixed for it to do anything. | High |
+## Media Platform
 
-| K31 | **Velero alert rules could never fire** | Four alerts nominally covered the offsite failure. `VeleroOffsiteBSLUnavailable` queried `velero_backup_storage_location_available`, a metric that does not exist (the real one is `velero_backup_location_status_gauge`, whose offsite series read 0 the whole time), and `VeleroOffsiteBackupMissing` matched `schedule="weekly-offsite"` when the real label is `velero-weekly-offsite`. Prometheus reported both rules health=ok, state=inactive -- indistinguishable from healthy. Fixed, and the metric names verified live. | Resolved |
-| K32 | **No absence or dead-man alerting** | Every alert in the repo fires on a metric's *value*; none fire on a metric's *disappearance*, and `absent()` appears nowhere in `k8s/`. The universal failure mode is therefore: the exporter dies, the series vanishes, the expression matches nothing, and the rule stays green forever. This is the single mechanism behind the etcd, Recyclarr, Velero and UPS blind spots. | High |
-| K33 | **Disaster-recovery runbooks are not executable as written** | `docs/runbooks/` calls an etcdctl subcommand that does not exist in the deployed etcd version, among other drift. The procedures have never been executed end to end. | High |
-| K34 | **Kyverno does not validate initContainers** | Four of five policies inspect only `spec.containers`, so any workload can bypass them entirely by doing the work in an initContainer. | Medium |
-| K35 | **authentik-server has restarted 8801 times** | ArgoCD reports the application Synced/Healthy throughout. Nothing alerts on a restart count that high because the crash loop is short enough to stay under the existing thresholds. | Medium |
-| K36 | **velero-weekly-full-cluster backups are all PartiallyFailed** | The node-agent DaemonSet carried no control-plane toleration, so it scheduled on two of three nodes. Any pod on `homelabk8s01-node-1` holding an fs-backup-eligible volume had every one of those volumes skipped -- `metallb-speaker` and its seven emptyDirs were the recurring casualty, and `isRunningInNode` returned the error that marked each run PartiallyFailed. Toleration added; node-agent now runs on all three nodes, verified by a PodVolumeBackup completing for a node-1 pod. Note metallb has since been removed, so the specific pod that tripped it no longer exists. | Resolved |
-| K37 | **Prometheus TSDB is node-pinned with no size cap and no backup** | It correctly lives on local-path ext4 rather than NFS, but it is pinned to node-3, unbounded, and excluded from backup. Losing that node loses all metrics history. | Medium |
-| K38 | **58 of 78 PVs are Released** | Orphaned data accumulates on the single NAS drive, and because `pathPattern` derives the directory from the *claim* name, nine directories are shared between a Bound PV and one or more Released PVs -- including Vault storage, the MinIO bucket, Authentik's database and the etcd snapshots. `reclaimPolicy: Retain` is the only reason cleaning up a stale PV does not destroy live data. | Medium |
-
-| K39 | **Nothing reconciles `k8s/bootstrap/`** | That directory is applied by `kubectl apply -k`, not by ArgoCD, so it drifts from git undetected. It bit twice on 2026-08-03: the CA ConfigMap stayed expired after being fixed in git, and Renovate PR #44 bumping ArgoCD to v3.4.6 merged without ever reaching the cluster (573 lines of drift, still running v3.3.6). Both applied, and `scripts/render-manifests.sh` now runs `kubectl diff -k` over every bootstrap directory and fails on drift. Note the ApplicationSet CRD requires `--server-side` -- it exceeds the last-applied-configuration annotation limit. | Resolved |
-| K40 | **Replacing a Gateway TLS secret requires restarting cilium-operator** | Cilium's operator copies referenced TLS secrets into the `cilium-secrets` namespace and Envoy reads that copy over SDS. Deleting and recreating the source secret leaves the copy absent: Envoy then serves a listener with no certificate and resets every handshake, while the Gateway still reports `Programmed=True` with all routes attached. Restarting `cilium-envoy` does not help; restarting `cilium-operator` does. Worth a runbook note. | Low |
-| K41 | **No `local-path` volume is in any backup, and two ADRs claimed otherwise** | Kopia file-system backup cannot read `hostPath` volumes, which is exactly what local-path provisions. The seven *arr config PVCs, the Prometheus TSDB and Uptime Kuma's database are captured as PVC and PV objects containing no data, so a restore recreates them empty. Velero records this as a *warning*, not an error, so the backup reports success -- the 2026-08-03 offsite run logged 110 of them and finished `Completed` with 0 errors. ADR-006 asserted "Velero backups cover disaster recovery for these volumes" and ADR-013 promised a "complete application-layer snapshot"; both corrected. Migrating back to `nfs-client` is *not* the remedy -- these are SQLite workloads deliberately moved off NFS in `41e6b11`, and they run in WAL mode, which coordinates through a memory-mapped `-shm` file that SQLite does not support over a network filesystem (NFS byte-range locking via NLM/NFSv4 is real but is not the mechanism WAL uses). The fix is an application-level `sqlite3 .backup` dump onto an `nfs-client` volume, which Velero does cover. Closed. `arr-config-backup` dumps Sonarr, Radarr, Bazarr, Prowlarr, Jellyfin and Seerr nightly through SQLite's online backup API (verified `integrity_check=ok`) and ships Tdarr's own native archive, which is consistent by construction; `uptime-kuma-backup` does the same for `kuma.db`. Both write to `nfs-client` volumes Velero does read -- 8.7 MB verified captured end to end as a PodVolumeBackup. Note fs-backup only reads volumes attached to a *running* pod, so an unmounted PVC is captured as an object holding no data; a holder Deployment keeps each volume mounted, and without it the entire mechanism silently backs up nothing. Alerts cover staleness, job failure and holder absence. The Prometheus TSDB stays out by decision (ADR-011, K37). | Resolved |
-| K42 | **`local-path` PVCs report no capacity metrics** | `kubelet_volume_stats_*` only covers CSI/NFS volumes, so the nine `local-path` PVCs -- every *arr config volume, Jellyfin's, and the 20Gi Prometheus TSDB -- have no per-volume usage series and therefore cannot be alerted on individually. They also carry no quota, so one runaway volume fills the node's root filesystem. `NodeDiskPressure` at 90% was the only net; `NodeRootDiskFillingUp` now warns at 80% for lead time. Node-2 sits at 67%. Per-volume visibility would need a node-exporter textfile collector or a directory-size exporter. | Low |
-| K43 | **Slow restart leaks are invisible to the crashloop alerts** | `authentik-server` had accumulated **8,963** restarts over 127 days and `authentik-worker` was OOMKilling ~10x/day, with nothing alerting. `KubePodCrashLooping` keys off `CrashLoopBackOff`, which a pod restarting every couple of hours never enters, so the whole class was silent. The server's restarts were `PostgreSQL connection failed ... Operation not permitted` -- the Cilium socket-LB EPERM signature when a ClusterIP has no ready backends -- and stopped once postgres settled. The worker was two separate faults: a 512Mi limit against a real ~1.2GB task peak, and `auth-egress` permitting only DNS, intra-namespace and NFS, so it could reach neither the kube-apiserver (outpost management) nor the internet. Granting apiserver egress *increased* memory use by letting the outpost tasks actually run. `arr-flaresolverr` was OOMKilling on the same pattern at 512Mi while running headless Chrome. Fixed: worker 2Gi, flaresolverr 1Gi, apiserver egress added, update-check and error-reporting disabled rather than opening world egress. `ContainerOOMKilled` and `ContainerRestartingSlowly` (>5 in 6h) now cover the gap. | Resolved |
-| K44 | **Memory limits are set low across the cluster, but only two containers were actually harmed** | A sweep of 24h peak working set against limits found a dozen containers at 80--99%: `alloy` 99%, `cert-manager-webhook` 98%, the etcd-backup `upload-offsite` step 98%, `arr-prowlarr` 96%, `external-secrets-cert-controller` 95%, `minio` 94%. This is a soft signal, not proof -- `container_memory_working_set_bytes` counts reclaimable page cache, and outside the `auth` namespace **nothing has restarted in 7 days**. Deliberately not bumped en masse. `arr-prowlarr` was raised 256Mi -> 512Mi because it drives every indexer search and 256Mi is genuinely small; the etcd-backup Job completes daily and is already covered by `EtcdBackupStale`/`EtcdBackupFailed`. `ContainerOOMKilled` is now the safety net for the rest, so a real kill surfaces instead of being inferred from a percentage. | Low |
-
-### Configuration Layer
-
-Runtime state that lives inside an application's own database rather than in Git. Recorded only as prose in `docs/apps/*.md` "Post-Deploy Setup" sections -- roughly 120 individual settings across 18 categories.
-
-| # | Gap | Risk | Severity |
-|---|-----|------|----------|
-| C1 | **\*arr API keys are self-generated and hand-copied into Vault** | Sonarr, Radarr, Prowlarr and Bazarr each generate a key into `/config/config.xml` on first boot. Eight consumers depend on those keys, so a cold rebuild deadlocks until a human visits four web UIs. Blocks every other item in this table. | Critical |
-| C2 | **Prowlarr indexer definitions and private-tracker passkeys exist only in SQLite** | The least reproducible state in the homelab. Some passkeys cannot be re-obtained without contacting a tracker. | Critical |
-| C3 | **Prowlarr's app-sync to Sonarr/Radarr is manual** | Without it, indexers added to Prowlarr never reach Sonarr or Radarr and the centralised-indexer benefit evaporates. | High |
-| C4 | **Sonarr/Radarr root folders and download-client wiring are click-ops** | Neither app will accept a series or movie without a root folder, and nothing creates the directories they point at. | High |
-| C5 | **Jellyfin's setup wizard, admin account, libraries and hardware transcoding are manual** | The entire GPU path is codified -- Proxmox PCI mapping, node selector, device plugin -- except the one setting that makes Jellyfin use it. | High |
-| C6 | **Bazarr, Seerr, qBittorrent and Tdarr configuration is entirely UI state** | Subtitle providers, language profiles, service registrations, download categories, and a 10-node transcode flow graph. | High |
-| C7 | **Authentik providers, applications, outposts and OAuth2 client secrets are 12 UI steps** | The longest post-deploy procedure in the repo. Client secrets are generated in the UI and hand-copied into Vault, inverting the intended direction. | High |
-| C8 | **Uptime Kuma's admin account, 18 monitors and status page are hand-created** | Its API is socket.io-only with no supported REST write path, making the monitoring-of-last-resort the least reproducible app in the repo. | Medium |
-| C9 | **NAS export layout and the media directory tree are undocumented manual setup** | `shared-data-pv.yml` hardcodes a volume UUID that will differ on any replacement NAS, and nothing creates `/data/media/{movies,tv,music}`. | Medium |
-
-### Media Platform
-
-Gaps measured against the goal of replacing streaming subscriptions rather than against infrastructure correctness.
-
-| # | Gap | Risk | Severity |
-|---|-----|------|----------|
-| M1 | **Acquisition is torrent-only** | A single gluetun + qBittorrent pod dependent on swarm health and on PIA continuing to forward a port. For back catalogue and non-English content this is where a request fails -- and a failed request is what sends a household back to streaming. | High |
-| M2 | **Nothing works off-LAN** | Jellyfin is a LoadBalancer behind a self-signed CA at `jellyfin.homelab.local`. Family cannot watch anywhere, and TV clients will not accept a private CA. | High |
-| M3 | **No retention policy against a hard capacity ceiling** | `shared-data-pv.yml` declares `capacity: 10Ti` against one 8 TB drive; NFS PVs enforce no quota, so nothing warns before writes fail. Nothing deletes anything, and media is deliberately excluded from backup. | High |
-| M4 | **No library-freshness mechanism** | Media lives on NFS and inotify does not work across NFS, so Jellyfin's real-time monitor is unreliable -- imports appear only on scheduled scans. | Medium |
-| M5 | **No household UX layer** | No watch analytics, no invites, no collections, no resume continuity, and none of the free Jellyfin plugins (Intro Skipper, TMDB Box Sets, Playback Reporting, Trakt) installed. | Medium |
-| M6 | ~~**Transcode policy is contradictory and unstated**~~ **Resolved.** The library acquires the best source and keeps it; Tdarr does not re-encode video. The One Flow set runs with `disable_video: true` for audio and container work, and health checks stay on. See [ADR-019](../decisions/019-transcode-policy.md). | Resolved |
-
-## Gap-to-Phase Mapping
-
-| Gap | Addressed In |
-|-----|-------------|
-| P2 | [Phase 1 -- Foundations](phase-1-foundations.md) |
-| K3, K9, K11, K15, N6 | [Phase 2 -- Kubernetes Hardening](phase-2-kubernetes-hardening.md) |
-| P3, N3, N4, N5, M2 | [Phase 3 -- Network](phase-3-network.md) |
-| P4, K1, K4 | [Phase 4 -- Compute & Storage](phase-4-compute-and-storage.md) |
-| K10, K14, K8 | [Phase 5 -- Observability](phase-5-observability.md) |
-| K12, K13 | [Phase 6 -- Platform Engineering](phase-6-platform-engineering.md) |
-| P5, N2 | [Phase 7 -- Long-Term Vision](phase-7-long-term-vision.md) |
-| C1--C9, K18--K27, K30, K42--K44, M1, M3--M6 | [Phase 8 -- Configuration as Code](phase-8-configuration-as-code.md) |
+| ID | Current assessment | Next step |
+|---|---|---|
+| M1 | Acquisition is torrent-only, with Gluetun providing a native-sidecar startup gate. | Verify tunnel-loss and forwarded-port behavior; evaluate Usenet as an additional acquisition path |
+| M2 | VPN access exists; public Jellyfin access is planned. | Test the intended remote-client experience before choosing ingress |
+| M3 | There is no automatic retention policy; declared NFS PV capacity is not a quota. | Measure capacity and alert headroom; develop retention rules in dry-run |
+| M4 | NFS-backed libraries need a reliable import-to-library refresh path. | Add supported notifications/API refresh and retain periodic scans as fallback |
+| M5 | Household enhancements include invites, watch analytics, collections and playback plugins. Watch/resume/request state is valuable data. | Prove request-to-playback and state recovery, then add the desired UX improvements |
+| M6 | [ADR-019](../decisions/019-transcode-policy.md) preserves video while allowing audio/container processing. | Verify Tdarr flows and quality-profile assignments against that policy |

@@ -21,13 +21,13 @@ cert-manager automates the issuance and renewal of TLS certificates within the c
 
 ## Cluster Integration
 
-Every Ingress resource in the cluster annotates with:
+The shared Gateway carries the issuer annotation:
 
 ```yaml
 cert-manager.io/cluster-issuer: homelab-ca-issuer
 ```
 
-This triggers cert-manager to automatically provision a TLS certificate for the host defined in the Ingress. Because the CA is internal, browsers on the LAN must trust the `homelab-ca` root certificate to avoid warnings.
+With Gateway API support enabled, this provisions the wildcard TLS certificate referenced by the Gateway HTTPS listener. HTTPRoutes inherit TLS termination at that listener. Because the CA is internal, browsers on the LAN must trust the `homelab-ca` root certificate to avoid warnings.
 
 The issuer chain must exist before the Gateway or any application requests a certificate. Nothing enforces that order -- a Certificate created too early stays pending and ArgoCD retries until the ClusterIssuer is ready.
 

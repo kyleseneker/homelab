@@ -22,7 +22,7 @@ A single ApplicationSet definition (`k8s/bootstrap/applicationsets/cluster-apps.
 
 ## Alternatives Considered
 
-- **App-of-apps with directory recursion**: A single root Application recursively discovers child Application manifests. Simpler setup, but all children sync as one operation -- one unhealthy app blocks all syncs.
+- **App-of-apps with directory recursion**: A root Application manages child Application manifests. Parent health and sync configuration can order child creation, while each child retains its own reconciliation. This adds a parent Application and explicit child manifests where the Git File Generator can discover components directly.
 - **Flux v2**: Comparable GitOps controller with HelmRelease and Kustomization CRDs. Uses a reconciliation-loop model rather than ArgoCD's sync model. No built-in UI.
 - **Two separate ApplicationSets** (one for Helm, one for git): Avoids `templatePatch` conditionals but duplicates the template definition.
 

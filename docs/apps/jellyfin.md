@@ -18,7 +18,7 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
-| `config` | PVC (`nfs-client`) | 5Gi | `/config` | Jellyfin configuration and metadata |
+| `config` | PVC (`local-path`) | 5Gi | `/config` | Jellyfin configuration and metadata |
 | `media` | PVC (existing `arr-data`) | -- | `/data/media` | Shared media library (`subPath: media`) |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device for hardware transcoding |
 
@@ -41,18 +41,9 @@ GPU limit: `gpu.intel.com/i915: 1`
 - The service is type `LoadBalancer`, giving Jellyfin a dedicated IP via Cilium L2 in addition to the Gateway API HTTPRoute.
 - Startup probe allows up to 30 failures at 10-second intervals (5 minutes) to account for library scanning on first boot.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-1. Open `https://jellyfin.homelab.local` and complete the setup wizard.
-2. Create an admin user account.
-3. Add media libraries:
-    - **Movies** -- folder path `/data/media/movies`
-    - **TV Shows** -- folder path `/data/media/tv`
-    - **Music** -- folder path `/data/media/music`
-4. Enable hardware transcoding:
-    - Go to **Dashboard > Playback > Transcoding**.
-    - Set hardware acceleration to **Intel QuickSync (QSV)**.
-    - The `/dev/dri` device is already mounted and the GPU resource is allocated.
+`JellyfinConfig` declares the administrator credentials, Movies/TV libraries, and QSV settings. Populate `jellyfin-credentials`, verify reconciliation and the administrator login, then test a hardware-transcoded playback. Music is not currently a declared library. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

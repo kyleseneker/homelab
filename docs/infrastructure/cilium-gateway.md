@@ -22,6 +22,8 @@ The `homelab-gateway` resource defines two listeners:
 - **HTTPS (443):** Terminates TLS for `*.homelab.local` using a cert-manager-issued certificate. Allows routes from all namespaces.
 - **HTTP (80):** Accepts traffic for `*.homelab.local` and redirects to HTTPS.
 
+The Gateway does not currently request a fixed address. Record its live `status.addresses` and the DNS records before adding `spec.addresses`; recreating it can otherwise assign a different IP from the pool. The repository cannot determine which address is safe to pin without that inventory.
+
 ### L2 Announcements
 
 Cilium's L2 announcement policy advertises LoadBalancer IPs via ARP on the local network, replacing MetalLB:

@@ -1,6 +1,6 @@
 # Downloads (Gluetun + qBittorrent)
 
-This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) with a torrent download client (qBittorrent). Both containers share a single network namespace, so all download traffic is routed through the Private Internet Access (PIA) VPN tunnel.
+This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) with a torrent download client (qBittorrent). Gluetun runs as a restartable init sidecar and both containers share a single network namespace, so all download traffic is routed through the Private Internet Access (PIA) VPN tunnel.
 
 ## Details
 
@@ -35,7 +35,7 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 
 ## Pod Architecture
 
-The two containers share a network namespace. Gluetun establishes the VPN tunnel and acts as the network gateway for qBittorrent. qBittorrent depends on Gluetun and will not start until it is healthy.
+Gluetun is a native sidecar (`initContainers`, `restartPolicy: Always`). Its startup healthcheck must succeed before Kubernetes starts qBittorrent. The sidecar stays running alongside the client and its firewall handles tunnel failures. Verify fail-closed behavior with an explicit VPN outage test; startup ordering alone does not prove leak prevention.
 
 ```mermaid
 flowchart TB
@@ -70,7 +70,7 @@ flowchart TB
 
 - `WEBUI_PORT`: `8080`
 - Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID).
-- Depends on `gluetun` -- will not start until Gluetun is ready.
+- Startup is gated by Gluetun's native-sidecar startup probe. The former chart `dependsOn` value was ignored.
 
 ### Pod Security
 
@@ -84,20 +84,13 @@ defaultPodOptions:
 
 This sysctl is required for the VPN routing to function correctly.
 
-## Post-Deploy Setup
+## Post-Deploy Verification
 
-### qBittorrent
+The init container seeds a new qBittorrent configuration from the PBKDF2 hash in `qbittorrent-credentials`. It does not overwrite an existing configuration. Keep the username/password/hash synchronized in Vault when rotating; do not rely on a temporary password printed in logs.
 
-1. Retrieve the temporary admin password from the container logs:
+`QBittorrentConfig` manages categories, save paths, seeding limits, and authentication preferences. Sonarr, Radarr, and the operator authenticate using `qbittorrent-credentials`; pod-network authentication bypass is disabled. The web route passes through the Authentik outpost and qBittorrent retains its own login.
 
-    ```bash
-    kubectl logs -n arr -l app.kubernetes.io/instance=arr-vpn-downloads -c qbittorrent | grep "temporary password"
-    ```
-
-2. Log in at `https://qbit.homelab.local` with username `admin` and the temporary password.
-3. Change the admin password immediately (Settings > Web UI > Authentication).
-4. Configure default save path to `/data/torrents`.
-5. Create categories `tv` and `movies` with appropriate save paths.
+Verify the CR is ready, a download-client connection test succeeds, and the torrent client's external address is the VPN address. PIA port forwarding is enabled, but this repository does not yet prove that the assigned port is synchronized into qBittorrent's listen-port setting; validate that separately before claiming incoming peer connectivity.
 
 ## Dependencies
 
