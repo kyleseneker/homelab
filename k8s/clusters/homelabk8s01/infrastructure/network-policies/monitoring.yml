@@ -35,6 +35,25 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: monitoring-allow-operator-webhook
+  namespace: monitoring
+spec:
+  description: "Allow API server admission calls to the Prometheus operator"
+  endpointSelector:
+    matchLabels:
+      app: kube-prometheus-stack-operator
+      release: kube-prometheus-stack
+  ingress:
+    - fromEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "10250"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: monitoring-allow-cluster-scraping
   namespace: monitoring
 spec:

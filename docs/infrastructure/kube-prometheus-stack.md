@@ -67,6 +67,8 @@ The following scrapes are disabled. kube-proxy is absent because Cilium replaces
 
 The monitoring stack is the central observability platform. Applications expose metrics via `ServiceMonitor` or `PodMonitor` resources, which Prometheus automatically discovers. Grafana provides visualization dashboards and integrates with Loki for log correlation.
 
+The API server reaches the operator's admission webhook on TCP 10250 through `monitoring-allow-operator-webhook`; this permits rule validation and mutation during both apply and Argo CD server-side diff.
+
 The stack depends on local-path for Prometheus and NFS for Grafana and on cert-manager for the Gateway certificate.
 
 ## Upstream Documentation
