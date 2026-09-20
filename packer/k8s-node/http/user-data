@@ -8,7 +8,7 @@ autoinstall:
     hostname: k8s-node-template
     username: media
     # mkpasswd --method=SHA-512 --rounds=4096 "packer"
-    # Overridden by cloud-init on clone -- only used during Packer build
+    # Build-only password. The final Packer playbook locks it before cloning.
     password: "$6$rounds=4096$saltsalt$ZpiWnz4eiOpVbgfzMUB.VGnqFmQp7haJP8P7xmOGKYeCWxvyJmZFl4D5EJ0hzh1sMkGOXmyJH3cXZjRXdKqj1"
   ssh:
     install-server: true
@@ -20,6 +20,11 @@ autoinstall:
     - qemu-guest-agent
     - cloud-init
   late-commands:
+    # Set shared IDs before the first SSH login; usermod cannot change the UID
+    # of the active account used by the Ansible provisioner.
+    - "curtin in-target --target=/target -- groupmod -g ${media_gid} media"
+    - "curtin in-target --target=/target -- usermod -u ${media_uid} -g ${media_gid} media"
+    - "curtin in-target --target=/target -- chown -R ${media_uid}:${media_gid} /home/media"
     - "echo 'media ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/media"
     - "chmod 440 /target/etc/sudoers.d/media"
     - "systemctl enable qemu-guest-agent --root=/target"

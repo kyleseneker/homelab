@@ -1,5 +1,6 @@
 ---
-- hosts: all
+- name: Build and sanitize the Kubernetes node template
+  hosts: all
   become: true
   roles:
     - base
@@ -14,3 +15,63 @@
       ansible.builtin.include_role:
         name: igpu
         tasks_from: install
+
+    - name: Complete package and driver handlers before sanitizing the template
+      ansible.builtin.meta: flush_handlers
+
+    - name: Require SSH public keys on cloned nodes
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/00-homelab.conf
+        content: |
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          PermitRootLogin no
+        mode: "0644"
+        validate: /usr/sbin/sshd -t -f %s
+
+    - name: Lock the build-only media password
+      ansible.builtin.user:
+        name: media
+        password: '!'
+      no_log: true
+
+    - name: Remove installer cloud configuration and DHCP network configuration
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/cloud/cloud.cfg.d/99-installer.cfg
+        - /etc/cloud/cloud.cfg.d/subiquity-disable-cloudinit-networking.cfg
+        - /etc/netplan/00-installer-config.yaml
+        - /etc/netplan/50-cloud-init.yaml
+        - /var/lib/dbus/machine-id
+        - /var/log/installer
+        - /home/media/.ssh/authorized_keys
+        - /root/.ssh/authorized_keys
+
+    - name: Enable Proxmox cloud-init on the next boot
+      ansible.builtin.copy:
+        dest: /etc/cloud/cloud.cfg.d/99-homelab.cfg
+        content: |
+          datasource_list: [NoCloud, ConfigDrive]
+          ssh_pwauth: false
+          ssh_deletekeys: true
+        mode: "0644"
+
+    - name: Find build SSH host keys
+      ansible.builtin.find:
+        paths: /etc/ssh
+        patterns: ssh_host_*
+      register: packer_host_keys
+
+    - name: Remove build SSH host identity
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ packer_host_keys.files }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+    - name: Reset cloud-init and machine identity for the next boot
+      ansible.builtin.command: cloud-init clean --logs --machine-id --seed
+      changed_when: true

@@ -11,8 +11,9 @@ INVENTORY    := $(ANSIBLE_DIR)/inventory/$(CLUSTER)/hosts.yml
 K8S_PLAYBOOK := $(ANSIBLE_DIR)/playbooks/k8s-cluster.yml
 
 export ANSIBLE_CONFIG := $(ANSIBLE_DIR)/ansible.cfg
+export KUBECONFIG ?= $(CURDIR)/kubeconfig
 
-CP_IP      := $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
+CP_IP      = $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
 CILIUM_VER := $(shell grep k8s_control_plane_cilium_version $(ANSIBLE_DIR)/group_vars/all/vars.yml | awk -F'"' '{print $$2}')
 
 .PHONY: help docs docs-serve
@@ -43,9 +44,9 @@ VAULT_ARGS    := --vault-password-file ../$(VAULT_PW_FILE)
 deps: ## Install Ansible Galaxy collections
 	ansible-galaxy collection install -r $(ANSIBLE_DIR)/requirements.yml
 
-vault-create: ## Create an empty vault.yml and encrypt it
+vault-create: ## Create an empty vault.yml ready for editing and encryption
 	@if [ ! -f $(VAULT_PW_FILE) ]; then \
-		echo "Enter a vault password:" && read -s pw && echo "$$pw" > $(VAULT_PW_FILE); \
+		umask 077; echo "Enter a vault password:" && read -rs pw && printf '%s\n' "$$pw" > $(VAULT_PW_FILE); \
 	fi
 	@if [ ! -f $(VAULT_FILE) ]; then \
 		echo "---" > $(VAULT_FILE); \
@@ -86,7 +87,7 @@ packer-build: ## Build K8s node VM template on Proxmox
 
 PLAYBOOK_VAULT_ARGS := $(if $(wildcard $(VAULT_PW_FILE)),$(VAULT_ARGS),)
 
-pve-configure: ## Configure Proxmox host (repos, IOMMU, cloud-init, API token)
+pve-configure: ## Configure Proxmox host (repos, IOMMU, network, UPS, API token, TFC agent)
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml
 
 pve-ssh: ## SSH into Proxmox host
@@ -100,7 +101,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-check-alerts vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-crd-schemas k8s-bootstrap-drift k8s-check-alerts vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	terraform -chdir=$(TF_DIR) init
@@ -114,12 +115,16 @@ k8s-infra: ## Provision K8s VMs on Proxmox
 k8s-configure: ## Bootstrap K8s cluster via Ansible
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(CLUSTER)/hosts.yml playbooks/k8s-cluster.yml
 
-k8s-deploy: k8s-infra k8s-configure k8s-bootstrap ## Full deploy: VMs + cluster + ArgoCD
+k8s-deploy: ## Full deploy: VMs + cluster + kubeconfig + ArgoCD
+	$(MAKE) k8s-infra
+	$(MAKE) k8s-configure
+	$(MAKE) k8s-kubeconfig
+	$(MAKE) k8s-bootstrap
 
 k8s-destroy: ## Tear down all K8s VMs
 	terraform -chdir=$(TF_DIR) destroy
 
-k8s-bootstrap: ## Install ArgoCD and root app-of-apps (one-time)
+k8s-bootstrap: ## Install or update ArgoCD and the ApplicationSet
 	kubectl apply -k k8s/bootstrap/argocd/ --server-side --force-conflicts
 	@echo "Waiting for ArgoCD to be ready..."
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
@@ -143,11 +148,12 @@ k8s-restore: ## List available Velero backups for restore
 	@echo "To restore, run: velero restore create --from-backup <backup-name>"
 
 k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
-	scp media@$(CP_IP):~/.kube/config ./kubeconfig
+	scp media@$(CP_IP):~/.kube/config "$(KUBECONFIG)"
+	chmod 600 "$(KUBECONFIG)"
 	@echo "Run: export KUBECONFIG=$$(pwd)/kubeconfig"
 
 cilium-upgrade: ## Upgrade Cilium and enable Gateway API + L2 announcements on existing cluster
-	cilium upgrade --version $(CILIUM_VER) --set gatewayAPI.enabled=true --set kubeProxyReplacement=true --set l2announcements.enabled=true --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443
+	cilium upgrade --version $(CILIUM_VER) --values ansible/roles/k8s_control_plane/files/cilium-values.yml --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443
 	cilium status --wait
 
 k8s-ssh-cp: ## SSH into control plane
@@ -162,7 +168,7 @@ VAULT_NS ?= vault
 k8s-render: ## Render every ApplicationSet manifest locally (same check CI runs)
 	./scripts/render-manifests.sh
 
-k8s-check-alerts: ## Verify every alert selector matches a live Prometheus series
+k8s-check-alerts: ## Audit current series referenced by local alert and recording rules
 	./scripts/check-alert-metrics.sh
 
 k8s-crd-schemas: ## Generate kubeconform schemas from the deployed media-operator charts
@@ -171,43 +177,19 @@ k8s-crd-schemas: ## Generate kubeconform schemas from the deployed media-operato
 vault-init: ## Initialize Vault and configure ESO integration (one-time)
 	./scripts/vault-init.sh
 
-vault-put-secret: ## Write a secret to Vault (usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=xxx)
-	@if [ -z "$(SECRET_PATH)" ] || [ -z "$(KEY)" ] || [ -z "$(VAL)" ]; then \
-		echo "Usage: make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword VAL=secret123"; exit 1; fi
-	@if [ -z "$$VAULT_TOKEN" ]; then echo "Error: VAULT_TOKEN not set. Export your root token first: export VAULT_TOKEN=hvs.xxxxx"; exit 1; fi
-	@lsof -ti:8200 | xargs kill 2>/dev/null || true
-	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
-	@sleep 3
-	@VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/$(SECRET_PATH) $(KEY)="$(VAL)" 2>/dev/null \
-		|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/$(SECRET_PATH) $(KEY)="$(VAL)"
-	@kill %% 2>/dev/null || true
+export SECRET_PATH KEY VAL VAULT_NS
 
-arr-keys-adopt: ## Copy each *arr app's live API key into Vault at homelab/apps/arr (never prints the key)
-	@if [ -z "$$VAULT_TOKEN" ]; then echo "Error: VAULT_TOKEN not set. Export your root token first: export VAULT_TOKEN=hvs.xxxxx"; exit 1; fi
-	@lsof -ti:8200 | xargs kill 2>/dev/null || true
-	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 >/dev/null 2>&1 &
-	@sleep 3
-	@for app in sonarr radarr prowlarr; do \
-		key=$$(kubectl --kubeconfig ./kubeconfig -n arr exec deploy/arr-$$app -c main -- \
-			sed -n 's:.*<ApiKey>\(.*\)</ApiKey>.*:\1:p' /config/config.xml 2>/dev/null); \
-		if [ -z "$$key" ]; then echo "  $$app: FAILED to read /config/config.xml"; continue; fi; \
-		VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/apps/arr $$app-api-key="$$key" >/dev/null 2>&1 \
-			|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/apps/arr $$app-api-key="$$key" >/dev/null; \
-		echo "  $$app: adopted"; \
-	done
-	@key=$$(kubectl --kubeconfig ./kubeconfig -n arr exec deploy/arr-bazarr -c main -- \
-		sed -n 's/^[[:space:]]*apikey:[[:space:]]*//p' /config/config/config.yaml 2>/dev/null | head -1); \
-	if [ -z "$$key" ]; then echo "  bazarr: FAILED to read config.yaml"; else \
-		VAULT_ADDR=http://127.0.0.1:8200 vault kv patch homelab/apps/arr bazarr-api-key="$$key" >/dev/null 2>&1 \
-			|| VAULT_ADDR=http://127.0.0.1:8200 vault kv put homelab/apps/arr bazarr-api-key="$$key" >/dev/null; \
-		echo "  bazarr: adopted"; fi
-	@kill %% 2>/dev/null || true
+vault-put-secret: ## Patch one Vault key safely (set SECRET_PATH, KEY and exported VAL)
+	@./scripts/with-vault.sh ./scripts/vault-put-secret.sh
+
+arr-keys-adopt: ## Adopt live *arr keys into Vault without replacing sibling keys
+	@./scripts/with-vault.sh ./scripts/arr-keys-adopt.sh
 
 vault-status: ## Show Vault seal status
-	@kubectl --kubeconfig ./kubeconfig port-forward -n $(VAULT_NS) pod/vault-0 8200:8200 &
-	@sleep 2
-	@VAULT_ADDR=http://127.0.0.1:8200 vault status
-	@kill %% 2>/dev/null || true
+	@./scripts/with-vault.sh vault status
+
+k8s-bootstrap-drift: ## Compare manually managed bootstrap resources with the cluster
+	./scripts/check-bootstrap-drift.sh
 
 # ---------------------------------------------------------------------------
 # AWS  (KMS key + IAM user for Vault auto-unseal)

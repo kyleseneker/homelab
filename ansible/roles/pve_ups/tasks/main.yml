@@ -1,4 +1,12 @@
 ---
+- name: Require a private UPS monitor password
+  ansible.builtin.assert:
+    that:
+      - pve_ups_upsmon_password | length >= 16
+      - pve_ups_upsmon_password is match('^[A-Za-z0-9_-]+$')
+    fail_msg: Store vault_pve_ups_upsmon_password in Ansible Vault (at least 16 letters, digits, underscores or hyphens).
+  no_log: true
+
 - name: Install NUT packages
   ansible.builtin.apt:
     name:

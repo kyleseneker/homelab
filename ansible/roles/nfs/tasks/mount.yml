@@ -4,5 +4,5 @@
     path: "{{ nfs_mount_path }}"
     src: "{{ nas_ip }}:{{ nfs_nas_export_path }}"
     fstype: nfs
-    opts: "vers=3,hard,intr"
+    opts: "vers=3,hard,_netdev"
     state: mounted

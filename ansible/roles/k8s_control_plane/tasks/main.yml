@@ -79,22 +79,53 @@
     creates: /usr/local/bin/cilium
     executable: /bin/bash
 
+- name: Check for an existing Cilium Helm release
+  ansible.builtin.command: >
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-system
+    get secret -l owner=helm,name=cilium -o name
+  register: k8s_control_plane_cilium_release
+  changed_when: false
+
+- name: Copy vendored Gateway API CRDs for first Cilium installation
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../k8s/components/gateway-api/"
+    dest: /etc/kubernetes/gateway-api/
+    mode: "0644"
+    directory_mode: "0755"
+  when: k8s_control_plane_cilium_release.stdout | length == 0
+
+- name: Install Gateway API CRDs before first Cilium installation
+  ansible.builtin.command: >
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf apply --server-side
+    --field-manager=argocd-controller -f /etc/kubernetes/gateway-api/
+  register: k8s_control_plane_gateway_crds
+  changed_when: "'serverside-applied' in k8s_control_plane_gateway_crds.stdout"
+  when: k8s_control_plane_cilium_release.stdout | length == 0
+
+- name: Wait for Gateway API CRDs before first Cilium installation
+  ansible.builtin.command: >
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf wait
+    --for=condition=Established --timeout=120s -f /etc/kubernetes/gateway-api/
+  changed_when: false
+  when: k8s_control_plane_cilium_release.stdout | length == 0
+
+- name: Copy shared Cilium values
+  ansible.builtin.copy:
+    src: cilium-values.yml
+    dest: /etc/kubernetes/cilium-values.yml
+    mode: "0644"
+
 - name: Install Cilium into the cluster
   ansible.builtin.command: >
     cilium install --version {{ k8s_control_plane_cilium_version }}
-    --set gatewayAPI.enabled=true
-    --set kubeProxyReplacement=true
-    --set l2announcements.enabled=true
+    --values /etc/kubernetes/cilium-values.yml
     --set k8sServiceHost={{ ansible_host }}
     --set k8sServicePort=6443
   environment:
     KUBECONFIG: /etc/kubernetes/admin.conf
   register: k8s_control_plane_cilium_install
-  changed_when: "'Cilium was successfully installed' in k8s_control_plane_cilium_install.stdout"
-  failed_when:
-    - k8s_control_plane_cilium_install.rc != 0
-    - "'already installed' not in k8s_control_plane_cilium_install.stderr"
-    - "'cannot reuse a name' not in k8s_control_plane_cilium_install.stderr"
+  changed_when: true
+  when: k8s_control_plane_cilium_release.stdout | length == 0
 
 - name: Wait for Cilium to be ready
   ansible.builtin.command: cilium status --wait

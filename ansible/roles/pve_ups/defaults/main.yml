@@ -12,8 +12,8 @@ pve_ups_vm_shutdown_timeout: 120
 # Address for upsd to listen on for remote clients (e.g. NUT exporter in K8s)
 pve_ups_listen_address: "{{ ansible_host }}"
 
-# Local-only password for upsmon <-> upsd communication
-pve_ups_upsmon_password: upsmon
+# upsd also listens on the LAN; the primary-monitor credential must be secret.
+pve_ups_upsmon_password: "{{ vault_pve_ups_upsmon_password }}"
 
 # upsmon settings
 pve_ups_monitor: "{{ pve_ups_name }}@localhost"

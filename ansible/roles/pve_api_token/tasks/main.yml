@@ -79,5 +79,5 @@
   ansible.builtin.debug:
     msg: >-
       Terraform API token created and saved to /root/.terraform-api-token on the PVE host.
-      Copy the value to your terraform.tfvars file.
+      Store the value in the HCP Terraform workspace as the sensitive proxmox_api_token variable.
   when: pve_api_token_token_result is not skipped

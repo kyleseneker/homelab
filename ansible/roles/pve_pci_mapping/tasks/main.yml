@@ -15,6 +15,8 @@
     SUB_DEVICE=$(cat /sys/bus/pci/devices/${DEV}/subsystem_device | sed 's/0x//')
     IOMMU=$(basename $(readlink /sys/bus/pci/devices/${DEV}/iommu_group))
     echo "id=${VENDOR}:${DEVICE},iommugroup=${IOMMU},node={{ inventory_hostname }},path=${DEV},subsystem-id=${SUB_VENDOR}:${SUB_DEVICE}"
+  args:
+    executable: /bin/bash
   register: pve_pci_mapping_info
   loop: "{{ pve_pci_mapping_mappings }}"
   changed_when: false

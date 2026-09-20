@@ -8,8 +8,9 @@
 #   - Vault pod running (deployed via Argo CD)
 #
 set -euo pipefail
+umask 077
 
-VAULT_NAMESPACE="${VAULT_NAMESPACE:-vault}"
+VAULT_NAMESPACE="${VAULT_NAMESPACE:-${VAULT_NS:-vault}}"
 VAULT_POD="${VAULT_POD:-vault-0}"
 VAULT_PORT="${VAULT_PORT:-8200}"
 VAULT_KV_PATH="${VAULT_KV_PATH:-homelab}"
@@ -23,51 +24,31 @@ info()  { echo "==> $*"; }
 warn()  { echo "WARN: $*" >&2; }
 error() { echo "ERROR: $*" >&2; exit 1; }
 
-cleanup() {
-  if [[ -n "${PORT_FORWARD_PID:-}" ]]; then
-    kill "$PORT_FORWARD_PID" 2>/dev/null || true
-    wait "$PORT_FORWARD_PID" 2>/dev/null || true
-  fi
-}
-trap cleanup EXIT
-
-# -----------------------------------------------------------------------
-# 1. Port-forward to Vault
-# -----------------------------------------------------------------------
-info "Starting port-forward to ${VAULT_POD} in namespace ${VAULT_NAMESPACE}..."
-kubectl port-forward -n "$VAULT_NAMESPACE" "pod/${VAULT_POD}" "${VAULT_PORT}:8200" &
-PORT_FORWARD_PID=$!
-sleep 3
-
-if ! kill -0 "$PORT_FORWARD_PID" 2>/dev/null; then
-  error "Port-forward failed. Is the Vault pod running?"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+for tool in kubectl vault jq; do
+  command -v "$tool" >/dev/null || error "Required tool missing: $tool"
+done
+if [[ "${1:-}" != "--connected" ]]; then
+  export VAULT_NS="$VAULT_NAMESPACE" VAULT_POD VAULT_PORT
+  exec "$ROOT/scripts/with-vault.sh" "$ROOT/scripts/vault-init.sh" --connected
 fi
 
 # -----------------------------------------------------------------------
 # 2. Check initialization status and initialize if needed
 # -----------------------------------------------------------------------
 VAULT_INIT_JSON=$(vault status -format=json 2>/dev/null || true)
-INIT_STATUS=$(echo "$VAULT_INIT_JSON" | jq -r '.initialized' 2>/dev/null || echo "false")
+if ! printf '%s' "$VAULT_INIT_JSON" | jq -e '.initialized | type == "boolean"' >/dev/null; then
+  error "Cannot read Vault initialization status; refusing to initialize."
+fi
+INIT_STATUS=$(printf '%s' "$VAULT_INIT_JSON" | jq -r '.initialized')
 
 if [[ "$INIT_STATUS" == "false" ]]; then
-  info "Initializing Vault (1 key share, 1 key threshold)..."
-  vault operator init -key-shares=1 -key-threshold=1 -format=json > "$INIT_OUTPUT_FILE"
+  [[ ! -e "$INIT_OUTPUT_FILE" ]] || error "Refusing to overwrite existing $INIT_OUTPUT_FILE"
+  info "Initializing Vault with one recovery share (AWS KMS auto-unseal)..."
+  (set -o noclobber; vault operator init -recovery-shares=1 -recovery-threshold=1 -format=json > "$INIT_OUTPUT_FILE")
+  info "Recovery key and root token saved privately to $INIT_OUTPUT_FILE (mode 0600)."
+  info "Store them in your password manager, then remove the local file."
 
-  UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' "$INIT_OUTPUT_FILE")
-  ROOT_TOKEN=$(jq -r '.root_token' "$INIT_OUTPUT_FILE")
-
-  echo ""
-  echo "============================================================"
-  echo "  VAULT INITIALIZED"
-  echo ""
-  echo "  Unseal Key:  ${UNSEAL_KEY}"
-  echo "  Root Token:  ${ROOT_TOKEN}"
-  echo ""
-  echo "  These credentials are saved to: ${INIT_OUTPUT_FILE}"
-  echo "  Store them in your password manager, then delete the file."
-  echo "  DO NOT commit this file to git."
-  echo "============================================================"
-  echo ""
 else
   info "Vault is already initialized."
 fi
@@ -77,7 +58,7 @@ fi
 # -----------------------------------------------------------------------
 # vault status exits 2 when sealed; capture output separately
 VAULT_STATUS_JSON=$(vault status -format=json 2>/dev/null || true)
-SEAL_TYPE=$(echo "$VAULT_STATUS_JSON" | jq -r '.seal_type' 2>/dev/null || echo "unknown")
+SEAL_TYPE=$(echo "$VAULT_STATUS_JSON" | jq -r '.type' 2>/dev/null || echo "unknown")
 SEAL_STATUS=$(echo "$VAULT_STATUS_JSON" | jq -r '.sealed' 2>/dev/null || echo "true")
 
 if [[ "$SEAL_STATUS" != "false" ]]; then
@@ -106,19 +87,16 @@ fi
 # -----------------------------------------------------------------------
 # 4. Authenticate
 # -----------------------------------------------------------------------
-if [[ -f "$INIT_OUTPUT_FILE" ]]; then
-  ROOT_TOKEN=$(jq -r '.root_token' "$INIT_OUTPUT_FILE")
-  vault login -no-print "$ROOT_TOKEN"
-else
-  SEAL_STATUS=$(vault status -format=json 2>/dev/null | jq -r '.sealed' 2>/dev/null || echo "true")
-  if [[ "$SEAL_STATUS" == "false" ]]; then
-    if ! vault token lookup &>/dev/null; then
-      echo -n "Enter root token: "
-      read -rs ROOT_TOKEN
-      echo ""
-      vault login -no-print "$ROOT_TOKEN"
-    fi
-  fi
+if [[ -z "${VAULT_TOKEN:-}" && -f "$INIT_OUTPUT_FILE" ]]; then
+  VAULT_TOKEN=$(jq -er '.root_token | select(type == "string" and length > 0)' "$INIT_OUTPUT_FILE")
+  export VAULT_TOKEN
+fi
+if ! vault token lookup >/dev/null 2>&1; then
+  [[ -t 0 ]] || error "Set VAULT_TOKEN to a token authorized to configure Vault."
+  read -rsp "Enter an administrative Vault token: " VAULT_TOKEN
+  echo ""
+  export VAULT_TOKEN
+  vault token lookup >/dev/null || error "Vault authentication failed."
 fi
 
 # -----------------------------------------------------------------------
@@ -180,6 +158,6 @@ info ""
 info "Next steps:"
 info "  1. Store the root token in your password manager"
 info "  2. Delete ${INIT_OUTPUT_FILE} if it exists (DO NOT commit it)"
-info "  3. If Vault is still using Shamir sealing, store the unseal key and follow the KMS migration runbook: docs/runbooks/vault-kms-migration.md"
-info "  4. Populate secrets with: vault kv put ${VAULT_KV_PATH}/<path> key=value"
+info "  3. Store recovery keys separately; they cannot replace the KMS key during recovery"
+info "  4. Populate secrets with: make vault-put-secret SECRET_PATH=<path> KEY=<key> (export VAL)"
 info "  5. Verify ClusterSecretStore: kubectl get clustersecretstore vault-backend"

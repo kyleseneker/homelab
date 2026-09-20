@@ -27,13 +27,13 @@ variable "template_id" {
 
 variable "iso_url" {
   type        = string
-  default     = "https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso"
+  default     = "https://old-releases.ubuntu.com/releases/24.04.2/ubuntu-24.04.2-live-server-amd64.iso"
   description = "Ubuntu server ISO download URL"
 }
 
 variable "iso_checksum" {
   type        = string
-  default     = "file:https://releases.ubuntu.com/noble/SHA256SUMS"
+  default     = "file:https://old-releases.ubuntu.com/releases/24.04.2/SHA256SUMS"
   description = "ISO checksum or file URL for automatic verification"
 }
 

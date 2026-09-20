@@ -1,4 +1,4 @@
 ---
 nas_ip: "192.168.1.158"
-nas_export_path: "/volume/3378ed38-0d32-49cd-b634-08ab63e14f07/.srv/.unifi-drive/Media/.data"
+nfs_nas_export_path: "/volume/3378ed38-0d32-49cd-b634-08ab63e14f07/.srv/.unifi-drive/Media/.data"
 nfs_mount_path: "/media"

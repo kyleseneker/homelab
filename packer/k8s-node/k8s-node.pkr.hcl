@@ -53,8 +53,14 @@ source "proxmox-iso" "k8s-node" {
   cloud_init              = true
   cloud_init_storage_pool = var.disk_storage_pool
 
-  http_directory = "http"
-  boot_wait      = "5s"
+  http_content = {
+    "/user-data" = templatefile("http/user-data", {
+      media_uid = var.media_uid
+      media_gid = var.media_gid
+    })
+    "/meta-data" = file("http/meta-data")
+  }
+  boot_wait = "5s"
   boot_command = [
     "c",
     "linux /casper/vmlinuz --- autoinstall ds='nocloud-net;s=http://{{ .HTTPIP }}:{{ .HTTPPort }}/' ",

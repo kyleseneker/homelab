@@ -10,7 +10,8 @@
       tags: [pve_disable_wireless]
     - role: pve_disable_ksm
       tags: [pve_disable_ksm]
-    - pve_cloud_init
+    - role: pve_cloud_init
+      when: pve_cloud_init_enabled | default(false) | bool
     - pve_pci_mapping
     - pve_api_token
     - pve_ups

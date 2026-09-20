@@ -1,0 +1,15 @@
+---
+# Shared by first bootstrap and `make cilium-upgrade`.
+kubeProxyReplacement: true
+gatewayAPI:
+  enabled: true
+l2announcements:
+  enabled: true
+ipam:
+  mode: cluster-pool
+  operator:
+    # Preserve the existing cluster's allocation. Changing a populated pool is
+    # a planned network migration, not a routine chart upgrade.
+    clusterPoolIPv4PodCIDRList:
+      - 10.0.0.0/8
+    clusterPoolIPv4MaskSize: 24

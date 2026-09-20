@@ -1,13 +1,19 @@
 ---
 - name: Remove PVE enterprise repository
   ansible.builtin.file:
-    path: /etc/apt/sources.list.d/pve-enterprise.list
+    path: "{{ item }}"
     state: absent
+  loop:
+    - /etc/apt/sources.list.d/pve-enterprise.list
+    - /etc/apt/sources.list.d/pve-enterprise.sources
 
 - name: Remove Ceph enterprise repository
   ansible.builtin.file:
-    path: /etc/apt/sources.list.d/ceph.list
+    path: "{{ item }}"
     state: absent
+  loop:
+    - /etc/apt/sources.list.d/ceph.list
+    - /etc/apt/sources.list.d/ceph.sources
 
 - name: Add PVE no-subscription repository
   ansible.builtin.apt_repository:
@@ -15,11 +21,15 @@
     filename: pve-no-subscription
     state: present
 
-- name: Update apt cache and dist-upgrade
+- name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
-    upgrade: dist
     cache_valid_time: 3600
+
+- name: Upgrade Proxmox packages during an explicit maintenance window
+  ansible.builtin.apt:
+    upgrade: dist
+  when: pve_repos_upgrade_packages | default(false) | bool
 
 - name: Install common utilities
   ansible.builtin.apt:

@@ -28,7 +28,7 @@
     state: directory
     owner: "{{ tfc_agent_user }}"
     group: "{{ tfc_agent_group }}"
-    mode: "0755"
+    mode: "0700"
 
 - name: Install unzip
   ansible.builtin.apt:
@@ -40,6 +40,7 @@
     url: "https://releases.hashicorp.com/tfc-agent/{{ tfc_agent_version }}/tfc-agent_{{ tfc_agent_version }}_linux_amd64.zip"
     dest: "/tmp/tfc-agent_{{ tfc_agent_version }}.zip"
     mode: "0644"
+    checksum: "sha256:https://releases.hashicorp.com/tfc-agent/{{ tfc_agent_version }}/tfc-agent_{{ tfc_agent_version }}_SHA256SUMS"
 
 - name: Extract tfc-agent binary
   ansible.builtin.unarchive:

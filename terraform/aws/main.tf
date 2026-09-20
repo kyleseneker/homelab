@@ -27,6 +27,10 @@ resource "aws_kms_key" "vault_unseal" {
   deletion_window_in_days = 30
   enable_key_rotation     = true
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name        = "vault-unseal-${var.environment}"
     Environment = var.environment
@@ -84,6 +88,10 @@ resource "aws_iam_user_policy_attachment" "vault_unseal" {
 resource "aws_s3_bucket" "velero_offsite" {
   bucket = "velero-offsite-${var.environment}"
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   tags = {
     Name        = "velero-offsite-${var.environment}"
     Environment = var.environment
@@ -118,12 +126,39 @@ resource "aws_s3_bucket_public_access_block" "velero_offsite" {
   restrict_public_buckets = true
 }
 
+data "aws_iam_policy_document" "velero_offsite_transport" {
+  statement {
+    sid    = "DenyInsecureTransport"
+    effect = "Deny"
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.velero_offsite.arn,
+      "${aws_s3_bucket.velero_offsite.arn}/*",
+    ]
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "velero_offsite" {
+  bucket = aws_s3_bucket.velero_offsite.id
+  policy = data.aws_iam_policy_document.velero_offsite_transport.json
+}
+
 resource "aws_s3_bucket_lifecycle_configuration" "velero_offsite" {
   bucket = aws_s3_bucket.velero_offsite.id
 
   rule {
     id     = "transition-to-ia"
     status = "Enabled"
+    filter {}
 
     transition {
       days          = 30

@@ -73,6 +73,11 @@
     state: directory
     mode: "0755"
 
+- name: Check for containerd configuration
+  ansible.builtin.stat:
+    path: /etc/containerd/config.toml
+  register: k8s_prereqs_containerd_config
+
 - name: Check if containerd config has CRI disabled
   ansible.builtin.command: grep -q 'disabled_plugins.*cri' /etc/containerd/config.toml
   register: k8s_prereqs_cri_disabled
@@ -82,13 +87,13 @@
 - name: Generate proper containerd config
   ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
   changed_when: true
-  when: k8s_prereqs_cri_disabled.rc == 0
+  when: not k8s_prereqs_containerd_config.stat.exists or k8s_prereqs_containerd_config.stat.size == 0 or k8s_prereqs_cri_disabled.rc == 0
   notify: Restart containerd
 
 - name: Enable SystemdCgroup in containerd
   ansible.builtin.lineinfile:
     path: /etc/containerd/config.toml
-    regexp: 'SystemdCgroup = false'
+    regexp: '^\s*SystemdCgroup\s*='
     line: '            SystemdCgroup = true'
   notify: Restart containerd
 

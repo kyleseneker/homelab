@@ -1,6 +1,19 @@
 apiVersion: audit.k8s.io/v1
 kind: Policy
+omitStages:
+  - RequestReceived
 rules:
+  # Include credential access metadata even for list/watch operations.
+  - level: Metadata
+    resources:
+      - group: ""
+        resources:
+          - secrets
+          - serviceaccounts/token
+      - group: authentication.k8s.io
+        resources:
+          - tokenreviews
+
   # Don't log requests to the following API endpoints
   - level: None
     nonResourceURLs:
@@ -34,18 +47,6 @@ rules:
         resources:
           - leases
 
-  # Log secret access at RequestResponse level (who touched secrets and when)
-  - level: RequestResponse
-    resources:
-      - group: ""
-        resources:
-          - secrets
-    verbs:
-      - create
-      - delete
-      - patch
-      - update
-
   # Log RBAC changes at RequestResponse level
   - level: RequestResponse
     resources:
@@ -61,12 +62,9 @@ rules:
       - patch
       - update
 
-  # Log authentication token and certificate requests
+  # Log certificate requests
   - level: RequestResponse
     resources:
-      - group: authentication.k8s.io
-        resources:
-          - tokenreviews
       - group: certificates.k8s.io
         resources:
           - certificatesigningrequests
