@@ -18,8 +18,6 @@ Tracing provides a way to investigate request latency across services and practi
 
 ## 5.2 Grafana Dashboards as Code
 
-- [x] Provision cluster-capacity, namespace-resource and Exportarr dashboards from Git.
-- [x] Load labeled dashboard ConfigMaps through the Grafana sidecar.
 - [ ] Export remaining useful UI-created dashboards to Git under kube-prometheus-stack and remove duplicates.
 - [ ] Verify provisioned dashboards survive an empty Grafana database in staging.
 - [ ] Add views for synthetic probe status, backup age and node disk headroom.
@@ -35,9 +33,6 @@ Set targets from household needs and observed behavior. Application availability
 
 ## 5.4 Prometheus-Native Synthetic Monitoring
 
-- [x] Deploy Blackbox Exporter with Git-managed Probe resources.
-- [x] Add probe failure, missing-series and exporter alerts.
-- [x] Configure an external Watchdog heartbeat.
 - [ ] Check the probe inventory against every HTTPRoute endpoint and its expected response.
 - [ ] Verify Blackbox rejects untrusted or expired certificates.
 - [ ] Add an authenticated request/playback check. A login redirect only establishes that the authentication edge is responding.

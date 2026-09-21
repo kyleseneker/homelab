@@ -38,8 +38,6 @@ Use staging for destructive experiments. Expand production experiments only when
 
 ## 6.4 Supply Chain Security
 
-- [x] Validate rendered manifests and CRD schemas in CI.
-- [x] Add Renovate extraction coverage for HTTP and OCI charts and regression tests for tooling.
 - [ ] Confirm the next Renovate run discovers the intended chart and image dependencies.
 - [ ] Scan relevant workload images as well as source manifests, keeping exceptions scoped.
 - [ ] Add Kyverno cosign verification for images with supported publisher identities and signatures; define treatment of unsigned dependencies before enforcement.
@@ -49,8 +47,6 @@ Signature verification establishes provenance from a configured signer. Scanning
 
 ## 6.5 Scoped Autonomous Operations
 
-- [x] Configure [OpenClaw's named scaling permissions](../decisions/023-scoped-autonomous-operations.md), Slack pairing and authenticated webhooks.
-- [ ] Verify allowed scaling and denied exec, Secret reads, node writes and arbitrary workload changes with the deployed ServiceAccount.
 - [ ] Verify Slack pairing and webhook authentication independently.
 - [ ] Record remediation target, reason, before/after state and outcome.
 - [ ] Review write-capable media API credentials separately from Kubernetes permissions.

@@ -12,7 +12,7 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 **Hardware is a separate workstream.** The [NAS mirror](phase-1-foundations.md#11-add-nas-drive-redundancy), [10G links](phase-3-network.md#31-enable-10g-networking) and [second MS-01](phase-4-compute-and-storage.md#41-add-a-second-compute-host) remain planned purchases. None is a prerequisite for starting the software lab on available capacity. Keep their design and migration tasks in their respective phases and pick them up when the hardware is available.
 
-Completed checkboxes describe implemented configuration or a completed task. Restore, upgrade and user-facing acceptance checks remain open until demonstrated.
+The roadmap contains remaining work. Remove completed tasks; keep enduring operational details in the application docs and runbooks, and completion history in Git. Restore, upgrade and user-facing acceptance checks stay open until demonstrated.
 
 ## Phases
 

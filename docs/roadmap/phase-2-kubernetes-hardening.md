@@ -17,7 +17,7 @@ The cluster and provisioning configuration use Kubernetes 1.31.4. Kubernetes 1.3
 ## 2.2 Make least privilege real
 
 - [ ] Deploy the audit/Alloy fixes and confirm secret and token payloads no longer enter new logs. Assess access to retained historical logs separately.
-- [ ] Test allowed and rejected OpenClaw operations: named companion Deployment scaling should work; arbitrary exec, node mutation and workload-template writes should fail.
+- [ ] Verify that the deployed OpenClaw ServiceAccount cannot mutate nodes.
 - [ ] Exercise each Kyverno rule with violating regular and init containers, plus legitimate privileged infrastructure exceptions.
 - [ ] Replace blanket namespace exceptions incrementally where workloads actually conform; do not enable enforcement by breaking essential controllers.
 - [ ] Measure egress and management reachability before tightening policies in working namespaces.

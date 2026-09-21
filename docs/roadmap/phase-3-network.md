@@ -34,10 +34,6 @@
 
 ## 3.2 Configure WireGuard VPN
 
-- [x] Enable WireGuard on the Dream Router 7
-- [x] Enable UniFi Teleport
-- [x] Grant the VPN zone access to the Homelab VLAN (192.168.10.0/24)
-- [x] Grant the VPN zone access to the Management VLAN (192.168.99.0/24)
 - [ ] Record client profiles and split-tunnel routes for phone and laptop
 - [ ] Record an off-LAN test of DNS, TLS, application login, and management access
 
@@ -108,7 +104,6 @@ AMT is configured in firmware. This completes the physical management connection
 ## Definition of Done
 
 - [ ] 10G link between MS-01 and at least one other device
-- [x] WireGuard VPN configured for remote Homelab and Management access
 - [ ] Remote client verification recorded
 - [ ] DNS centralized or automated through the chosen approach
 - [ ] External access path chosen and implemented for Jellyfin
