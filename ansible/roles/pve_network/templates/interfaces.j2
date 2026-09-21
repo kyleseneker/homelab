@@ -15,3 +15,5 @@ iface {{ pve_network_bridge }} inet static
 auto {{ pve_network_bridge }}.{{ pve_network_management_vlan }}
 iface {{ pve_network_bridge }}.{{ pve_network_management_vlan }} inet static
 	address {{ pve_network_management_address }}
+
+source /etc/network/interfaces.d/*

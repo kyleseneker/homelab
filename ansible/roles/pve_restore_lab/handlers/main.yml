@@ -1,0 +1,5 @@
+---
+- name: Reload restore lab firewall
+  ansible.builtin.systemd:
+    name: restore-lab-network
+    state: reloaded

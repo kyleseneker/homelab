@@ -79,6 +79,16 @@
     creates: /usr/local/bin/cilium
     executable: /bin/bash
 
+- name: Wait for the API server after initialization or a node reboot
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf --request-timeout=5s
+    get --raw=/readyz
+  register: k8s_control_plane_api_ready
+  changed_when: false
+  retries: 30
+  delay: 5
+  until: k8s_control_plane_api_ready.rc == 0
+
 - name: Check for an existing Cilium Helm release
   ansible.builtin.command: >
     kubectl --kubeconfig=/etc/kubernetes/admin.conf -n kube-system
@@ -111,7 +121,7 @@
 
 - name: Copy shared Cilium values
   ansible.builtin.copy:
-    src: cilium-values.yml
+    src: "{{ k8s_control_plane_cilium_values_file }}"
     dest: /etc/kubernetes/cilium-values.yml
     mode: "0644"
 

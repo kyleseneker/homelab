@@ -1,0 +1,9 @@
+---
+ansible_user: labadmin
+ansible_ssh_private_key_file: "{{ inventory_dir }}/../../../.lab/id_ed25519"
+ansible_ssh_common_args: >-
+  -o IdentitiesOnly=yes
+  -o ProxyCommand="ssh -i ~/.ssh/id_ed25519_homelab -o IdentitiesOnly=yes -o BatchMode=yes -W %h:%p root@192.168.10.2"
+k8s_control_plane_pod_network_cidr: "172.24.0.0/16"
+k8s_control_plane_service_cidr: "172.25.0.0/16"
+k8s_control_plane_cilium_values_file: "{{ inventory_dir }}/cilium-values.yml"

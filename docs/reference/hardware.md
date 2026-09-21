@@ -79,7 +79,16 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | homelabk8s01-node-2 | Worker | 4 | 16 GB | -- |
 | homelabk8s01-node-3 | Worker | 4 | 24 GB | Intel Iris Xe (i915) |
 
-Total allocated: 10 vCPU / 48 GB of 14C / 64 GB physical.
+Production allocation: 10 vCPU / 48 GB of 14C / 64 GB physical.
+
+#### Disposable Recovery Lab
+
+| Node | Role | vCPU | RAM | Network |
+|------|------|------|-----|---------|
+| homelabrestore01-node-1 | Control plane | 2 | 3 GB | Internal `vmbr1` |
+| homelabrestore01-node-2 | Worker | 2 | 4 GB | Internal `vmbr1` |
+
+With the lab running, total VM allocation is 14 vCPU / 55 GB. The lab uses independent VM disks and a separate Terraform workspace; its VMs do not start automatically with the host. Template 9010 is a stopped lab-only copy of the cloud image. See the [restore lab runbook](../runbooks/restore-lab.md) for access, isolation and teardown.
 
 ## Networking
 

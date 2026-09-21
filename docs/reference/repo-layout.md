@@ -9,7 +9,9 @@ homelab/
 ├── docs-requirements.txt            # MkDocs dependencies
 ├── renovate.json                    # Renovate dependency update config
 ├── docs/                            # Documentation source
+├── .lab/                            # Ignored lab key, kubeconfig and tunnel socket
 ├── scripts/
+│   ├── restore-lab-access.sh         # Isolated lab SSH and API access
 │   ├── vault-init.sh                # One-time Vault init + ESO K8s auth setup
 │   ├── render-manifests.sh          # Render every ApplicationSet manifest offline
 │   ├── check-alert-metrics.sh       # Verify alert selectors match live Prometheus series
@@ -37,12 +39,14 @@ homelab/
 │   ├── ansible.cfg                  # Ansible configuration
 │   ├── requirements.yml             # Galaxy collections
 │   ├── playbooks/
-│   │   ├── group_vars -> ../group_vars # Load shared vars for both playbooks
+│   │   ├── group_vars -> ../group_vars # Load shared vars for playbooks
 │   │   ├── pve-host.yml             # Proxmox host setup
-│   │   └── k8s-cluster.yml          # K8s cluster bootstrap
+│   │   ├── k8s-cluster.yml          # Production K8s bootstrap
+│   │   ├── restore-lab-host.yml     # Lab host network, template and API identity
+│   │   └── restore-lab.yml          # Isolated K8s bootstrap without NFS
 │   ├── inventory/
 │   │   ├── <pve-host>/              # Proxmox host inventory + vaulted vars
-│   │   └── <cluster>/               # K8s node inventory + NAS vars
+│   │   └── <cluster>/               # K8s node inventory + cluster vars
 │   ├── roles/
 │   │   ├── base/                    # Common node setup
 │   │   ├── igpu/                    # Intel iGPU driver setup
@@ -56,6 +60,7 @@ homelab/
 │   │   ├── pve_iommu/               # IOMMU/VFIO setup
 │   │   ├── pve_pci_mapping/         # PCI device mapping
 │   │   ├── pve_network/             # Bridges and VLAN subinterfaces
+│   │   ├── pve_restore_lab/         # Internal bridge, firewall and lab template
 │   │   ├── pve_ups/                 # NUT server for the CyberPower UPS
 │   │   ├── pve_disable_ksm/         # Disable KSM (ksmd oops wedges guests)
 │   │   ├── pve_disable_wireless/    # Disable the unused AX211 radio

@@ -27,9 +27,9 @@ UPS/NUT, MinIO + offsite S3, etcd snapshots, and local SQLite-to-NFS backup brid
 
 ## 1.2 Verify Recovery
 
-Start with one disposable control plane and worker, using separate credentials, a separate kubeconfig and writable paths that cannot touch production data. Build and bootstrap them from this repository, then restore one application from S3. This first complete recovery provides the procedure and timing baseline for the remaining services.
+Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable control plane and worker, using separate credentials, a separate kubeconfig and writable paths that cannot touch production data. Build and bootstrap them from this repository, then restore one application from S3. This first complete recovery provides the procedure and timing baseline for the remaining services.
 
-- [ ] Build a fresh Packer clone and isolated cluster; verify unique machine/SSH identity, Cilium startup and a worker join
+- [ ] Build a fresh Packer template, replace the lab cloud-image template, and repeat identity, prerequisite and reboot checks
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
 - [ ] Inventory every PVC and application: recoverable data, backup mechanism, exclusions, destination and acceptable data loss/recovery time
 - [ ] Inspect Velero backup warnings, volume exclusions and PodVolumeBackup results; confirm each required data volume was actually captured

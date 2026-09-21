@@ -1,0 +1,59 @@
+---
+- name: Prepare disposable recovery nodes from the cloud-image template
+  hosts: k8s_cluster
+  gather_facts: false
+  become: true
+  pre_tasks:
+    - name: Require the isolated lab inventory
+      ansible.builtin.assert:
+        that:
+          - restore_lab | default(false) | bool
+          - inventory_hostname in ['homelabrestore01-node-1', 'homelabrestore01-node-2']
+          - ansible_host in ['172.26.0.10', '172.26.0.11']
+    - name: Wait for fresh clones to accept SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+    - name: Gather lab node facts
+      ansible.builtin.setup:
+    - name: Wait for cloud-init before installing prerequisites
+      ansible.builtin.command: cloud-init status --wait
+      register: restore_lab_cloud_init_wait
+      changed_when: false
+      failed_when: restore_lab_cloud_init_wait.rc not in [0, 2]
+    - name: Read cloud-init completion details
+      ansible.builtin.command: cloud-init status --format json
+      register: restore_lab_cloud_init_status
+      changed_when: false
+      failed_when: restore_lab_cloud_init_status.rc not in [0, 2]
+    - name: Require successful initialization with only deprecation warnings
+      ansible.builtin.assert:
+        that:
+          - (restore_lab_cloud_init_status.stdout | from_json).status == 'done'
+          - (restore_lab_cloud_init_status.stdout | from_json).errors | length == 0
+          - >-
+            ((restore_lab_cloud_init_status.stdout | from_json).recoverable_errors
+            | default({})).keys() | difference(['DEPRECATED']) | length == 0
+  roles:
+    - base
+    - k8s_prereqs
+  post_tasks:
+    - name: Check whether updated lab packages require a reboot
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: restore_lab_reboot_required
+    - name: Reboot disposable nodes before accepting the bootstrap
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+      when: restore_lab_reboot_required.stat.exists
+
+- name: Initialize the recovery control plane
+  hosts: control_plane
+  become: true
+  roles:
+    - k8s_control_plane
+
+- name: Join the recovery worker
+  hosts: workers
+  become: true
+  roles:
+    - k8s_worker

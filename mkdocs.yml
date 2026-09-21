@@ -110,6 +110,7 @@ nav:
       - Renovate: infrastructure/renovate.md
   - Runbooks:
       - Disaster Recovery: runbooks/disaster-recovery.md
+      - Restore Lab: runbooks/restore-lab.md
       - Upgrading Apps: runbooks/upgrading-apps.md
       - Upgrading Kubernetes: runbooks/upgrading-kubernetes.md
       - Adding an App: runbooks/adding-an-app.md

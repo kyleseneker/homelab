@@ -1,0 +1,3 @@
+---
+# Group k8s_cluster has higher precedence than shared group_vars/all.
+restore_lab: true

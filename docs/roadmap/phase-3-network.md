@@ -96,7 +96,7 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads
 - [ ] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
 - [ ] Inventory Cilium pod allocations, the Kubernetes service range and routed/VPN networks; the configured `10.0.0.0/8` pool contains the `10.96.0.0/12` service range
-- [ ] Rehearse a non-overlapping address plan in the isolated lab and document the migration procedure before changing the running cluster
+- [ ] Document and rehearse the production address migration, using the lab's verified separate pod/service ranges as a baseline
 - [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
 
 ---

@@ -2,6 +2,16 @@ variable "vm_name" {
   type = string
 }
 
+variable "bridge" {
+  type    = string
+  default = "vmbr0"
+}
+
+variable "username" {
+  type    = string
+  default = "media"
+}
+
 variable "vm_id" {
   type = number
 }
@@ -71,6 +81,11 @@ variable "onboot" {
 }
 
 variable "started" {
+  type    = bool
+  default = true
+}
+
+variable "agent_enabled" {
   type    = bool
   default = true
 }

@@ -52,6 +52,24 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-ssh-cp` | SSH into control plane |
 | `make cilium-upgrade` | Upgrade Cilium with Gateway API and L2 announcements on an existing cluster |
 
+## Restore Lab
+
+Use these dedicated targets for `homelabrestore01`; do not pass the lab to the production bootstrap. See the [restore lab runbook](../runbooks/restore-lab.md) for first-time workspace setup.
+
+| Command | Description |
+|---------|-------------|
+| `make lab-host` | Configure the isolated bridge, firewall, template and scoped API identity |
+| `make lab-init` | Initialize the separate Terraform workspace |
+| `make lab-plan` | Preview lab VM changes |
+| `make lab-infra` | Provision the two lab VMs |
+| `make lab-configure` | Bootstrap Kubernetes without production storage or applications |
+| `make lab-tunnel` | Forward the lab API to localhost:16443 through Proxmox |
+| `make lab-kubeconfig` | Fetch credentials into `.lab/kubeconfig` |
+| `make lab-status` | Check lab node readiness |
+| `make lab-ssh` | SSH to the lab control plane through Proxmox |
+| `make lab-disconnect` | Close the API tunnel |
+| `make lab-destroy` | Destroy only lab VMs, retaining the host setup and credentials |
+
 ## Validation
 
 | Command | Description |

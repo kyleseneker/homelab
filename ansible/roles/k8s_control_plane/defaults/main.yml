@@ -3,3 +3,4 @@ k8s_control_plane_version: "1.31.4"
 k8s_control_plane_pod_network_cidr: "10.244.0.0/16"
 k8s_control_plane_service_cidr: "10.96.0.0/12"
 k8s_control_plane_cilium_version: "1.19.1"
+k8s_control_plane_cilium_values_file: cilium-values.yml

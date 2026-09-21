@@ -43,6 +43,11 @@ jobs:
           terraform init -backend=false
           terraform validate
 
+      - working-directory: terraform/hosts/homelabrestore01
+        run: |
+          terraform init -backend=false
+          terraform validate
+
   kubernetes:
     runs-on: ubuntu-latest
     steps:

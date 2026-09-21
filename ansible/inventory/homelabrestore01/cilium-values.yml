@@ -1,0 +1,14 @@
+---
+kubeProxyReplacement: true
+gatewayAPI:
+  enabled: false
+l2announcements:
+  enabled: false
+operator:
+  replicas: 1
+ipam:
+  mode: cluster-pool
+  operator:
+    clusterPoolIPv4PodCIDRList:
+      - 172.24.0.0/16
+    clusterPoolIPv4MaskSize: 24

@@ -113,6 +113,7 @@ k8s-infra: ## Provision K8s VMs on Proxmox
 	terraform -chdir=$(TF_DIR) apply
 
 k8s-configure: ## Bootstrap K8s cluster via Ansible
+	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(CLUSTER)/hosts.yml playbooks/k8s-cluster.yml
 
 k8s-deploy: ## Full deploy: VMs + cluster + kubeconfig + ArgoCD
@@ -125,6 +126,7 @@ k8s-destroy: ## Tear down all K8s VMs
 	terraform -chdir=$(TF_DIR) destroy
 
 k8s-bootstrap: ## Install or update ArgoCD and the ApplicationSet
+	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
 	kubectl apply -k k8s/bootstrap/argocd/ --server-side --force-conflicts
 	@echo "Waiting for ArgoCD to be ready..."
 	kubectl -n argocd wait --for=condition=available deployment/argocd-server --timeout=300s
@@ -148,11 +150,13 @@ k8s-restore: ## List available Velero backups for restore
 	@echo "To restore, run: velero restore create --from-backup <backup-name>"
 
 k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
+	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
 	scp media@$(CP_IP):~/.kube/config "$(KUBECONFIG)"
 	chmod 600 "$(KUBECONFIG)"
 	@echo "Run: export KUBECONFIG=$$(pwd)/kubeconfig"
 
 cilium-upgrade: ## Upgrade Cilium and enable Gateway API + L2 announcements on existing cluster
+	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
 	cilium upgrade --version $(CILIUM_VER) --values ansible/roles/k8s_control_plane/files/cilium-values.yml --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443
 	cilium status --wait
 
@@ -205,3 +209,44 @@ aws-plan: ## Preview AWS resource changes
 
 aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
 	terraform -chdir=$(AWS_TF_DIR) apply
+
+# ---------------------------------------------------------------------------
+# Isolated restore lab (never uses the production kubeconfig or ApplicationSet)
+# ---------------------------------------------------------------------------
+
+LAB_TF_DIR := terraform/hosts/homelabrestore01
+
+.PHONY: lab-host lab-init lab-plan lab-infra lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
+
+lab-host: ## Configure the isolated Proxmox bridge, firewall and lab API identity
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/restore-lab-host.yml
+
+lab-init: ## Initialize the separate restore-lab Terraform workspace
+	terraform -chdir=$(LAB_TF_DIR) init
+
+lab-plan: ## Preview only the two disposable recovery VMs
+	terraform -chdir=$(LAB_TF_DIR) plan
+
+lab-infra: ## Provision the two disposable recovery VMs
+	terraform -chdir=$(LAB_TF_DIR) apply
+
+lab-configure: ## Bootstrap the lab without production storage or Applications
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/homelabrestore01/hosts.yml playbooks/restore-lab.yml
+
+lab-tunnel: ## Open the lab API tunnel on localhost:16443
+	./scripts/restore-lab-access.sh tunnel
+
+lab-disconnect: ## Close the lab API tunnel
+	./scripts/restore-lab-access.sh disconnect
+
+lab-kubeconfig: ## Fetch lab credentials into .lab/kubeconfig
+	./scripts/restore-lab-access.sh kubeconfig
+
+lab-ssh: ## SSH to the disposable control plane through Proxmox
+	./scripts/restore-lab-access.sh ssh
+
+lab-status: ## Check nodes using only the lab kubeconfig
+	kubectl --kubeconfig $(CURDIR)/.lab/kubeconfig get nodes -o wide
+
+lab-destroy: ## Destroy only the recovery VMs; retain host network and credentials
+	terraform -chdir=$(LAB_TF_DIR) destroy

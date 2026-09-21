@@ -6,7 +6,7 @@ Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles appl
 
 **Status convention:** Implemented means the configuration exists in the repository. A restore, upgrade or application outcome is complete only after its acceptance check succeeds. Operational checks remain open where evidence is still needed.
 
-A read-only cluster check on 2026-09-20 found all three nodes Ready, ArgoCD Applications Synced/Healthy, and no pod or workload-controller readiness exceptions. ExternalSecrets and certificates were Ready, and all PVCs were Bound. Scheduled backup jobs had succeeded and both Velero locations were Available; completed Velero backups still contained warnings, so recovery remains the first acceptance project.
+All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. Offsite application recovery remains unverified: completed Velero backups contain warnings, and a successful backup does not prove the data can be restored.
 
 ## Physical Layer
 
@@ -31,7 +31,7 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | N4 | WireGuard and Teleport are implemented with Homelab and Management access. | Record an off-LAN DNS, TLS, login and management-access check |
 | N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#34-plan-external-access-for-jellyfin) |
 | N6 | Cilium egress policies cover selected namespaces and destinations. | Inventory coverage and required traffic before tightening policies |
-| N8 | The configured Cilium pool, `10.0.0.0/8`, contains the Kubernetes service range, `10.96.0.0/12`. | Inventory allocated pod/service ranges and routed networks, then rehearse an overlap-free address plan in the isolated lab |
+| N8 | The configured Cilium pool, `10.0.0.0/8`, contains the Kubernetes service range, `10.96.0.0/12`. | Inventory production and routed/VPN ranges, then rehearse the production migration using the lab's verified non-overlapping ranges |
 
 ## Kubernetes / Software Layer
 

@@ -28,6 +28,7 @@ vault-init-keys.json
 # Kubeconfig
 kubeconfig
 *.kubeconfig
+.lab/
 
 # MkDocs
 site/

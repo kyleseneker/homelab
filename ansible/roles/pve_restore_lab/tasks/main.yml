@@ -1,0 +1,139 @@
+---
+- name: Create network fragment directory
+  ansible.builtin.file:
+    path: /etc/network/interfaces.d
+    state: directory
+    mode: "0755"
+
+- name: Include network fragments without reloading production networking
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    line: source /etc/network/interfaces.d/*
+
+- name: Define the internal lab bridge
+  ansible.builtin.copy:
+    dest: /etc/network/interfaces.d/restore-lab
+    mode: "0644"
+    content: |
+      # Brought up by restore-lab-network.service after its firewall is loaded.
+      iface vmbr1 inet static
+          address 172.26.0.1/24
+          bridge-ports none
+          bridge-stp off
+          bridge-fd 0
+          post-up sysctl -w net.ipv6.conf.vmbr1.disable_ipv6=1
+
+- name: Install the lab firewall
+  ansible.builtin.copy:
+    src: restore-lab.nft
+    dest: /etc/restore-lab.nft
+    mode: "0644"
+    validate: /usr/sbin/nft --check --file %s
+  notify: Reload restore lab firewall
+
+- name: Install the lab network service
+  ansible.builtin.copy:
+    src: restore-lab-network.service
+    dest: /etc/systemd/system/restore-lab-network.service
+    mode: "0644"
+
+- name: Start the isolated lab network
+  ansible.builtin.systemd:
+    name: restore-lab-network
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Check for the dedicated lab template
+  ansible.builtin.command: qm status 9010
+  register: pve_restore_lab_template
+  changed_when: false
+  failed_when: false
+
+- name: Clone the existing cloud image into a lab-only template
+  ansible.builtin.command: qm clone 9000 9010 --name restore-lab-template --full 1 --storage local-lvm
+  changed_when: true
+  when: pve_restore_lab_template.rc != 0
+
+- name: Put the new template on the isolated bridge and disable guest-agent waiting
+  ansible.builtin.command: qm set 9010 --net0 virtio,bridge=vmbr1 --agent enabled=0
+  changed_when: true
+  when: pve_restore_lab_template.rc != 0
+
+- name: Convert the lab image to a template
+  ansible.builtin.command: qm template 9010
+  changed_when: true
+  when: pve_restore_lab_template.rc != 0
+
+- name: Read the lab template configuration
+  ansible.builtin.command: pvesh get /nodes/homelabpve01/qemu/9010/config --output-format json
+  register: pve_restore_lab_template_config
+  changed_when: false
+
+- name: Verify the dedicated template identity and network
+  ansible.builtin.assert:
+    that:
+      - (pve_restore_lab_template_config.stdout | from_json).name == 'restore-lab-template'
+      - (pve_restore_lab_template_config.stdout | from_json).template == 1
+      - "'bridge=vmbr1' in (pve_restore_lab_template_config.stdout | from_json).net0"
+
+- name: Read existing Proxmox users
+  ansible.builtin.command: pveum user list --output-format json
+  register: pve_restore_lab_users
+  changed_when: false
+
+- name: Create the lab provisioning identity
+  ansible.builtin.command: pveum user add restore-lab@pve
+  changed_when: true
+  when: "'restore-lab@pve' not in (pve_restore_lab_users.stdout | from_json | map(attribute='userid'))"
+
+- name: Read current Proxmox ACLs
+  ansible.builtin.command: pveum acl list --output-format json
+  register: pve_restore_lab_acls
+  changed_when: false
+
+- name: Restrict provisioning to lab VMs, the clone template, and required storage/network
+  ansible.builtin.command: >-
+    pveum acl modify {{ item.path }} --users restore-lab@pve --roles {{ item.role }}
+  changed_when: true
+  loop:
+    - {path: /vms/300, role: PVEVMAdmin}
+    - {path: /vms/301, role: PVEVMAdmin}
+    - {path: /vms/9010, role: PVETemplateUser}
+    - {path: /storage/local-lvm, role: PVEDatastoreUser}
+    - {path: /nodes/homelabpve01, role: PVEAuditor}
+    - {path: /sdn/zones/localnetwork/vmbr1, role: PVESDNUser}
+  when: >-
+    (pve_restore_lab_acls.stdout | from_json
+    | selectattr('ugid', 'eq', 'restore-lab@pve')
+    | selectattr('path', 'eq', item.path)
+    | selectattr('roleid', 'eq', item.role) | list | length) == 0
+
+- name: Remove the lab identity's obsolete clone access to the production template
+  ansible.builtin.command: pveum acl delete /vms/9000 --users restore-lab@pve --roles PVETemplateUser
+  changed_when: true
+  when: >-
+    (pve_restore_lab_acls.stdout | from_json
+    | selectattr('ugid', 'eq', 'restore-lab@pve')
+    | selectattr('path', 'eq', '/vms/9000')
+    | selectattr('roleid', 'eq', 'PVETemplateUser') | list | length) > 0
+
+- name: Read existing lab API tokens
+  ansible.builtin.command: pveum user token list restore-lab@pve --output-format json
+  register: pve_restore_lab_tokens
+  changed_when: false
+
+- name: Create the lab API token
+  ansible.builtin.command: pveum user token add restore-lab@pve terraform --privsep 0 --output-format json
+  no_log: true
+  register: pve_restore_lab_token
+  changed_when: true
+  when: "'terraform' not in (pve_restore_lab_tokens.stdout | from_json | map(attribute='tokenid'))"
+
+- name: Save the lab provisioning token on the host
+  ansible.builtin.copy:
+    dest: /root/.restore-lab-api-token
+    content: "restore-lab@pve!terraform={{ (pve_restore_lab_token.stdout | from_json).value }}\n"
+    mode: "0600"
+  no_log: true
+  when: pve_restore_lab_token is not skipped

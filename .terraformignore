@@ -15,3 +15,8 @@ mkdocs.yml
 kubeconfig
 .gitignore
 .DS_Store
+.lab/
+.vault-password
+*.kubeconfig
+**/*.secret.tfvars
+.env

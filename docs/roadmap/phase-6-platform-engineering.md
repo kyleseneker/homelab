@@ -15,7 +15,7 @@
 - [ ] Rehearse bootstrap, worker replacement and application restores.
 - [ ] Give staging distinct credentials, application endpoints and writable storage paths.
 
-The second host provides capacity for a persistent staging cluster. Start the [rebuild and restore lab](phase-1-foundations.md#12-verify-recovery) on disposable VMs while that hardware work is underway, and carry its bootstrap and acceptance checks into staging.
+The second host provides capacity for a persistent staging cluster. Use the existing [restore lab](../runbooks/restore-lab.md) on disposable VMs while that hardware work is underway, and carry its bootstrap and acceptance checks into staging.
 
 ## 6.2 Runtime Security with Falco
 

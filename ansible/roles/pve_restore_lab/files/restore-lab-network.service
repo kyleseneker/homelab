@@ -1,0 +1,15 @@
+[Unit]
+Description=Isolated recovery lab firewall and internal bridge
+After=networking.service
+Before=pve-guests.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/restore-lab.nft
+ExecStart=/usr/sbin/ifup vmbr1
+ExecStart=/usr/sbin/sysctl -w net.ipv4.ip_forward=1
+ExecReload=/usr/sbin/nft -f /etc/restore-lab.nft
+
+[Install]
+WantedBy=multi-user.target

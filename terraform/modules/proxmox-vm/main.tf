@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   agent {
-    enabled = true
+    enabled = var.agent_enabled
   }
 
   disk {
@@ -32,7 +32,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   network_device {
-    bridge = "vmbr0"
+    bridge = var.bridge
     model  = "virtio"
   }
 
@@ -61,7 +61,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     }
 
     user_account {
-      username = "media"
+      username = var.username
       keys     = [var.ssh_public_key]
     }
   }
