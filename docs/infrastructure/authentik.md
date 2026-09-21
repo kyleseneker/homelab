@@ -62,6 +62,8 @@ Prerequisites: Authentik pods running in `auth`, DNS configured, and credentials
 
 ## Recovery and Backups
 
-The `auth` namespace is included in daily stateful and weekly full-cluster Velero schedules. A filesystem copy of running PostgreSQL is not a tested database restore; track database-consistent backup and restore drills in the roadmap.
+`authentik-backup` runs at 01:45 UTC, creating a custom-format PostgreSQL dump on the `authentik-backups` NFS PVC. It publishes the archive only after `pg_dump` and archive-list validation succeed. A holder Deployment keeps it mounted for daily MinIO and weekly S3 backups. Alerts cover a missing/stale successful dump and an unavailable holder.
+
+An S3 copy has been restored into empty lab PostgreSQL with source/restored table and key object counts matching. See [the recovery procedure and evidence](../runbooks/backup-and-restore.md#authentik-postgresql-recovery). Preserve `AUTHENTIK_SECRET_KEY` separately and test application/OIDC recovery before declaring identity recovery complete; the raw live PostgreSQL volume is not the logical recovery method.
 
 During an Authentik outage, proxy routes can fail. Use the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for local admin login and loopback port-forwarding without changing public routes.

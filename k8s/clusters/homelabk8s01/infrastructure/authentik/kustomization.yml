@@ -8,3 +8,4 @@ resources:
   - pdb.yml
   - blueprints-configmap.yml
   - referencegrant.yml
+  - backup.yml

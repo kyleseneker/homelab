@@ -120,6 +120,12 @@ The operator reports Ready and Synced for the declared application and indexer. 
 
 Prowlarr needs the official `indexers.prowlarr.com` catalog even when using the built-in Torznab schema. Its Cilium policy allows that hostname on HTTPS, the local fixture, Sonarr and DNS. Recyclarr alone can fetch public HTTPS guide resources; it has only fresh lab credentials. Sonarr can reach only lab Prowlarr and DNS. Neither application can reach production/NAS endpoints or arbitrary public HTTPS. These are deliberately different permissions for different recovery roles, not a namespace-wide internet allowance.
 
+## Authentik Database Recovery
+
+The `authentik-database` lab manifests provide a separate `restore-auth` namespace, a fresh local PVC and PostgreSQL 17.9. No Authentik server/worker or external database Service is started. The namespace denies all network traffic; administration uses `kubectl exec` and the local PostgreSQL socket.
+
+The [S3 logical-dump restore](backup-and-restore.md#authentik-postgresql-recovery) passed a transactional restore and source/restored count comparison. Database consistency is verified; application login/OIDC and independently available recovery credentials remain separate checks.
+
 ## Access and Teardown
 
 Every manual command must select the lab kubeconfig explicitly:

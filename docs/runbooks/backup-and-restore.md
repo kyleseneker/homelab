@@ -259,3 +259,45 @@ kopia snapshot restore <snapshot-id>/sonarr <new-private-directory> \
 Record the dump's original timestamp before copying it. For an offline SQLite dump in WAL mode, open it with `mode=ro&immutable=1` for integrity checks; never use immutable mode against a live writer. Install only into a stopped application on a fresh volume, following the [lab procedure](restore-lab.md#sonarr-recovery).
 
 This drill needed neither MinIO nor NAS data access, but the original services were not shut down. Backup credentials were obtained from the running production cluster. It therefore proves S3 database recovery across the lab's network boundary, not full site-loss recovery with externally escrowed credentials. Repeat with independently available credentials as part of the remaining recovery acceptance checks.
+
+## Authentik PostgreSQL Recovery
+
+`authentik-backup` runs at 01:45 UTC using PostgreSQL 17 tools, before the daily Velero schedule. PostgreSQL's [native `pg_dump`](https://www.postgresql.org/docs/17/app-pgdump.html) provides a consistent database snapshot while the application continues running. The job writes a custom-format archive to a temporary file, checks its archive listing, then atomically publishes `authentik.dump` on the `authentik-backups` PVC. The holder must remain Running for Velero to capture this volume. Do not overlap a manual dump with another dump job.
+
+Keep the original `AUTHENTIK_SECRET_KEY` and bootstrap credentials available independently. The dump contains application data, not PostgreSQL cluster roles or a separately recoverable copy of Vault. A restore with `--no-owner --no-acl` assigns objects to the destination role; provision that role and its credentials before restoring.
+
+### Restore into the Lab
+
+1. Retrieve the `authentik-backup-holder` PodVolumeBackup from the chosen offsite backup using the read-only Kopia procedure above. Its repository prefix is `velero/kopia/auth/`; retain both `authentik.dump` and `completed-at` in a private directory.
+2. Apply the lab `authentik-database/namespace.yml`, create `restore-authentik-db` in `restore-auth` with a fresh `password` key through private process input, then apply that directory's Kustomization. It creates only local storage and PostgreSQL, with no Service and namespace deny-all networking. Always select `.lab/kubeconfig` and confirm context `homelabrestore01` before writes.
+3. Wait for the database Deployment to be Ready. Confirm the destination contains zero public tables. Never run the restore over an existing application's database.
+4. Restore into the empty database:
+
+    ```bash
+    kubectl --kubeconfig .lab/kubeconfig -n restore-auth \
+      exec -i deploy/restore-authentik-db -- \
+      pg_restore --exit-on-error --single-transaction --no-owner --no-acl \
+        -U authentik -d authentik_restore \
+      < .lab/authentik-restore/source/authentik.dump
+    ```
+
+5. Compare table, user, application, provider, flow and migration counts with the recovery evidence. Confirm local PostgreSQL readiness and that public HTTPS, lab/production APIs and NAS access remain blocked. Database contents include sensitive identity material; keep the lab isolated and do not print rows or tokens.
+6. For application recovery, supply the original Authentik secret key, configure only lab database/service endpoints, and test login and OIDC before reopening integrations. This final application step has not yet been verified.
+
+### Verified Database Restore
+
+| Evidence | Result |
+|----------|--------|
+| Offsite backup | `authentik-logical-20260921`, Completed |
+| Kopia snapshot | `38ae9c0f39ab50ac03c58c4857cf88fe` in `velero/kopia/auth/` |
+| Dump completed | 2026-09-21 14:42:17 UTC |
+| S3 retrieval | 2026-09-21 14:48:50–14:48:55 UTC; dump age approximately 6 minutes 34 seconds |
+| Restored archive | 15,770,027 bytes |
+| SHA-256 | `2e1aefd9a2cffc9cd33a997a48d591df86178cb17fedcc3fb252d9d01d7e7753` |
+| Destination | Fresh local-path PVC, PostgreSQL 17.9, database `authentik_restore` |
+| Restore result | Exit 0 in a single transaction; verified at 2026-09-21 14:50:19 UTC |
+| Counts matching production | 212 tables, 3 users, 13 applications, 13 providers, 14 flows, 692 migrations |
+| Retrieval through database verification | Approximately 1 minute 28 seconds, with lab Kubernetes/PostgreSQL already ready |
+| Isolation | Local database readiness passed; unrelated public HTTPS, both APIs and NAS TCP probes timed out |
+
+The dump was retrieved from S3, without reading NAS data during restoration. Recovery credentials still came from the running production cluster. This proves native database recovery, not independent credential recovery, Authentik login, or an end-to-end OIDC recovery.

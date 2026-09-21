@@ -31,13 +31,12 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 - [ ] Build a fresh Packer template, replace the lab cloud-image template, and repeat identity, prerequisite and reboot checks
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
-- [ ] Inventory every PVC and application: recoverable data, backup mechanism, exclusions, destination and acceptable data loss/recovery time
-- [ ] Inspect Velero backup warnings, volume exclusions and PodVolumeBackup results; confirm each required data volume was actually captured
+- [ ] Set acceptable data-loss and recovery-time targets for the [inventoried data](../architecture/backups.md#recovery-coverage); close the documented non-database and unprotected-volume gaps
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
 - [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
 - [ ] Restore Vault data and test KMS auto-unseal, Kubernetes auth, and ESO with credentials available outside the cluster
 - [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; resolve recreated profile IDs for dependent apps and verify production authentication
-- [ ] Test Tdarr archive recovery, Authentik database consistency, and qBittorrent resume/config coverage
+- [ ] Restore Tdarr flows and qBittorrent resume/config state; complete Authentik application login/OIDC recovery from its verified logical database dump
 - [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data
 - [ ] Keep bootstrap credentials and recovery instructions available outside the cluster and Vault
 - [ ] Review backup credentials and S3 retention/deletion controls; versioning and Terraform deletion guards alone do not provide an immutable copy

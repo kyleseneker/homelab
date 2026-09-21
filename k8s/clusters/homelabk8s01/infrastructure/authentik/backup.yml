@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: authentik-backups
+  namespace: auth
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: authentik-backup
+  namespace: auth
+spec:
+  schedule: "45 1 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: authentik-backup
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 977
+            runAsGroup: 988
+            fsGroup: 988
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: dump
+              # Match the PostgreSQL major version in the Authentik chart.
+              image: postgres:17.9-bookworm
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  umask 077
+                  staged=/backup/authentik.dump.tmp
+                  trap 'rm -f "$staged"' EXIT
+                  pg_dump --format=custom --no-acl --lock-wait-timeout=60s \
+                    --file="$staged"
+                  pg_restore --list "$staged" >/dev/null
+                  mv "$staged" /backup/authentik.dump
+                  date -u +%Y-%m-%dT%H:%M:%SZ > /backup/completed-at.tmp
+                  mv /backup/completed-at.tmp /backup/completed-at
+                  echo "Authentik logical backup completed"
+              env:
+                - name: PGHOST
+                  value: authentik-postgresql.auth.svc.cluster.local
+                - name: PGPORT
+                  value: "5432"
+                - name: PGUSER
+                  value: authentik
+                - name: PGDATABASE
+                  value: authentik
+                - name: PGCONNECT_TIMEOUT
+                  value: "15"
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: authentik-credentials
+                      key: AUTHENTIK_POSTGRESQL__PASSWORD
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: authentik-backups
+            - name: tmp
+              emptyDir: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-backup-holder
+  namespace: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-backup-holder
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik-backup-holder
+      annotations:
+        backup.velero.io/backup-volumes: backup
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 977
+        runAsGroup: 988
+        fsGroup: 988
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: holder
+          image: registry.k8s.io/pause:3.10
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: authentik-backups
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: authentik-backup
+  namespace: auth
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: authentik-backup
+      rules:
+        - alert: AuthentikBackupStale
+          expr: |
+            (time() - kube_cronjob_status_last_successful_time{namespace="auth", cronjob="authentik-backup"} > 108000)
+            or
+            ((time() - kube_cronjob_created{namespace="auth", cronjob="authentik-backup"} > 108000)
+              unless on(namespace, cronjob)
+                kube_cronjob_status_last_successful_time{namespace="auth", cronjob="authentik-backup"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Authentik has no successful logical backup in the last 30 hours
+            description: Check the authentik-backup CronJob before relying on filesystem backups of PostgreSQL.
+        - alert: AuthentikBackupVolumeUnmounted
+          expr: |
+            kube_deployment_status_replicas_available{namespace="auth", deployment="authentik-backup-holder"} < 1
+            or absent(kube_deployment_status_replicas_available{namespace="auth", deployment="authentik-backup-holder"})
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Authentik backup volume has no running holder
+            description: Velero cannot capture the logical dump unless its holder pod keeps the PVC mounted.
