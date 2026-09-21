@@ -218,3 +218,44 @@ The `arr-config-backups` and `uptime-kuma-backups` PVCs hold staged database dum
 5. Start the app and verify login, representative records, and integration/API credentials before resuming GitOps. Retain the rollback copy until validated.
 
 Record the source backup, dump age, target volume mapping, integrity result, and an actual application-level read. A monthly isolated restore drill is still required; schedules and holder pods alone do not demonstrate recoverability.
+
+
+## Verified Sonarr Offsite Restore
+
+Sonarr 4.0.19 started successfully from an application-consistent SQLite dump retrieved directly from AWS S3 into the isolated restore lab. The database was copied into a fresh 1 GiB local-path PVC, owned by UID 977 / GID 988, and passed `PRAGMA integrity_check` before startup. The installed file matched the downloaded SHA-256.
+
+| Evidence | Result |
+|----------|--------|
+| Velero backup | `velero-weekly-offsite-20260920050031` |
+| PodVolumeBackup | `velero-weekly-offsite-20260920050031-mbzmn`, Completed |
+| Kopia snapshot | `94b958bbbd73b55ab2269e6c0666c050`, subdirectory `sonarr` |
+| S3 source | `velero-offsite-homelab`, repository prefix `velero/kopia/arr/` |
+| Dump timestamp | 2026-09-20 01:35:01 UTC |
+| Retrieval | 2026-09-21 13:22:01–13:22:05 UTC; approximately 4 seconds |
+| Dump age at retrieval | 35 hours 47 minutes |
+| Application verification | 2026-09-21 13:34:31 UTC; 12 minutes 30 seconds after retrieval began, with the lab already bootstrapped |
+| Restored database | 4,046,848 bytes; integrity `ok` |
+| SHA-256 | `a19f2fe0ce6ee12085462cb04f3c67d76760759de5d9e63d6a1ffaca2dc2f5ab` |
+| Database/API comparison | 1 series, 116 episodes, 54 episode-file records, 7 quality profiles; all series identities and episode identities/titles match |
+| Login | Fresh lab Forms user; anonymous protected-page redirect and authenticated HTTP 200 verified |
+
+The staging pod could not connect to public HTTPS, the lab API, the production API or NAS NFS. No production media volume was mounted. The 54 episode-file records are metadata; this test did not recover or read the media files. The original database contained no local users, consistent with production's external authentication. The lab Forms login does not validate Authentik recovery.
+
+The backup contained `sonarr.db`, not `config.xml`. Deployment/bootstrap settings and a fresh API key were supplied separately. In production, Git/Helm and Vault/ESO provide deployment settings and API credentials; media-operator owns the declared root folders, download clients, notifications and media-management settings; Prowlarr owns indexer sync; Recyclarr owns quality profiles and custom formats. These controllers should recreate their declared configuration after the database is restored. Controller reconciliation, credential recovery and production SSO were not exercised by this standalone drill. Settings absent from these declarations still need explicit recovery coverage.
+
+### Read-only S3 Retrieval
+
+Use the selected Completed PodVolumeBackup's `snapshotID`, uploader and storage location to identify the repository. This drill used checksum-verified Kopia 0.23.1 to read the Velero Kopia repository directly. Follow Velero's [read-only Kopia connection guidance](https://velero.io/docs/v1.18/troubleshooting/) with `--readonly`, `--override-username=default` and `--override-hostname=default` so the recovery client does not take maintenance ownership.
+
+Read the AWS credential reference from the offsite BackupStorageLocation and the repository password from `velero-repo-credentials`. Supply them through a private process environment, never command arguments or terminal output. Use an ephemeral configuration/cache directory under ignored `.lab/`, disable file logging and keychain access, and do not persist credentials. With that connection established:
+
+```bash
+# Use the same private --config-file and global options on each invocation.
+kopia snapshot list --all --json
+kopia snapshot restore <snapshot-id>/sonarr <new-private-directory> \
+  --skip-owners --skip-permissions --no-overwrite-files
+```
+
+Record the dump's original timestamp before copying it. For an offline SQLite dump in WAL mode, open it with `mode=ro&immutable=1` for integrity checks; never use immutable mode against a live writer. Install only into a stopped application on a fresh volume, following the [lab procedure](restore-lab.md#sonarr-recovery).
+
+This drill needed neither MinIO nor NAS data access, but the original services were not shut down. Backup credentials were obtained from the running production cluster. It therefore proves S3 database recovery across the lab's network boundary, not full site-loss recovery with externally escrowed credentials. Repeat with independently available credentials as part of the remaining recovery acceptance checks.

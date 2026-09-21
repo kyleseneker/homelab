@@ -1,0 +1,75 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/sonarr
+          tag: 4.0.19
+        env:
+          TZ: America/Chicago
+          PUID: '977'
+          PGID: '988'
+          SONARR__AUTH__METHOD: Forms
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+              - CHOWN
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 30
+              timeoutSeconds: 15
+              failureThreshold: 10
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 15
+              timeoutSeconds: 15
+              failureThreshold: 5
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /ping
+                port: 8989
+              periodSeconds: 5
+              timeoutSeconds: 15
+              failureThreshold: 30
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 8989
+defaultPodOptions:
+  automountServiceAccountToken: false
+  securityContext:
+    fsGroup: 988
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: restore-sonarr-config
+    globalMounts:
+      - path: /config

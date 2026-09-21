@@ -1,6 +1,6 @@
 # Isolated Restore Lab
 
-The recovery lab uses two disposable VMs on the existing Proxmox host. Its first acceptance test is an application restore from offsite storage. A successful cluster bootstrap alone does not prove recovery; the [recovery backlog](../roadmap/phase-1-foundations.md#12-verify-recovery) remains open until those checks pass.
+The recovery lab uses two disposable VMs on the existing Proxmox host. It has passed a Sonarr database restore from offsite S3. The [recovery backlog](../roadmap/phase-1-foundations.md#12-verify-recovery) tracks the remaining controller, credential and platform recovery checks.
 
 ## Boundaries
 
@@ -46,7 +46,7 @@ Use the dedicated `lab-*` targets. The production ApplicationSet includes produc
 
 Both nodes run Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-139. They returned Ready after the package-required reboot, and a second bootstrap run completed with zero changes. All five production/lab machine IDs and SSH host keys are distinct. CoreDNS and public HTTPS work from a lab pod; the private endpoints below are blocked. The lab API token returns permission denied for production VMs 200–202 and template 9000. Production remains at three Ready nodes and 53 Synced/Healthy Applications.
 
-The raw cloud-image bootstrap is verified. The fresh Packer build, ArgoCD/application bootstrap and offsite application restore are still separate acceptance checks.
+The raw cloud-image bootstrap and isolated Sonarr database restore are verified. The fresh Packer build and ArgoCD/controller-driven application bootstrap remain separate acceptance checks.
 
 ## Acceptance Checks
 
@@ -59,7 +59,27 @@ Before transferring backup data:
 - No NFS mounts or production credentials exist on the lab nodes.
 - All production nodes and applications remain healthy.
 
-For the first restore, retrieve the application-consistent Sonarr dump and required non-database configuration from an offsite backup. Restore into a new local volume under deny-all egress, with no production media mount. Verify database integrity, login and representative series/episode state. Record the backup age, restored contents, missing data and elapsed recovery time in the backup runbook. Do not mark offsite recovery complete based on a local NAS copy or a successful Velero status alone.
+## Sonarr Recovery
+
+The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no media mount or ingress, and a namespace policy denying all ingress and egress. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
+
+The [backup runbook](backup-and-restore.md#verified-sonarr-offsite-restore) records the source, checks and limits of the completed database restore. Non-database configuration is recreated from declared configuration and fresh lab credentials. Production recovery should use Helm/Git, Vault/ESO, media-operator, Prowlarr and Recyclarr according to their existing ownership; it should not accumulate a second manual configuration procedure. The standalone lab deployment intentionally does not reconcile production integrations.
+
+For another drill:
+
+1. Retrieve the selected Sonarr dump from S3 using the read-only procedure in the backup runbook. Preserve its timestamp, hash and integrity result.
+2. Apply the lab local-path provisioner and Sonarr resource Kustomizations with `--kubeconfig .lab/kubeconfig`. Confirm the context is `homelabrestore01` and both nodes have the expected names before any write.
+3. Mount the fresh `restore-sonarr-config` PVC in a temporary staging pod in `restore-sonarr`. Before copying data, verify the deny-all policy blocks public HTTPS, the lab API and production/NAS endpoints. Never reuse a volume containing an active database or stale WAL files.
+4. Install `sonarr.db` as UID 977 / GID 988, mode 0600. Recreate `config.xml` with port 8989, Forms authentication and a newly generated lab API key. Keep credentials in ignored `.lab/` files with mode 0600. Verify the installed database hash matches the downloaded dump, then remove the staging pod.
+5. Render `app-template` using the version in the lab Sonarr `config.yml` and its `values.yml`, release/namespace `restore-sonarr`; apply the render with the explicit lab kubeconfig. Wait for the Deployment to become Ready.
+6. Forward the service locally and create a fresh Forms user through Sonarr's host configuration. Verify an anonymous protected page redirects to login and an authenticated browser session reaches it. Use the lab API key to compare series, episode and episode-file records against the source database.
+
+```bash
+kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr \
+  port-forward --address 127.0.0.1 svc/restore-sonarr 18989:8989
+```
+
+Keep restored integration credentials isolated. A full reconciliation drill requires lab-specific endpoints and Secrets before starting controllers; do not apply the production media-config resources unchanged.
 
 ## Access and Teardown
 

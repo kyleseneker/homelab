@@ -27,7 +27,7 @@ UPS/NUT, MinIO + offsite S3, etcd snapshots, and local SQLite-to-NFS backup brid
 
 ## 1.2 Verify Recovery
 
-Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable control plane and worker, using separate credentials, a separate kubeconfig and writable paths that cannot touch production data. Build and bootstrap them from this repository, then restore one application from S3. This first complete recovery provides the procedure and timing baseline for the remaining services.
+Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable control plane and worker, using separate credentials, a separate kubeconfig and writable paths that cannot touch production data. The Sonarr database has been restored from S3 with integrity, API record and lab login checks; see the [recorded result](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore). Complete controller-driven configuration and independent credential recovery next.
 
 - [ ] Build a fresh Packer template, replace the lab cloud-image template, and repeat identity, prerequisite and reboot checks
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
@@ -36,9 +36,9 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable c
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
 - [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
 - [ ] Restore Vault data and test KMS auto-unseal, Kubernetes auth, and ESO with credentials available outside the cluster
-- [ ] Restore one SQLite application from its application-consistent dump, including non-database configuration; verify login and representative media state
+- [ ] Reconcile restored media applications using Git/Helm, Vault/ESO, media-operator, Prowlarr and Recyclarr; verify credential alignment, profile IDs and production authentication
 - [ ] Test Tdarr archive recovery, Authentik database consistency, and qBittorrent resume/config coverage
-- [ ] Restore from S3 with MinIO and the original NAS unavailable; record backup age, recovery time, and the data restored
+- [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data
 - [ ] Keep bootstrap credentials and recovery instructions available outside the cluster and Vault
 - [ ] Review backup credentials and S3 retention/deletion controls; versioning and Terraform deletion guards alone do not provide an immutable copy
 
