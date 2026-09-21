@@ -76,10 +76,10 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | Node | Role | vCPU | RAM | PCI Passthrough |
 |------|------|------|-----|-----------------|
 | homelabk8s01-node-1 | Control plane | 2 | 8 GB | -- |
-| homelabk8s01-node-2 | Worker | 4 | 24 GB | -- |
+| homelabk8s01-node-2 | Worker | 4 | 16 GB | -- |
 | homelabk8s01-node-3 | Worker | 4 | 24 GB | Intel Iris Xe (i915) |
 
-Total allocated: 10 vCPU / 56 GB of 14C / 64 GB physical.
+Total allocated: 10 vCPU / 48 GB of 14C / 64 GB physical.
 
 ## Networking
 

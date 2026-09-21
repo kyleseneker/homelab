@@ -20,7 +20,7 @@ nodes = {
     ip     = "192.168.10.51/24"
     vm_id  = 201
     cores  = 4
-    memory = 24576
+    memory = 16384
   }
   homelabk8s01-node-3 = {
     role         = "worker"
