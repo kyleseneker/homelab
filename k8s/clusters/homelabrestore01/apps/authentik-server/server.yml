@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: restore-authentik-db
+  namespace: restore-auth
+spec:
+  selector:
+    app.kubernetes.io/name: restore-authentik-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restore-authentik-server
+  namespace: restore-auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: restore-authentik-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-authentik-server
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          image: ghcr.io/goauthentik/server:2026.2.1
+          args: [server]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: AUTHENTIK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: restore-authentik-server
+                  key: secret-key
+            - name: AUTHENTIK_POSTGRESQL__HOST
+              value: restore-authentik-db.restore-auth.svc.cluster.local
+            - name: AUTHENTIK_POSTGRESQL__NAME
+              value: authentik_restore
+            - name: AUTHENTIK_POSTGRESQL__USER
+              value: authentik
+            - name: AUTHENTIK_POSTGRESQL__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: restore-authentik-db
+                  key: password
+            - name: AUTHENTIK_OUTPOSTS__DISABLE_EMBEDDED_OUTPOST
+              value: "true"
+            - name: AUTHENTIK_DISABLE_UPDATE_CHECK
+              value: "true"
+            - name: AUTHENTIK_ERROR_REPORTING__ENABLED
+              value: "false"
+          ports:
+            - name: http
+              containerPort: 9000
+          readinessProbe:
+            httpGet:
+              path: /-/health/ready/
+              port: http
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: authentik-database-access
+  namespace: restore-auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-authentik-db
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-authentik-server
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: authentik-server-access
+  namespace: restore-auth
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-authentik-server
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-authentik-db
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

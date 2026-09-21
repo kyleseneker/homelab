@@ -282,7 +282,7 @@ Keep the original `AUTHENTIK_SECRET_KEY` and bootstrap credentials available ind
     ```
 
 5. Compare table, user, application, provider, flow and migration counts with the recovery evidence. Confirm local PostgreSQL readiness and that public HTTPS, lab/production APIs and NAS access remain blocked. Database contents include sensitive identity material; keep the lab isolated and do not print rows or tokens.
-6. For application recovery, supply the original Authentik secret key, configure only lab database/service endpoints, and test login and OIDC before reopening integrations. This final application step has not yet been verified.
+6. Continue with the isolated application check below before reopening integrations.
 
 ### Verified Database Restore
 
@@ -300,4 +300,19 @@ Keep the original `AUTHENTIK_SECRET_KEY` and bootstrap credentials available ind
 | Retrieval through database verification | Approximately 1 minute 28 seconds, with lab Kubernetes/PostgreSQL already ready |
 | Isolation | Local database readiness passed; unrelated public HTTPS, both APIs and NAS TCP probes timed out |
 
-The dump was retrieved from S3, without reading NAS data during restoration. Recovery credentials still came from the running production cluster. This proves native database recovery, not independent credential recovery, Authentik login, or an end-to-end OIDC recovery.
+The dump was retrieved from S3, without reading NAS data during restoration. Recovery credentials still came from the running production cluster. This database stage alone proves native database recovery. The application checks below extend that evidence; independent credential recovery remains unverified.
+
+### Verified Application and OIDC Recovery
+
+After restoring the database, create `restore-authentik-server` in `restore-auth` with the original `AUTHENTIK_SECRET_KEY` under `secret-key`, using private process input. Apply `k8s/clusters/homelabrestore01/apps/authentik-server` with the lab kubeconfig. This is a separate deployment step: it starts the matching Authentik 2026.2.1 server and permits only lab PostgreSQL and DNS egress. The database Service is internal; server access uses a localhost-only port-forward. No worker or embedded outpost runs, and no production blueprints are mounted.
+
+The application recovery check passed against the S3-restored database:
+
+- The server became Ready and loaded all 13 restored OIDC providers.
+- `ak create_recovery_key 10 akadmin` issued a short-lived recovery link in the lab. Following it established a session; `/api/v3/core/users/me/` identified the restored administrator. Keep the link and cookies private.
+- Only the restored ArgoCD provider's redirect URI was changed to `http://127.0.0.1:19001/callback`. Its original client credentials and signing key were retained. Never make this callback edit in production.
+- An authorization-code request with random state and nonce passed the existing explicit-consent flow. Flow API submissions used the `X-authentik-CSRF` header and the server-issued consent challenge token.
+- The code exchange returned an ID token whose RS256 signature verified against the restored provider's JWKS. Issuer, audience, nonce and expiry checks passed; userinfo matched the restored administrator. Reusing the code returned HTTP 400.
+- The server could reach lab PostgreSQL; public HTTPS, lab/production APIs and NAS probes timed out.
+
+This verifies emergency administrator login and the restored provider's OIDC protocol flow with a lab callback. It does not verify ordinary password/MFA login, a running ArgoCD/Grafana client, production TLS/routes, proxy outposts, worker tasks or independently escrowed recovery credentials. The original secret key and backup credentials were still obtained from production. Keep those remaining checks separate from this successful application restore, and delete private test links, cookies and client credentials after use.

@@ -1,0 +1,9 @@
+appName: restore-authentik-server
+namespace: restore-auth
+sourceType: git
+gitPath: k8s/clusters/homelabrestore01/apps/authentik-server
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

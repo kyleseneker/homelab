@@ -243,7 +243,7 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `arr/arr-vpn-downloads-gluetun-config` | Live NFS file backup; VPN settings/credentials also come from Git/Vault | Fresh VPN bootstrap not demonstrated |
 | `arr/arr-vpn-downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | Resume consistency and application recovery unverified |
 | `auth/data-authentik-postgresql-0` | Native `pg_dump` to `authentik-backups`; raw volume is also captured | Raw live PostgreSQL files are not the database recovery method; preserve Authentik's secret key separately |
-| `auth/authentik-backups` | Daily custom-format PostgreSQL archive, mounted by a holder and captured by Velero | S3 database restoration verified; application login/OIDC restoration still required |
+| `auth/authentik-backups` | Daily custom-format PostgreSQL archive, mounted by a holder and captured by Velero | S3 database, emergency login and OIDC code exchange verified; ordinary login/MFA, clients and proxy/worker recovery remain open |
 | `backups/etcd-snapshots` | Daily etcd snapshot plus matching PKI, uploaded directly to `etcd-snapshots/` in S3 | Seven retained pairs; isolated control-plane restoration still required |
 | `backups/minio` | Local Velero object store | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |

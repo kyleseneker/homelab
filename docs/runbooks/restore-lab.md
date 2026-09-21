@@ -122,9 +122,9 @@ Prowlarr needs the official `indexers.prowlarr.com` catalog even when using the 
 
 ## Authentik Database Recovery
 
-The `authentik-database` lab manifests provide a separate `restore-auth` namespace, a fresh local PVC and PostgreSQL 17.9. No Authentik server/worker or external database Service is started. The namespace denies all network traffic; administration uses `kubectl exec` and the local PostgreSQL socket.
+The `authentik-database` lab manifests provide a separate `restore-auth` namespace, a fresh local PVC and PostgreSQL 17.9. The database-only step starts no Authentik server/worker or Service. Its namespace denies all network traffic; administration uses `kubectl exec` and the local PostgreSQL socket.
 
-The [S3 logical-dump restore](backup-and-restore.md#authentik-postgresql-recovery) passed a transactional restore and source/restored count comparison. Database consistency is verified; application login/OIDC and independently available recovery credentials remain separate checks.
+The [S3 logical-dump restore](backup-and-restore.md#authentik-postgresql-recovery) passed a transactional restore and source/restored count comparison. The separate `authentik-server` manifests then enable the [verified emergency-login/OIDC check](backup-and-restore.md#verified-application-and-oidc-recovery), allowing only server-to-database traffic and DNS. They require the original Authentik application secret key in a lab Secret. No worker or embedded outpost is enabled. Ordinary password/MFA login, client applications and independently available recovery credentials remain unverified.
 
 ## Access and Teardown
 
