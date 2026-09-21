@@ -1,0 +1,22 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: SonarrConfig
+metadata:
+  name: sonarr
+  namespace: restore-sonarr
+spec:
+  connection:
+    url: http://restore-sonarr.restore-sonarr.svc.cluster.local:8989
+    apiKeySecretRef:
+      name: restore-sonarr-api-key
+      key: api-key
+  reconcile:
+    interval: 1m
+    deletionPolicy: orphan
+  # This writable lab-only directory contains no production media.
+  rootFolders:
+    - path: /config/restore-media/tv
+  downloadClientConfig:
+    enableCompletedDownloadHandling: true
+    autoRedownloadFailed: true
+  mediaManagement:
+    downloadPropersAndRepacks: doNotPrefer

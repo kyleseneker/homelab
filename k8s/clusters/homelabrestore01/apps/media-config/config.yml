@@ -1,0 +1,9 @@
+appName: restore-media-config
+namespace: restore-sonarr
+sourceType: git
+gitPath: k8s/clusters/homelabrestore01/apps/media-config
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

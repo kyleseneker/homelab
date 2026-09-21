@@ -1,0 +1,11 @@
+appName: restore-media-operator
+namespace: restore-sonarr
+sourceType: helm
+chartRepo: ghcr.io/kyleseneker/media-operator
+chartName: media-operator-pvr
+chartVersion: "0.34.0"
+createNamespace: false
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

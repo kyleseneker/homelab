@@ -6,7 +6,7 @@ Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles appl
 
 **Status convention:** Implemented means the configuration exists in the repository. A restore, upgrade or application outcome is complete only after its acceptance check succeeds. Operational checks remain open where evidence is still needed.
 
-All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. The [Sonarr offsite restore](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore) passed SQLite integrity, application record and lab login checks on fresh local storage with NAS access blocked. Controller reconciliation, independent recovery credentials and other application restores remain unverified; completed Velero backups still contain warnings.
+All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. The [Sonarr offsite restore](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore) passed SQLite integrity, application record and lab login checks on fresh local storage with NAS access blocked. Sonarr media-operator root-folder creation and settings repair also passed. Remaining integration reconciliation, independent recovery credentials and other application restores remain unverified; completed Velero backups still contain warnings.
 
 ## Physical Layer
 

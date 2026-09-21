@@ -61,9 +61,9 @@ Before transferring backup data:
 
 ## Sonarr Recovery
 
-The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no media mount or ingress, and a namespace policy denying all ingress and egress. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
+The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no production media mount or HTTPRoute, and deny-all egress. Namespace traffic is denied by default; a narrow policy allows the lab media-operator to reach Sonarr on port 8989. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
 
-The [backup runbook](backup-and-restore.md#verified-sonarr-offsite-restore) records the source, checks and limits of the completed database restore. Non-database configuration is recreated from declared configuration and fresh lab credentials. Production recovery should use Helm/Git, Vault/ESO, media-operator, Prowlarr and Recyclarr according to their existing ownership; it should not accumulate a second manual configuration procedure. The standalone lab deployment intentionally does not reconcile production integrations.
+The [backup runbook](backup-and-restore.md#verified-sonarr-offsite-restore) records the source, checks and limits of the completed database restore. Non-database configuration is recreated from declared configuration and fresh lab credentials. Production recovery should use Helm/Git, Vault/ESO, media-operator, Prowlarr and Recyclarr according to their existing ownership; it should not accumulate a second manual configuration procedure. The lab operator reconciles a bounded Sonarr configuration; production download clients, notifications and indexers remain isolated.
 
 For another drill:
 
@@ -79,7 +79,24 @@ kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr \
   port-forward --address 127.0.0.1 svc/restore-sonarr 18989:8989
 ```
 
-Keep restored integration credentials isolated. A full reconciliation drill requires lab-specific endpoints and Secrets before starting controllers; do not apply the production media-config resources unchanged.
+## Media-operator Reconciliation
+
+The lab runs the same `media-operator-pvr` 0.34.0 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
+
+To repeat after the database restore:
+
+1. Create `restore-sonarr-api-key` in `restore-sonarr` with key `api-key` matching the lab Sonarr API key. Supply its value through a private file or process input, not shell arguments or terminal output.
+2. Create `/config/restore-media/tv` inside Sonarr's local PVC, owned by 977:988. This empty directory substitutes for a media root; it contains no recovered media.
+3. Apply the lab `media-operator` resource Kustomization, then render/apply its pinned Helm chart with CRDs included. Use release `restore-media-operator`, namespace `restore-sonarr`, and the committed lab values. Every Kubernetes command must specify `.lab/kubeconfig`.
+4. Wait for the SonarrConfig CRD to become Established and the operator Deployment to become Ready, then apply the lab `media-config` Kustomization.
+5. Inspect both Ready and Synced conditions, their observed generation, and the actual Sonarr API settings. A successful Deployment alone does not demonstrate reconciliation.
+6. Change a managed setting through the lab API and remove only the lab root-folder API entry. Within the one-minute reconciliation interval, verify the setting and entry are restored. Compare series/episode identities with the source dump and confirm Sonarr still cannot reach public HTTPS, either Kubernetes API, or NAS NFS.
+
+Network access is limited by pod identity: the operator can reach the lab API, CoreDNS and Sonarr; Sonarr gains no outbound access. Retain the namespace default-deny policy. Keep restored integration credentials isolated; do not apply production media-config resources unchanged.
+
+The drill passed initial reconciliation and a second repair: the operator corrected all three changed settings, created the missing lab root-folder entry, and recreated it after deletion (API ID 2 became 3). Ready and Synced conditions matched the current generation. All series and episode identities still matched the source dump, all 54 episode-file records remained, and all four Sonarr egress probes timed out as expected. Verification completed at 2026-09-21 14:07:38 UTC.
+
+This verifies Sonarr's bounded media-operator reconciliation. Prowlarr indexer sync, Recyclarr profiles, download clients, notifications, Vault/ESO credential bootstrap and Authentik remain separate recovery checks.
 
 ## Access and Teardown
 

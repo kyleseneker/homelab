@@ -13,13 +13,20 @@ trap 'rm -rf "$work"' EXIT
 val() { sed -n "s/^$2:[[:space:]]*//p" "$1" | head -1 | tr -d "'\"" ; }
 
 count=0
+touch "$work/pulled-charts"
 while IFS= read -r cfg; do
   repo="$(val "$cfg" chartRepo)"
   name="$(val "$cfg" chartName)"
   ver="$(val "$cfg" chartVersion)"
   [ -n "$name" ] || continue
+  chart="oci://${repo}/${name}"
+  # Multiple clusters may pin the same chart; Helm cannot untar it twice.
+  if grep -Fxq "${chart}@${ver}" "$work/pulled-charts"; then
+    continue
+  fi
   helm pull "oci://${repo}/${name}" --version "$ver" --untar --untardir "$work" >/dev/null 2>&1 || {
     echo "  FAILED to pull ${name} ${ver}" >&2; exit 1; }
+  printf '%s\n' "${chart}@${ver}" >> "$work/pulled-charts"
   count=$((count+1))
 done < <(grep -rl 'chartRepo: ghcr.io/kyleseneker/media-operator' k8s/clusters/*/apps/*/config.yml | sort)
 
