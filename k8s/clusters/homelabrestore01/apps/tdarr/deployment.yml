@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restore-tdarr
+  namespace: restore-tdarr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: restore-tdarr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-tdarr
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: server
+          image: ghcr.io/haveagitgat/tdarr:2.86.01
+          # Run only the server binary; bypass the container's node supervisor.
+          command: [/app/Tdarr_Server/Tdarr_Server]
+          workingDir: /app/Tdarr_Server
+          env:
+            - name: internalNode
+              value: "false"
+            - name: inContainer
+              value: "true"
+            - name: serverIP
+              value: 0.0.0.0
+            - name: serverPort
+              value: "8266"
+            - name: webUIPort
+              value: "8265"
+            - name: openBrowser
+              value: "false"
+            - name: cronPluginUpdate
+              value: ""
+            - name: auth
+              value: "true"
+            - name: seededApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: restore-tdarr-api-key
+                  key: api-key
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=512
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8265
+            initialDelaySeconds: 15
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /app/server
+            - name: configs
+              mountPath: /app/configs
+            - name: logs
+              mountPath: /app/logs
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: restore-tdarr
+        - name: configs
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}

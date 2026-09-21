@@ -316,3 +316,33 @@ The application recovery check passed against the S3-restored database:
 - The server could reach lab PostgreSQL; public HTTPS, lab/production APIs and NAS probes timed out.
 
 This verifies emergency administrator login and the restored provider's OIDC protocol flow with a lab callback. It does not verify ordinary password/MFA login, a running ArgoCD/Grafana client, production TLS/routes, proxy outposts, worker tasks or independently escrowed recovery credentials. The original secret key and backup credentials were still obtained from production. Keep those remaining checks separate from this successful application restore, and delete private test links, cookies and client credentials after use.
+
+## Tdarr Native Archive Recovery
+
+Tdarr 2.86.01's bundled backup screen specifies an offline restore: stop the server and unpack the native archive into its data directory. The lab uses a fresh volume, so no existing database is overwritten. The archive contains `DB2` and `Plugins`; database dumps alone do not recover the plugin files.
+
+1. Retrieve `tdarr/latest.zip` from the offsite media-holder snapshot using the read-only Kopia procedure. Keep the original archive private and verify its ZIP CRC and SHA-256 before extraction.
+2. Apply only `namespace.yml`, `networkpolicy.yml` and `pvc.yml` from `k8s/clusters/homelabrestore01/apps/tdarr`, selecting `.lab/kubeconfig` explicitly. Leave the server stopped. Create `restore-tdarr-api-key` with a fresh `api-key` beginning with `tapi_` through private process input.
+3. Mount the new PVC in a temporary non-root import pod in `restore-tdarr`. Reject absolute paths, parent-directory traversal and symlinks in the ZIP. Require an empty destination, then extract into the PVC's `Tdarr/` directory. Verify `Tdarr/DB2/SQL/database.db` with SQLite `integrity_check`. The archive's `SQL_backup_preop` directory is an old rollback copy, not the active database.
+4. Remove the import pod, then apply the directory's Kustomization. It runs only the server binary at the production version, with `internalNode=false`, a read-only root filesystem and no media/GPU mounts. The namespace denies ingress and egress; no Service or route is created. Use `kubectl exec` or a localhost port-forward for checks.
+5. Read `FlowsJSONDB`, `LibrarySettingsJSONDB`, `VariablesJSONDB` and `FileJSONDB` through `/api/v2/cruddb` in `getAll` mode using the fresh lab key. Compare complete records with the archive's corresponding SQLite tables, not merely their counts. Compare plugin file hashes and confirm `/api/v2/get-nodes` is empty. Do not confuse restored node configuration records with connected nodes.
+
+### Verified Tdarr Restore
+
+| Evidence | Result |
+|----------|--------|
+| Offsite backup | `recovery-verify-20260921` |
+| Kopia snapshot | `823c7796b716c4351068b720750dd720` in `velero/kopia/arr/` |
+| Native archive SHA-256 | `0aa77fb922435e0ebbad89fcd95912d81b15994651095571abace75b5df6ed38` |
+| Archive contents | 501 entries; CRC checks passed |
+| Active database SHA-256 before startup | `41712f7f2dcba881099bc178c2f5806b08bf82f6188fb013acad14d5225ca96e` |
+| Destination | Fresh 2 GiB local-path PVC; Tdarr 2.86.01 |
+| Database integrity | `ok` before application startup |
+| Records loaded through the API | Exact matches for 5 flows, 2 libraries, 34 variables and 60 file-metadata records |
+| Plugins | All 275 archived plugin files matched their original hashes |
+| Authentication | Fresh lab API key accepted; unauthenticated collection request returned HTTP 401 |
+| Restart | Exact record comparisons and API authentication passed again after server restart |
+| Processing | Zero connected nodes; no media or GPU mounted |
+| Isolation | Public HTTPS, lab/production APIs and NAS TCP probes timed out |
+
+This verifies native configuration recovery and application readability. It does not recover the media files, prove flow execution or GPU transcoding, or verify normal UI/SSO login. Backup credentials still came from production. Test a copied media fixture and review library-specific replacement/deletion settings before enabling workers in a real recovery.

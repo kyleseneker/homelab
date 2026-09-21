@@ -236,7 +236,7 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `arr/arr-radarr-config` | Daily `radarr/radarr.db` dump | Application restore and profile recreation unverified |
 | `arr/arr-seerr-config` | Daily `seerr/db/db.sqlite3` dump | Requires media-server login and profiles recreated by Recyclarr; Seerr connections now resolve profile IDs by name; `.backup-preop` is an extra rollback copy, not the active database |
 | `arr/arr-sonarr-config` | Daily `sonarr/sonarr.db` dump | Offsite database, login, records and bounded controller recovery verified; media/integration recovery remains separate |
-| `arr/arr-tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Archive and primary SQLite integrity verified; application/flow restore still required |
+| `arr/arr-tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Native restore verified: exact flow/library/variable/file records and plugin hashes; worker execution and media recovery remain unverified |
 | `arr/arr-config-backups` | NFS staging volume mounted by `arr-config-backup-holder`; daily MinIO and weekly S3 | A successful copy job alone does not demonstrate upload or application recovery |
 | `arr/arr-data` | Shared media/downloads on NFS; deliberately excluded from Velero volume backups | No independent media copy demonstrated; NAS redundancy does not replace a backup |
 | `arr/arr-recyclarr` | NFS state/cache mounted by its holder, captured by Velero; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |

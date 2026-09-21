@@ -1,0 +1,9 @@
+appName: restore-tdarr
+namespace: restore-tdarr
+sourceType: git
+gitPath: k8s/clusters/homelabrestore01/apps/tdarr
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
