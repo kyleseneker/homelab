@@ -61,7 +61,7 @@ Before transferring backup data:
 
 ## Sonarr Recovery
 
-The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no production media mount or HTTPRoute, and deny-all egress. Namespace traffic is denied by default; a narrow policy allows the lab media-operator to reach Sonarr on port 8989. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
+The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no production media mount or HTTPRoute, and restricted egress. Namespace traffic is denied by default; narrow policies allow the lab controllers and Recyclarr to reach Sonarr, and Sonarr to reach lab Prowlarr and DNS. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
 
 The [backup runbook](backup-and-restore.md#verified-sonarr-offsite-restore) records the source, checks and limits of the completed database restore. Non-database configuration is recreated from declared configuration and fresh lab credentials. Production recovery should use Helm/Git, Vault/ESO, media-operator, Prowlarr and Recyclarr according to their existing ownership; it should not accumulate a second manual configuration procedure. The lab operator reconciles a bounded Sonarr configuration; production download clients, notifications and indexers remain isolated.
 
@@ -92,11 +92,33 @@ To repeat after the database restore:
 5. Inspect both Ready and Synced conditions, their observed generation, and the actual Sonarr API settings. A successful Deployment alone does not demonstrate reconciliation.
 6. Change a managed setting through the lab API and remove only the lab root-folder API entry. Within the one-minute reconciliation interval, verify the setting and entry are restored. Compare series/episode identities with the source dump and confirm Sonarr still cannot reach public HTTPS, either Kubernetes API, or NAS NFS.
 
-Network access is limited by pod identity: the operator can reach the lab API, CoreDNS and Sonarr; Sonarr gains no outbound access. Retain the namespace default-deny policy. Keep restored integration credentials isolated; do not apply production media-config resources unchanged.
+Network access is limited by pod identity: the operator can reach the lab API, CoreDNS and Sonarr. The subsequent Prowlarr drill adds only DNS and lab Prowlarr access for Sonarr. Retain the namespace default-deny policy. Keep restored integration credentials isolated; do not apply production media-config resources unchanged.
 
 The drill passed initial reconciliation and a second repair: the operator corrected all three changed settings, created the missing lab root-folder entry, and recreated it after deletion (API ID 2 became 3). Ready and Synced conditions matched the current generation. All series and episode identities still matched the source dump, all 54 episode-file records remained, and all four Sonarr egress probes timed out as expected. Verification completed at 2026-09-21 14:07:38 UTC.
 
-This verifies Sonarr's bounded media-operator reconciliation. Prowlarr indexer sync, Recyclarr profiles, download clients, notifications, Vault/ESO credential bootstrap and Authentik remain separate recovery checks.
+This verifies Sonarr's bounded media-operator reconciliation. The following drills cover Recyclarr and Prowlarr's synchronization path. Production tracker recovery, download clients, notifications, Vault/ESO credential bootstrap and Authentik remain separate recovery checks.
+
+## Recyclarr and Prowlarr Recovery
+
+The lab uses production's Recyclarr 8.7.1, Prowlarr 2.5.2 and indexer-operator 0.34.0 pins. Both clusters consume the same Recyclarr profile ConfigMap from `k8s/components/recyclarr-config`; URL environment overrides select the lab, while the default URLs preserve production behavior. The suspended lab CronJob runs only `sync sonarr`, stores its cache on local-path storage and uses a separate lab Secret. Run jobs sequentially against that cache.
+
+Recyclarr repaired a deliberately disabled upgrade setting, adopted all 31 existing custom formats, and recreated the deleted `WEB-1080p` profile. Its new ID was **8**, replacing **7**. The lab series was temporarily assigned another profile to permit deletion, then reassociated with the recreated profile by name. A third sync reported no changes to profiles, formats, quality sizes or naming. This proves the configured profile can be recreated; consumers such as Seerr must resolve and verify the resulting ID rather than reuse production's numeric ID.
+
+Prowlarr starts with a fresh local database and lab API key. The indexer operator recreates its Sonarr application connection and a Torznab indexer named `Recovery Fixture` from the lab `ProwlarrConfig`. A local Python fixture advertises TV categories and returns one synthetic release because Prowlarr rejects an empty feed during validation. Its download URL returns 404, and it serves no media. It does not use real tracker credentials or public tracker endpoints.
+
+The operator reports Ready and Synced for the declared application and indexer. Prowlarr synchronizes `Recovery Fixture (Prowlarr)` into Sonarr using the lab endpoint and credentials. Sonarr's indexer connection test passes. After deleting only the test entry from Sonarr, `ApplicationIndexerSync` completed and recreated it (ID 7 became 8). All series/episode identities and 54 episode-file records remained intact; both applications timed out against the four blocked network probes. Verification completed at 2026-09-21 14:30:31 UTC. This validates the Prowlarr-to-Sonarr synchronization path, not recovery of the five production tracker definitions or their credentials. The four original indexer rows in the restored Sonarr database remain isolated; a new Prowlarr database does not automatically adopt or remove those old connections.
+
+### Repeat the Drill
+
+1. Complete the Sonarr restore first. Create `restore-recyclarr-secrets` with a `secrets.yml` entry named `sonarr_api_key` containing the lab Sonarr key. Use private process input or a protected file. Use `radarr_api_key: unused-lab-only` for the shared configuration's unused Radarr reference; `sync sonarr` excludes that instance.
+2. Apply the lab Recyclarr resource Kustomization and render/apply its pinned Helm chart with release `restore-recyclarr` and the committed values. Run `kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr create job --from=cronjob/restore-recyclarr <unique-job-name>`. Verify completion, logs, profile settings and custom-format counts; repeat to confirm no further changes. Leave the CronJob suspended.
+3. Create `restore-prowlarr-api-key` with a new `api-key` value. Apply the `indexer-fixture` and `prowlarr` resource Kustomizations, then render/apply Prowlarr's chart as `restore-prowlarr` with the committed values.
+4. Apply the `media-operator-indexers` resource Kustomization and render/apply its pinned chart as `restore-media-operator-indexers`, including CRDs. The 0.34.0 chart needs the same missing FlareSolverr RBAC workaround as production; the lab grants it only in `restore-sonarr`.
+5. Confirm Prowlarr's `/api/v1/appprofile` maps ID 1 to `Standard` before applying its CR. The CR currently requires a numeric app-profile ID. Apply `media-config`, then check Ready/Synced conditions at the current generation and verify actual application/indexer state through both APIs.
+6. Test the synchronized indexer through Sonarr. To verify repair, delete only `Recovery Fixture (Prowlarr)` from Sonarr and run Prowlarr's `ApplicationIndexerSync` command; confirm the indexer returns and the command completes. Never delete the restored production indexers as part of this test.
+7. Compare restored series/episode identities and the 54 episode-file records against the source dump. Retest blocked connections to the production API, NAS, lab API and unrelated public HTTPS from both applications.
+
+Prowlarr needs the official `indexers.prowlarr.com` catalog even when using the built-in Torznab schema. Its Cilium policy allows that hostname on HTTPS, the local fixture, Sonarr and DNS. Recyclarr alone can fetch public HTTPS guide resources; it has only fresh lab credentials. Sonarr can reach only lab Prowlarr and DNS. Neither application can reach production/NAS endpoints or arbitrary public HTTPS. These are deliberately different permissions for different recovery roles, not a namespace-wide internet allowance.
 
 ## Access and Teardown
 

@@ -1,0 +1,38 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: ProwlarrConfig
+metadata:
+  name: prowlarr
+  namespace: restore-sonarr
+spec:
+  connection:
+    url: http://restore-prowlarr.restore-sonarr.svc.cluster.local:9696
+    apiKeySecretRef:
+      name: restore-prowlarr-api-key
+      key: api-key
+  reconcile:
+    interval: 1m
+    deletionPolicy: orphan
+  applications:
+    - name: Sonarr
+      implementation: Sonarr
+      configContract: SonarrSettings
+      syncLevel: fullSync
+      prowlarrUrl: http://restore-prowlarr.restore-sonarr.svc.cluster.local:9696
+      baseUrl: http://restore-sonarr.restore-sonarr.svc.cluster.local:8989
+      apiKeySecretRef:
+        name: restore-sonarr-api-key
+        key: api-key
+      syncCategories: [5000, 5040]
+  indexers:
+    - name: Recovery Fixture
+      implementation: Torznab
+      configContract: TorznabSettings
+      enable: true
+      # Confirm /api/v1/appprofile before applying to a rebuilt database.
+      appProfileId: 1
+      priority: 25
+      fields:
+        - name: baseUrl
+          value: http://restore-indexer.restore-sonarr.svc.cluster.local:8080
+        - name: apiPath
+          value: /api

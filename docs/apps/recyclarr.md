@@ -43,7 +43,7 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 - Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID).
 - The Job and state holder run as UID 977/GID 988, matching the NAS media identity. Recyclarr's process identity is set by the pod security context; `PUID`/`PGID` alone do not change it. Matching ownership lets Git use the NFS cache without disabling its ownership check.
 - Configuration is split into two files:
-    - `recyclarr.yml` (ConfigMap) -- defines which quality profiles and custom formats to sync.
+    - `recyclarr.yml` (shared ConfigMap from `k8s/components/recyclarr-config`) -- defines which quality profiles and custom formats to sync. `SONARR_URL` and `RADARR_URL` can override the production defaults for isolated recovery.
     - `secrets.yml` (Secret) -- contains Sonarr and Radarr API keys referenced by the config.
 
 ### Quality Profiles

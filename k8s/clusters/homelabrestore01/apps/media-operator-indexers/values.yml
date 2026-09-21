@@ -1,0 +1,12 @@
+watchNamespace: restore-sonarr
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restore-indexer
+  namespace: restore-sonarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: restore-indexer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-indexer
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: indexer
+          image: python:3.12.9-alpine
+          command:
+            - python3
+            - -c
+            - |
+              from email.utils import formatdate
+              from http.server import BaseHTTPRequestHandler, HTTPServer
+              from urllib.parse import urlparse, parse_qs
+              class Handler(BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      if urlparse(self.path).path != "/api":
+                          self.send_error(404)
+                          return
+                      query = parse_qs(urlparse(self.path).query)
+                      if query.get("t") == ["caps"]:
+                          body = '<caps><server version="1.0" title="Recovery Fixture"/><limits max="100" default="100"/><searching><search available="yes" supportedParams="q"/><tv-search available="yes" supportedParams="q,season,ep,tvdbid"/></searching><categories><category id="5000" name="TV"><subcat id="5040" name="TV/HD"/></category></categories></caps>'
+                      else:
+                          body = '<rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed"><channel><title>Recovery Fixture</title><description>Synthetic recovery test catalog</description><link>http://restore-indexer:8080</link><item><title>Recovery.Fixture.S01E01.1080p.WEB-DL.H264-LAB</title><guid>urn:restore-lab:fixture</guid><link>http://restore-indexer:8080/unavailable.torrent</link><pubDate>LAB_PUB_DATE</pubDate><size>1073741824</size><enclosure url="http://restore-indexer:8080/unavailable.torrent" length="1073741824" type="application/x-bittorrent"/><torznab:attr name="category" value="5040"/><torznab:attr name="seeders" value="1"/><torznab:attr name="peers" value="1"/></item></channel></rss>'
+                      self.send_response(200)
+                      self.send_header("Content-Type", "application/xml")
+                      self.end_headers()
+                      self.wfile.write(body.replace("LAB_PUB_DATE", formatdate(usegmt=True)).encode())
+                  def log_message(self, *args):
+                      pass
+              HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          readinessProbe:
+            httpGet:
+              path: /api?t=caps
+              port: 8080

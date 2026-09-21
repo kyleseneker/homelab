@@ -1,0 +1,55 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: recyclarr-to-sonarr
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-sonarr
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-recyclarr
+      ports:
+        - protocol: TCP
+          port: 8989
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: recyclarr-egress
+  namespace: restore-sonarr
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-recyclarr
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: restore-sonarr
+            app.kubernetes.io/name: restore-sonarr
+      toPorts:
+        - ports:
+            - port: "8989"
+              protocol: TCP
+    # Recyclarr downloads public TRaSH guides and configuration resources.
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

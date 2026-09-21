@@ -1,0 +1,198 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-prowlarr-to-restore-sonarr-ingress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-sonarr
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-prowlarr
+      ports:
+        - protocol: TCP
+          port: 8989
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-prowlarr-to-restore-sonarr-egress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-sonarr
+      ports:
+        - protocol: TCP
+          port: 8989
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-sonarr-to-restore-prowlarr-ingress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-sonarr
+      ports:
+        - protocol: TCP
+          port: 9696
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-sonarr-to-restore-prowlarr-egress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-sonarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-prowlarr
+      ports:
+        - protocol: TCP
+          port: 9696
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-prowlarr-to-restore-indexer-ingress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-indexer
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-prowlarr
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-prowlarr-to-restore-indexer-egress
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: restore-indexer
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-prowlarr-dns
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restore-sonarr-dns
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-sonarr
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: prowlarr-definitions
+  namespace: restore-sonarr
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+          rules:
+            dns:
+              - matchPattern: '*'
+    # The definition catalog is required even for the built-in Torznab schema.
+    - toFQDNs:
+        - matchName: indexers.prowlarr.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

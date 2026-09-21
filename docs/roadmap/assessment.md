@@ -6,7 +6,7 @@ Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles appl
 
 **Status convention:** Implemented means the configuration exists in the repository. A restore, upgrade or application outcome is complete only after its acceptance check succeeds. Operational checks remain open where evidence is still needed.
 
-All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. The [Sonarr offsite restore](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore) passed SQLite integrity, application record and lab login checks on fresh local storage with NAS access blocked. Sonarr media-operator root-folder creation and settings repair also passed. Remaining integration reconciliation, independent recovery credentials and other application restores remain unverified; completed Velero backups still contain warnings.
+All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. The [Sonarr offsite restore](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore) passed SQLite integrity, application record and lab login checks on fresh local storage with NAS access blocked. Sonarr media-operator root-folder/settings repair, Recyclarr profile recreation, and Prowlarr synchronization through a local test indexer also passed. Remaining integration reconciliation, independent recovery credentials and other application restores remain unverified; completed Velero backups still contain warnings.
 
 ## Physical Layer
 
@@ -53,7 +53,7 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | K22 | CI validates ApplicationSet contracts, rendered manifests, pinned CRD schemas, admission fixtures and operational scripts. | Use the same checks for the isolated rebuild; runtime behavior remains an acceptance check |
 | K23 | Renovate extracts HTTP and OCI chart versions from ApplicationSet configuration files. | Confirm scheduled discovery and resulting update PRs |
 | K24, K39 | ArgoCD Applications reconcile independently. Bootstrap ArgoCD/ApplicationSet resources are manually applied; generated Application sync waves do not order their workloads. | Use the explicit bootstrap/drift commands and prove convergence from an empty cluster |
-| K25, K27 | Recyclarr and Unpackerr use shared API-key references; their configuration includes writable state, download paths and NAS-compatible identity. | Verify successful configuration sync and processing against fresh and restored application state |
+| K25, K27 | Recyclarr and Unpackerr use shared API-key references and NAS-compatible identity. Recyclarr recreated its Sonarr profile and adopted restored custom formats in the lab. | Verify Radarr profile recovery and Unpackerr processing against restored state |
 | K30 | Slack/webhook delivery and an external heartbeat are configured. | Exercise receiver downtime and confirm independent detection of a failed delivery path |
 | K33, K41 | SQLite/native dumps bridge local-path application data into mounted NFS volumes for Velero. Recovery procedures include etcd tool compatibility and Vault/NFS bootstrap dependencies. | Inventory every application's data, test database/native archive consistency and restore retained state; set explicit recovery-point and recovery-time targets |
 | K38 | Retained NFS PV directories can be reused by claim name. | Map each directory to all current PV references before reclaiming storage; a Released PV alone does not establish unused data |
@@ -73,7 +73,7 @@ Seven media-operator chart configurations and eight media Config resources are p
 | IDs | Current assessment | Next step |
 |---|---|---|
 | C1 | Sonarr/Radarr/Prowlarr API-key injection and shared Vault references are implemented. Bazarr and other first-boot credentials need a tested adoption/bootstrap path. | Rebuild without preexisting application databases |
-| C2, C3 | Prowlarr indexers, application sync and secret references are declared. | Escrow tracker secrets and prove reconciliation after restore |
+| C2, C3 | Prowlarr indexers, application sync and secret references are declared; local test-indexer creation and Sonarr resynchronization passed. | Escrow tracker secrets and recover the actual production tracker connections |
 | C4 | Sonarr/Radarr root folders and download wiring are declared. | Prepare NAS directories and resolve quality-profile identity on a fresh database |
 | C5 | Jellyfin admin bootstrap, libraries and QSV encoding are declared. | Verify initial setup, permissions and actual hardware-assisted playback |
 | C6 | Bazarr, Seerr, qBittorrent and Tdarr Config resources are implemented. | Test generated payloads and secret dependencies against the pinned applications |

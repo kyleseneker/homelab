@@ -27,7 +27,7 @@ UPS/NUT, MinIO + offsite S3, etcd snapshots, and local SQLite-to-NFS backup brid
 
 ## 1.2 Verify Recovery
 
-Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable control plane and worker, using separate credentials, a separate kubeconfig and writable paths that cannot touch production data. The Sonarr database has been restored from S3 with integrity, API record and lab login checks; see the [recorded result](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore). Sonarr media-operator reconciliation also passed creation and drift-repair checks. Complete the remaining integration and independent credential recovery checks next.
+Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining checks below. The runbooks retain the verified Sonarr offsite restore and controller-reconciliation procedures and results; this backlog tracks unfinished recovery work.
 
 - [ ] Build a fresh Packer template, replace the lab cloud-image template, and repeat identity, prerequisite and reboot checks
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
@@ -36,7 +36,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) with one disposable c
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
 - [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
 - [ ] Restore Vault data and test KMS auto-unseal, Kubernetes auth, and ESO with credentials available outside the cluster
-- [ ] Verify Prowlarr indexer sync, Recyclarr profiles, download-client/notification reconciliation and Vault/ESO credential bootstrap around restored media applications; confirm profile IDs and production authentication
+- [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; resolve recreated profile IDs for dependent apps and verify production authentication
 - [ ] Test Tdarr archive recovery, Authentik database consistency, and qBittorrent resume/config coverage
 - [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data
 - [ ] Keep bootstrap credentials and recovery instructions available outside the cluster and Vault

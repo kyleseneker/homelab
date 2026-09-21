@@ -7,7 +7,7 @@ data:
   recyclarr.yml: |
     sonarr:
       sonarr-main:
-        base_url: http://arr-sonarr.arr.svc.cluster.local:8989
+        base_url: !env_var SONARR_URL http://arr-sonarr.arr.svc.cluster.local:8989
         api_key: !secret sonarr_api_key
         media_naming:
           series: default
@@ -91,7 +91,7 @@ data:
 
     radarr:
       radarr-main:
-        base_url: http://arr-radarr.arr.svc.cluster.local:7878
+        base_url: !env_var RADARR_URL http://arr-radarr.arr.svc.cluster.local:7878
         api_key: !secret radarr_api_key
         media_naming:
           folder: jellyfin-tmdb
