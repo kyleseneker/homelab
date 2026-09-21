@@ -35,7 +35,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
 - [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
 - [ ] Restore Vault data and test KMS auto-unseal, Kubernetes auth, and ESO with credentials available outside the cluster
-- [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; resolve recreated profile IDs for dependent apps and verify production authentication
+- [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; validate the remaining Bazarr/Prowlarr profile IDs and verify production authentication
 - [ ] Restore Tdarr flows and qBittorrent resume/config state
 - [ ] Verify Authentik ordinary password/MFA login, client application login, proxy outposts and worker behavior after the verified emergency-login/OIDC restore
 - [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data

@@ -234,7 +234,7 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `arr/arr-jellyfin-config` | Daily SQLite dump at `jellyfin/data/data/jellyfin.db` | Artwork/plugins and full application restore unverified |
 | `arr/arr-prowlarr-config` | Daily `prowlarr/prowlarr.db` dump; declared settings in Git | Real tracker credentials and restored database behavior unverified |
 | `arr/arr-radarr-config` | Daily `radarr/radarr.db` dump | Application restore and profile recreation unverified |
-| `arr/arr-seerr-config` | Daily `seerr/db/db.sqlite3` dump | Requires media-server login and valid recreated profile IDs; `.backup-preop` is an extra rollback copy, not the active database |
+| `arr/arr-seerr-config` | Daily `seerr/db/db.sqlite3` dump | Requires media-server login and profiles recreated by Recyclarr; Seerr connections now resolve profile IDs by name; `.backup-preop` is an extra rollback copy, not the active database |
 | `arr/arr-sonarr-config` | Daily `sonarr/sonarr.db` dump | Offsite database, login, records and bounded controller recovery verified; media/integration recovery remains separate |
 | `arr/arr-tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Archive and primary SQLite integrity verified; application/flow restore still required |
 | `arr/arr-config-backups` | NFS staging volume mounted by `arr-config-backup-holder`; daily MinIO and weekly S3 | A successful copy job alone does not demonstrate upload or application recovery |

@@ -81,7 +81,7 @@ kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr \
 
 ## Media-operator Reconciliation
 
-The lab runs the same `media-operator-pvr` 0.34.0 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
+The lab runs the same `media-operator-pvr` 0.34.1 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
 
 To repeat after the database restore:
 
@@ -119,6 +119,12 @@ The operator reports Ready and Synced for the declared application and indexer. 
 7. Compare restored series/episode identities and the 54 episode-file records against the source dump. Retest blocked connections to the production API, NAS, lab API and unrelated public HTTPS from both applications.
 
 Prowlarr needs the official `indexers.prowlarr.com` catalog even when using the built-in Torznab schema. Its Cilium policy allows that hostname on HTTPS, the local fixture, Sonarr and DNS. Recyclarr alone can fetch public HTTPS guide resources; it has only fresh lab credentials. Sonarr can reach only lab Prowlarr and DNS. Neither application can reach production/NAS endpoints or arbitrary public HTTPS. These are deliberately different permissions for different recovery roles, not a namespace-wide internet allowance.
+
+## Dependent Profile Resolution
+
+The released `media-operator-requests` 0.34.1 controller was tested temporarily in `restore-sonarr` against the real restored Sonarr and an isolated Seerr API fixture. It resolved stale profile ID `7` to `WEB-1080p` ID `8`, then reconciled successfully with the numeric ID omitted. Selecting a nonexistent profile made `Synced` false and left the fixture's connection and write count unchanged. The temporary controller, fixture, Secret, custom resource and network allowances were removed after verification; the existing PVR/indexer controllers remain on 0.34.1.
+
+This tests the released controller's profile dependency, not Seerr login or restored application data. Production declares profiles by name and still needs reachable Sonarr/Radarr APIs, valid API keys and profiles created by Recyclarr.
 
 ## Authentik Database Recovery
 

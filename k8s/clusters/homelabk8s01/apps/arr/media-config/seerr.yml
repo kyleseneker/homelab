@@ -35,7 +35,6 @@ spec:
     apiKeySecretRef:
       name: arr-api-keys
       key: sonarr-api-key
-    activeProfileId: 7
     activeProfileName: WEB-1080p
     activeDirectory: /data/media/tv
     enableSeasonFolders: true
@@ -49,7 +48,6 @@ spec:
     apiKeySecretRef:
       name: arr-api-keys
       key: radarr-api-key
-    activeProfileId: 7
     activeProfileName: HD Bluray + WEB
     activeDirectory: /data/media/movies
     minimumAvailability: released
