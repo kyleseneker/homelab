@@ -1,0 +1,9 @@
+appName: restore-qbittorrent
+namespace: restore-qbittorrent
+sourceType: git
+gitPath: k8s/clusters/homelabrestore01/apps/qbittorrent
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

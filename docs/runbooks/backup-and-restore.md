@@ -346,3 +346,31 @@ Tdarr 2.86.01's bundled backup screen specifies an offline restore: stop the ser
 | Isolation | Public HTTPS, lab/production APIs and NAS TCP probes timed out |
 
 This verifies native configuration recovery and application readability. It does not recover the media files, prove flow execution or GPU transcoding, or verify normal UI/SSO login. Backup credentials still came from production. Test a copied media fixture and review library-specific replacement/deletion settings before enabling workers in a real recovery.
+
+## qBittorrent Configuration and Resume Recovery
+
+The `qbit-config` volume contains qBittorrent settings, category definitions and `BT_backup` torrent/resume records. It is captured as a live NFS filesystem backup. The download/media volume is excluded: restoring resume records does not restore their payload files or prove that a transfer can resume.
+
+1. Retrieve the chosen `qbit-config` PodVolumeBackup through the read-only Kopia procedure. Preserve the original snapshot privately. Check that each `.torrent` has its corresponding `.fastresume`, both decode as bencode, and the torrent metadata's info-hash agrees with the resume record and filenames. Do not print torrent names, tracker URLs or credentials.
+2. Prepare a separate lab copy while the client is stopped. Use a fresh WebUI username/password hash; require localhost authentication and disable subnet bypass. Disable external-command hooks, RSS auto-download and DHT/PeX/local discovery. Bind torrent networking to loopback. Set the copied resume records to stopped (`paused=1`, `auto_managed=0`), leaving their identities, paths and transfer history intact. Remove stale process locks. Never make these test changes in the original snapshot or production configuration.
+3. Apply only `namespace.yml`, `networkpolicy.yml` and `pvc.yml` from `k8s/clusters/homelabrestore01/apps/qbittorrent`, with `.lab/kubeconfig`. Import the prepared copy into the empty PVC using a temporary non-root pod, then remove that pod before applying the Deployment.
+4. The Deployment runs qBittorrent 5.2.3 directly, using `/config` for configuration and data. It starts no Gluetun/VPN sidecar and mounts no downloads. The namespace denies all ingress/egress; no Service or route is created. Access the WebUI through `kubectl exec` or a localhost-only port-forward.
+5. Verify unauthenticated API rejection, login with the fresh lab credentials, and the restored torrent/category/path/history metadata. qBittorrent 5.2.3 returns HTTP 204 with a session cookie on successful login. Its Host header validation also checks the port: when forwarding local `18080` to `8080`, API clients must send matching `Host: 127.0.0.1:8080` and `Referer: http://127.0.0.1:8080` headers. Alternatively, forward local port `8080` when available. Keep host-header validation and CSRF protection enabled.
+6. Confirm zero peers, blocked external/API/NAS access and persistent metadata after restarting the lab client. In a real recovery, restore and verify the payload at its expected paths and reestablish the VPN boundary before permitting transfers.
+
+### Verified qBittorrent Restore
+
+| Evidence | Result |
+|----------|--------|
+| Offsite backup | `recovery-verify-20260921` |
+| Kopia snapshot | `a3aa2dbe8202b4ba7d09b12c87bfa50b` in `velero/kopia/arr/` |
+| Snapshot contents | 36 files, including settings, categories and one torrent/resume pair |
+| Pair integrity | Bencode readable; info-hash matched torrent metadata, resume record and filenames |
+| Destination | Fresh 2 GiB local-path PVC; qBittorrent 5.2.3 |
+| API comparisons | Torrent identity/name, category, save path, total size and download/upload history matched the source; category names/save paths matched |
+| Authentication | Fresh login succeeded; unauthenticated torrent-list request returned HTTP 403; both authentication bypasses disabled |
+| Runtime state | `missingFiles`, zero peers; download payload deliberately absent |
+| Isolation | Public HTTPS, lab/production APIs and NAS TCP probes timed out |
+| Restart | Authentication and metadata comparisons passed again |
+
+This proves application-readable configuration and resume metadata for this snapshot. It does not establish atomic consistency for every future live filesystem backup, recover the payload, exercise VPN bootstrap or demonstrate downloading/seeding. Backup credentials still came from the running production cluster. The production media operator already handles this version's HTTP 204 login/session-cookie behavior and remained Ready/Synced.

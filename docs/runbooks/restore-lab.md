@@ -138,6 +138,12 @@ The `tdarr` manifests run Tdarr 2.86.01 in `restore-tdarr`, using fresh local st
 
 The server loads the archived flows, libraries, variables and file metadata exactly; all archived plugin file hashes match. API authentication and isolation checks passed. Transcoding, media recovery and normal UI/SSO login remain outside this verification.
 
+## qBittorrent Recovery
+
+The `qbittorrent` manifests provide an isolated client in `restore-qbittorrent` with fresh local storage and deny-all networking. Prepare and import the stopped lab copy before applying the Deployment, following the [configuration/resume recovery procedure](backup-and-restore.md#qbittorrent-configuration-and-resume-recovery). The client has no VPN sidecar, download volume, Service or route.
+
+Fresh login, torrent/category/path/history comparisons, network isolation and persistence across restart passed. The restored torrent reports `missingFiles`, which is expected because payload data was not restored. VPN bootstrap and real transfer recovery remain separate checks.
+
 ## Access and Teardown
 
 Every manual command must select the lab kubeconfig explicitly:

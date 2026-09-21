@@ -6,7 +6,11 @@ Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles appl
 
 **Status convention:** Implemented means the configuration exists in the repository. A restore, upgrade or application outcome is complete only after its acceptance check succeeds. Operational checks remain open where evidence is still needed.
 
-All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation. The [Sonarr offsite restore](../runbooks/backup-and-restore.md#verified-sonarr-offsite-restore) passed SQLite integrity, application record and lab login checks on fresh local storage with NAS access blocked. Sonarr media-operator root-folder/settings repair, Recyclarr profile recreation, and Prowlarr synchronization through a local test indexer also passed. Remaining integration reconciliation, independent recovery credentials and other application restores remain unverified; the backup inventory now accounts for the remaining Velero warnings and unprotected data. Authentik's logical PostgreSQL dump passed isolated S3 restoration, emergency administrator login and a signed OIDC code exchange with a lab callback. Ordinary login/MFA, client applications, proxy outposts and worker recovery remain open. Tdarr native configuration restoration also passed exact API-record and plugin-file comparisons; media processing remains unverified.
+All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation.
+
+[Verified recovery checks](../runbooks/backup-and-restore.md) cover Sonarr's database/login and bounded operator, Recyclarr and Prowlarr reconciliation; Authentik's logical database, emergency login and OIDC exchange; Tdarr's native configuration and plugins; and qBittorrent's configuration/resume metadata and fresh login across restart. The backup inventory accounts for Velero warnings and unprotected data.
+
+Independent recovery credentials, remaining application/integration restores, ordinary Authentik login/MFA and proxy/worker behavior, Tdarr media processing, and qBittorrent payload/VPN recovery remain unverified. These checks remain in [Phase 1](phase-1-foundations.md).
 
 ## Physical Layer
 
