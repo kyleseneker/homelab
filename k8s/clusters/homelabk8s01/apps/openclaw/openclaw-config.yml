@@ -47,7 +47,6 @@ data:
         "allowedAgentIds": [
           "main"
         ],
-        "transformsDir": "~/.openclaw/hooks/transforms",
         "internal": {
           "enabled": true,
           "entries": {

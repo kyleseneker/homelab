@@ -23,6 +23,22 @@ def configmap_data(path):
 
 
 class OpenClawRuntimeTests(unittest.TestCase):
+    def test_hook_modules_resolve_to_the_bootstrapped_transform_directory(self):
+        config = json.loads(configmap_data(
+            APPS / "openclaw/openclaw-config.yml"
+        )["config.json5"])
+        values = yaml.safe_load((APPS / "openclaw/values.yml").read_text())
+        runtime_path = Path(values["controllers"]["main"]["containers"]["main"]
+                            ["env"]["OPENCLAW_CONFIG_PATH"])
+        root = runtime_path.parent / "hooks/transforms"
+        # OpenClaw resolves this option relative to its transform root, not a shell.
+        configured = root / config["hooks"].get("transformsDir", ".")
+        transforms = configmap_data(APPS / "openclaw/hooks-transforms-configmap.yml")
+        for mapping in config["hooks"]["mappings"]:
+            module = mapping["transform"]["module"]
+            self.assertEqual(configured / module, root / module)
+            self.assertIn(module, transforms)
+
     def run_node(self, script):
         result = subprocess.run(
             ["node", "-"], input=script, text=True, capture_output=True, cwd=REPO
@@ -98,6 +114,18 @@ assert.throws(run);
 assert.equal(fs.readFileSync(configPath, 'utf8'), 'invalid-json');
 """
             )
+
+
+class RecyclarrRuntimeTests(unittest.TestCase):
+    def test_process_identity_matches_nfs_media_identity(self):
+        media = configmap_data(APPS / "arr/prereqs/env.yml")
+        values = yaml.safe_load((APPS / "arr/recyclarr/values.yml").read_text())
+        holder = yaml.safe_load((APPS / "arr/recyclarr/state-holder.yml").read_text())
+        for security in (values["defaultPodOptions"]["securityContext"],
+                         holder["spec"]["template"]["spec"]["securityContext"]):
+            self.assertEqual(security["runAsUser"], int(media["PUID"]))
+            self.assertEqual(security["runAsGroup"], int(media["PGID"]))
+            self.assertEqual(security["fsGroup"], int(media["PGID"]))
 
 
 class BackupRuntimeTests(unittest.TestCase):
