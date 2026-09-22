@@ -161,14 +161,14 @@ identities/permissions, and Secret recreation across controller restarts. ESO is
 scoped to this namespace. The admin credential came from the local Vault CLI file;
 KMS/S3 credential retrieval from HCP was independently verified. A subsequent
 fresh-PVC restore of the direct S3 archive passed auto-unseal and authenticated
-reads without production access; its temporary resources were removed. Recurring
-consistent backups and a protected credential copy independent of HCP remain open.
+reads without production access; its temporary resources were removed. A protected credential copy independent of HCP remains open.
 
 The lab now runs the `infrastructure/vault-raft` overlay after the verified
 [file-to-Raft migration and native snapshot restore](backup-and-restore.md#raft-migration-and-native-snapshot-rehearsal).
 Its original file PVC remains for rollback; Raft and snapshot staging each have a
-separate local PVC. The snapshot CronJob stays suspended. Production still uses
-its original file backend pending cutover.
+separate local PVC. The lab snapshot CronJob stays suspended. Production now uses
+local Raft and a daily direct S3 snapshot job. Its first uploaded native snapshot
+also passed a fresh-PVC lab restore; temporary verification resources were removed.
 
 ## Access and Teardown
 

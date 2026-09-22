@@ -22,6 +22,9 @@ Times are UTC. The schedules capture Kubernetes objects and eligible mounted vol
 
 ## Vault File-Backend Recovery
 
+This section recovers retained pre-cutover archives. Production uses the native
+Raft snapshot procedure below; its old NFS claim no longer receives writes.
+
 Use the [quiesced backup helper](../infrastructure/vault.md#consistent-file-backend-copy)
 for a consistent manual copy, then use the offsite transfer below. Scheduled
 Velero backups still copy the live file backend; the verified manual archive does
@@ -161,9 +164,9 @@ explain the rotating-token and audience settings used here.
 
 ### Raft Migration and Native Snapshot Rehearsal
 
-Production remains on the file backend. The lab has migrated to a separate local
-Raft PVC while retaining the original file PVC for rollback. The proposed
-production architecture is recorded in [ADR-024](../decisions/024-vault-integrated-storage.md).
+Production and the lab now use separate local Raft PVCs, retaining their original
+file PVCs as historical recovery material. The production
+architecture is recorded in [ADR-024](../decisions/024-vault-integrated-storage.md).
 
 To repeat the offline lab migration after a file-backend restore:
 
@@ -186,7 +189,7 @@ To repeat the offline lab migration after a file-backend restore:
 
 All lab commands use `.lab/kubeconfig` and namespace `restore-vault`. The lab's
 Application config now points at the Raft overlay; the file base remains the
-explicit restore/rollback stage. Production's Application remains unchanged.
+explicit file-archive restore stage. Production uses its own Raft claim and values.
 
 Run `python3 scripts/restore-vault-auth.py --snapshots` after migration to configure
 the lab snapshot-read role. `CronJob/restore-vault-snapshot` is suspended; create a
@@ -213,10 +216,63 @@ server and PVC.
 | Native restore | Fresh local PVC, same KMS key, no force flag; original identity and matching Grafana fields recovered |
 | Rollback | Retained file backend auto-unsealed; return to Raft and ESO checks passed |
 
-This verifies the migration and native backup mechanism. Production migration,
-automated S3 snapshots, deployed retention and freshness alerts are still pending.
+This verifies the migration and native backup mechanism. Production verification
+is recorded in the next section.
 See HashiCorp's [offline migration](https://developer.hashicorp.com/vault/docs/commands/operator/migrate)
 and [Raft snapshot commands](https://developer.hashicorp.com/vault/docs/commands/operator/raft).
+
+## Production Native Snapshots
+
+`vault/vault-snapshot` runs daily at **01:30 UTC**. The job authenticates through
+Kubernetes as `vault-snapshot`, saves and inspects an online Raft snapshot, and
+uploads to `s3://velero-offsite-homelab/vault-raft-snapshots/`. Uploads refuse an
+existing key. A successful job requires a downloaded copy with the same S3 version
+and SHA-256. `scripts/vault-snapshot-auth.sh` configures its ten-minute,
+snapshot-read-only role using an existing administrative Vault CLI session.
+
+The S3 bucket denies insecure transport. Current objects under this prefix expire
+after 30 days; noncurrent versions retain the existing 90-day rule. This is not
+immutable storage. `VaultSnapshotStale` watches successful CronJob timestamps and
+alerts after a 30-hour gap with a 30-minute pending period. The first run was a
+manual job; the first scheduled run supplies the CronJob success timestamp.
+
+### Restore a Native S3 Snapshot
+
+1. Export recovery credentials from HCP using the disaster-recovery runbook. Keep
+   the credential files and downloaded snapshot private. Select the desired
+   `vault-raft-snapshots/` object, download it with the exported S3 identity, and
+   compare SHA-256 with its `sha256` object metadata. This needs neither production
+   Kubernetes nor Velero, MinIO or NAS.
+2. Prepare a separate Vault 1.21.2 Raft target with a **new empty** local PVC and
+   the original KMS key/credentials. Isolate it from production clients and
+   Kubernetes authentication. Preserve any surviving data before replacing it.
+3. Only for this empty snapshot target, run `vault operator init` and capture its
+   temporary administrator credential privately. Copy the encrypted snapshot into
+   private staging space in the target pod. Authenticate with that temporary
+   credential and run `vault operator raft snapshot restore /tmp/offsite.snap`.
+   The tested same-KMS-key procedure did not need `-force`.
+4. Poll until the **original cluster ID** and unsealed state appear. Restore is
+   asynchronous; an early status response can still describe the temporary
+   cluster. Authenticate with the original restored administrative credential,
+   compare representative KV values privately, and reconfigure Kubernetes auth
+   for the destination cluster before enabling ESO and clients.
+5. Verify ESO refreshes and secret values, then recreate the snapshot role if
+   needed. Restore the backup job and credential reference only after auth works.
+   Delete temporary test workloads, PVCs and network policies after validation.
+
+| Check | Result |
+|-------|--------|
+| Production migration | Offline read-only copy from NFS to local Raft; old claim and a fresh encrypted archive retained |
+| Production health | Original cluster identity, KMS auto-unseal, representative KV equality and forced ESO refresh passed; all 28 ExternalSecrets Ready |
+| Backup permissions | Snapshot read allowed; secret read, wrong service account and wrong audience denied |
+| Verified S3 object | `vault-raft-snapshots/vault-20260922T130941Z.snap`, 48,305 bytes |
+| SHA-256 | `311af9f97be0060f00fc7ef59fe0d44c453d25918afe743d54abe20918541c02` |
+| Restore | Independent HCP S3 credentials, new lab PVC, original KMS key; original identity and KV values recovered without force |
+| Cleanup | Temporary restore Deployment, PVC and network policy removed |
+
+The old `data-vault-0` NFS volume is stale after cutover. Returning to it would lose
+new Raft writes. Keep it as historical recovery material until separately retired.
+One Raft voter remains non-HA; loss of its node requires snapshot recovery.
 
 ## etcd Snapshots
 

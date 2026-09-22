@@ -46,20 +46,18 @@
 
 ## 4.3 Migrate Vault to HA (Raft)
 
-- [ ] Cut over production Vault to local integrated Raft storage using the verified migration and rollback procedure
 - [ ] Configure three Vault replicas using integrated Raft storage
-- [ ] Move Vault from NFS to durable local storage, with peer discovery and TLS configured
+- [ ] Give each voter its own durable local claim and configure peer discovery and TLS
 - [ ] Spread Raft voters across the available physical hosts; use one voter per host when the third host is added
 - [ ] Verify AWS KMS auto-unseal works for all replicas
-- [ ] Verify ESO reaches Vault through the Vault service
-- [ ] Deploy recurring production Raft snapshots, offsite verification and freshness monitoring
+- [ ] Verify ESO continues refreshing secrets through the Vault service during leader failover
 - [ ] Test leader failover and document whole-host failure behavior for the deployed placement
 
 | | |
 |---|---|
-| **Why** | Vault is a single pod on NFS. A pod or storage outage interrupts secret refreshes, new secret-dependent deployments, and rotations. |
+| **Why** | Vault is one Raft voter on local storage. A pod or storage outage interrupts secret refreshes, new secret-dependent deployments, and rotations. |
 | **Approach** | Integrated Raft replicates Vault data without a separate etcd or Consul cluster. All replicas use the same KMS key for auto-unseal. |
-| **Migration** | Changing replica count or StorageClass does not migrate the existing file-storage backend. Migrate the data and replace file backups with Raft snapshots. |
+| **Migration** | Production uses local Raft and verified offsite native snapshots. Expansion requires separate per-voter claims, discovery and placement; increasing replicas against the current single claim is unsafe. |
 | **Failure tolerance** | Three voters tolerate one voter failure. As with etcd, surviving either physical host's loss requires a third independent host. |
 
 ## 4.4 Expand NAS Storage

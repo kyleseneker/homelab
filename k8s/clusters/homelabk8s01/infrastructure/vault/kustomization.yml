@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - httproute.yml
   - pdb.yml
+  - raft-pvc.yml
+  - backup.yml

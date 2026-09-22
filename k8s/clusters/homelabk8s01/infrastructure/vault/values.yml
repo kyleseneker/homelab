@@ -8,6 +8,8 @@ server:
         runAsGroup: 1000
         fsGroup: 1000
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       container:
         allowPrivilegeEscalation: false
         readOnlyRootFilesystem: true
@@ -17,9 +19,14 @@ server:
   volumes:
     - name: tmp
       emptyDir: {}
+    - name: raft-data
+      persistentVolumeClaim:
+        claimName: vault-raft-data
   volumeMounts:
     - name: tmp
       mountPath: /tmp
+    - name: raft-data
+      mountPath: /vault/data
   extraSecretEnvironmentVars:
     - envName: AWS_ACCESS_KEY_ID
       secretName: vault-aws-kms
@@ -34,25 +41,9 @@ server:
       secretName: vault-aws-kms
       secretKey: VAULT_AWSKMS_SEAL_KEY_ID
   standalone:
-    enabled: true
-    config: |
-      ui = true
-
-      listener "tcp" {
-        tls_disable = 1
-        address     = "[::]:8200"
-        cluster_address = "[::]:8201"
-      }
-
-      storage "file" {
-        path = "/vault/data"
-      }
-
-      seal "awskms" {}
+    enabled: false
   dataStorage:
-    enabled: true
-    size: 1Gi
-    storageClass: nfs-client
+    enabled: false
   resources:
     requests:
       cpu: 50m
@@ -60,5 +51,28 @@ server:
     limits:
       cpu: 250m
       memory: 256Mi
+  ha:
+    disruptionBudget:
+      enabled: false
+    enabled: true
+    replicas: 1
+    raft:
+      enabled: true
+      config: |
+        disable_mlock = true
+        ui = true
+
+        listener "tcp" {
+          tls_disable = 1
+          address     = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+
+        storage "raft" {
+          path = "/vault/data"
+          node_id = "vault-0"
+        }
+
+        seal "awskms" {}
 ui:
   enabled: true

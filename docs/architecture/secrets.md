@@ -26,7 +26,7 @@ flowchart LR
 
 | Component | Namespace | Purpose |
 |-----------|-----------|---------|
-| Vault | `vault` | Secrets backend (KV v2 engine, standalone mode, file storage) |
+| Vault | `vault` | Secrets backend (KV v2 engine, one Raft voter, local storage) |
 | External Secrets Operator | `external-secrets` | Syncs Vault secrets into K8s Secret objects |
 | ClusterSecretStore | Cluster-scoped | Cluster-scoped connection config for Vault |
 | ExternalSecret | Various | Per-secret declaration of what to sync from Vault |
@@ -132,9 +132,9 @@ kubectl annotate externalsecret -n arr vpn-credentials \
 
 ### Vault Backup
 
-Vault file storage is on NFS. Weekly cluster/offsite schedules include Vault, but copying a live data directory does not prove application-consistent recovery. Test a supported consistent backup and restore. The KMS key unlocks existing encrypted data; it does not recreate lost secrets.
+Vault uses local Raft storage with daily native S3 snapshots, verified by downloading and comparing each upload. An isolated production snapshot restore passed with the original KMS key, cluster identity and secret values. The KMS key unlocks existing encrypted data; it does not recreate lost secrets.
 
-Keep KMS credentials, recovery keys, backup-store credentials and required administrator access outside Vault. A restore cannot depend on ESO reading secrets from the Vault instance that is not yet restored. Reconnect or restore the correct data directory before starting recovery; initialize a new Vault only when intentionally creating a new backend.
+Keep KMS credentials, recovery keys, backup-store credentials and required administrator access outside Vault. A restore cannot depend on ESO reading secrets from the Vault instance that is not yet restored. Reconnect or restore the correct data directory before starting recovery; initialize only an intentionally new backend or the empty native-snapshot target described in the recovery runbook.
 
 See the [disaster recovery runbook](../runbooks/disaster-recovery.md) for the ordered procedure and the [backup runbook](../runbooks/backup-and-restore.md) for data-coverage limitations. Terraform state may also contain sensitive AWS access keys even though its outputs are marked sensitive; protect the state backend.
 

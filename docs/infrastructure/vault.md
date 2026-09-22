@@ -13,8 +13,8 @@ HashiCorp Vault provides centralized secrets storage for the cluster. All applic
 
 ## Key Configuration
 
-- **Mode**: Standalone (single replica, file storage)
-- **Storage**: File backend on NFS-backed PVC (1Gi)
+- **Mode**: Integrated Raft (one voter; not highly available)
+- **Storage**: Local-path PVC `vault-raft-data` (1Gi; protected from Argo pruning)
 - **Seal**: AWS KMS auto-unseal (key: `alias/vault-unseal-homelab`)
 - **UI**: Enabled at `vault.homelab.local`
 - **Injector**: Disabled (using External Secrets Operator instead)
@@ -24,7 +24,8 @@ HashiCorp Vault provides centralized secrets storage for the cluster. All applic
 
 ## Initialization
 
-Vault requires one-time initialization after first deployment:
+A new, empty Vault requires one-time initialization after first deployment. Never
+initialize migrated data; use the recovery runbook for snapshot restoration:
 
 ```bash
 make vault-init
@@ -36,6 +37,9 @@ This runs `scripts/vault-init.sh`, which:
 2. Enables the `homelab` KV v2 secrets engine
 3. Enables Kubernetes auth method
 4. Creates an ESO read policy and role
+
+Then run `scripts/vault-snapshot-auth.sh` with an administrative Vault CLI session
+to configure the read-only backup role. Repeat this after rebuilding auth bindings.
 
 Store the root token in a password manager.
 
@@ -64,9 +68,31 @@ Vault, cert-manager, and the External Secrets Operator form the bootstrap layer 
 
 ## Backup
 
-Vault data lives on an NFS-backed PVC and is included in the weekly cluster/offsite schedules. A copy of a live Vault file backend is not proof of consistent recovery. Rehearse data restoration with KMS and backup-store credentials available outside Vault; see the backup and disaster-recovery runbooks.
+`CronJob/vault-snapshot` saves a native online snapshot daily at **01:30 UTC** and
+uploads it to `s3://velero-offsite-homelab/vault-raft-snapshots/`. It succeeds only
+after downloading the object and matching its version and SHA-256. The projected
+service-account identity has only snapshot-read access; AWS credentials come
+through ESO from the existing Velero offsite credential. No root token or
+Kubernetes administration is granted to the job.
+
+Current objects expire after 30 days; noncurrent versions follow the existing
+90-day bucket rule. `VaultSnapshotStale` alerts after 30 hours without a successful
+job (plus 30 minutes pending). The daily interval is not an agreed RPO/RTO.
+
+The production snapshot passed an isolated S3 restore using independently exported
+HCP credentials, the original KMS key and original Vault administrative token.
+See [native snapshot recovery](../runbooks/backup-and-restore.md#production-native-snapshots)
+and [ADR-024](../decisions/024-vault-integrated-storage.md).
+
+The old `data-vault-0` NFS claim is retained as pre-cutover recovery material. It
+receives no new writes and cannot provide a current rollback. One local Raft voter
+still requires snapshot recovery after node/storage loss; three-voter HA remains
+planned. Do not increase replicas against the single shared claim.
 
 ### Consistent file-backend copy
+
+This is the legacy file-backend procedure. The helper refuses the current Raft
+backend; retain it for old archives and file-stage recovery.
 
 `scripts/vault-file-backup.py` creates an encrypted archive while the standalone
 Vault writer is stopped. It checks initialized/unsealed state, starts a read-only
@@ -96,7 +122,7 @@ The output must not already exist. Keep it encrypted and outside Git. This helpe
 creates a local recovery copy; it does not replace scheduled backups. Use the
 [offsite transfer helper](../runbooks/backup-and-restore.md#offsite-vault-archive)
 to upload and verify it. Manual local and S3 restores passed KMS auto-unseal and
-authenticated secret-read checks; recurring consistent backups remain unfinished.
+authenticated secret-read checks. Production now uses the native snapshot job above.
 
 If the process is forcibly killed, connectivity is lost, or restart verification
 fails, inspect the cluster before retrying. Restore one Vault replica, wait for

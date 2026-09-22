@@ -156,6 +156,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "velero_offsite" {
   bucket = aws_s3_bucket.velero_offsite.id
 
   rule {
+    id     = "expire-vault-raft-snapshots"
+    status = "Enabled"
+    filter {
+      prefix = "vault-raft-snapshots/"
+    }
+    expiration {
+      days = 30
+    }
+  }
+
+  rule {
     id     = "transition-to-ia"
     status = "Enabled"
     filter {}

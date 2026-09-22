@@ -1,0 +1,204 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-snapshot
+  namespace: vault
+automountServiceAccountToken: false
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-snapshot
+  namespace: vault
+spec:
+  suspend: false
+  schedule: 30 1 * * *
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: vault-snapshot
+        spec:
+          serviceAccountName: vault-snapshot
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            runAsGroup: 1000
+            fsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: auth
+              projected:
+                sources:
+                  - serviceAccountToken:
+                      path: token
+                      audience: vault
+                      expirationSeconds: 600
+            - name: tmp
+              emptyDir: {}
+            - name: aws
+              secret:
+                secretName: vault-snapshot-offsite
+                defaultMode: 288
+          initContainers:
+            - name: snapshot
+              image: hashicorp/vault:1.21.2
+              command:
+                - sh
+                - -ec
+              args:
+                - |
+                  umask 077
+                  VAULT_TOKEN=$(vault write -field=token auth/kubernetes/login \
+                    role=vault-snapshot jwt=@/var/run/vault-auth/token)
+                  export VAULT_TOKEN
+                  staged=/backup/snapshot.tmp
+                  trap 'rm -f "$staged"; vault token revoke -self >/dev/null 2>&1 || true' EXIT
+                  vault operator raft snapshot save "$staged"
+                  vault operator raft snapshot inspect "$staged" >/dev/null
+                  archive="/backup/vault-$(date -u +%Y%m%dT%H%M%SZ).snap"
+                  test ! -e "$archive"
+                  mv "$staged" "$archive"
+                  sha256sum "$archive" > "$archive.sha256"
+                  echo 'Native Raft snapshot saved and inspected'
+              env:
+                - name: VAULT_ADDR
+                  value: http://vault.vault.svc.cluster.local:8200
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: auth
+                  mountPath: /var/run/vault-auth
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+          containers:
+            - name: upload
+              image: amazon/aws-cli:2.36.19
+              command:
+                - sh
+                - -ec
+              args:
+                - |
+                  set -- /backup/vault-*.snap
+                  test "$#" -eq 1 && test -f "$1"
+                  archive="$1"
+                  sha=$(sha256sum "$archive" | awk '{print $1}')
+                  key="$S3_PREFIX/$(basename "$archive")"
+                  version=$(aws s3api put-object --bucket "$S3_BUCKET" --key "$key" \
+                    --body "$archive" --server-side-encryption AES256 --if-none-match '*' \
+                    --metadata "sha256=$sha" --query VersionId --output text)
+                  received=$(aws s3api get-object --bucket "$S3_BUCKET" --key "$key" \
+                    /backup/verified.snap --query VersionId --output text)
+                  test "$version" = "$received"
+                  test "$sha" = "$(sha256sum /backup/verified.snap | awk '{print $1}')"
+                  echo 'Native snapshot uploaded and downloaded with matching version and SHA-256'
+              env:
+                - name: AWS_SHARED_CREDENTIALS_FILE
+                  value: /aws/cloud
+                - name: AWS_CONFIG_FILE
+                  value: /dev/null
+                - name: AWS_DEFAULT_REGION
+                  value: us-east-1
+                - name: AWS_EC2_METADATA_DISABLED
+                  value: 'true'
+                - name: AWS_PAGER
+                  value: ''
+                - name: S3_BUCKET
+                  value: velero-offsite-homelab
+                - name: S3_PREFIX
+                  value: vault-raft-snapshots
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: aws
+                  mountPath: /aws
+                  readOnly: true
+                - name: tmp
+                  mountPath: /tmp
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: vault-snapshot-offsite
+  namespace: vault
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: vault-backend
+  target:
+    name: vault-snapshot-offsite
+  data:
+    - secretKey: cloud
+      remoteRef:
+        key: infrastructure/velero-offsite
+        property: cloud
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vault-snapshot
+  namespace: vault
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: vault-snapshot
+      rules:
+        - alert: VaultSnapshotStale
+          expr: |-
+            (time() - kube_cronjob_status_last_successful_time{namespace="vault", cronjob="vault-snapshot"} > 108000)
+            or
+            ((time() - kube_cronjob_created{namespace="vault", cronjob="vault-snapshot"} > 108000)
+             unless on(namespace, cronjob)
+             kube_cronjob_status_last_successful_time{namespace="vault", cronjob="vault-snapshot"})
+            or absent(kube_cronjob_created{namespace="vault", cronjob="vault-snapshot"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Vault has no verified offsite snapshot in 30 hours
+            description: Check the Vault snapshot job; success requires an S3 download
+              with matching version and SHA-256.

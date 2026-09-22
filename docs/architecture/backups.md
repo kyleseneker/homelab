@@ -72,7 +72,7 @@ Velero uses the AWS plugin to communicate with MinIO over the S3 API. File syste
 !!! danger "Kopia cannot read local-path volumes"
     File-system backup skips `hostPath` volumes, which is what the `local-path` provisioner creates. Every *arr config PVC, the Prometheus TSDB, and Uptime Kuma's database are captured as objects holding **no data**, and Velero records this as a warning rather than an error -- so the backup reports `Completed`.
 
-    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault's scheduled live file-backend copy still needs replacement with consistent recurring backups. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
+    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault uses daily native Raft snapshots uploaded directly to S3 and verified by read-back. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
 
     Kopia also only reads volumes attached to a **running** pod. Each backup volume is kept mounted by a holder Deployment; without it the mechanism silently captures nothing.
 
@@ -226,7 +226,7 @@ A green backup status is not a restore test. Record an isolated application rest
 
 ## Recovery Coverage
 
-The active PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `openclaw`, `argocd`, `vault` and `external-secrets`. MinIO and the NFS provisioner's root export are deliberately outside that schedule.
+The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `openclaw`, `argocd`, `vault` and `external-secrets`. MinIO and the NFS provisioner's root export are deliberately outside that schedule.
 
 | Namespace / PVC | Data and recovery mechanism | Remaining limitation |
 |-----------------|-----------------------------|----------------------|
@@ -253,13 +253,14 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `monitoring/uptime-kuma-backups` | NFS dump staging volume mounted by its holder | Captured offsite; still requires application-level restoration |
 | `nfs-provisioner/pvc-nfs-provisioner-nfs-subdir-external-provisioner` | Root export mount used by the provisioner | Not a separate copy of child PVC data; reconstruct provisioning from Git |
 | `openclaw/openclaw` | NFS workspace/runtime state captured by daily and offsite Velero | Restore with integrations and remediation disabled until credentials and scope are verified |
-| `vault/data-vault-0` | Live file-backend volume captured by weekly local/offsite Velero | Manual quiesced local/S3 restores, KMS auto-unseal and scoped Kubernetes auth/ESO verified using HCP credential recovery; recurring consistent backups and an HCP-independent credential copy remain open |
+| `vault/vault-raft-data` | Daily native online snapshot to S3, independent of Velero/NFS | Production S3 snapshot restored in isolation with original KMS/identity and matching values; HCP-independent credential escrow remains open |
+| `vault/data-vault-0` | Retained, unmounted pre-cutover file backend | Historical recovery material only; receives no new writes and is not a current rollback |
 
 Pods without persistent data rely on Git and their external secret sources. Retained/released PV directories are not automatically rebound or validated by this inventory; preserve and identify them before attempting recovery. ConfigMaps and Secret objects may exist in a Velero backup, but that does not demonstrate that independent bootstrap credentials are available during site loss.
 
 ### Schedule Limits and Verified Contents
 
-SQLite/native dumps and the Authentik logical dump run daily before the 03:00 UTC local backup. Most application offsite data is uploaded weekly at 05:00 UTC Sunday, so an offsite recovery point can be roughly seven days old plus the dump-to-upload interval. Vault's current raw copy is weekly; etcd snapshots are uploaded daily and retain seven pairs. These are implementation limits, not agreed acceptable data-loss or recovery-time targets. Set those targets before claiming the schedules meet them.
+SQLite/native dumps and the Authentik logical dump run daily before the 03:00 UTC local backup. Most application offsite data is uploaded weekly at 05:00 UTC Sunday, so an offsite recovery point can be roughly seven days old plus the dump-to-upload interval. Vault native snapshots upload daily at 01:30 UTC and expire current objects after 30 days; etcd snapshots upload daily and retain seven pairs. These are implementation limits, not agreed acceptable data-loss or recovery-time targets. Set those targets before claiming the schedules meet them.
 
 `recovery-verify-20260921` completed with all 42 PodVolumeBackups complete and no errors. Its 30 warnings comprised 20 completed-job volumes, nine unsupported local-path volumes and one unused ArgoCD volume. The local-path warnings correspond to the seven media config PVCs, Uptime Kuma and Prometheus; the first eight have separate dump/archive paths, while Prometheus history remains unprotected. Do not globally suppress these warnings: a new unsupported stateful volume would be a real coverage gap.
 
