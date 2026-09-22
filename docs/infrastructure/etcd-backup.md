@@ -32,7 +32,12 @@ The job is pinned to the control-plane node. If that node is unschedulable, the 
 
 ## Restore
 
-See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). Note that `etcdctl snapshot restore` was removed in etcd 3.6; restore uses `etcdutl`, which ships in the same image.
+See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). The pinned `registry.k8s.io/etcd:3.5.15-0` image ships `/usr/local/bin/etcdctl`, not `etcdutl`. Its restore command supports revision bump and compaction; revalidate the image and tooling together during upgrades.
+
+The [isolated etcd/API drill](../runbooks/disaster-recovery.md#isolated-etcd-and-api-verification)
+restored an offsite snapshot and matching PKI, verified revision bump/compaction,
+and read matching object counts through the recovered API. Full controller and
+node recovery remains open.
 
 ## Upstream Documentation
 

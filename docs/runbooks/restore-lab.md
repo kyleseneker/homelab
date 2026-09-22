@@ -170,6 +170,16 @@ separate local PVC. The lab snapshot CronJob stays suspended. Production now use
 local Raft and a daily direct S3 snapshot job. Its first uploaded native snapshot
 also passed a fresh-PVC lab restore; temporary verification resources were removed.
 
+## etcd and API Recovery
+
+The [isolated verifier](disaster-recovery.md#isolated-etcd-and-api-verification)
+restored a production S3 etcd snapshot and its matching PKI on the lab control-plane
+host using separate container storage and loopback-only networking. Snapshot
+integrity, revision bump/compaction, TLS and recovered API object counts passed.
+The lab's own control plane and workloads were unchanged. Temporary containers,
+networking, restored data and PKI copies were removed afterward. Controller and
+replacement-node recovery are still tracked in the recovery backlog.
+
 ## Access and Teardown
 
 Every manual command must select the lab kubeconfig explicitly:

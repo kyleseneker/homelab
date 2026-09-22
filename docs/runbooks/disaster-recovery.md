@@ -97,7 +97,7 @@ This procedure is for the current **single-member** kubeadm control plane with i
 
 1. Obtain the snapshot from NAS or S3 without depending on a working Kubernetes API. On the control-plane host, put it at `/var/tmp/etcd-recovery/snapshot.db` with restrictive permissions. Retrieve the matching PKI tarball if certificates are lost; restore only that PKI after preserving any current files. Do not overwrite working certificates unnecessarily.
 
-2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.31.4 default is `registry.k8s.io/etcd:3.5.15-0`; verify the actual manifest before selecting a restore utility. Prepare all artifacts before stopping the API.
+2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.31.4 default is `registry.k8s.io/etcd:3.5.15-0`; verify the actual manifest before selecting a restore utility. This image ships `/usr/local/bin/etcdctl`, not `etcdutl`; its restore command supports the revision-bump and compaction flags below. Recheck the shipped binaries and flags when changing versions. Prepare all artifacts before stopping the API.
 
 3. On the control plane, move all control-plane manifests to a persistent directory **outside** the watched manifest directory. Keep kubelet running so it removes the static pods:
 
@@ -123,12 +123,12 @@ This procedure is for the current **single-member** kubeadm control plane with i
     sudo ctr -n k8s.io run --rm \
       --mount type=bind,src=/var/tmp/etcd-recovery,dst=/recovery,options=rbind:ro \
       "$ETCD_IMAGE" etcd-snapshot-check \
-      etcdutl snapshot status /recovery/snapshot.db --write-out=table
+      /usr/local/bin/etcdctl snapshot status /recovery/snapshot.db --write-out=table
     sudo ctr -n k8s.io run --rm \
       --mount type=bind,src=/var/tmp/etcd-recovery,dst=/recovery,options=rbind:ro \
       --mount type=bind,src=/var/lib,dst=/var/lib,options=rbind:rw \
       "$ETCD_IMAGE" etcd-restore \
-      etcdutl snapshot restore /recovery/snapshot.db \
+      /usr/local/bin/etcdctl snapshot restore /recovery/snapshot.db \
         --data-dir=/var/lib/etcd-restore \
         --name="$ETCD_NAME" \
         --initial-advertise-peer-urls="$ETCD_PEER_URL" \
@@ -157,6 +157,63 @@ This procedure is for the current **single-member** kubeadm control plane with i
     ```
 
 6. Inspect reconciliation and Secret rotations since the snapshot. Keep the old data and manifests until recovery is validated. A rollback requires stopping the same static pods first, moving the failed restored directory aside, and putting the preserved directory back; never swap a live etcd data directory.
+
+### Isolated etcd and API Verification
+
+`scripts/verify-etcd-recovery.py` checks a production snapshot/PKI pair on
+`homelabrestore01-node-1` without replacing the lab's control plane. It runs only
+as root on that exact lab hostname, refuses an existing work directory, validates
+archive paths, and creates a separate network namespace containing only loopback.
+The original production API address exists only on that namespace's loopback;
+there is no interface or route to either cluster or the internet. No kubelet,
+scheduler or controller manager is connected to the restored API.
+
+To repeat the drill:
+
+1. Retrieve a matching `snapshot-<timestamp>.db` and `pki-<timestamp>.tar.gz` from
+   `s3://velero-offsite-homelab/etcd-snapshots/` with independently recovered S3
+   credentials. Record their versions and SHA-256 values. Both contain sensitive
+   recovery material; use private directories and never print contents.
+2. Prepare a root-owned **0700** input directory on the lab control plane with
+   these files: `snapshot.db`, `pki.tar.gz`, `etcd-source.json`,
+   `kube-apiserver-source.json`, and `audit-policy.yml`. Each source JSON document
+   contains `image` and `command` from the corresponding original static-pod
+   container. Capture these before an outage; the verified images are etcd
+   `3.5.15-0` and kube-apiserver `v1.31.4`. Use the repository's
+   `ansible/roles/k8s_control_plane/templates/audit-policy.yml.j2` for the audit
+   policy. Transfer the verifier through the same administrative SSH path.
+3. Ensure the lab has headroom for the temporary processes. The verifier limits
+   running etcd/API memory to 384/768 MiB and one CPU each. On the lab host, run:
+
+    ```bash
+    sudo python3 /var/tmp/homelab-etcd-recovery-input/verify-etcd-recovery.py \
+      --source /var/tmp/homelab-etcd-recovery-input \
+      --work /var/tmp/homelab-etcd-recovery-check
+    ```
+
+4. Inspect the nonsensitive `verification.json` result. Commands and server logs
+   stay in the private work directory. The verifier stops its own containers and
+   removes its network namespace on normal completion, errors and handled
+   termination. After an unhandled host/process failure, inspect named
+   `etcd-recovery-*` containers and `homelab-etcd-recovery` networking before retrying;
+   do not delete unrelated lab CRI containers or CNI namespaces.
+5. Preserve only needed verification evidence, then remove the temporary input
+   and work directories, downloaded working copies, and generated client keys.
+   Confirm the original lab and production nodes remain Ready.
+
+| Check | Verified result |
+|-------|-----------------|
+| Offsite pair | `snapshot-20260922-020005.db` and matching PKI archive, obtained with HCP-exported S3 credentials |
+| Snapshot SHA-256 | `0f5945eef14a4f3b4340af6786c64fadc9f32ca0538e9a879639e6d06598b483` |
+| Integrity and revision | Snapshot hash checked; revision `166199690` restored as `1166199690`; reads at the old revision rejected as compacted |
+| PKI and API | Original TLS material accepted; authenticated `/readyz` succeeded; anonymous Secret access denied |
+| Recovered objects | API and etcd counts matched: 19 namespaces, 3 node records, 64 deployments and 71 Secrets |
+| Isolation and cleanup | Loopback-only networking; no recovered controllers/workloads started; temporary containers, namespace, data and PKI copies removed |
+
+This proves offsite datastore and API recovery using the backed-up PKI. Node
+records in the restored API are historical objects, not recovered running nodes.
+Controller-manager/scheduler convergence, kubelet reconnection, replacement-node
+bootstrapping and application volume recovery remain separate checks.
 
 ## Single Node Failure
 

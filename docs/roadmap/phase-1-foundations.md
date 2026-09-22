@@ -33,7 +33,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
 - [ ] Set acceptable data-loss and recovery-time targets for the [inventoried data](../architecture/backups.md#recovery-coverage); close the documented non-database and unprotected-volume gaps
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
-- [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
+- [ ] Complete restored controller-manager/scheduler convergence, kubelet reconnection and replacement-node bootstrapping after the verified [offsite etcd/PKI and API restore](../runbooks/disaster-recovery.md#isolated-etcd-and-api-verification)
 - [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; validate the remaining Bazarr/Prowlarr profile IDs and verify production authentication
 - [ ] Rebuild Gluetun/VPN access and verify download-payload recovery before resuming qBittorrent transfers
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior

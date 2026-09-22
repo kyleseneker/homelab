@@ -244,7 +244,7 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `arr/arr-vpn-downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | One offsite torrent/resume pair loaded with matching configuration/history and fresh login; payload recovery and VPN bootstrap remain unverified |
 | `auth/data-authentik-postgresql-0` | Native `pg_dump` to `authentik-backups`; raw volume is also captured | Raw live PostgreSQL files are not the database recovery method; preserve Authentik's secret key separately |
 | `auth/authentik-backups` | Daily custom-format PostgreSQL archive, mounted by a holder and captured by Velero | S3 database, emergency login and OIDC code exchange verified; ordinary login/MFA, clients and proxy/worker recovery remain open |
-| `backups/etcd-snapshots` | Daily etcd snapshot plus matching PKI, uploaded directly to `etcd-snapshots/` in S3 | Seven retained pairs; isolated control-plane restoration still required |
+| `backups/etcd-snapshots` | Daily etcd snapshot plus matching PKI, uploaded directly to `etcd-snapshots/` in S3 | Seven retained pairs; isolated offsite etcd/PKI and API restore verified; controller/node convergence still required |
 | `backups/minio` | Local Velero object store | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |
 | `monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` | Local-path TSDB, skipped by Velero | Historical metrics have no independent backup |
