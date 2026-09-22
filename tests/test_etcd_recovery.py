@@ -153,3 +153,29 @@ class RuntimeSocketIsolation(unittest.TestCase):
         config['imports'] = ['/etc/other-runtime/*.toml']
         with self.assertRaisesRegex(RuntimeError, 'roots/imports'):
             runtime.validate_runtime_config(config, root, host_config_masked=True)
+
+
+class RepositoryPasswordExport(unittest.TestCase):
+    def secret(self):
+        import base64
+        return {'kind': 'Secret', 'metadata': {'namespace': 'backups', 'name': 'velero-repo-credentials'},
+                'data': {'repository-password': base64.b64encode(b'test-only-password').decode()}}
+
+    def test_export_is_private_and_never_overwrites(self):
+        import stat
+        with tempfile.TemporaryDirectory() as root:
+            target = Path(root) / 'password'
+            recovery.export_kopia_password(self.secret(), target)
+            self.assertEqual(target.read_bytes(), b'test-only-password')
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o600)
+            with self.assertRaises(FileExistsError):
+                recovery.export_kopia_password(self.secret(), target)
+
+    def test_wrong_secret_is_rejected_before_writing(self):
+        secret = self.secret()
+        secret['metadata']['name'] = 'unrelated'
+        with tempfile.TemporaryDirectory() as root:
+            target = Path(root) / 'password'
+            with self.assertRaises(ValueError):
+                recovery.export_kopia_password(secret, target)
+            self.assertFalse(target.exists())

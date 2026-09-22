@@ -33,7 +33,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
 - [ ] Set acceptable data-loss and recovery-time targets for the [inventoried data](../architecture/backups.md#recovery-coverage); close the documented non-database and unprotected-volume gaps
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
-- [ ] Extend the verified [lab worker rebuild with checkpointed volumes](../runbooks/restore-lab.md#worker-replacement-drill) to offsite application-volume recovery on the [recovered control plane and network](../runbooks/restore-lab.md#node-and-cilium-recovery-drill)
+- [ ] Combine the verified [independent offsite volume restore](../runbooks/backup-and-restore.md#independent-fresh-volume-repeat) with the [fresh control-plane and network recovery](../runbooks/restore-lab.md#node-and-cilium-recovery-drill) in one drill; extend application coverage beyond the verified fixtures
 - [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; validate the remaining Bazarr/Prowlarr profile IDs and verify production authentication
 - [ ] Rebuild Gluetun/VPN access and verify download-payload recovery before resuming qBittorrent transfers
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior

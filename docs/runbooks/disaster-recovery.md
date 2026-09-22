@@ -207,6 +207,12 @@ private output and the verifier scripts to the lab over administrative SSH.
       --work /var/tmp/homelab-etcd-recovery-check
     ```
 
+   Add `--export-kopia-password` to save only the recovered Velero repository
+   password as mode-0600 `kopia-password` in the work directory. This supports
+   [independent offsite volume retrieval](backup-and-restore.md#independent-repository-credential-recovery)
+   without querying production. Treat this optional output as sensitive recovery
+   material and delete it with the copied PKI after use.
+
    Add `--controllers` to test restored leader election, Deployment/ReplicaSet/Pod
    creation and scheduler binding. It regenerates one-day controller client
    certificates from the backed-up CA using their original identities and RBAC.

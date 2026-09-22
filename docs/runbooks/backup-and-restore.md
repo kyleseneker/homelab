@@ -26,9 +26,9 @@ This section recovers retained pre-cutover archives. Production uses the native
 Raft snapshot procedure below; its old NFS claim no longer receives writes.
 
 Use the [quiesced backup helper](../infrastructure/vault.md#consistent-file-backend-copy)
-for a consistent manual copy, then use the offsite transfer below. Scheduled
-Velero backups still copy the live file backend; the verified manual archive does
-not make those scheduled copies consistent.
+for a consistent historical file-backend copy, then use the offsite transfer below.
+Historical live Velero copies were not proven consistent. Current production
+recovery uses the daily native Raft snapshots below.
 
 1. Take the encrypted archive with Vault stopped, then verify production restarted,
    auto-unsealed, and resumed reconciliation. Preserve its SHA-256 digest privately
@@ -68,8 +68,9 @@ not make those scheduled copies consistent.
 
 The local restore and the fresh S3 restore below both verified the encrypted file
 backend, KMS auto-unseal and authenticated secret reads. The authentication check
-also verifies bounded Kubernetes auth/ESO recovery. Scheduled consistent backups
-remain unfinished; the manual copy does not establish a recurring recovery point.
+also verifies bounded Kubernetes auth/ESO recovery. The subsequent production
+Raft cutover and daily native snapshots establish the current recurring recovery
+path; the file archive remains historical recovery material.
 
 ### Offsite Vault Archive
 
@@ -514,6 +515,52 @@ Record the dump's original timestamp before copying it. For an offline SQLite du
 
 This drill needed neither MinIO nor NAS data access, but the original services were not shut down. Backup credentials were obtained from the running production cluster. It therefore proves S3 database recovery across the lab's network boundary, not full site-loss recovery with externally escrowed credentials. Repeat with independently available credentials as part of the remaining recovery acceptance checks.
 
+### Independent Repository Credential Recovery
+
+The repository password can be recovered from a complete offsite etcd bundle when
+production Kubernetes, Vault and NAS access are unavailable. This still requires
+HCP Terraform access for S3 credentials and a trusted recovery machine.
+
+1. Export credentials with `scripts/export-recovery-credentials.py`. Download and
+   verify a completed etcd/PKI/host-configuration bundle using the
+   [offline preparation procedure](../infrastructure/etcd-backup.md#restore).
+2. Run the [disconnected etcd/API verifier](disaster-recovery.md#isolated-etcd-and-api-verification)
+   with `--export-kopia-password`. It retrieves only
+   `backups/velero-repo-credentials` from the recovered API and writes
+   `kopia-password` inside its private work directory with mode 0600. It refuses
+   to overwrite that file. No controllers or kubelets are needed. Copy the file
+   through administrative SSH without displaying its contents.
+3. Select a known completed PodVolumeBackup snapshot and repository namespace from
+   the backup inventory. Use the read-only helper with a new output directory:
+
+   ```bash
+   python3 scripts/restore-kopia-offsite.py \
+     --credentials-dir .lab/recovery-credentials-hcp \
+     --password-file .lab/volume-recovery/kopia-password \
+     --namespace arr --snapshot <snapshot-id> \
+     --output .lab/volume-recovery/application
+   ```
+
+   The helper uses the checksum-verified `.lab/bin/kopia`, ignores ambient AWS and
+   Kopia environment settings, connects read-only with Velero's repository identity,
+   and removes temporary connection/cache state. Credentials are supplied through
+   the process environment, never command arguments. Source data and nonsensitive
+   retrieval metadata remain in the private output directory. A failed restore
+   requires a new output directory; it never merges into a previous attempt.
+4. Follow the application's import and validation procedure on a new empty PVC.
+   Keep the source copy untouched. Remove the temporary recovered datastore,
+   certificates, password, source/prepared copies and test resources after checks.
+   Lab local-path volumes use `Retain`: namespace deletion alone leaves data.
+   Match the temporary PVC UID to its Released PV, set only that test PV to
+   `Delete`, and verify both the PV and its node-local directory disappear.
+
+This path passed for the qBittorrent volume below using repository credentials
+from `recovery-20260922-202350.json` and S3 credentials from HCP. Retrieval and
+application recovery did not query the production cluster or read MinIO/NAS.
+This provides credential independence from the live cluster, not independence
+from HCP or a substitute for separately protected recovery credentials. A rotated
+repository password must still match the selected backup repository.
+
 ## Authentik PostgreSQL Recovery
 
 `authentik-backup` runs at 01:45 UTC using PostgreSQL 17 tools, before the daily Velero schedule. PostgreSQL's [native `pg_dump`](https://www.postgresql.org/docs/17/app-pgdump.html) provides a consistent database snapshot while the application continues running. The job writes a custom-format archive to a temporary file, checks its archive listing, then atomically publishes `authentik.dump` on the `authentik-backups` PVC. The holder must remain Running for Velero to capture this volume. Do not overlap a manual dump with another dump job.
@@ -627,4 +674,20 @@ The `qbit-config` volume contains qBittorrent settings, category definitions and
 | Isolation | Public HTTPS, lab/production APIs and NAS TCP probes timed out |
 | Restart | Authentication and metadata comparisons passed again |
 
-This proves application-readable configuration and resume metadata for this snapshot. It does not establish atomic consistency for every future live filesystem backup, recover the payload, exercise VPN bootstrap or demonstrate downloading/seeding. Backup credentials still came from the running production cluster. The production media operator already handles this version's HTTP 204 login/session-cookie behavior and remained Ready/Synced.
+This proves application-readable configuration and resume metadata for this snapshot. It does not establish atomic consistency for every future live filesystem backup, recover the payload, exercise VPN bootstrap or demonstrate downloading/seeding. The first check used credentials from the running production cluster. The independent repeat below recovered its credentials from HCP and offsite etcd. The production media operator already handles this version's HTTP 204 login/session-cookie behavior.
+
+### Independent Fresh-volume Repeat
+
+The same offsite snapshot was retrieved read-only through the independent
+credential path above and imported into a separate, empty worker-local PVC. The
+original lab application and volume remained intact. The prepared copy contained
+34 files after removing process locks and applying the existing no-transfer lab
+settings; all file hashes matched inside the PVC before startup.
+
+qBittorrent 5.2.3 passed fresh authentication, source torrent/category/path/history
+comparisons, zero-peer checks and blocked public/API/NAS probes, then passed again
+after restart. The temporary namespace/PVC, recovered etcd/API state, downloaded
+copies and repository password were removed after verification. This extends the
+volume restore evidence to independent credentials and fresh storage. It does not
+prove download-payload recovery or combine this application restore with another
+fresh control-plane replacement in the same drill.

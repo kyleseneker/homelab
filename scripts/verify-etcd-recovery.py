@@ -8,6 +8,7 @@ Use --controllers for disconnected controller/bootstrap protocol checks.
 Use --runtime for one real kubelet and inert Pod after stopping the recovered controllers.
 """
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -39,7 +40,20 @@ def flag(command, name):
     return matches[0]
 
 
-def main(source, work, controllers=False, runtime=False):
+def export_kopia_password(secret, destination):
+    metadata = secret.get('metadata', {})
+    if (secret.get('kind') != 'Secret' or metadata.get('namespace') != 'backups'
+            or metadata.get('name') != 'velero-repo-credentials'):
+        raise ValueError('Expected the recovered Velero repository Secret')
+    password = base64.b64decode(secret['data']['repository-password'], validate=True)
+    if not password or b'\0' in password:
+        raise ValueError('Invalid repository password')
+    descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, 'wb') as stream:
+        stream.write(password)
+
+
+def main(source, work, controllers=False, runtime=False, export_password=False):
     if os.geteuid() != 0 or socket.gethostname() != 'homelabrestore01-node-1':
         raise RuntimeError('Run only as root on homelabrestore01-node-1')
     if work.exists() or Path('/run/netns', NETNS).exists():
@@ -206,6 +220,10 @@ def main(source, work, controllers=False, runtime=False):
                 from recovery_runtime import verify as verify_runtime
                 evidence['runtime_checks'] = verify_runtime(work, run, request, stop)
             namespace()
+        if export_password:
+            secret = json.loads(request('/api/v1/namespaces/backups/secrets/velero-repo-credentials').stdout)
+            export_kopia_password(secret, work / 'kopia-password')
+            evidence['kopia_password_recovered'] = True
         (work / 'verification.json').write_text(json.dumps(evidence, indent=2) + '\n')
         print(json.dumps(evidence), flush=True)
     finally:
@@ -234,5 +252,7 @@ if __name__ == '__main__':
     parser.add_argument('--work', required=True, type=Path, help='New private directory; never an existing data directory')
     parser.add_argument('--controllers', action='store_true', help='Also verify disconnected controllers and node bootstrap protocol')
     parser.add_argument('--runtime', action='store_true', help='Also verify a real isolated kubelet and inert Pod; implies --controllers')
+    parser.add_argument('--export-kopia-password', action='store_true',
+                        help='Save only the recovered Velero repository password privately in the work directory')
     args = parser.parse_args()
-    main(args.source, args.work, controllers=args.controllers, runtime=args.runtime)
+    main(args.source, args.work, controllers=args.controllers, runtime=args.runtime, export_password=args.export_kopia_password)

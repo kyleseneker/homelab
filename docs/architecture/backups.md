@@ -130,7 +130,7 @@ Velero backs up Kubernetes API resources, not etcd itself. A separate CronJob in
 | Credentials | ExternalSecret (`etcd-backup-credentials`, from `infrastructure/etcd-backup`) |
 | Alerting | `EtcdBackupStale` PrometheusRule |
 
-Each run writes both a `snapshot-<timestamp>.db` and a `pki-<timestamp>.tar.gz` of `/etc/kubernetes/pki`, since a snapshot is useless for rebuilding a control plane without the matching CA material. The job is pinned to the control-plane node, so it cannot run if that node is unschedulable.
+Each run writes `snapshot-<timestamp>.db`, matching `pki-<timestamp>.tar.gz` and `control-plane-<timestamp>.tar.gz` host configuration. It publishes `recovery-<timestamp>.json` only after S3 read-back verification; recovery requires the complete matching set. The job is pinned to the control-plane node, so it cannot run if that node is unschedulable.
 
 See [Disaster Recovery](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption) for the restore procedure.
 
@@ -241,10 +241,10 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `arr/arr-data` | Shared media/downloads on NFS; deliberately excluded from Velero volume backups | No independent media copy demonstrated; NAS redundancy does not replace a backup |
 | `arr/arr-recyclarr` | NFS state/cache mounted by its holder, captured by Velero; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |
 | `arr/arr-vpn-downloads-gluetun-config` | Live NFS file backup; VPN settings/credentials also come from Git/Vault | Fresh VPN bootstrap not demonstrated |
-| `arr/arr-vpn-downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | One offsite torrent/resume pair loaded with matching configuration/history and fresh login; payload recovery and VPN bootstrap remain unverified |
+| `arr/arr-vpn-downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | Offsite configuration/resume state restored to fresh storage using HCP/offsite-etcd credentials; login/history/restart verified; payload recovery and VPN bootstrap remain unverified |
 | `auth/data-authentik-postgresql-0` | Native `pg_dump` to `authentik-backups`; raw volume is also captured | Raw live PostgreSQL files are not the database recovery method; preserve Authentik's secret key separately |
 | `auth/authentik-backups` | Daily custom-format PostgreSQL archive, mounted by a holder and captured by Velero | S3 database, emergency login and OIDC code exchange verified; ordinary login/MFA, clients and proxy/worker recovery remain open |
-| `backups/etcd-snapshots` | Daily etcd snapshot plus matching PKI, uploaded directly to `etcd-snapshots/` in S3 | Seven retained pairs; offsite etcd/PKI, API, bounded controllers and node-certificate protocol verified; real kubelet/runtime and replacement-machine recovery remain open |
+| `backups/etcd-snapshots` | Daily etcd snapshot plus matching PKI, uploaded directly to `etcd-snapshots/` in S3 | Seven completed sets retained; offsite static control-plane boot, normal node registration and Cilium networking verified on replacement VMs; integrated application-volume recovery remains open |
 | `backups/minio` | Local Velero object store | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |
 | `monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` | Local-path TSDB, skipped by Velero | Historical metrics have no independent backup |
@@ -260,7 +260,7 @@ Pods without persistent data rely on Git and their external secret sources. Reta
 
 ### Schedule Limits and Verified Contents
 
-SQLite/native dumps and the Authentik logical dump run daily before the 03:00 UTC local backup. Most application offsite data is uploaded weekly at 05:00 UTC Sunday, so an offsite recovery point can be roughly seven days old plus the dump-to-upload interval. Vault native snapshots upload daily at 01:30 UTC and expire current objects after 30 days; etcd snapshots upload daily and retain seven pairs. These are implementation limits, not agreed acceptable data-loss or recovery-time targets. Set those targets before claiming the schedules meet them.
+SQLite/native dumps and the Authentik logical dump run daily before the 03:00 UTC local backup. Most application offsite data is uploaded weekly at 05:00 UTC Sunday, so an offsite recovery point can be roughly seven days old plus the dump-to-upload interval. Vault native snapshots upload daily at 01:30 UTC and expire current objects after 30 days; etcd snapshots upload daily and retain seven completed sets. These are implementation limits, not agreed acceptable data-loss or recovery-time targets. Set those targets before claiming the schedules meet them.
 
 `recovery-verify-20260921` completed with all 42 PodVolumeBackups complete and no errors. Its 30 warnings comprised 20 completed-job volumes, nine unsupported local-path volumes and one unused ArgoCD volume. The local-path warnings correspond to the seven media config PVCs, Uptime Kuma and Prometheus; the first eight have separate dump/archive paths, while Prometheus history remains unprotected. Do not globally suppress these warnings: a new unsupported stateful volume would be a real coverage gap.
 
