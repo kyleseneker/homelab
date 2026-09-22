@@ -4,11 +4,34 @@
     path: /etc/kubernetes/kubelet.conf
   register: k8s_worker_kubelet_conf
 
-- name: Join the Kubernetes cluster
-  ansible.builtin.command: "{{ hostvars[groups['control_plane'][0]].k8s_control_plane_join_command }}"
-  changed_when: true
-  no_log: true
+- name: Bootstrap a new worker with a short-lived token
   when: not k8s_worker_kubelet_conf.stat.exists
+  block:
+    - name: Generate a worker join command on the control plane
+      ansible.builtin.command: kubeadm token create --ttl 15m --print-join-command
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      register: k8s_worker_join_command
+      changed_when: true
+      no_log: true
+
+    - name: Join the Kubernetes cluster
+      ansible.builtin.command: "{{ k8s_worker_join_command.stdout }}"
+      changed_when: true
+      no_log: true
+  always:
+    - name: Revoke the worker bootstrap token
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - token
+          - delete
+          - "{{ (k8s_worker_join_command.stdout | regex_search('--token\\s+(\\S+)', '\\1')) | first }}"
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      changed_when: true
+      no_log: true
+      when:
+        - k8s_worker_join_command is defined
+        - k8s_worker_join_command.rc | default(1) == 0
 
 - name: Wait for node to be ready
   ansible.builtin.command: >

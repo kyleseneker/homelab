@@ -146,14 +146,3 @@
   delay: 15
   register: k8s_control_plane_cilium_status
   until: k8s_control_plane_cilium_status.rc == 0
-
-- name: Generate join command
-  ansible.builtin.command: kubeadm token create --print-join-command
-  register: k8s_control_plane_join_command_raw
-  changed_when: false
-  no_log: true
-
-- name: Store join command as fact
-  ansible.builtin.set_fact:
-    k8s_control_plane_join_command: "{{ k8s_control_plane_join_command_raw.stdout }}"
-  no_log: true

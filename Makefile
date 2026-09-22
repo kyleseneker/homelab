@@ -216,10 +216,13 @@ aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
 
 LAB_TF_DIR := terraform/hosts/homelabrestore01
 
-.PHONY: lab-host lab-init lab-plan lab-infra lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
+.PHONY: lab-host lab-permissions lab-init lab-plan lab-infra lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
 
 lab-host: ## Configure the isolated Proxmox bridge, firewall and lab API identity
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/restore-lab-host.yml
+
+lab-permissions: ## Restore scoped lab ACLs after deleting a disposable VM
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/restore-lab-host.yml --tags lab_permissions
 
 lab-init: ## Initialize the separate restore-lab Terraform workspace
 	terraform -chdir=$(LAB_TF_DIR) init

@@ -258,7 +258,7 @@ Cilium/Pod networking and application volume recovery remain separate checks.
 
 ## Single Node Failure
 
-Inspect the Terraform plan and the failed VM before replacement; restarting Terraform does not automatically identify every guest failure. Re-provision only the failed worker and rejoin using Ansible. Local-path PVCs remain tied to their original node/data directory; they do not migrate with rescheduled pods. Recover application data from dumps or surviving node disks before bringing those workloads online. A control-plane loss needs one of the recovery paths above.
+Inspect the Terraform plan and the failed VM before replacement; restarting Terraform does not automatically identify every guest failure. Re-provision only the failed worker and rejoin using Ansible with `--limit <worker-name>`. The worker role obtains a short-lived join token from the surviving control plane and revokes it after the join attempt. The [lab worker replacement procedure](restore-lab.md#worker-replacement-drill) covers the required data checkpoint and VM-specific permission restoration. Local-path PVCs remain tied to their original node/data directory; they do not migrate with rescheduled pods. Recover application data from dumps or surviving node disks before bringing those workloads online. A control-plane loss needs one of the recovery paths above.
 
 ## NAS Failure
 

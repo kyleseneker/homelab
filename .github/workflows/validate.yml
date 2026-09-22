@@ -108,6 +108,8 @@ jobs:
       - run: ansible-galaxy collection install -r ansible/requirements.yml
       - working-directory: ansible
         run: ansible-lint
+      - name: Test worker-only bootstrap and token cleanup
+        run: python3 -m unittest discover -s tests -p test_worker_bootstrap.py
 
   scripts:
     runs-on: ubuntu-latest

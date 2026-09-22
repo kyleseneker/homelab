@@ -59,6 +59,78 @@ Before transferring backup data:
 - No NFS mounts or production credentials exist on the lab nodes.
 - All production nodes and applications remain healthy.
 
+## Worker Replacement Drill
+
+A worker-only rebuild uses the existing Terraform VM module and Ansible worker
+role. The worker role generates a 15-minute bootstrap token on the surviving
+control plane only when `kubelet.conf` is absent, then revokes that token after
+its join attempt. It does not require the control-plane play to run first.
+
+1. Confirm the explicit lab kubeconfig selects only the two lab nodes. Inventory
+   PV paths, node affinity, application replica counts and suspended CronJobs.
+   Save these records privately. Every current lab local-path PV resides on VM 301;
+   replacing that disk without a data restore would lose those volumes.
+2. Scale the `restore-*` Deployments to zero and wait for their Pods to terminate.
+   Keep the control plane and network controllers running. Archive
+   `/opt/local-path-provisioner` with numeric ownership, permissions, ACLs and
+   extended attributes preserved. Verify the archive and record file hashes before
+   proceeding. These are sensitive recovery files; use directories mode 0700 and
+   files mode 0600.
+3. Take a full VM 301 backup with Proxmox `vzdump --mode stop` into a private local
+   directory. Wait for completion and verify both compressed-stream and VMA
+   integrity. A VM snapshot alone is insufficient rollback protection because
+   Terraform replacement deletes the old VM disks and their snapshots.
+4. Use two reviewed Terraform plans in the lab workspace. First save a destroy
+   plan with `-destroy -target='module.vm["homelabrestore01-node-2"]'` and confirm
+   it deletes only VM 301. Apply that exact plan after both recovery copies are
+   verified. Proxmox removes `/vms/301` ACLs when deleting the VM, so run
+   `make lab-permissions` next to restore the existing narrow permissions.
+   Then save a normal plan, require exactly one create for VM 301, and apply it.
+   A single `-replace` apply cannot recreate this VM with its deleted ACL. Do not
+   broaden the provisioning token to bypass this boundary. Keep applications
+   scaled to zero throughout.
+5. Remove the old lab worker's Node record. Verify the replacement's SSH host key
+   through the administrative Proxmox path and update only that lab host's trust
+   entry. Run the existing playbook with the worker limit:
+
+    ```bash
+    cd ansible
+    ansible-playbook --vault-password-file ../.vault-password \
+      -i inventory/homelabrestore01/hosts.yml playbooks/restore-lab.yml \
+      --limit homelabrestore01-node-2
+    ```
+
+6. Confirm a new machine ID, system UUID and Node UID, plus healthy Cilium and
+   kubelet registration. Restore the quiesced volume archive into `/opt` on the
+   fresh worker before restarting applications. Require every recorded file's
+   hash, owner and permissions to match, and confirm PV paths and node affinity
+   still refer to the intended worker. Do not import old kubelet credentials,
+   containerd state or Cilium state from the VM backup.
+7. Restore saved replica counts. Verify application readiness, Vault auto-unseal,
+   database access, Pod DNS and cross-node service traffic. Retest the lab's
+   production/NAS/management blocks and application egress policies. Run the
+   worker playbook again to check convergence, then require a no-change Terraform
+   plan and healthy production nodes/Applications.
+8. Retain the VM backup until the checks pass. On failure, stop the replacement
+   VM and restore the verified VM 301 backup on `local-lvm`; reconcile Terraform
+   and node registration before restoring application replica counts. Remove only
+   the temporary drill backups and copied credentials after successful acceptance.
+
+The worker replacement passed on VM 301 using a fresh clone of template 9010:
+
+| Check | Verified result |
+|-------|-----------------|
+| Machine and bootstrap | New SSH host key, machine ID, system UUID and Node UID; Kubernetes 1.31.4 Ready through the worker-only play; bootstrap token revoked |
+| Local data | All 5,702 checkpointed files matched SHA-256, size, UID/GID and mode before application startup; all 12 PV definitions preserved |
+| Cilium networking | Worker Pod reached a service backed by a control-plane Pod; Pod DNS and public HTTPS passed; production API, NAS, host SSH and management SSH blocked |
+| Policy enforcement | A selected worker Pod lost service/public egress under a deny-egress policy; temporary probe namespace removed |
+| Convergence and cleanup | Worker Ansible rerun completed with zero changes; Terraform reported no changes; temporary VM and volume recovery archives removed after acceptance |
+| Applications | Original Deployment replica counts restored; Sonarr identities and 54 episode files preserved; Prowlarr connection test and application egress blocks passed; Vault Raft auto-unsealed through KMS; Authentik retained two users |
+
+This drill distinguishes rebuilding a worker from restoring its application data.
+A local quiesced volume checkpoint does not prove recovery after loss of the
+Proxmox host, nor does it replace the application's verified offsite restore path.
+
 ## Sonarr Recovery
 
 The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no production media mount or HTTPRoute, and restricted egress. Namespace traffic is denied by default; narrow policies allow the lab controllers and Recyclarr to reach Sonarr, and Sonarr to reach lab Prowlarr and DNS. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
@@ -184,8 +256,10 @@ cgroup inside the disconnected namespace. The control-plane VM now has 4 GiB RAM
 for this drill, managed through its existing Terraform node variables.
 Temporary containers, services, cgroups, networking, restored data and copied/generated
 credentials were removed afterward; both original lab nodes remain Ready.
-Replacement-machine recovery, production Cilium/Pod networking and application
-volumes remain in the backlog.
+Replacement control-plane recovery from offsite etcd/PKI, production Cilium
+convergence and offsite application volumes remain in the backlog. The separate
+[worker replacement drill](#worker-replacement-drill) verifies a fresh lab worker
+and restoration of its locally checkpointed volumes.
 
 ## Access and Teardown
 

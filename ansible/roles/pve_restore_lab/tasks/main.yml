@@ -88,11 +88,13 @@
   when: "'restore-lab@pve' not in (pve_restore_lab_users.stdout | from_json | map(attribute='userid'))"
 
 - name: Read current Proxmox ACLs
+  tags: [lab_permissions]
   ansible.builtin.command: pveum acl list --output-format json
   register: pve_restore_lab_acls
   changed_when: false
 
 - name: Restrict provisioning to lab VMs, the clone template, and required storage/network
+  tags: [lab_permissions]
   ansible.builtin.command: >-
     pveum acl modify {{ item.path }} --users restore-lab@pve --roles {{ item.role }}
   changed_when: true
@@ -110,6 +112,7 @@
     | selectattr('roleid', 'eq', item.role) | list | length) == 0
 
 - name: Remove the lab identity's obsolete clone access to the production template
+  tags: [lab_permissions]
   ansible.builtin.command: pveum acl delete /vms/9000 --users restore-lab@pve --roles PVETemplateUser
   changed_when: true
   when: >-
