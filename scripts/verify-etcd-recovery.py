@@ -4,7 +4,8 @@
 Run as root on homelabrestore01-node-1 with a private input directory containing
 snapshot.db, pki.tar.gz, etcd-source.json, kube-apiserver-source.json, audit-policy.yml.
 Source JSON files contain only the image and command from the original static pods.
-Never points kubelet, a scheduler or a controller manager at the recovered API.
+Use --controllers for disconnected controller/bootstrap protocol checks.
+Never connects a kubelet or executes recovered workloads.
 """
 import argparse
 import hashlib
@@ -38,7 +39,7 @@ def flag(command, name):
     return matches[0]
 
 
-def main(source, work):
+def main(source, work, controllers=False):
     if os.geteuid() != 0 or socket.gethostname() != 'homelabrestore01-node-1':
         raise RuntimeError('Run only as root on homelabrestore01-node-1')
     if work.exists() or Path('/run/netns', NETNS).exists():
@@ -72,8 +73,8 @@ def main(source, work):
     network_created = False
     ctr = ['ctr', '-n', 'k8s.io']
 
-    def run(args, ok=True, timeout=120):
-        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
+    def run(args, ok=True, timeout=120, data=None):
+        result = subprocess.run(args, input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
         log.write(result.stderr)
         log.flush()
         if ok and result.returncode:
@@ -105,12 +106,24 @@ def main(source, work):
                               '--endpoints=https://127.0.0.1:2379', '--cacert=/pki/etcd/ca.crt',
                               '--cert=/pki/etcd/healthcheck-client.crt', '--key=/pki/etcd/healthcheck-client.key'] + args, ok)
 
-    def request(path, authenticated=True, ok=True):
+    def request(path, authenticated=True, ok=True, method='GET', data=None, header=None, certificate=None):
         args = ['ip', 'netns', 'exec', NETNS, 'curl', '--silent', '--show-error', '--fail',
-                '--max-time', '20', '--cacert', str(work / 'pki/ca.crt')]
+                '--max-time', '20', '--cacert', str(work / 'pki/ca.crt'), '--request', method,
+                '--write-out', '\n%{http_code}']
         if authenticated:
-            args += ['--cert', str(work / 'admin.crt'), '--key', str(work / 'admin.key')]
-        return run(args + ['https://' + address + ':6443' + path], ok, 30)
+            certificate = (work / 'admin.crt', work / 'admin.key')
+        if certificate:
+            args += ['--cert', str(certificate[0]), '--key', str(certificate[1])]
+        if header:
+            args += ['--header', '@' + str(header)]
+        payload = None
+        if data is not None:
+            args += ['--header', 'Content-Type: application/json', '--data-binary', '@-']
+            payload = json.dumps(data).encode()
+        result = run(args + ['https://' + address + ':6443' + path], ok, 30, payload)
+        body, status = result.stdout.rsplit(b'\n', 1)
+        result.stdout, result.http_status = body, int(status)
+        return result
 
     try:
         run(['ip', 'netns', 'add', NETNS]); network_created = True
@@ -169,7 +182,7 @@ def main(source, work):
             actual[resource] = len(items)
             if actual[resource] != counts[resource] or not actual[resource]:
                 raise RuntimeError('API/etcd object counts differ: ' + resource)
-        if request('/api/v1/secrets', authenticated=False, ok=False).returncode == 0:
+        if request('/api/v1/secrets', authenticated=False, ok=False).http_status not in (401, 403):
             raise RuntimeError('Unauthenticated secret access unexpectedly succeeded')
         namespace()
         evidence = {'snapshot_revision': status['revision'], 'restored_revision': endpoint['header']['revision'],
@@ -178,6 +191,11 @@ def main(source, work):
                     'original_pki_tls_verified': True, 'etcd_healthy': True, 'api_ready': True,
                     'object_counts': actual, 'anonymous_secret_access_denied': True,
                     'network': 'loopback only; no external routes', 'controllers_started': False}
+        if controllers:
+            from recovery_controllers import verify
+            evidence['controller_checks'] = verify(work, source, address, run, mount, launch, request)
+            evidence['controllers_started'] = True
+            namespace()
         (work / 'verification.json').write_text(json.dumps(evidence, indent=2) + '\n')
         print(json.dumps(evidence), flush=True)
     finally:
@@ -204,5 +222,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', required=True, type=Path)
     parser.add_argument('--work', required=True, type=Path, help='New private directory; never an existing data directory')
+    parser.add_argument('--controllers', action='store_true', help='Also verify disconnected controllers and node bootstrap protocol')
     args = parser.parse_args()
-    main(args.source, args.work)
+    main(args.source, args.work, controllers=args.controllers)

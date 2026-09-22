@@ -165,8 +165,10 @@ This procedure is for the current **single-member** kubeadm control plane with i
 as root on that exact lab hostname, refuses an existing work directory, validates
 archive paths, and creates a separate network namespace containing only loopback.
 The original production API address exists only on that namespace's loopback;
-there is no interface or route to either cluster or the internet. No kubelet,
-scheduler or controller manager is connected to the restored API.
+there is no interface or route to either cluster or the internet. The default
+check runs only etcd/API. `--controllers` also starts the recovered controller
+manager and scheduler for a bounded bootstrap/scheduling test; neither mode
+connects a kubelet or executes recovered workloads.
 
 To repeat the drill:
 
@@ -182,14 +184,29 @@ To repeat the drill:
    `3.5.15-0` and kube-apiserver `v1.31.4`. Use the repository's
    `ansible/roles/k8s_control_plane/templates/audit-policy.yml.j2` for the audit
    policy. Transfer the verifier through the same administrative SSH path.
+   For `--controllers`, also copy `scripts/recovery_controllers.py` beside it and
+   provide `kube-controller-manager-source.json` and `kube-scheduler-source.json`
+   with the same `image`/`command` structure from the original static pods.
 3. Ensure the lab has headroom for the temporary processes. The verifier limits
-   running etcd/API memory to 384/768 MiB and one CPU each. On the lab host, run:
+   running etcd/API memory to 384/768 MiB and one CPU each. Controller mode adds
+   256/128 MiB limits and refuses to start without another 512 MiB available after
+   etcd/API are ready. On the lab host, run:
 
     ```bash
     sudo python3 /var/tmp/homelab-etcd-recovery-input/verify-etcd-recovery.py \
       --source /var/tmp/homelab-etcd-recovery-input \
       --work /var/tmp/homelab-etcd-recovery-check
     ```
+
+   Add `--controllers` to test restored leader election, Deployment/ReplicaSet/Pod
+   creation and scheduler binding. It regenerates one-day controller client
+   certificates from the backed-up CA using their original identities and RBAC.
+   A temporary bootstrap token requests a kubelet client certificate through the
+   recovered API; built-in controllers must approve and sign it automatically.
+   The issued identity registers a test Node, updates its status and is denied
+   unrelated Secret listing. The test supplies Node status itself; this is a
+   protocol fixture, not a running kubelet. A single pause Pod is scheduled to
+   that record and must remain unexecuted. The token is then deleted.
 
 4. Inspect the nonsensitive `verification.json` result. Commands and server logs
    stay in the private work directory. The verifier stops its own containers and
@@ -208,12 +225,15 @@ To repeat the drill:
 | Integrity and revision | Snapshot hash checked; revision `166199690` restored as `1166199690`; reads at the old revision rejected as compacted |
 | PKI and API | Original TLS material accepted; authenticated `/readyz` succeeded; anonymous Secret access denied |
 | Recovered objects | API and etcd counts matched: 19 namespaces, 3 node records, 64 deployments and 71 Secrets |
-| Isolation and cleanup | Loopback-only networking; no recovered controllers/workloads started; temporary containers, namespace, data and PKI copies removed |
+| Controllers | Original controller identities renewed both leader leases; Deployment produced a ReplicaSet and Pod; scheduler bound the Pod to the fixture Node |
+| Bootstrap | Bootstrap token authenticated; CSR automatically approved/signed; issued node certificate registered its Node and was denied unrelated Secret listing |
+| Isolation and cleanup | Loopback-only networking; no kubelet or workload execution; temporary containers, namespace, restored data and all copied/generated credentials removed |
 
 This proves offsite datastore and API recovery using the backed-up PKI. Node
 records in the restored API are historical objects, not recovered running nodes.
-Controller-manager/scheduler convergence, kubelet reconnection, replacement-node
-bootstrapping and application volume recovery remain separate checks.
+The bounded controller and bootstrap-protocol checks passed. Actual kubelet
+reconnection, replacement-machine bootstrapping, runtime/CNI networking and
+application volume recovery remain separate checks.
 
 ## Single Node Failure
 

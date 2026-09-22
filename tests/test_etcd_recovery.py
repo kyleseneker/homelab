@@ -43,3 +43,25 @@ class RecoveryGuards(unittest.TestCase):
             with self.assertRaises(ValueError):
                 recovery.flag(command, '--name')
         self.assertEqual(recovery.flag(['etcd', '--name=original'], '--name'), 'original')
+
+
+controller_spec = importlib.util.spec_from_file_location('recovery_controllers', Path(__file__).parents[1] / 'scripts/recovery_controllers.py')
+controllers = importlib.util.module_from_spec(controller_spec)
+controller_spec.loader.exec_module(controllers)
+
+
+class ControllerGuards(unittest.TestCase):
+    def test_low_memory_refuses_before_credentials_or_processes(self):
+        def unexpected(*args, **kwargs):
+            self.fail('No operation may run without memory headroom')
+        with patch.object(Path, 'read_text', return_value='MemAvailable: 1024 kB\n'):
+            with self.assertRaisesRegex(RuntimeError, 'headroom'):
+                controllers.verify(Path('/unused'), Path('/unused'), '192.168.10.50',
+                                   unexpected, unexpected, unexpected, unexpected)
+
+    def test_changed_controller_version_requires_revalidation(self):
+        with tempfile.TemporaryDirectory() as root:
+            source = Path(root)
+            (source / 'kube-scheduler-source.json').write_text('{"image":"registry.k8s.io/kube-scheduler:v1.32.0","command":["kube-scheduler"]}')
+            with self.assertRaisesRegex(RuntimeError, 'Revalidate'):
+                controllers.controller_source(source, 'kube-scheduler')

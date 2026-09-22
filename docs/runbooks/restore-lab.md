@@ -176,9 +176,12 @@ The [isolated verifier](disaster-recovery.md#isolated-etcd-and-api-verification)
 restored a production S3 etcd snapshot and its matching PKI on the lab control-plane
 host using separate container storage and loopback-only networking. Snapshot
 integrity, revision bump/compaction, TLS and recovered API object counts passed.
+The optional controller check also passed leader election, Deployment/Pod creation,
+scheduler binding and automatic node-certificate approval/registration. The Node
+was a protocol fixture; no kubelet or workload execution was tested.
 The lab's own control plane and workloads were unchanged. Temporary containers,
-networking, restored data and PKI copies were removed afterward. Controller and
-replacement-node recovery are still tracked in the recovery backlog.
+networking, restored data and copied/generated credentials were removed afterward.
+Real kubelet/runtime and replacement-machine recovery remain in the backlog.
 
 ## Access and Teardown
 

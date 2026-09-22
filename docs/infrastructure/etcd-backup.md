@@ -36,8 +36,9 @@ See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etc
 
 The [isolated etcd/API drill](../runbooks/disaster-recovery.md#isolated-etcd-and-api-verification)
 restored an offsite snapshot and matching PKI, verified revision bump/compaction,
-and read matching object counts through the recovered API. Full controller and
-node recovery remains open.
+and read matching object counts through the recovered API. Its optional controller
+check passed leader election, scheduling and automatic node-certificate issuance
+and registration. Real kubelet and replacement-machine recovery remain open.
 
 ## Upstream Documentation
 
