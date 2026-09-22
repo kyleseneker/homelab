@@ -1,0 +1,35 @@
+installCRDs: true
+podSecurityContext:
+  runAsNonRoot: true
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+podDisruptionBudget:
+  enabled: true
+  maxUnavailable: 1
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+webhook:
+  create: false
+certController:
+  create: false
+scopedNamespace: restore-vault
+scopedRBAC: true
+serviceAccount:
+  name: restore-external-secrets
+processClusterExternalSecret: false
+processClusterPushSecret: false
+processClusterStore: false
+processClusterGenerator: false
+processPushSecret: false
+crds:
+  conversion:
+    enabled: false

@@ -39,18 +39,17 @@ the manual archive offsite.
 3. Privately create `restore-vault-kms` in `restore-vault` with
    `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and
    `VAULT_AWSKMS_SEAL_KEY_ID`. Use the original KMS key; never initialize the
-   restored storage. The committed policy permits only DNS and HTTPS to
-   `kms.us-east-1.amazonaws.com`; change the endpoint together with the region if
-   recovering a different deployment.
+   restored storage. The committed policy permits DNS and KMS HTTPS to
+   `kms.us-east-1.amazonaws.com`; the lab API is also allowed for authentication.
+   Change the endpoint with the region if recovering a different deployment.
 4. Apply the full lab Kustomization. Check `vault status -format=json` through
    `kubectl exec`: initialized, unsealed, `awskms`, file storage, and the original
    cluster identity. Restart the lab Deployment and repeat. Probe blocked public,
-   production API, NAS and lab API destinations.
-5. Separately verify authenticated secret reads and rebuild Kubernetes auth/ESO
-   against the replacement cluster. Restored Kubernetes auth still refers to the
-   original cluster and is not usable merely because Vault unsealed. Obtain the
-   necessary administrative/recovery credentials independently; never expose a
-   root token in logs or enable access back to production to bypass this step.
+   production API and NAS destinations.
+5. Continue with the Kubernetes auth/ESO procedure below. Unsealing does not prove
+   client authentication. Use independently available administrative credentials;
+   never expose a root token in logs or enable access back to production to bypass
+   the replacement-cluster setup.
 
 ### Verified Storage and Auto-Unseal
 
@@ -61,14 +60,59 @@ the manual archive offsite.
 | Import | 109 encrypted files restored to empty lab-local storage; every SHA-256 digest matched |
 | Runtime | Vault 1.21.2 initialized and auto-unsealed through the original AWS KMS key; original cluster identity matched |
 | Restart | Lab auto-unseal passed again after restart |
-| Isolation | Public HTTPS, production API, NAS and lab API TCP probes timed out; only DNS/KMS egress permitted |
+| Isolation | Public HTTPS, production API and NAS TCP probes timed out; lab API access is restricted to authentication/reconciliation roles |
 | Production | Vault restarted and auto-unsealed; maintenance pause and reader removed; ESO store Ready |
 
 This proves recovery of the encrypted file backend and KMS auto-unseal from a
-consistent **local** copy. Authenticated secret reads, replacement-cluster
-Kubernetes auth/ESO, scheduled consistent offsite copies, and independently
-available bootstrap credentials remain unverified. KMS credentials for this drill
-came privately from the running production cluster.
+consistent **local** copy. The authentication check below verifies bounded
+Kubernetes auth/ESO recovery. Scheduled consistent offsite copies and independently available KMS
+credentials remain unverified. KMS credentials for this drill came privately from
+the running production cluster.
+
+### Kubernetes Auth and ESO Recovery
+
+The lab Vault manifests include a projected, rotating Kubernetes service-account
+token and the lab CA. Its dedicated ClusterRole permits only `create` on
+`tokenreviews.authentication.k8s.io`. Vault can reach the lab API, DNS and the
+regional KMS endpoint; ingress on 8200 is limited to the lab ESO controller.
+Production API/NAS and unrelated public HTTPS remain blocked. No external route
+is exposed.
+
+1. Complete the storage restore and apply the lab Vault Kustomization. Obtain an
+   administrative Vault token independently, either through `VAULT_TOKEN` or the
+   local Vault CLI token file. Do not place it in manifests, command arguments,
+   logs or the ESO runtime Secret.
+2. Run `python3 scripts/restore-vault-auth.py`. It refuses a kubeconfig context
+   other than `homelabrestore01`. It configures the restored Kubernetes auth mount
+   to use the pod's lab CA and rotating reviewer token, then creates a dedicated
+   `restore-external-secrets` role with audience `vault`, a ten-minute maximum
+   token lifetime, and read access only to `homelab/data/infrastructure/grafana`.
+   The restored production ESO role/policy remain separate.
+3. Render/apply ESO chart 2.2.0 as `restore-external-secrets` in `restore-vault`,
+   using `infrastructure/external-secrets/values.yml` under the lab cluster. Install
+   its CRDs with server-side apply, then apply that directory's Kustomization.
+   The controller uses namespace-scoped RBAC and a SecretStore; cluster stores,
+   cluster reconciliation and push controllers are disabled. The lab uses only
+   v1 resources, with conversion/webhook/certificate controllers disabled.
+4. Wait for `SecretStore/restore-vault` and `ExternalSecret/restore-grafana` to
+   report Ready. Privately compare both generated Grafana fields with the restored
+   Vault data. Delete only `Secret/restore-grafana` and trigger a refresh; confirm
+   ESO creates a new Secret UID with identical values.
+5. Verify the correct service account/audience authenticates, while the wrong
+   service account and audience fail. Confirm its Vault token cannot read another
+   path or write the permitted path. Revoke the short-lived test token afterward.
+   Restart Vault and ESO, then repeat the read/reconciliation checks.
+
+This procedure passed using an existing administrative token from the local Vault
+CLI file. Both restored Grafana fields matched production in a private comparison;
+Kubernetes login, restricted reads, all four denial checks, and recreation after
+Secret deletion passed before and after restarting Vault and ESO. No admin token
+is required by either runtime controller. This demonstrates representative secret
+recovery, not every application credential or a complete site-loss bootstrap.
+
+Vault's [local reviewer-token behavior](https://developer.hashicorp.com/vault/docs/auth/kubernetes)
+and ESO's [Vault authentication configuration](https://external-secrets.io/latest/provider/hashicorp-vault/)
+explain the rotating-token and audience settings used here.
 
 ## etcd Snapshots
 

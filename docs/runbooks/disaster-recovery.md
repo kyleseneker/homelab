@@ -14,7 +14,7 @@ Keep these outside Kubernetes and Vault itself:
 - A tested Vault data backup, application restore records, and recent etcd snapshot/PKI pairs.
 - The NAS exports and retained PV directory mappings. MinIO runs **inside Kubernetes** on NFS; it is not a separate NAS service.
 
-KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local restore](backup-and-restore.md#vault-file-backend-recovery) verified storage and KMS auto-unseal; consistent offsite recovery and replacement-cluster authentication remain unverified.
+KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local restore](backup-and-restore.md#vault-file-backend-recovery) verified storage, KMS auto-unseal and scoped Kubernetes auth/ESO; consistent offsite recovery and independently available KMS credentials remain unverified.
 
 ### Procedure
 

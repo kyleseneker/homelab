@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: restore-vault
+  namespace: restore-vault
+spec:
+  selector:
+    app.kubernetes.io/name: restore-vault
+  ports:
+    - name: http
+      port: 8200
+      targetPort: 8200

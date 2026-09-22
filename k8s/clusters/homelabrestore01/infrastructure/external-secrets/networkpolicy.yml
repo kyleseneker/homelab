@@ -1,0 +1,30 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: restore-external-secrets
+  namespace: restore-vault
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: restore-external-secrets
+  egress:
+    - toEntities:
+        - kube-apiserver
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: '53'
+              protocol: UDP
+            - port: '53'
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: restore-vault
+            app.kubernetes.io/name: restore-vault
+      toPorts:
+        - ports:
+            - port: '8200'
+              protocol: TCP

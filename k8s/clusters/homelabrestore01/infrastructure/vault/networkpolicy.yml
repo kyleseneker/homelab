@@ -15,8 +15,18 @@ metadata:
   name: restore-vault
   namespace: restore-vault
 spec:
-  endpointSelector: {}
-  ingress: []
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-vault
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: restore-vault
+            app.kubernetes.io/instance: restore-external-secrets
+      toPorts:
+        - ports:
+            - port: '8200'
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:
@@ -35,3 +45,5 @@ spec:
         - ports:
             - port: '443'
               protocol: TCP
+    - toEntities:
+        - kube-apiserver

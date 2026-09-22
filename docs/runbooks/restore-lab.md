@@ -147,15 +147,19 @@ Fresh login, torrent/category/path/history comparisons, network isolation and pe
 ## Vault Recovery
 
 The `infrastructure/vault` manifests run Vault 1.21.2 in `restore-vault` on a
-fresh local PVC, with no Service, route or service-account token. Import the
+fresh local PVC, with a cluster-internal Service and no external route. Import the
 quiesced encrypted archive before starting the Deployment and supply the original
-KMS credentials privately. Only DNS and the regional KMS HTTPS endpoint are
-allowed; production storage and Kubernetes APIs remain unreachable.
+KMS credentials privately. DNS, the regional KMS HTTPS endpoint and the lab API
+are allowed; production storage/API remain unreachable. Vault uses an explicitly
+projected rotating token with only TokenReview permission.
 
 The [file-backend recovery procedure](backup-and-restore.md#vault-file-backend-recovery)
 verified all 109 restored file digests, the original Vault identity, and KMS
-auto-unseal across restart. Authenticated reads and replacement-cluster
-Kubernetes auth/ESO still need independent recovery credentials.
+auto-unseal across restart. The [Kubernetes auth/ESO check](backup-and-restore.md#kubernetes-auth-and-eso-recovery)
+then verified restricted login, matching Grafana credentials, rejection of invalid
+identities/permissions, and Secret recreation across controller restarts. ESO is
+scoped to this namespace. The admin credential came from the local Vault CLI file;
+independently available KMS credentials and consistent offsite recovery remain open.
 
 ## Access and Teardown
 

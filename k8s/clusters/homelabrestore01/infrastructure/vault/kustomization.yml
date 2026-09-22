@@ -6,3 +6,5 @@ resources:
   - pvc.yml
   - configuration.yml
   - deployment.yml
+  - auth-rbac.yml
+  - service.yml

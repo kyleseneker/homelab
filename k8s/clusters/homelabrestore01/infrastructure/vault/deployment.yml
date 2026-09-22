@@ -81,6 +81,9 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            - name: kubernetes-auth
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
@@ -90,3 +93,20 @@ spec:
             name: restore-vault
         - name: tmp
           emptyDir: {}
+        - name: kubernetes-auth
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  expirationSeconds: 3600
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+              - downwardAPI:
+                  items:
+                    - path: namespace
+                      fieldRef:
+                        fieldPath: metadata.namespace
+      serviceAccountName: restore-vault

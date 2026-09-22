@@ -1,0 +1,19 @@
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: restore-vault
+  namespace: restore-vault
+spec:
+  provider:
+    vault:
+      server: http://restore-vault.restore-vault.svc.cluster.local:8200
+      path: homelab
+      version: v2
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: restore-external-secrets
+          serviceAccountRef:
+            name: restore-external-secrets
+            audiences:
+              - vault
