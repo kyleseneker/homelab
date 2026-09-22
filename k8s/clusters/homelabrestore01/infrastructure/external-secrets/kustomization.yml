@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - networkpolicy.yml
   - store.yml
-  - external-secret.yml
+  - grafana-external-secret.yml
