@@ -174,7 +174,12 @@ after stopping the recovered controllers.
 
 To repeat the drill:
 
-1. Retrieve a matching `snapshot-<timestamp>.db` and `pki-<timestamp>.tar.gz` from
+For backups with a completion manifest, use the [offline input preparation helper](../infrastructure/etcd-backup.md#restore)
+first. It supplies the files below from the downloaded snapshot, PKI and host
+configuration archives, without reading the live control plane. Transfer its
+private output and the verifier scripts to the lab over administrative SSH.
+
+1. For a legacy two-file backup, retrieve a matching `snapshot-<timestamp>.db` and `pki-<timestamp>.tar.gz` from
    `s3://velero-offsite-homelab/etcd-snapshots/` with independently recovered S3
    credentials. Record their versions and SHA-256 values. Both contain sensitive
    recovery material; use private directories and never print contents.
@@ -182,10 +187,10 @@ To repeat the drill:
    these files: `snapshot.db`, `pki.tar.gz`, `etcd-source.json`,
    `kube-apiserver-source.json`, and `audit-policy.yml`. Each source JSON document
    contains `image` and `command` from the corresponding original static-pod
-   container. Capture these before an outage; the verified images are etcd
-   `3.5.15-0` and kube-apiserver `v1.31.4`. Use the repository's
-   `ansible/roles/k8s_control_plane/templates/audit-policy.yml.j2` for the audit
-   policy. Transfer the verifier through the same administrative SSH path.
+   container. The offline helper derives these from the configuration archive. For legacy
+   backups, capture them before an outage; the verified images are etcd
+   `3.5.15-0` and kube-apiserver `v1.31.4`. Use the archived audit policy; for legacy backups, use the repository's
+   `ansible/roles/k8s_control_plane/templates/audit-policy.yml.j2`. Transfer the verifier through the same administrative SSH path.
    For `--controllers`, also copy `scripts/recovery_controllers.py` beside it and
    provide `kube-controller-manager-source.json` and `kube-scheduler-source.json`
    with the same `image`/`command` structure from the original static pods.
@@ -239,17 +244,18 @@ To repeat the drill:
 
 | Check | Verified result |
 |-------|-----------------|
-| Offsite pair | `snapshot-20260922-020005.db` and matching PKI archive, obtained with HCP-exported S3 credentials |
-| Snapshot SHA-256 | `0f5945eef14a4f3b4340af6786c64fadc9f32ca0538e9a879639e6d06598b483` |
-| Integrity and revision | Snapshot hash checked; revision `166199690` restored as `1166199690`; reads at the old revision rejected as compacted |
+| Offsite bundle | `recovery-20260922-202350.json` and its snapshot, PKI and host configuration archives, obtained with HCP-exported S3 credentials; component inputs prepared without querying production |
+| Snapshot SHA-256 | `26e387d147b7db5cc0cafcc0b29fe61450921ecd1abdb0ca07d36eaaf1b1a12e` |
+| Integrity and revision | Snapshot hash checked; revision `167190232` restored as `1167190232`; reads at the old revision rejected as compacted |
 | PKI and API | Original TLS material accepted; authenticated `/readyz` succeeded; anonymous Secret access denied |
-| Recovered objects | API and etcd counts matched: 19 namespaces, 3 node records, 64 deployments and 71 Secrets |
+| Recovered objects | API and etcd counts matched: 19 namespaces, 3 node records, 64 deployments and 72 Secrets |
 | Controllers | Original controller identities renewed both leader leases; Deployment produced a ReplicaSet and Pod; scheduler bound the Pod to the fixture Node |
 | Bootstrap | Bootstrap token authenticated; CSR automatically approved/signed; issued node certificate registered its Node and was denied unrelated Secret listing |
 | Real kubelet/runtime | Issued node certificate connected a real kubelet; Node Ready and lease renewal verified; one inert pause container Running/Ready in a separate CRI, dedicated cgroup and verified disconnected network namespace |
 | Isolation and cleanup | Loopback-only networking; recovered controllers stopped before kubelet startup; temporary containers, services, cgroup, namespace, restored data and copied/generated credentials removed; original lab runtime socket preserved |
 
-This proves offsite datastore and API recovery using the backed-up PKI. Node
+This proves offsite datastore and API recovery using the backed-up PKI and host
+configuration, without fetching component configuration from production. Node
 records in the restored API are historical objects, not recovered running nodes.
 The controller, bootstrap-protocol and real kubelet/runtime checks passed. The
 latter used the existing lab machine and a cached image with HostNetwork confined

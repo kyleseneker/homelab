@@ -4,7 +4,7 @@ metadata:
   name: etcd-backup
   namespace: backups
 spec:
-  schedule: "0 2 * * *"
+  schedule: 0 2 * * *
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -15,13 +15,14 @@ spec:
         app.kubernetes.io/name: etcd-backup
     spec:
       backoffLimit: 2
+      activeDeadlineSeconds: 900
       template:
         metadata:
           labels:
             app.kubernetes.io/name: etcd-backup
         spec:
           nodeSelector:
-            node-role.kubernetes.io/control-plane: ""
+            node-role.kubernetes.io/control-plane: ''
           tolerations:
             - key: node-role.kubernetes.io/control-plane
               effect: NoSchedule
@@ -33,13 +34,12 @@ spec:
               type: RuntimeDefault
           initContainers:
             - name: snapshot
-              # Match kubeadm v1.31.4; update with the control-plane minor upgrade.
               image: registry.k8s.io/etcd:3.5.15-0
               command:
                 - etcdctl
                 - snapshot
                 - save
-                - /snapshots/latest.db
+                - /work/snapshot.db
                 - --endpoints=https://$(NODE_IP):2379
                 - --cacert=/etc/kubernetes/pki/etcd/ca.crt
                 - --cert=/etc/kubernetes/pki/etcd/server.crt
@@ -55,7 +55,8 @@ spec:
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 capabilities:
-                  drop: ["ALL"]
+                  drop:
+                    - ALL
               resources:
                 requests:
                   cpu: 50m
@@ -67,31 +68,23 @@ spec:
                 - name: k8s-pki
                   mountPath: /etc/kubernetes/pki
                   readOnly: true
-                - name: snapshots
-                  mountPath: /snapshots
+                - name: work
+                  mountPath: /work
             - name: prepare
-              image: alpine:3.24
-              command: ["/bin/sh", "-c"]
-              args:
-                - |
-                  set -eu
-                  umask 077
-                  TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-                  mv /snapshots/latest.db "/snapshots/snapshot-${TIMESTAMP}.db"
-                  echo "Backing up control plane PKI"
-                  tar czf "/snapshots/pki-${TIMESTAMP}.tar.gz" -C /etc/kubernetes pki
-                  # etcdctl creates 0600 files. Grant only the uploader group read access.
-                  chmod 0640 "/snapshots/snapshot-${TIMESTAMP}.db" "/snapshots/pki-${TIMESTAMP}.tar.gz"
-                  echo "Pruning old snapshots (keeping 7)"
-                  ls -t /snapshots/snapshot-*.db | tail -n +8 | xargs rm -f 2>/dev/null || true
-                  ls -t /snapshots/pki-*.tar.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
+              image: amazon/aws-cli:2.36.19
+              command:
+                - python3
+                - -u
+                - /scripts/backup.py
+                - prepare
               securityContext:
                 runAsUser: 0
                 runAsGroup: 1000
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 capabilities:
-                  drop: ["ALL"]
+                  drop:
+                    - ALL
               resources:
                 requests:
                   cpu: 25m
@@ -100,35 +93,42 @@ spec:
                   cpu: 100m
                   memory: 64Mi
               volumeMounts:
-                - name: k8s-pki
-                  mountPath: /etc/kubernetes/pki
+                - name: k8s-config
+                  mountPath: /source/kubernetes
                   readOnly: true
+                - name: work
+                  mountPath: /work
                 - name: snapshots
                   mountPath: /snapshots
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+                - name: kubelet-config
+                  mountPath: /source/kubelet-config.yaml
+                  readOnly: true
+                - name: kubeadm-flags
+                  mountPath: /source/kubeadm-flags.env
+                  readOnly: true
+                - name: kubelet-extra
+                  mountPath: /source/kubelet-extra.env
+                  readOnly: true
+                - name: containerd-config
+                  mountPath: /source/containerd.toml
+                  readOnly: true
+                - name: hostname
+                  mountPath: /source/hostname
+                  readOnly: true
+                - name: os-release
+                  mountPath: /source/os-release
+                  readOnly: true
           containers:
             - name: upload-offsite
               image: amazon/aws-cli:2.36.19
-              command: ["/bin/sh", "-c"]
-              args:
-                - |
-                  set -euo pipefail
-                  LATEST_SNAP=$(ls -t /snapshots/snapshot-*.db | head -1)
-                  LATEST_PKI=$(ls -t /snapshots/pki-*.tar.gz | head -1)
-                  echo "Uploading $(basename "${LATEST_SNAP}") to s3://${S3_BUCKET}/etcd-snapshots/"
-                  aws s3 cp "${LATEST_SNAP}" "s3://${S3_BUCKET}/etcd-snapshots/$(basename "${LATEST_SNAP}")"
-                  echo "Uploading $(basename "${LATEST_PKI}") to s3://${S3_BUCKET}/etcd-snapshots/"
-                  aws s3 cp "${LATEST_PKI}" "s3://${S3_BUCKET}/etcd-snapshots/$(basename "${LATEST_PKI}")"
-                  echo "Pruning old offsite files (keeping 7 of each)"
-                  for prefix in snapshot pki; do
-                    aws s3 ls "s3://${S3_BUCKET}/etcd-snapshots/${prefix}-" \
-                      | sort -r \
-                      | tail -n +8 \
-                      | awk '{print $4}' \
-                      | while read -r f; do
-                          aws s3 rm "s3://${S3_BUCKET}/etcd-snapshots/${f}"
-                        done
-                  done
-                  echo "Upload complete"
+              command:
+                - python3
+                - -u
+                - /scripts/backup.py
+                - upload
               env:
                 - name: AWS_ACCESS_KEY_ID
                   valueFrom:
@@ -158,10 +158,14 @@ spec:
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
                 capabilities:
-                  drop: ["ALL"]
+                  drop:
+                    - ALL
               volumeMounts:
-                - name: snapshots
-                  mountPath: /snapshots
+                - name: work
+                  mountPath: /work
+                  readOnly: true
+                - name: scripts
+                  mountPath: /scripts
                   readOnly: true
                 - name: tmp
                   mountPath: /tmp
@@ -175,3 +179,38 @@ spec:
                 claimName: etcd-snapshots
             - name: tmp
               emptyDir: {}
+            - name: kubelet-config
+              hostPath:
+                path: /var/lib/kubelet/config.yaml
+                type: File
+            - name: kubeadm-flags
+              hostPath:
+                path: /var/lib/kubelet/kubeadm-flags.env
+                type: File
+            - name: kubelet-extra
+              hostPath:
+                path: /etc/default/kubelet
+                type: File
+            - name: containerd-config
+              hostPath:
+                path: /etc/containerd/config.toml
+                type: File
+            - name: hostname
+              hostPath:
+                path: /etc/hostname
+                type: File
+            - name: os-release
+              hostPath:
+                path: /etc/os-release
+                type: File
+            - name: k8s-config
+              hostPath:
+                path: /etc/kubernetes
+                type: Directory
+            - name: work
+              emptyDir:
+                sizeLimit: 2Gi
+            - name: scripts
+              configMap:
+                name: etcd-backup-scripts
+                defaultMode: 292
