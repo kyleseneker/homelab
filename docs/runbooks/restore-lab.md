@@ -222,7 +222,7 @@ kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr \
 
 ## Media-operator Reconciliation
 
-The lab runs the same `media-operator-pvr` 0.34.1 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
+The lab runs the same `media-operator-pvr` 0.34.3 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
 
 To repeat after the database restore:
 
@@ -254,7 +254,7 @@ The operator reports Ready and Synced for the declared application and indexer. 
 1. Complete the Sonarr restore first. Create `restore-recyclarr-secrets` with a `secrets.yml` entry named `sonarr_api_key` containing the lab Sonarr key. Use private process input or a protected file. Use `radarr_api_key: unused-lab-only` for the shared configuration's unused Radarr reference; `sync sonarr` excludes that instance.
 2. Apply the lab Recyclarr resource Kustomization and render/apply its pinned Helm chart with release `restore-recyclarr` and the committed values. Run `kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr create job --from=cronjob/restore-recyclarr <unique-job-name>`. Verify completion, logs, profile settings and custom-format counts; repeat to confirm no further changes. Leave the CronJob suspended.
 3. Create `restore-prowlarr-api-key` with a new `api-key` value. Apply the `indexer-fixture` and `prowlarr` resource Kustomizations, then render/apply Prowlarr's chart as `restore-prowlarr` with the committed values.
-4. Apply the `media-operator-indexers` resource Kustomization and render/apply its pinned chart as `restore-media-operator-indexers`, including CRDs. The 0.34.0 chart needs the same missing FlareSolverr RBAC workaround as production; the lab grants it only in `restore-sonarr`.
+4. Apply the `media-operator-indexers` resource Kustomization and render/apply its pinned chart as `restore-media-operator-indexers`, including CRDs. The 0.34.3 chart includes FlareSolverr RBAC; no separate workaround is required.
 5. Confirm Prowlarr's `/api/v1/appprofile` maps ID 1 to `Standard` before applying its CR. The CR currently requires a numeric app-profile ID. Apply `media-config`, then check Ready/Synced conditions at the current generation and verify actual application/indexer state through both APIs.
 6. Test the synchronized indexer through Sonarr. To verify repair, delete only `Recovery Fixture (Prowlarr)` from Sonarr and run Prowlarr's `ApplicationIndexerSync` command; confirm the indexer returns and the command completes. Never delete the restored production indexers as part of this test.
 7. Compare restored series/episode identities and the 54 episode-file records against the source dump. Retest blocked connections to the production API, NAS, lab API and unrelated public HTTPS from both applications.
