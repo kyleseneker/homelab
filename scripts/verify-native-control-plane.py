@@ -160,6 +160,21 @@ ExecStart=/usr/bin/kubelet --config=/var/lib/kubelet/config.yaml --container-run
     run(['systemctl', 'restart', 'kubelet'])
 
 
+def wait_for_controller_leases(read, sleep=time.sleep, attempts=30):
+    previous = {}
+    required = {'kube-controller-manager', 'kube-scheduler'}
+    for _ in range(attempts):
+        current = {x['metadata']['name']: x['spec'].get('renewTime') for x in read()
+                   if x['metadata']['name'] in required}
+        if set(current) == required and all(current[name] and name in previous
+                                           and current[name] != previous[name] for name in required):
+            return
+        for name, value in current.items():
+            previous.setdefault(name, value)
+        sleep(2)
+    raise RuntimeError('Recovered controller leases did not renew')
+
+
 def verify():
     def api(path):
         return run(['curl', '--silent', '--show-error', '--fail', '--max-time', '5',
@@ -204,15 +219,7 @@ def verify():
     for resource in ('namespaces', 'nodes', 'deployments', 'secrets'):
         prefix = '/apis/apps/v1/' if resource == 'deployments' else '/api/v1/'
         counts[resource] = len(json.loads(api(prefix + resource))['items'])
-    leases = json.loads(api('/apis/coordination.k8s.io/v1/namespaces/kube-system/leases'))['items']
-    previous = {x['metadata']['name']: x['spec'].get('renewTime') for x in leases
-                if x['metadata']['name'] in ('kube-controller-manager', 'kube-scheduler')}
-    time.sleep(6)
-    leases = json.loads(api('/apis/coordination.k8s.io/v1/namespaces/kube-system/leases'))['items']
-    renewed = {x['metadata']['name'] for x in leases if x['metadata']['name'] in previous
-               and x['spec'].get('renewTime') != previous[x['metadata']['name']]}
-    if renewed != {'kube-controller-manager', 'kube-scheduler'}:
-        raise RuntimeError('Recovered controller leases did not renew')
+    wait_for_controller_leases(lambda: json.loads(api('/apis/coordination.k8s.io/v1/namespaces/kube-system/leases'))['items'])
     blocked = []
     for host, port in [('1.1.1.1', 443), ('192.168.10.51', 10250),
                        ('192.168.1.158', 2049), ('172.26.0.1', 22)]:

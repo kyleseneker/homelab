@@ -47,3 +47,18 @@ class NativeRecovery(unittest.TestCase):
             marker.unlink()
             marker.symlink_to('/dev/null')
             self.assertFalse(native.empty_manifests(root))
+
+    def test_lease_check_waits_for_both_controllers_to_start_and_renew(self):
+        def lease(name, renewal):
+            return {'metadata': {'name': name}, 'spec': {'renewTime': renewal}}
+        manager, scheduler = 'kube-controller-manager', 'kube-scheduler'
+        observations = iter([[], [lease(manager, 'a')],
+                             [lease(manager, 'b'), lease(scheduler, 'a')],
+                             [lease(manager, 'c'), lease(scheduler, 'b')]])
+        native.wait_for_controller_leases(lambda: next(observations), sleep=lambda _: None, attempts=4)
+
+    def test_lease_check_rejects_controllers_that_never_renew(self):
+        leases = [{'metadata': {'name': name}, 'spec': {'renewTime': 'unchanged'}}
+                  for name in ('kube-controller-manager', 'kube-scheduler')]
+        with self.assertRaisesRegex(RuntimeError, 'did not renew'):
+            native.wait_for_controller_leases(lambda: leases, sleep=lambda _: None, attempts=3)

@@ -197,8 +197,107 @@ bundle `recovery-20260922-202350.json`:
 | Lab rollback | Original VM 300 identity and both Ready nodes restored; saved replica counts, Sonarr/Prowlarr checks, Vault auto-unseal, Authentik access and cross-node networking passed; full Terraform plan had no changes; temporary recovery copies removed |
 
 The native kubelet intentionally had no API kubeconfig, and the historical Node
-records do not demonstrate fresh node registration. Normal kubelet integration,
-production Cilium convergence and offsite application-volume recovery remain open.
+records do not demonstrate fresh node registration. The following drill verifies
+normal kubelet integration and production Cilium separately.
+
+## Node and Cilium Recovery Drill
+
+Extend the [native control-plane drill](#native-control-plane-recovery-drill) to
+normal kubelet registration and the production Cilium configuration on two fresh
+VMs. This tests a disposable copy of the offsite datastore. It deliberately
+removes executable workload records before connecting kubelets; it does not
+restore production applications or their volumes.
+
+1. Quiesce lab applications and save both original VM 300/301 archives, node
+   identities, PV inventory and replica counts. Verify both archives before
+   replacing either VM. Review Terraform plans for exactly those two replacements,
+   restore their scoped permissions with `make lab-permissions`, and prepare both
+   fresh nodes with the shared prerequisite play. Confirm new machine IDs and no
+   existing Kubernetes credentials or datastore.
+2. Before enabling the host egress block, cache the archived control-plane images,
+   configured pause image, production Cilium/Envoy/operator images, CoreDNS and the
+   synthetic fixture image on both nodes. Use `crictl pull` and verify the image
+   references with `crictl inspecti`: raw `ctr` tag-plus-digest imports can miss
+   kubelet's canonical digest lookup and cause blocked download attempts.
+3. Keep the worker stopped while running the native static control-plane restore
+   and verification. Retain the Proxmox `vmbr1` forwarding block throughout this
+   drill. Copy `quarantine-recovered-workloads.py` and
+   `bootstrap-recovered-control-plane.py` beside the native helper on VM 300.
+4. Run the quarantine helper as root. It requires verified standalone kubelet,
+   pauses the two static controllers, removes executable Kubernetes workloads,
+   admission webhooks and stale node/Cilium identities from the **recovered copy**,
+   verifies their absence and records the source snapshot hash. Secrets,
+   configuration, RBAC, volume records and Helm history remain. If it fails, inspect
+   the failure with the controllers stopped; do not enable normal kubelet.
+5. Run `bootstrap-recovered-control-plane.py --source <input> --cilium-values
+   <shared-values>`, using `ansible/roles/k8s_control_plane/files/cilium-values.yml`.
+   It rechecks the empty workload set, retains the original CA and archived kubelet
+   settings, and generates only the kubelet kubeconfig through a dedicated kubeadm
+   phase. It does not initialize a new cluster. The temporary administrator
+   certificate comes from the native drill and lasts one day. Label/taint the
+   registered control plane as usual.
+6. The guest firewall now permits the two lab nodes, the configured production Pod
+   range, and Proxmox-initiated administration. Its narrow HTTP reply exception to
+   `172.26.0.1` permits Cilium Gateway proxy replies that bypass the ordinary
+   conntrack state match. Host forwarding still blocks external access. On the
+   worker, persist `192.168.10.50/32 via 172.26.0.10` before kubelet startup: that
+   address belongs to the recovered API on control-plane loopback. Start the
+   worker and join through the existing `k8s_worker` role with the lab inventory;
+   its short-lived token is revoked after the attempt.
+7. Forward local port 16444 through Proxmox to `172.26.0.10:6443`, using a separate
+   private kubeconfig with the recovered CA, temporary administrator certificate
+   and TLS server name `192.168.10.50`. Keep the original lab kubeconfig for
+   rollback. Upgrade the retained Cilium release using the production path:
+
+   ```bash
+   cilium upgrade --kubeconfig .lab/network-recovery/kubeconfig \
+     --version 1.19.1 \
+     --values ansible/roles/k8s_control_plane/files/cilium-values.yml \
+     --set k8sServiceHost=192.168.10.50 --set k8sServicePort=6443
+   ```
+
+   Recreate CoreDNS through `kubeadm init phase addon coredns --config
+   <recovered-kubeadm-config>`. Require both nodes Ready and all Cilium/Envoy,
+   operator and DNS Pods healthy. Check the actual Cilium ConfigMap: cluster name
+   `kubernetes`, ID `0`, pool `10.0.0.0/8`, kube-proxy replacement, Gateway API and
+   L2 announcements remain the production settings. This drill does not migrate
+   the overlapping production Pod/Service ranges.
+8. Apply `tests/recovery/network-fixture.yml` only to this quarantined cluster. It
+   places server/client Pods on opposite nodes and creates a private Gateway VIP
+   `172.26.0.241` with hostname `recovery.invalid`. Verify internal DNS, cross-node
+   Service HTTP, Gateway/HTTPRoute conditions and an HTTP request from Proxmox to
+   the VIP. Apply a temporary deny-egress NetworkPolicy selecting only the client;
+   require its previously working direct Service request to fail, then remove the
+   policy and require traffic to return. Check public HTTPS, production worker,
+   NAS, host SSH and management SSH are inaccessible from the client.
+9. Reboot each node separately. Require a new boot ID with its existing fresh node
+   identity, healthy static/API components, both nodes Ready, and repeat the
+   networking/isolation checks. Inventory running Pods: only the explicitly
+   installed infrastructure and synthetic fixture may run.
+10. Stop both disposable VMs and restore **both** verified original VM archives.
+    Verify original SSH keys and machine IDs before restoring trust. Confirm the
+    recovered datastore and copied credentials are absent, close the temporary
+    tunnel, remove only the drill host firewall table and reopen original lab
+    access. Restore saved replica counts and verify original application data,
+    networking, production health and a full no-change Terraform plan. Only then
+    remove temporary archives, downloaded inputs and generated credentials.
+
+The two-node drill passed from the same completed offsite bundle:
+
+| Check | Verified result |
+|-------|-----------------|
+| Fresh nodes | Both VMs replaced from template 9010; new machine IDs/system UUIDs and real kubelet registration using the recovered CA |
+| Containment | Executable records removed only from the recovered copy before normal kubelet startup; only explicitly installed infrastructure and fixture Pods ran |
+| Cilium | Production 1.19.1 chart and shared values; original cluster identity and IPAM retained; two agents and Envoys plus operator healthy |
+| Traffic | Internal DNS and cross-node Service HTTP passed; temporary deny-egress policy blocked the direct Service request; traffic returned after removal |
+| Gateway | Lab VIP `172.26.0.241` allocated and announced; Gateway/HTTPRoute accepted; Proxmox HTTP request returned the synthetic response |
+| Reboots | Both nodes returned Ready after separate reboots; their identities persisted and DNS, Service/Gateway traffic and isolation passed again |
+| Convergence | Shared worker join role completed with zero changes after recovery |
+| Lab rollback | Both original node identities and PV specifications restored; saved replicas and Sonarr/Prowlarr, Vault, Authentik and network checks passed; full Terraform plan had no changes; production remained healthy |
+
+Offsite application-volume recovery remains separate from this network drill.
+The Gateway check covers the isolated bridge; it does not establish physical
+network failover, multi-control-plane availability or application recovery.
 
 ## Sonarr Recovery
 
@@ -325,8 +424,9 @@ cgroup inside the disconnected namespace. The control-plane VM now has 4 GiB RAM
 for this drill, managed through its existing Terraform node variables.
 Temporary containers, services, cgroups, networking, restored data and copied/generated
 credentials were removed afterward; both original lab nodes remain Ready.
-Replacement control-plane recovery from offsite etcd/PKI, production Cilium
-convergence and offsite application volumes remain in the backlog. The separate
+The [native control-plane](#native-control-plane-recovery-drill) and
+[node/Cilium recovery](#node-and-cilium-recovery-drill) drills extend these checks
+to replacement VMs. Offsite application-volume recovery remains in the backlog. The separate
 [worker replacement drill](#worker-replacement-drill) verifies a fresh lab worker
 and restoration of its locally checkpointed volumes.
 

@@ -83,8 +83,11 @@ check passed leader election, scheduling and automatic node-certificate issuance
 and registration. A real isolated kubelet/runtime check and a fresh lab worker
 rebuild also passed. A [fresh-machine static control-plane boot and reboot](../runbooks/restore-lab.md#native-control-plane-recovery-drill)
 also passed from the complete offsite bundle. That drill uses standalone kubelet
-for containment; normal node registration and production Cilium remain separate
-acceptance checks.
+for containment. The subsequent [two-node recovery drill](../runbooks/restore-lab.md#node-and-cilium-recovery-drill)
+quarantined executable records in the recovered copy, registered fresh nodes, and
+verified the production Cilium configuration, DNS, cross-node Services, policy
+enforcement and a lab L2 Gateway through node reboots. Application-volume recovery
+remains a separate check.
 
 ## Upstream Documentation
 

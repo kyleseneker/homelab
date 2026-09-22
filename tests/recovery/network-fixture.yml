@@ -1,0 +1,166 @@
+# Apply only to the quarantined recovered cluster, never production.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: recovery-network-check
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: server
+  namespace: recovery-network-check
+  labels:
+    app: server
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: homelabrestore01-node-1
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: server
+      image: docker.io/library/python:3.12.9-alpine
+      command:
+        - python3
+        - -c
+        - |
+          import signal
+          import sys
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  self.send_response(200)
+                  self.end_headers()
+                  self.wfile.write(b'recovery-ok')
+          HTTPServer(('0.0.0.0', 8080), Handler).serve_forever()
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: recovery-network-check
+  labels:
+    app: client
+spec:
+  nodeSelector:
+    kubernetes.io/hostname: homelabrestore01-node-2
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: client
+      image: docker.io/library/python:3.12.9-alpine
+      command:
+        - python3
+        - -c
+        - |
+          import signal
+          import sys
+          import time
+          signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+          time.sleep(7200)
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: recovery-http
+  namespace: recovery-network-check
+spec:
+  selector:
+    app: server
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: recovery-network-check
+spec:
+  blocks:
+    - cidr: 172.26.0.240/29
+  serviceSelector:
+    matchLabels:
+      recovery-fixture: recovery-network-check
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: recovery-network-check
+  namespace: recovery-network-check
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 172.26.0.241
+  infrastructure:
+    labels:
+      recovery-fixture: recovery-network-check
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: recovery.invalid
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: recovery-network-check
+  namespace: recovery-network-check
+spec:
+  parentRefs:
+    - name: recovery-network-check
+      sectionName: http
+  hostnames:
+    - recovery.invalid
+  rules:
+    - backendRefs:
+        - name: recovery-http
+          port: 8080
