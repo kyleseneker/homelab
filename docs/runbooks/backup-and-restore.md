@@ -23,9 +23,9 @@ Times are UTC. The schedules capture Kubernetes objects and eligible mounted vol
 ## Vault File-Backend Recovery
 
 Use the [quiesced backup helper](../infrastructure/vault.md#consistent-file-backend-copy)
-for a consistent manual copy. Scheduled Velero backups still copy the live file
-backend; this procedure does not make those scheduled copies consistent or upload
-the manual archive offsite.
+for a consistent manual copy, then use the offsite transfer below. Scheduled
+Velero backups still copy the live file backend; the verified manual archive does
+not make those scheduled copies consistent.
 
 1. Take the encrypted archive with Vault stopped, then verify production restarted,
    auto-unsealed, and resumed reconciliation. Preserve its SHA-256 digest privately
@@ -55,7 +55,7 @@ the manual archive offsite.
 
 | Check | Result |
 |-------|--------|
-| Source | Manual quiesced production archive `vault-file-20260922.tar.gz`; 44,304 bytes |
+| Source | Quiesced production archive `vault-file-20260922.tar.gz`; 44,304 bytes; subsequently downloaded from S3 into fresh lab storage |
 | Archive SHA-256 | `ee7fcd3359383acb5b3cd35bff4c58f60b7f6590c8e889d29dcc5101aa57cfef` |
 | Import | 109 encrypted files restored to empty lab-local storage; every SHA-256 digest matched |
 | Runtime | Vault 1.21.2 initialized and auto-unsealed through the original AWS KMS key; original cluster identity matched |
@@ -63,11 +63,56 @@ the manual archive offsite.
 | Isolation | Public HTTPS, production API and NAS TCP probes timed out; lab API access is restricted to authentication/reconciliation roles |
 | Production | Vault restarted and auto-unsealed; maintenance pause and reader removed; ESO store Ready |
 
-This proves recovery of the encrypted file backend and KMS auto-unseal from a
-consistent **local** copy. The authentication check below verifies bounded
-Kubernetes auth/ESO recovery. Scheduled consistent offsite copies remain unverified. The original drill used
-production KMS credentials; the [HCP recovery path](disaster-recovery.md#recover-aws-credentials-from-hcp-terraform)
-subsequently retrieved and verified those credentials without production access.
+The local restore and the fresh S3 restore below both verified the encrypted file
+backend, KMS auto-unseal and authenticated secret reads. The authentication check
+also verifies bounded Kubernetes auth/ESO recovery. Scheduled consistent backups
+remain unfinished; the manual copy does not establish a recurring recovery point.
+
+### Offsite Vault Archive
+
+After validating a quiesced archive, use the [HCP credential export](disaster-recovery.md#recover-aws-credentials-from-hcp-terraform)
+and AWS CLI to upload it into the existing offsite bucket and verify a download:
+
+```bash
+python3 scripts/vault-offsite-copy.py \
+  --archive '.lab/vault-restore/vault-file-<timestamp>.tar.gz' \
+  --credentials-dir .lab/recovery-credentials \
+  --expected-sha256 '<verified archive SHA-256>' \
+  --download-output .lab/vault-restore/vault-file-offsite.tar.gz
+```
+
+The helper reads bucket/region from the protected export, ignores ambient AWS
+credentials, checks the source digest, and uploads to
+`vault-file-backups/<archive filename>` with S3 AES256 encryption and a SHA-256
+metadata field. `If-None-Match: *` prevents overwriting an existing object. It
+checks the downloaded bytes, metadata and version before publishing a private
+local file; an existing local download is never overwritten. Reusing an uploaded
+archive filename intentionally fails. If upload succeeds but download fails, use
+`aws s3api get-object` with the exported credentials to retrieve that existing
+object separately and verify its recorded digest; do not delete it to rerun the
+upload.
+
+This direct prefix is separate from Velero's `velero/` repositories and needs no
+Kopia repository password. Recover into empty storage using the file-backend
+procedure above. S3 bucket versioning is enabled, but neither it nor conditional
+uploads make the archive immutable. Current objects have no automatic age-based
+deletion; choose a retention policy before automating recurring uploads.
+
+| Check | Verified result |
+|-------|-----------------|
+| Object | `s3://velero-offsite-homelab/vault-file-backups/vault-file-20260922.tar.gz` |
+| Version | `_9pYzsIC99O4UqOJh3MtuYy6.ngKVJlM` |
+| Integrity | Download SHA-256 matched the archive digest above; all 109 extracted encrypted file hashes matched |
+| Fresh restore | Separate empty lab PVC; Vault initialized, auto-unsealed, and retained its original cluster identity |
+| Authentication | Local administrative token authenticated; both Grafana fields matched the previously verified restore |
+| Credentials | S3 and KMS credentials exported from HCP; no production Kubernetes access used for this restore |
+| Overwrite protection | Repeated upload to the same object returned `PreconditionFailed` |
+| Cleanup | Temporary offsite-test Deployment, PVC, KMS Secret and network policy removed; the original lab Vault/ESO remain |
+
+The temporary server had no Service, service-account token, production mounts or
+API access; its network policy allowed only DNS/KMS. This proves manual offsite
+Vault recovery without the production cluster, MinIO or NAS, while still relying
+on HCP access and independently held Vault administrative credentials.
 
 ### Kubernetes Auth and ESO Recovery
 

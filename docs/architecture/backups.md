@@ -72,7 +72,7 @@ Velero uses the AWS plugin to communicate with MinIO over the S3 API. File syste
 !!! danger "Kopia cannot read local-path volumes"
     File-system backup skips `hostPath` volumes, which is what the `local-path` provisioner creates. Every *arr config PVC, the Prometheus TSDB, and Uptime Kuma's database are captured as objects holding **no data**, and Velero records this as a warning rather than an error -- so the backup reports `Completed`.
 
-    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault's live file-backend copy still needs a consistent recovery method. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
+    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault's scheduled live file-backend copy still needs replacement with consistent recurring backups. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
 
     Kopia also only reads volumes attached to a **running** pod. Each backup volume is kept mounted by a holder Deployment; without it the mechanism silently captures nothing.
 
@@ -253,7 +253,7 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `monitoring/uptime-kuma-backups` | NFS dump staging volume mounted by its holder | Captured offsite; still requires application-level restoration |
 | `nfs-provisioner/pvc-nfs-provisioner-nfs-subdir-external-provisioner` | Root export mount used by the provisioner | Not a separate copy of child PVC data; reconstruct provisioning from Git |
 | `openclaw/openclaw` | NFS workspace/runtime state captured by daily and offsite Velero | Restore with integrations and remediation disabled until credentials and scope are verified |
-| `vault/data-vault-0` | Live file-backend volume captured by weekly local/offsite Velero | Manual quiesced restore, KMS auto-unseal and scoped Kubernetes auth/ESO verified; HCP credential recovery verified; scheduled consistency/offsite recovery and an HCP-independent credential copy remain open |
+| `vault/data-vault-0` | Live file-backend volume captured by weekly local/offsite Velero | Manual quiesced local/S3 restores, KMS auto-unseal and scoped Kubernetes auth/ESO verified using HCP credential recovery; recurring consistent backups and an HCP-independent credential copy remain open |
 
 Pods without persistent data rely on Git and their external secret sources. Retained/released PV directories are not automatically rebound or validated by this inventory; preserve and identify them before attempting recovery. ConfigMaps and Secret objects may exist in a Velero backup, but that does not demonstrate that independent bootstrap credentials are available during site loss.
 

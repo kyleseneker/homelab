@@ -14,7 +14,7 @@ Keep these outside Kubernetes and Vault itself:
 - A tested Vault data backup, application restore records, and recent etcd snapshot/PKI pairs.
 - The NAS exports and retained PV directory mappings. MinIO runs **inside Kubernetes** on NFS; it is not a separate NAS service.
 
-KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local restore](backup-and-restore.md#vault-file-backend-recovery) verified storage, KMS auto-unseal and scoped Kubernetes auth/ESO; consistent offsite recovery remains unverified. The HCP credential path below is independent of Kubernetes and Vault.
+KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local/S3 restores](backup-and-restore.md#vault-file-backend-recovery) verified storage, KMS auto-unseal and authenticated reads; the lab also verified scoped Kubernetes auth/ESO. Recurring consistent backups remain unfinished. The HCP credential path below is independent of Kubernetes and Vault.
 
 ### Recover AWS Credentials from HCP Terraform
 
@@ -73,7 +73,7 @@ an independently protected copy. The local `.lab` export alone is not that copy.
 
     Velero's chart also references `velero-cloud-credentials`; provide its original MinIO credential file or a temporary recovery values override that uses only offsite. Recoveries from S3 do not require a healthy MinIO default location. Do not commit bootstrap credential files or capture the generated Secret YAML in logs.
 
-5. Start Velero and its node agents, confirm the offsite location is `Available`, and let it synchronize backup metadata. Recover Vault storage before starting the Vault pod, or rebind its surviving NFS directory. Use the original KMS key, then verify `vault status` reports initialized and unsealed. **Do not run `make vault-init` on data intended for recovery.** If no usable Vault backup remains, explicitly take the full Vault data-loss path below.
+5. Recover Vault storage before starting the Vault pod, using the [quiesced direct S3 archive](backup-and-restore.md#offsite-vault-archive), or rebind its surviving NFS directory. The direct archive can be downloaded without Velero, MinIO or Kopia. Start Velero and its node agents for the remaining application backups, confirm the offsite location is `Available`, and let it synchronize backup metadata. Use the original KMS key, then verify `vault status` reports initialized and unsealed. **Do not run `make vault-init` on data intended for recovery.** If no usable Vault backup remains, explicitly take the full Vault data-loss path below.
 
 6. Re-establish ESO's Kubernetes authentication and policy/binding for the new cluster before relying on Secret synchronization. A recovered Vault may retain old cluster authentication configuration. Confirm ExternalSecrets are ready without printing their contents.
 

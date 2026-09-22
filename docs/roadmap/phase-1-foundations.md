@@ -34,7 +34,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Set acceptable data-loss and recovery-time targets for the [inventoried data](../architecture/backups.md#recovery-coverage); close the documented non-database and unprotected-volume gaps
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
 - [ ] Restore etcd + matching PKI into an isolated replacement control plane using the [DR runbook](../runbooks/disaster-recovery.md)
-- [ ] Automate consistent Vault backups and verify an offsite restore; the manual quiesced local copy and KMS auto-unseal are proven
+- [ ] Automate consistent Vault backups and monitor offsite freshness and retention
 - [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; validate the remaining Bazarr/Prowlarr profile IDs and verify production authentication
 - [ ] Rebuild Gluetun/VPN access and verify download-payload recovery before resuming qBittorrent transfers
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior
@@ -55,6 +55,6 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 ## Definition of Done
 
 - [ ] NAS running a mirrored drive pool
-- [ ] Independent restores of etcd, Vault, and an application demonstrated
+- [ ] Independent etcd recovery and an application restore using externally held credentials demonstrated
 - [ ] Offsite recovery demonstrated with the original NAS unavailable
 - [ ] Backup alerts and UPS shutdown verified

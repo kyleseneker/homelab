@@ -93,9 +93,10 @@ python3 scripts/vault-file-backup.py --kubeconfig kubeconfig \
 ```
 
 The output must not already exist. Keep it encrypted and outside Git. This helper
-creates a local recovery copy; it does not upload it offsite or replace scheduled
-backups. A successful archive still needs isolated restoration, KMS auto-unseal,
-and authenticated secret-read verification before it demonstrates recovery.
+creates a local recovery copy; it does not replace scheduled backups. Use the
+[offsite transfer helper](../runbooks/backup-and-restore.md#offsite-vault-archive)
+to upload and verify it. Manual local and S3 restores passed KMS auto-unseal and
+authenticated secret-read checks; recurring consistent backups remain unfinished.
 
 If the process is forcibly killed, connectivity is lost, or restart verification
 fails, inspect the cluster before retrying. Restore one Vault replica, wait for
