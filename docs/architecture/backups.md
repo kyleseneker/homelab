@@ -253,7 +253,7 @@ The active PVC inventory below separates a captured volume from a demonstrated a
 | `monitoring/uptime-kuma-backups` | NFS dump staging volume mounted by its holder | Captured offsite; still requires application-level restoration |
 | `nfs-provisioner/pvc-nfs-provisioner-nfs-subdir-external-provisioner` | Root export mount used by the provisioner | Not a separate copy of child PVC data; reconstruct provisioning from Git |
 | `openclaw/openclaw` | NFS workspace/runtime state captured by daily and offsite Velero | Restore with integrations and remediation disabled until credentials and scope are verified |
-| `vault/data-vault-0` | Live file-backend volume captured by weekly local/offsite Velero | Manual quiesced restore, KMS auto-unseal and scoped Kubernetes auth/ESO verified; scheduled consistency/offsite recovery and independent KMS credentials remain unverified |
+| `vault/data-vault-0` | Live file-backend volume captured by weekly local/offsite Velero | Manual quiesced restore, KMS auto-unseal and scoped Kubernetes auth/ESO verified; HCP credential recovery verified; scheduled consistency/offsite recovery and an HCP-independent credential copy remain open |
 
 Pods without persistent data rely on Git and their external secret sources. Retained/released PV directories are not automatically rebound or validated by this inventory; preserve and identify them before attempting recovery. ConfigMaps and Secret objects may exist in a Velero backup, but that does not demonstrate that independent bootstrap credentials are available during site loss.
 

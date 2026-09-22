@@ -14,7 +14,36 @@ Keep these outside Kubernetes and Vault itself:
 - A tested Vault data backup, application restore records, and recent etcd snapshot/PKI pairs.
 - The NAS exports and retained PV directory mappings. MinIO runs **inside Kubernetes** on NFS; it is not a separate NAS service.
 
-KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local restore](backup-and-restore.md#vault-file-backend-recovery) verified storage, KMS auto-unseal and scoped Kubernetes auth/ESO; consistent offsite recovery and independently available KMS credentials remain unverified.
+KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. A live file-system copy of the file storage backend is not evidence of a consistent Vault recovery point; use a quiesced backup. The [manual local restore](backup-and-restore.md#vault-file-backend-recovery) verified storage, KMS auto-unseal and scoped Kubernetes auth/ESO; consistent offsite recovery remains unverified. The HCP credential path below is independent of Kubernetes and Vault.
+
+### Recover AWS Credentials from HCP Terraform
+
+The `homelab-aws` workspace in the `kyleseneker` HCP organization already holds the
+KMS auto-unseal and Velero offsite IAM credentials as Terraform outputs. With a
+working HCP account/CLI token, recover them without contacting Kubernetes or Vault:
+
+```bash
+make aws-init
+mkdir -p .lab
+python3 scripts/export-recovery-credentials.py --output-dir .lab/recovery-credentials
+```
+
+The output directory must be new. The helper creates it with mode 0700 and writes
+`vault-kms.env`, `velero-offsite.credentials`, and non-secret `metadata.json` with
+mode 0600. It captures Terraform output privately and never prints credentials.
+The region comes from the original KMS key ARN. The env/credentials files can be
+used directly by the bootstrap commands below. Do not commit or paste them into
+logs; keep any long-term copy in protected recovery storage outside the homelab.
+
+This path was tested without production Kubernetes access: the KMS credentials
+successfully encrypted/decrypted a random nonce and matched the credentials used
+by the restored Vault's auto-unseal; the S3 credentials successfully listed the
+existing offsite backup prefix. The existing local Vault CLI token also
+successfully administered the restored instance. This establishes a working
+external credential source, not an offline recovery kit. Preserve HCP account/MFA
+recovery, its CLI token or another authorized login, and Vault administrative or
+recovery material separately. An HCP outage or loss of that account still requires
+an independently protected copy. The local `.lab` export alone is not that copy.
 
 ### Procedure
 

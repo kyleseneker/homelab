@@ -65,9 +65,9 @@ the manual archive offsite.
 
 This proves recovery of the encrypted file backend and KMS auto-unseal from a
 consistent **local** copy. The authentication check below verifies bounded
-Kubernetes auth/ESO recovery. Scheduled consistent offsite copies and independently available KMS
-credentials remain unverified. KMS credentials for this drill came privately from
-the running production cluster.
+Kubernetes auth/ESO recovery. Scheduled consistent offsite copies remain unverified. The original drill used
+production KMS credentials; the [HCP recovery path](disaster-recovery.md#recover-aws-credentials-from-hcp-terraform)
+subsequently retrieved and verified those credentials without production access.
 
 ### Kubernetes Auth and ESO Recovery
 

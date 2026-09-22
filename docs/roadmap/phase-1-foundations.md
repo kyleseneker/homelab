@@ -40,7 +40,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior
 - [ ] Verify Authentik ordinary password/MFA login, client application login, proxy outposts and worker behavior after the verified emergency-login/OIDC restore
 - [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data
-- [ ] Keep bootstrap credentials and recovery instructions available outside the cluster and Vault
+- [ ] Keep an independently protected bootstrap credential copy and account/MFA recovery outside the homelab and HCP; HCP-based KMS/S3 retrieval is verified
 - [ ] Review backup credentials and S3 retention/deletion controls; versioning and Terraform deletion guards alone do not provide an immutable copy
 
 ## 1.3 Verify Backup and Power Alerts

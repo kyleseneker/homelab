@@ -10,7 +10,7 @@ All three production nodes are Ready and all 53 ArgoCD Applications are Synced/H
 
 [Verified recovery checks](../runbooks/backup-and-restore.md) cover Sonarr's database/login and bounded operator, Recyclarr and Prowlarr reconciliation; Authentik's logical database, emergency login and OIDC exchange; Tdarr's native configuration and plugins; qBittorrent's configuration/resume metadata and fresh login across restart; and Vault's quiesced file-backend restore, KMS auto-unseal and scoped Kubernetes auth/ESO recovery. The backup inventory accounts for Velero warnings and unprotected data.
 
-Independent recovery credentials, remaining application/integration restores, ordinary Authentik login/MFA and proxy/worker behavior, Tdarr media processing, and qBittorrent payload/VPN recovery remain unverified. These checks remain in [Phase 1](phase-1-foundations.md).
+HCP-independent recovery credentials, remaining application/integration restores, ordinary Authentik login/MFA and proxy/worker behavior, Tdarr media processing, and qBittorrent payload/VPN recovery remain unverified. These checks remain in [Phase 1](phase-1-foundations.md).
 
 ## Physical Layer
 

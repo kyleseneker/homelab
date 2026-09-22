@@ -159,7 +159,8 @@ auto-unseal across restart. The [Kubernetes auth/ESO check](backup-and-restore.m
 then verified restricted login, matching Grafana credentials, rejection of invalid
 identities/permissions, and Secret recreation across controller restarts. ESO is
 scoped to this namespace. The admin credential came from the local Vault CLI file;
-independently available KMS credentials and consistent offsite recovery remain open.
+KMS/S3 credential retrieval from HCP was independently verified. Consistent offsite
+recovery and a protected credential copy independent of HCP remain open.
 
 ## Access and Teardown
 
