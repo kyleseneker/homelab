@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restore-vault
+  namespace: restore-vault
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: restore-vault
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-vault
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: vault
+          image: hashicorp/vault:1.21.2
+          command:
+            - vault
+            - server
+            - -config=/vault/config/vault.hcl
+          env:
+            - name: VAULT_ADDR
+              value: http://127.0.0.1:8200
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: restore-vault-kms
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: restore-vault-kms
+                  key: AWS_SECRET_ACCESS_KEY
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: restore-vault-kms
+                  key: AWS_REGION
+            - name: VAULT_AWSKMS_SEAL_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: restore-vault-kms
+                  key: VAULT_AWSKMS_SEAL_KEY_ID
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command:
+                - vault
+                - status
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /vault/data
+            - name: config
+              mountPath: /vault/config
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: restore-vault
+        - name: config
+          configMap:
+            name: restore-vault
+        - name: tmp
+          emptyDir: {}

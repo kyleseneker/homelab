@@ -144,6 +144,19 @@ The `qbittorrent` manifests provide an isolated client in `restore-qbittorrent` 
 
 Fresh login, torrent/category/path/history comparisons, network isolation and persistence across restart passed. The restored torrent reports `missingFiles`, which is expected because payload data was not restored. VPN bootstrap and real transfer recovery remain separate checks.
 
+## Vault Recovery
+
+The `infrastructure/vault` manifests run Vault 1.21.2 in `restore-vault` on a
+fresh local PVC, with no Service, route or service-account token. Import the
+quiesced encrypted archive before starting the Deployment and supply the original
+KMS credentials privately. Only DNS and the regional KMS HTTPS endpoint are
+allowed; production storage and Kubernetes APIs remain unreachable.
+
+The [file-backend recovery procedure](backup-and-restore.md#vault-file-backend-recovery)
+verified all 109 restored file digests, the original Vault identity, and KMS
+auto-unseal across restart. Authenticated reads and replacement-cluster
+Kubernetes auth/ESO still need independent recovery credentials.
+
 ## Access and Teardown
 
 Every manual command must select the lab kubeconfig explicitly:

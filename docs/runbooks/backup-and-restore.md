@@ -20,6 +20,56 @@ Times are UTC. The schedules capture Kubernetes objects and eligible mounted vol
 !!! note
     The `kube-system` and `kube-public` namespaces are excluded from backups because their resources are managed by kubeadm and ArgoCD. These are recreated during a cluster rebuild rather than restored from backup.
 
+## Vault File-Backend Recovery
+
+Use the [quiesced backup helper](../infrastructure/vault.md#consistent-file-backend-copy)
+for a consistent manual copy. Scheduled Velero backups still copy the live file
+backend; this procedure does not make those scheduled copies consistent or upload
+the manual archive offsite.
+
+1. Take the encrypted archive with Vault stopped, then verify production restarted,
+   auto-unsealed, and resumed reconciliation. Preserve its SHA-256 digest privately
+   alongside the archive.
+2. Apply only the namespace, network policies and PVC from
+   `k8s/clusters/homelabrestore01/infrastructure/vault` using `.lab/kubeconfig`.
+   Keep the lab Deployment absent until import completes. Mount the fresh PVC in a
+   temporary non-root import pod (UID 100, GID/fsGroup 1000), assert the directory
+   is empty, and extract the trusted archive there. Compare every file digest with
+   the archive before starting Vault, then remove the import pod.
+3. Privately create `restore-vault-kms` in `restore-vault` with
+   `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, and
+   `VAULT_AWSKMS_SEAL_KEY_ID`. Use the original KMS key; never initialize the
+   restored storage. The committed policy permits only DNS and HTTPS to
+   `kms.us-east-1.amazonaws.com`; change the endpoint together with the region if
+   recovering a different deployment.
+4. Apply the full lab Kustomization. Check `vault status -format=json` through
+   `kubectl exec`: initialized, unsealed, `awskms`, file storage, and the original
+   cluster identity. Restart the lab Deployment and repeat. Probe blocked public,
+   production API, NAS and lab API destinations.
+5. Separately verify authenticated secret reads and rebuild Kubernetes auth/ESO
+   against the replacement cluster. Restored Kubernetes auth still refers to the
+   original cluster and is not usable merely because Vault unsealed. Obtain the
+   necessary administrative/recovery credentials independently; never expose a
+   root token in logs or enable access back to production to bypass this step.
+
+### Verified Storage and Auto-Unseal
+
+| Check | Result |
+|-------|--------|
+| Source | Manual quiesced production archive `vault-file-20260922.tar.gz`; 44,304 bytes |
+| Archive SHA-256 | `ee7fcd3359383acb5b3cd35bff4c58f60b7f6590c8e889d29dcc5101aa57cfef` |
+| Import | 109 encrypted files restored to empty lab-local storage; every SHA-256 digest matched |
+| Runtime | Vault 1.21.2 initialized and auto-unsealed through the original AWS KMS key; original cluster identity matched |
+| Restart | Lab auto-unseal passed again after restart |
+| Isolation | Public HTTPS, production API, NAS and lab API TCP probes timed out; only DNS/KMS egress permitted |
+| Production | Vault restarted and auto-unsealed; maintenance pause and reader removed; ESO store Ready |
+
+This proves recovery of the encrypted file backend and KMS auto-unseal from a
+consistent **local** copy. Authenticated secret reads, replacement-cluster
+Kubernetes auth/ESO, scheduled consistent offsite copies, and independently
+available bootstrap credentials remain unverified. KMS credentials for this drill
+came privately from the running production cluster.
+
 ## etcd Snapshots
 
 A separate CronJob backs up the etcd database directly. Velero cannot back up or restore etcd — it operates at the Kubernetes API layer and requires a running API server. etcd snapshots are the only way to recover a cluster whose control plane is corrupted or unrecoverable.

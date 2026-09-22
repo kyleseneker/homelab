@@ -4,6 +4,10 @@ metadata:
   name: cluster-apps
   namespace: argocd
 spec:
+  # Keep explicit maintenance pauses until the operator removes them.
+  preservedFields:
+    annotations:
+      - argocd.argoproj.io/skip-reconcile
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:

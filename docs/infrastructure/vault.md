@@ -66,6 +66,55 @@ Vault, cert-manager, and the External Secrets Operator form the bootstrap layer 
 
 Vault data lives on an NFS-backed PVC and is included in the weekly cluster/offsite schedules. A copy of a live Vault file backend is not proof of consistent recovery. Rehearse data restoration with KMS and backup-store credentials available outside Vault; see the backup and disaster-recovery runbooks.
 
+### Consistent file-backend copy
+
+`scripts/vault-file-backup.py` creates an encrypted archive while the standalone
+Vault writer is stopped. It checks initialized/unsealed state, starts a read-only
+reader on the same node, pauses the Vault Application, scales Vault to zero, and
+validates the archive before publishing it with private permissions. Cleanup
+restarts Vault, checks KMS auto-unseal and the original cluster identity, then
+resumes reconciliation and removes the reader. Existing Kubernetes Secrets remain
+available while Vault is down; Vault API requests and ESO refreshes cannot succeed
+during that interval.
+
+The ApplicationSet must preserve `argocd.argoproj.io/skip-reconcile`; otherwise it
+removes the pause annotation and self-heal can restart the writer mid-copy. The
+helper refuses to run without that prerequisite. Preserving the annotation does
+not pause any application by itself. Remove every maintenance pause explicitly
+when work is complete. See [Argo CD's preserved fields documentation](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Controlling-Resource-Modification/).
+
+Run from the repository root with cluster-admin access during a maintenance window:
+
+```bash
+mkdir -p .lab/vault-restore
+chmod 700 .lab/vault-restore
+python3 scripts/vault-file-backup.py --kubeconfig kubeconfig \
+  --output .lab/vault-restore/vault-file-backup.tar.gz
+```
+
+The output must not already exist. Keep it encrypted and outside Git. This helper
+creates a local recovery copy; it does not upload it offsite or replace scheduled
+backups. A successful archive still needs isolated restoration, KMS auto-unseal,
+and authenticated secret-read verification before it demonstrates recovery.
+
+If the process is forcibly killed, connectivity is lost, or restart verification
+fails, inspect the cluster before retrying. Restore one Vault replica, wait for
+`vault-0` to become Ready, and confirm initialized/unsealed state and the original
+cluster identity. Only then remove the maintenance annotation and unused
+`vault-file-backup-*` reader pod:
+
+```bash
+kubectl --kubeconfig kubeconfig -n vault scale statefulset/vault --replicas=1
+kubectl --kubeconfig kubeconfig -n vault wait --for=create pod/vault-0 --timeout=120s
+kubectl --kubeconfig kubeconfig -n vault wait --for=condition=Ready pod/vault-0 --timeout=180s
+kubectl --kubeconfig kubeconfig -n vault exec vault-0 -- vault status
+kubectl --kubeconfig kubeconfig -n argocd annotate application vault \
+  argocd.argoproj.io/skip-reconcile-
+```
+
+Do not initialize Vault or modify its original data directory during recovery.
+Delete incomplete local `.vault-backup-*` files after production is healthy.
+
 ## Upstream Documentation
 
 <https://developer.hashicorp.com/vault/docs>

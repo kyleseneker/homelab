@@ -8,7 +8,7 @@ Provisioning is encoded in Packer, Ansible and Terraform; ArgoCD reconciles appl
 
 All three production nodes are Ready and all 53 ArgoCD Applications are Synced/Healthy. The [isolated restore lab](../runbooks/restore-lab.md) has two Ready nodes, a tested reboot and repeatable bootstrap, distinct node identities and verified network isolation.
 
-[Verified recovery checks](../runbooks/backup-and-restore.md) cover Sonarr's database/login and bounded operator, Recyclarr and Prowlarr reconciliation; Authentik's logical database, emergency login and OIDC exchange; Tdarr's native configuration and plugins; and qBittorrent's configuration/resume metadata and fresh login across restart. The backup inventory accounts for Velero warnings and unprotected data.
+[Verified recovery checks](../runbooks/backup-and-restore.md) cover Sonarr's database/login and bounded operator, Recyclarr and Prowlarr reconciliation; Authentik's logical database, emergency login and OIDC exchange; Tdarr's native configuration and plugins; qBittorrent's configuration/resume metadata and fresh login across restart; and Vault's quiesced file-backend restore with KMS auto-unseal. The backup inventory accounts for Velero warnings and unprotected data.
 
 Independent recovery credentials, remaining application/integration restores, ordinary Authentik login/MFA and proxy/worker behavior, Tdarr media processing, and qBittorrent payload/VPN recovery remain unverified. These checks remain in [Phase 1](phase-1-foundations.md).
 

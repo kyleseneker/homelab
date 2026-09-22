@@ -1,0 +1,9 @@
+appName: restore-vault
+namespace: restore-vault
+sourceType: git
+gitPath: k8s/clusters/homelabrestore01/infrastructure/vault
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
