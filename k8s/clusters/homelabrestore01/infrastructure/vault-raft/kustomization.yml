@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../vault
+  - pvc.yml
+  - snapshot.yml
+patches:
+  - patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: restore-vault
+        namespace: restore-vault
+      data:
+        vault.hcl: |
+          ui = false
+          disable_mlock = true
+          api_addr = "http://127.0.0.1:8200"
+          cluster_addr = "http://127.0.0.1:8201"
+          listener "tcp" {
+            tls_disable = 1
+            address = "0.0.0.0:8200"
+            cluster_address = "127.0.0.1:8201"
+          }
+          storage "raft" {
+            node_id = "restore-vault"
+            path = "/vault/data"
+          }
+          seal "awskms" {}
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: restore-vault
+        namespace: restore-vault
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: data
+                persistentVolumeClaim:
+                  claimName: restore-vault-raft

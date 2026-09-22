@@ -46,13 +46,13 @@
 
 ## 4.3 Migrate Vault to HA (Raft)
 
-- [ ] Back up standalone Vault and rehearse the data migration to integrated Raft storage
+- [ ] Cut over production Vault to local integrated Raft storage using the verified migration and rollback procedure
 - [ ] Configure three Vault replicas using integrated Raft storage
 - [ ] Move Vault from NFS to durable local storage, with peer discovery and TLS configured
 - [ ] Spread Raft voters across the available physical hosts; use one voter per host when the third host is added
 - [ ] Verify AWS KMS auto-unseal works for all replicas
 - [ ] Verify ESO reaches Vault through the Vault service
-- [ ] Implement Raft snapshots and verify restoration
+- [ ] Deploy recurring production Raft snapshots, offsite verification and freshness monitoring
 - [ ] Test leader failover and document whole-host failure behavior for the deployed placement
 
 | | |

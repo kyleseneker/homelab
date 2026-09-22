@@ -144,6 +144,7 @@ nav:
       - Authentik Blueprints: decisions/021-authentik-blueprints.md
       - Synthetic Monitoring: decisions/022-synthetic-monitoring-and-delivery.md
       - Scoped Autonomous Operations: decisions/023-scoped-autonomous-operations.md
+      - Vault Integrated Storage: decisions/024-vault-integrated-storage.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md

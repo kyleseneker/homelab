@@ -146,7 +146,7 @@ Fresh login, torrent/category/path/history comparisons, network isolation and pe
 
 ## Vault Recovery
 
-The `infrastructure/vault` manifests run Vault 1.21.2 in `restore-vault` on a
+The `infrastructure/vault` base restores Vault 1.21.2 in `restore-vault` on a
 fresh local PVC, with a cluster-internal Service and no external route. Import the
 quiesced encrypted archive before starting the Deployment and supply the original
 KMS credentials privately. DNS, the regional KMS HTTPS endpoint and the lab API
@@ -163,6 +163,12 @@ KMS/S3 credential retrieval from HCP was independently verified. A subsequent
 fresh-PVC restore of the direct S3 archive passed auto-unseal and authenticated
 reads without production access; its temporary resources were removed. Recurring
 consistent backups and a protected credential copy independent of HCP remain open.
+
+The lab now runs the `infrastructure/vault-raft` overlay after the verified
+[file-to-Raft migration and native snapshot restore](backup-and-restore.md#raft-migration-and-native-snapshot-rehearsal).
+Its original file PVC remains for rollback; Raft and snapshot staging each have a
+separate local PVC. The snapshot CronJob stays suspended. Production still uses
+its original file backend pending cutover.
 
 ## Access and Teardown
 

@@ -26,6 +26,13 @@ class RestoreVaultAuthTests(unittest.TestCase):
             self.assertEqual(run.call_count, 2)
             self.assertNotIn('vault write', run.call_args.args[0][-1])
 
+    def test_snapshot_auth_requires_raft_before_mutations(self):
+        responses = [b'homelabrestore01\n', json.dumps({'initialized': True, 'sealed': False, 'storage_type': 'file'}).encode()]
+        with patch.object(MODULE, 'run', side_effect=responses) as run, patch.dict('os.environ', {'VAULT_TOKEN': 'test-fixture'}):
+            with self.assertRaisesRegex(RuntimeError, 'requires a migrated Raft'):
+                MODULE.main(configure_snapshots=True)
+            self.assertEqual(run.call_count, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

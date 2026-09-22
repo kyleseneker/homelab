@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: restore-vault-raft-migrate
+  namespace: restore-vault
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-vault-raft-migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: hashicorp/vault:1.21.2
+          command:
+            - sh
+            - -ec
+          args:
+            - |
+              test -z "$(ls -A /destination)"
+              mkdir /tmp/source
+              cp -a /source/. /tmp/source/
+              cat > /tmp/migrate.hcl <<'CONFIG'
+              storage_source "file" { path = "/tmp/source" }
+              storage_destination "raft" {
+                path = "/destination"
+                node_id = "restore-vault"
+              }
+              cluster_addr = "http://127.0.0.1:8201"
+              CONFIG
+              vault operator migrate -config=/tmp/migrate.hcl > /tmp/migration.log 2>&1
+              echo 'Offline storage migration completed'
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          volumeMounts:
+            - name: source
+              mountPath: /source
+              readOnly: true
+            - name: destination
+              mountPath: /destination
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: source
+          persistentVolumeClaim:
+            claimName: restore-vault
+            readOnly: true
+        - name: destination
+          persistentVolumeClaim:
+            claimName: restore-vault-raft
+        - name: tmp
+          emptyDir: {}

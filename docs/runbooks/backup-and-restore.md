@@ -159,6 +159,65 @@ Vault's [local reviewer-token behavior](https://developer.hashicorp.com/vault/do
 and ESO's [Vault authentication configuration](https://external-secrets.io/latest/provider/hashicorp-vault/)
 explain the rotating-token and audience settings used here.
 
+### Raft Migration and Native Snapshot Rehearsal
+
+Production remains on the file backend. The lab has migrated to a separate local
+Raft PVC while retaining the original file PVC for rollback. The proposed
+production architecture is recorded in [ADR-024](../decisions/024-vault-integrated-storage.md).
+
+To repeat the offline lab migration after a file-backend restore:
+
+1. Verify Vault is initialized, unsealed and using file storage. Record its cluster
+   ID and privately compare representative secret values. Keep the source archive.
+2. Apply only `vault-raft/pvc.yml` to create an empty destination. Scale
+   `Deployment/restore-vault` to zero and wait for its pods to disappear. The
+   migration Job must never copy a live writer's data.
+3. Apply `vault-raft/migration` and wait for `Job/restore-vault-raft-migrate` to
+   complete. It mounts the original PVC read-only, copies it into scratch space,
+   and runs `vault operator migrate` from that copy into the empty destination.
+   It refuses a nonempty destination. Migration logs remain inside the temporary
+   container because they contain internal storage paths.
+4. Delete the completed migration Job, then apply the `vault-raft` overlay. Verify
+   Raft storage, KMS auto-unseal, original cluster ID, authenticated reads, and ESO
+   reconciliation. Do not initialize the migrated destination.
+5. Before accepting new writes, applying the original `vault` base switches back
+   to the retained file PVC. Verify auto-unseal, then reapply the Raft overlay to
+   return to Raft. The old file backend does not receive subsequent Raft writes.
+
+All lab commands use `.lab/kubeconfig` and namespace `restore-vault`. The lab's
+Application config now points at the Raft overlay; the file base remains the
+explicit restore/rollback stage. Production's Application remains unchanged.
+
+Run `python3 scripts/restore-vault-auth.py --snapshots` after migration to configure
+the lab snapshot-read role. `CronJob/restore-vault-snapshot` is suspended; create a
+manual Job from it to test capture. It authenticates with a projected ten-minute
+service-account token, saves and inspects a native snapshot, records its SHA-256,
+and revokes its Vault token. It has no Kubernetes RBAC grants or AWS credentials.
+Snapshots are staged on a separate lab PVC; this job does not upload them offsite.
+
+For native restoration, start a separate Raft server with an **empty** PVC and the
+same KMS key. Initialize only that empty test target, capture its temporary admin
+credential privately, and run `vault operator raft snapshot restore` against the
+snapshot. The rehearsal did not require `-force`. Wait for the original cluster
+ID and unsealed state to converge: an immediate response can still show the
+initial target's identity while restore completes. Authenticate with the original
+restored administrative token and compare secret values before deleting the test
+server and PVC.
+
+| Check | Result |
+|-------|--------|
+| File-to-Raft migration | Offline copy migrated; original file PVC retained read-only during migration |
+| Compatibility | KMS auto-unseal, original identity, authenticated values, Kubernetes auth denial checks and ESO Secret repair passed |
+| Snapshot capture | Manual Job completed using only `read` on the snapshot endpoint; individual secret reads were denied |
+| Snapshot | 49,752 bytes; SHA-256 `3ab68728b84bd9cc62e2ae71681afa35dbb5c6f9a9636a529e7cb5105ee84836` |
+| Native restore | Fresh local PVC, same KMS key, no force flag; original identity and matching Grafana fields recovered |
+| Rollback | Retained file backend auto-unsealed; return to Raft and ESO checks passed |
+
+This verifies the migration and native backup mechanism. Production migration,
+automated S3 snapshots, deployed retention and freshness alerts are still pending.
+See HashiCorp's [offline migration](https://developer.hashicorp.com/vault/docs/commands/operator/migrate)
+and [Raft snapshot commands](https://developer.hashicorp.com/vault/docs/commands/operator/raft).
+
 ## etcd Snapshots
 
 A separate CronJob backs up the etcd database directly. Velero cannot back up or restore etcd — it operates at the Kubernetes API layer and requires a running API server. etcd snapshots are the only way to recover a cluster whose control plane is corrupted or unrecoverable.

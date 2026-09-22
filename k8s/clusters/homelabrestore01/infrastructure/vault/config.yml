@@ -1,7 +1,7 @@
 appName: restore-vault
 namespace: restore-vault
 sourceType: git
-gitPath: k8s/clusters/homelabrestore01/infrastructure/vault
+gitPath: k8s/clusters/homelabrestore01/infrastructure/vault-raft
 createNamespace: false
 hasResources: false
 syncOptions:

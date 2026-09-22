@@ -16,7 +16,7 @@ def run(arguments, data=None):
     return result.stdout
 
 
-def main():
+def main(configure_snapshots=False):
     context = run(KUBE + ['config', 'current-context']).decode().strip()
     if context != 'homelabrestore01':
         raise RuntimeError('Expected the homelabrestore01 context; refusing to configure Vault')
@@ -34,6 +34,8 @@ def main():
     status = json.loads(vault('vault status -format=json'))
     if not status['initialized'] or status['sealed']:
         raise RuntimeError('Restore and auto-unseal Vault before configuring authentication')
+    if configure_snapshots and status.get('storage_type') != 'raft':
+        raise RuntimeError('Snapshot authentication requires a migrated Raft backend')
     # Empty reviewer/CA fields select the pod's rotating token and lab CA files.
     vault('vault write auth/kubernetes/config -', json.dumps({
         'kubernetes_host': 'https://kubernetes.default.svc:443',
@@ -48,8 +50,21 @@ def main():
         'audience': 'vault', 'token_policies': ['restore-grafana-read'],
         'token_ttl': '10m', 'token_max_ttl': '10m',
     }))
-    print('Lab Kubernetes auth configured; ESO role can read only the restored Grafana credential path.')
+    if configure_snapshots:
+        vault('vault policy write restore-vault-snapshot -',
+              'path "sys/storage/raft/snapshot" { capabilities = ["read"] }\n')
+        vault('vault write auth/kubernetes/role/restore-vault-snapshot -', json.dumps({
+            'bound_service_account_names': ['restore-vault-snapshot'],
+            'bound_service_account_namespaces': ['restore-vault'],
+            'audience': 'vault', 'token_policies': ['restore-vault-snapshot'],
+            'token_ttl': '10m', 'token_max_ttl': '10m',
+        }))
+    print('Lab Kubernetes auth configured with scoped ESO/snapshot permissions.')
 
 
 if __name__ == '__main__':
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--snapshots', action='store_true', help='Also configure read-only Raft snapshot authentication')
+    main(configure_snapshots=parser.parse_args().snapshots)
