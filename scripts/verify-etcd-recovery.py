@@ -5,7 +5,7 @@ Run as root on homelabrestore01-node-1 with a private input directory containing
 snapshot.db, pki.tar.gz, etcd-source.json, kube-apiserver-source.json, audit-policy.yml.
 Source JSON files contain only the image and command from the original static pods.
 Use --controllers for disconnected controller/bootstrap protocol checks.
-Never connects a kubelet or executes recovered workloads.
+Use --runtime for one real kubelet and inert Pod after stopping the recovered controllers.
 """
 import argparse
 import hashlib
@@ -39,7 +39,7 @@ def flag(command, name):
     return matches[0]
 
 
-def main(source, work, controllers=False):
+def main(source, work, controllers=False, runtime=False):
     if os.geteuid() != 0 or socket.gethostname() != 'homelabrestore01-node-1':
         raise RuntimeError('Run only as root on homelabrestore01-node-1')
     if work.exists() or Path('/run/netns', NETNS).exists():
@@ -98,6 +98,13 @@ def main(source, work, controllers=False):
                       '--with-ns', 'network:/run/netns/' + NETNS] + mounts + [image, name] + command
         process = subprocess.Popen(args, stdout=output, stderr=subprocess.STDOUT)
         processes.append((name, process, output))
+
+    def stop(name):
+        entry = next(item for item in processes if item[0] == name)
+        run(ctr + ['tasks', 'kill', '--signal', 'SIGTERM', name])
+        entry[1].wait(timeout=30)
+        entry[2].close()
+        processes.remove(entry)
 
     def client(args, ok=True):
         command = ctr + ['run', '--rm', '--read-only', '--with-ns', 'network:/run/netns/' + NETNS]
@@ -168,7 +175,7 @@ def main(source, work, controllers=False):
         api_command = api['command'] + ['--bind-address=' + address]
         launch('etcd-recovery-api', API_IMAGE, api_command,
                mount(work / 'pki', '/etc/kubernetes/pki') + mount(work / 'audit', '/var/log/kubernetes/audit', True)
-               + mount(source / 'audit-policy.yml', '/etc/kubernetes/audit/audit-policy.yml'), 768 * 1024 * 1024)
+               + mount(source / 'audit-policy.yml', '/etc/kubernetes/audit/audit-policy.yml'), 1280 * 1024 * 1024)
         for _ in range(60):
             if request('/readyz', ok=False).stdout.strip() == b'ok':
                 break
@@ -191,10 +198,13 @@ def main(source, work, controllers=False):
                     'original_pki_tls_verified': True, 'etcd_healthy': True, 'api_ready': True,
                     'object_counts': actual, 'anonymous_secret_access_denied': True,
                     'network': 'loopback only; no external routes', 'controllers_started': False}
-        if controllers:
+        if controllers or runtime:
             from recovery_controllers import verify
             evidence['controller_checks'] = verify(work, source, address, run, mount, launch, request)
             evidence['controllers_started'] = True
+            if runtime:
+                from recovery_runtime import verify as verify_runtime
+                evidence['runtime_checks'] = verify_runtime(work, run, request, stop)
             namespace()
         (work / 'verification.json').write_text(json.dumps(evidence, indent=2) + '\n')
         print(json.dumps(evidence), flush=True)
@@ -223,5 +233,6 @@ if __name__ == '__main__':
     parser.add_argument('--source', required=True, type=Path)
     parser.add_argument('--work', required=True, type=Path, help='New private directory; never an existing data directory')
     parser.add_argument('--controllers', action='store_true', help='Also verify disconnected controllers and node bootstrap protocol')
+    parser.add_argument('--runtime', action='store_true', help='Also verify a real isolated kubelet and inert Pod; implies --controllers')
     args = parser.parse_args()
-    main(args.source, args.work, controllers=args.controllers)
+    main(args.source, args.work, controllers=args.controllers, runtime=args.runtime)

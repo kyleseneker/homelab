@@ -7,7 +7,7 @@ The recovery lab uses two disposable VMs on the existing Proxmox host. It has pa
 | Resource | Lab allocation |
 |----------|----------------|
 | Terraform workspace | `kyleseneker/homelab-homelabrestore01` |
-| Control plane | VM 300, `homelabrestore01-node-1`, 2 vCPU / 3 GiB / 32 GiB disk |
+| Control plane | VM 300, `homelabrestore01-node-1`, 2 vCPU / 4 GiB / 32 GiB disk |
 | Worker | VM 301, `homelabrestore01-node-2`, 2 vCPU / 4 GiB / 32 GiB disk |
 | Node network | `vmbr1`, no physical ports; `172.26.0.0/24` |
 | Node addresses | Control plane `172.26.0.10`, worker `172.26.0.11` |
@@ -17,7 +17,7 @@ The recovery lab uses two disposable VMs on the existing Proxmox host. It has pa
 | API access | SSH tunnel through Proxmox, `127.0.0.1:16443` |
 | Storage | VM-local disks only; no production NFS mounts |
 
-The nodes share the physical host's failure domain and are not a persistent staging or HA cluster. Worker 2 in production has 16 GiB to leave room for the lab. Check current host memory before starting it; the lab adds 7 GiB of guest allocation. Lab VMs do not start automatically with Proxmox.
+The nodes share the physical host's failure domain and are not a persistent staging or HA cluster. Worker 2 in production has 16 GiB to leave room for the lab. Check current host memory before starting it; the lab adds 8 GiB of guest allocation. Lab VMs do not start automatically with Proxmox.
 
 The host's `restore-lab-network` service loads a dedicated nftables table before bringing up `vmbr1` and enabling IPv4 forwarding. Public internet access is masqueraded through `vmbr0`. Lab-initiated access to private networks, link-local addresses, the host and IPv6 forwarding is blocked. Return traffic for connections initiated by the host is allowed for administrative access. Forwarding between the existing Homelab and Management interfaces is also blocked. The playbook never flushes the host firewall or reloads the production bridge.
 
@@ -177,11 +177,15 @@ restored a production S3 etcd snapshot and its matching PKI on the lab control-p
 host using separate container storage and loopback-only networking. Snapshot
 integrity, revision bump/compaction, TLS and recovered API object counts passed.
 The optional controller check also passed leader election, Deployment/Pod creation,
-scheduler binding and automatic node-certificate approval/registration. The Node
-was a protocol fixture; no kubelet or workload execution was tested.
-The lab's own control plane and workloads were unchanged. Temporary containers,
-networking, restored data and copied/generated credentials were removed afterward.
-Real kubelet/runtime and replacement-machine recovery remain in the backlog.
+scheduler binding and automatic node-certificate approval/registration. Runtime
+mode then connected a real kubelet with that certificate, verified Node readiness
+and lease renewal, and ran one inert pause container in a separate CRI and dedicated
+cgroup inside the disconnected namespace. The control-plane VM now has 4 GiB RAM
+for this drill, managed through its existing Terraform node variables.
+Temporary containers, services, cgroups, networking, restored data and copied/generated
+credentials were removed afterward; both original lab nodes remain Ready.
+Replacement-machine recovery, production Cilium/Pod networking and application
+volumes remain in the backlog.
 
 ## Access and Teardown
 

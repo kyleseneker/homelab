@@ -168,7 +168,9 @@ The original production API address exists only on that namespace's loopback;
 there is no interface or route to either cluster or the internet. The default
 check runs only etcd/API. `--controllers` also starts the recovered controller
 manager and scheduler for a bounded bootstrap/scheduling test; neither mode
-connects a kubelet or executes recovered workloads.
+connects a kubelet or executes recovered workloads. `--runtime` additionally
+connects a real kubelet with the issued certificate and runs one inert pause Pod
+after stopping the recovered controllers.
 
 To repeat the drill:
 
@@ -187,8 +189,10 @@ To repeat the drill:
    For `--controllers`, also copy `scripts/recovery_controllers.py` beside it and
    provide `kube-controller-manager-source.json` and `kube-scheduler-source.json`
    with the same `image`/`command` structure from the original static pods.
+   For `--runtime`, also copy `scripts/recovery_runtime.py`; it requires Python
+   3.11 or newer, kubelet 1.31.4 and containerd 2.3.5 on the lab node.
 3. Ensure the lab has headroom for the temporary processes. The verifier limits
-   running etcd/API memory to 384/768 MiB and one CPU each. Controller mode adds
+   running etcd/API memory to 384/1280 MiB and one CPU each. Controller mode adds
    256/128 MiB limits and refuses to start without another 512 MiB available after
    etcd/API are ready. On the lab host, run:
 
@@ -208,12 +212,27 @@ To repeat the drill:
    protocol fixture, not a running kubelet. A single pause Pod is scheduled to
    that record and must remain unexecuted. The token is then deleted.
 
+   `--runtime` implies `--controllers`. Take a rollback snapshot of the lab VMs
+   first. After the protocol checks, the verifier stops its recovered controllers
+   and removes their fixture Pod before connecting a real kubelet. Its separate
+   containerd and kubelet use private roots and sockets; original runtime state,
+   sockets, configuration and Kubernetes credentials are masked in private mount
+   namespaces. Effective containerd socket configuration is checked before startup.
+   Native services are capped at 192/256 MiB, and the dedicated Pod cgroup at
+   128 MiB; this phase requires another 640 MiB available. The cached pause image
+   is imported offline. Only one explicitly assigned, unprivileged HostNetwork
+   Pod may run inside the disconnected network namespace. This does not exercise
+   production Cilium or ordinary Pod networking.
+
 4. Inspect the nonsensitive `verification.json` result. Commands and server logs
    stay in the private work directory. The verifier stops its own containers and
    removes its network namespace on normal completion, errors and handled
    termination. After an unhandled host/process failure, inspect named
    `etcd-recovery-*` containers and `homelab-etcd-recovery` networking before retrying;
-   do not delete unrelated lab CRI containers or CNI namespaces.
+   do not delete unrelated lab CRI containers or CNI namespaces. Runtime mode also
+   stops its transient `etcd-recovery-runtime` and `etcd-recovery-kubelet` services,
+   removes `/sys/fs/cgroup/etcd-recovery-pods`, and checks that the original lab CRI
+   socket is unchanged. Inspect these too after an interrupted drill.
 5. Preserve only needed verification evidence, then remove the temporary input
    and work directories, downloaded working copies, and generated client keys.
    Confirm the original lab and production nodes remain Ready.
@@ -227,13 +246,15 @@ To repeat the drill:
 | Recovered objects | API and etcd counts matched: 19 namespaces, 3 node records, 64 deployments and 71 Secrets |
 | Controllers | Original controller identities renewed both leader leases; Deployment produced a ReplicaSet and Pod; scheduler bound the Pod to the fixture Node |
 | Bootstrap | Bootstrap token authenticated; CSR automatically approved/signed; issued node certificate registered its Node and was denied unrelated Secret listing |
-| Isolation and cleanup | Loopback-only networking; no kubelet or workload execution; temporary containers, namespace, restored data and all copied/generated credentials removed |
+| Real kubelet/runtime | Issued node certificate connected a real kubelet; Node Ready and lease renewal verified; one inert pause container Running/Ready in a separate CRI, dedicated cgroup and verified disconnected network namespace |
+| Isolation and cleanup | Loopback-only networking; recovered controllers stopped before kubelet startup; temporary containers, services, cgroup, namespace, restored data and copied/generated credentials removed; original lab runtime socket preserved |
 
 This proves offsite datastore and API recovery using the backed-up PKI. Node
 records in the restored API are historical objects, not recovered running nodes.
-The bounded controller and bootstrap-protocol checks passed. Actual kubelet
-reconnection, replacement-machine bootstrapping, runtime/CNI networking and
-application volume recovery remain separate checks.
+The controller, bootstrap-protocol and real kubelet/runtime checks passed. The
+latter used the existing lab machine and a cached image with HostNetwork confined
+to the disconnected namespace. Replacement-machine bootstrapping, production
+Cilium/Pod networking and application volume recovery remain separate checks.
 
 ## Single Node Failure
 

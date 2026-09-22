@@ -20,7 +20,7 @@ nodes = {
     ip        = "172.26.0.10/24"
     vm_id     = 300
     cores     = 2
-    memory    = 3072
+    memory    = 4096
     disk_size = 32
   }
   homelabrestore01-node-2 = {
