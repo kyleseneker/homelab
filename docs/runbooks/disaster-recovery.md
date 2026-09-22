@@ -259,7 +259,8 @@ configuration, without fetching component configuration from production. Node
 records in the restored API are historical objects, not recovered running nodes.
 The controller, bootstrap-protocol and real kubelet/runtime checks passed. The
 latter used the existing lab machine and a cached image with HostNetwork confined
-to the disconnected namespace. Replacement-machine bootstrapping, production
+to the disconnected namespace. A [fresh-machine static control-plane boot and reboot](restore-lab.md#native-control-plane-recovery-drill)
+also passed with standalone kubelet. Normal node registration, production
 Cilium/Pod networking and application volume recovery remain separate checks.
 
 ## Single Node Failure

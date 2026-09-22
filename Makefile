@@ -216,7 +216,7 @@ aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
 
 LAB_TF_DIR := terraform/hosts/homelabrestore01
 
-.PHONY: lab-host lab-permissions lab-init lab-plan lab-infra lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
+.PHONY: lab-host lab-permissions lab-init lab-plan lab-infra lab-prepare lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
 
 lab-host: ## Configure the isolated Proxmox bridge, firewall and lab API identity
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/restore-lab-host.yml
@@ -232,6 +232,9 @@ lab-plan: ## Preview only the two disposable recovery VMs
 
 lab-infra: ## Provision the two disposable recovery VMs
 	terraform -chdir=$(LAB_TF_DIR) apply
+
+lab-prepare: ## Install lab prerequisites without initializing Kubernetes
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/homelabrestore01/hosts.yml playbooks/restore-lab-prepare.yml
 
 lab-configure: ## Bootstrap the lab without production storage or Applications
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/homelabrestore01/hosts.yml playbooks/restore-lab.yml

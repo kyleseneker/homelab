@@ -81,8 +81,10 @@ restored an offsite snapshot and matching PKI, verified revision bump/compaction
 and read matching object counts through the recovered API. Its optional controller
 check passed leader election, scheduling and automatic node-certificate issuance
 and registration. A real isolated kubelet/runtime check and a fresh lab worker
-rebuild also passed. Booting a replacement control-plane machine from the offsite
-state remains a separate acceptance check.
+rebuild also passed. A [fresh-machine static control-plane boot and reboot](../runbooks/restore-lab.md#native-control-plane-recovery-drill)
+also passed from the complete offsite bundle. That drill uses standalone kubelet
+for containment; normal node registration and production Cilium remain separate
+acceptance checks.
 
 ## Upstream Documentation
 

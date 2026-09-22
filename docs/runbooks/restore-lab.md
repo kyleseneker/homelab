@@ -131,6 +131,75 @@ This drill distinguishes rebuilding a worker from restoring its application data
 A local quiesced volume checkpoint does not prove recovery after loss of the
 Proxmox host, nor does it replace the application's verified offsite restore path.
 
+## Native Control-plane Recovery Drill
+
+Use a fresh VM 300 to verify that the offsite bundle can boot the original static
+control-plane pods with the host's kubelet and containerd. The
+`scripts/verify-native-control-plane.py` helper runs only on the lab control-plane
+hostname. It uses standalone kubelet with no API kubeconfig and disables the
+kubelet API, so restored Deployments, DaemonSets and other API workloads cannot
+execute. This is a deliberate containment overlay on the archived kubelet
+settings; normal node registration and production Cilium convergence are separate
+acceptance checks.
+
+1. Record lab node identities, PVs and application replica counts privately. Scale
+   restored applications to zero and wait for writers to exit. Shut down VM 301
+   and leave its disks untouched throughout the drill.
+2. Create a full VM 300 `vzdump --mode stop` backup in a private Proxmox directory.
+   Verify both Zstandard and VMA integrity with pipeline failure propagation.
+   VM snapshots alone do not survive Terraform deletion.
+3. Review and apply a saved Terraform destroy plan targeting only
+   `module.vm["homelabrestore01-node-1"]`, then run `make lab-permissions`.
+   Review a separate create plan with the same target: an unrestricted plan would
+   also restart the intentionally stopped worker. Apply only the reviewed plan.
+4. Verify the new SSH host key through Proxmox, update only the lab host's trust
+   entry, and run `playbooks/restore-lab-prepare.yml` with the lab inventory and
+   `--limit homelabrestore01-node-1`. This shared prerequisite play installs base
+   packages and Kubernetes tooling without running `kubeadm init`. Verify the
+   fresh machine identity and absence of old etcd and Kubernetes credentials.
+5. Before transferring recovery credentials, cache the four pinned control-plane
+   images and the pause image selected by the archived containerd configuration.
+   Install Python/PyYAML and nftables. Add a temporary Proxmox forwarding rule
+   dropping all traffic arriving from `vmbr1`, including established outbound
+   connections. Keep the worker stopped. Administrative SSH from Proxmox remains
+   available through the existing host input rules.
+6. Download a completed bundle using independent S3 credentials and run the
+   [offline preparation helper](../infrastructure/etcd-backup.md#restore).
+   Transfer its private output and both Python helpers into a root-owned 0700
+   directory on the fresh VM. Run the native helper's `install --source <input>`.
+   It installs a persistent guest firewall allowing only loopback and host SSH,
+   places the original API address on loopback, restores etcd with revision bump
+   and compaction, and boots the four static pods with the recovered PKI and
+   controller kubeconfigs. It refuses an initialized machine.
+7. Inspect the private `verification.json`: authenticated API readiness, recovered
+   object counts, exactly four running control-plane containers, the bumped etcd
+   revision and renewed controller/scheduler leases must pass. Record the machine
+   and boot IDs. Reboot the VM, run the helper's `verify` operation, and require
+   the same checks on a new boot ID. Check outbound blocks explicitly.
+8. Preserve only nonsensitive evidence. Stop the fresh VM and restore the verified
+   VM 300 rollback archive on its existing ID/storage. Restore the original SSH
+   trust after checking the restored key through Proxmox. Remove only the drill's
+   host firewall table, start VM 300 and then VM 301, and restore saved replica
+   counts. Verify lab networking/application health, production health, and a full
+   no-change Terraform plan before deleting the temporary rollback archive and
+   downloaded recovery credentials.
+
+The fresh-machine static control-plane drill passed using the completed offsite
+bundle `recovery-20260922-202350.json`:
+
+| Check | Verified result |
+|-------|-----------------|
+| Fresh machine | Terraform replaced VM 300 from template 9010; SSH host key, machine ID and system UUID differed from the original lab nodes; no `kubeadm init` or old guest state was used |
+| Native boot | Host kubelet/containerd ran exactly the four original static control-plane pods with recovered PKI and controller kubeconfigs; authenticated API ready and both controller leases renewed |
+| Datastore | Snapshot SHA-256 matched the offline drill; revision bump retained; 19 namespaces, 3 historical Node records, 64 Deployments and 72 Secrets matched |
+| Reboot | New boot ID, same recovered datastore/object counts, all four static containers running and both controller leases renewed |
+| Isolation | Persistent guest firewall and host forwarding block; public HTTPS, production worker kubelet, NAS NFS and host SSH egress probes timed out before and after reboot |
+| Lab rollback | Original VM 300 identity and both Ready nodes restored; saved replica counts, Sonarr/Prowlarr checks, Vault auto-unseal, Authentik access and cross-node networking passed; full Terraform plan had no changes; temporary recovery copies removed |
+
+The native kubelet intentionally had no API kubeconfig, and the historical Node
+records do not demonstrate fresh node registration. Normal kubelet integration,
+production Cilium convergence and offsite application-volume recovery remain open.
+
 ## Sonarr Recovery
 
 The lab manifests under `k8s/clusters/homelabrestore01/` provide the shared local-path provisioner and a Sonarr deployment using production's image and chart versions. Sonarr has a fresh local PVC, no production media mount or HTTPRoute, and restricted egress. Namespace traffic is denied by default; narrow policies allow the lab controllers and Recyclarr to reach Sonarr, and Sonarr to reach lab Prowlarr and DNS. Administrative access uses port forwarding. The production ApplicationSet does not discover this cluster.
