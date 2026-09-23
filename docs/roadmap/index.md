@@ -6,7 +6,7 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 ## Start Here
 
-**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Use it to rehearse each minor-version step, check Cilium/chart compatibility and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
+**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. The first lab step, 1.31.4 → 1.32.13, passed. Continue each minor-version step, close the admission/Gateway/runtime coverage gaps and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
 
 Continue the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery) alongside upgrade work. The lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
 

@@ -6,9 +6,8 @@
 
 ## 2.1 Upgrade the unsupported platform
 
-The cluster and provisioning configuration use Kubernetes 1.31.4. Kubernetes 1.31 reached end of life on 2025-11-11. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/1.31/).
+Production and shared image defaults use Kubernetes 1.31.4. The lab has verified the first intermediate upgrade to 1.32.13; the [current inventory and rehearsal results](../runbooks/upgrading-kubernetes.md#current-platform-and-verified-rehearsal) record its limits. Kubernetes 1.31 reached end of life on 2025-11-11. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/1.31/).
 
-- [ ] Inventory running Kubernetes, kubeadm/kubelet, containerd, Cilium, Gateway CRDs and etcd versions.
 - [ ] Select a supported destination and verify the complete compatibility matrix against primary release documentation.
 - [ ] Rehearse each intermediate minor upgrade with an isolated restore and a rollback/rebuild path.
 - [ ] Upgrade one minor at a time; retain and test compatible etcd backup/restore tooling.

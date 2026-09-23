@@ -1,0 +1,5 @@
+---
+# Explicit inputs keep a bootstrap version change from becoming an upgrade.
+k8s_upgrade_version: ""
+k8s_upgrade_package_suffix: "1.1"
+k8s_upgrade_backup_verified: false

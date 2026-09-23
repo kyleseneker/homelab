@@ -1,0 +1,138 @@
+---
+- name: Require a reviewed target and verified recovery checkpoint
+  ansible.builtin.assert:
+    that:
+      - k8s_upgrade_backup_verified | bool
+      - k8s_upgrade_version is match('^1\.[0-9]+\.[0-9]+$')
+      - groups['control_plane'] | length == 1
+    fail_msg: Verify recovery inputs and choose an exact target before upgrading this single-control-plane cluster.
+
+- name: Read the current API and kubelet versions
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf get nodes -o json
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: k8s_upgrade_nodes
+  changed_when: false
+
+- name: Set versions for this node and control plane
+  ansible.builtin.set_fact:
+    k8s_upgrade_node_version: >-
+      {{ (k8s_upgrade_nodes.stdout | from_json)['items']
+      | selectattr('metadata.name', 'eq', inventory_hostname)
+      | map(attribute='status.nodeInfo.kubeletVersion') | first | regex_replace('^v', '') }}
+    k8s_upgrade_minor: "{{ k8s_upgrade_version.split('.')[:2] | join('.') }}"
+
+- name: Read API server version
+  ansible.builtin.command: kubectl --kubeconfig=/etc/kubernetes/admin.conf version -o json
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: k8s_upgrade_api
+  changed_when: false
+
+- name: Reject skipped minors and downgrades
+  ansible.builtin.assert:
+    that:
+      - k8s_upgrade_version is version(k8s_upgrade_node_version, '>=')
+      - (k8s_upgrade_version.split('.')[1] | int) - (k8s_upgrade_node_version.split('.')[1] | int) in [0, 1]
+      - k8s_upgrade_version is version((k8s_upgrade_api.stdout | from_json).serverVersion.gitVersion | regex_replace('^v', ''), '>=')
+      - (k8s_upgrade_version.split('.')[1] | int) - ((k8s_upgrade_api.stdout | from_json).serverVersion.minor | int) in [0, 1]
+      - inventory_hostname in groups['control_plane'] or (k8s_upgrade_api.stdout | from_json).serverVersion.gitVersion == 'v' ~ k8s_upgrade_version
+
+- name: Add the target Kubernetes package signing key
+  ansible.builtin.get_url:
+    url: "https://pkgs.k8s.io/core:/stable:/v{{ k8s_upgrade_minor }}/deb/Release.key"
+    dest: "/etc/apt/keyrings/kubernetes-v{{ k8s_upgrade_minor }}.asc"
+    mode: "0644"
+
+- name: Add the target Kubernetes package repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_upgrade_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_upgrade_minor }}/deb/ /"
+    state: present
+
+- name: Install the exact target kubeadm
+  ansible.builtin.apt:
+    name: "kubeadm={{ k8s_upgrade_version }}-{{ k8s_upgrade_package_suffix }}"
+    state: present
+    update_cache: true
+    allow_change_held_packages: true
+
+- name: Hold kubeadm after installation
+  ansible.builtin.dpkg_selections:
+    name: kubeadm
+    selection: hold
+
+- name: Check the control-plane upgrade plan
+  ansible.builtin.command: kubeadm upgrade plan v{{ k8s_upgrade_version }}
+  changed_when: false
+  when: inventory_hostname in groups['control_plane']
+
+- name: Upgrade the control plane while retaining Cilium kube-proxy replacement
+  ansible.builtin.command: kubeadm upgrade apply v{{ k8s_upgrade_version }} --yes --skip-phases=addon/kube-proxy
+  changed_when: true
+  when:
+    - inventory_hostname in groups['control_plane']
+    - (k8s_upgrade_api.stdout | from_json).serverVersion.gitVersion != 'v' ~ k8s_upgrade_version
+
+- name: Drain this node through the eviction API
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf drain {{ inventory_hostname }}
+    --ignore-daemonsets --delete-emptydir-data --timeout=300s
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  changed_when: true
+
+- name: Upgrade worker kubeadm configuration
+  ansible.builtin.command: kubeadm upgrade node
+  changed_when: true
+  when: inventory_hostname in groups['workers']
+
+- name: Install the target kubelet and kubectl
+  ansible.builtin.apt:
+    name:
+      - "kubelet={{ k8s_upgrade_version }}-{{ k8s_upgrade_package_suffix }}"
+      - "kubectl={{ k8s_upgrade_version }}-{{ k8s_upgrade_package_suffix }}"
+    state: present
+    allow_change_held_packages: true
+
+- name: Hold the upgraded node packages
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Restart the upgraded kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted
+    daemon_reload: true
+
+- name: Wait for this node to report the target version and readiness
+  ansible.builtin.command: >-
+    kubectl --kubeconfig=/etc/kubernetes/admin.conf --request-timeout=10s get node {{ inventory_hostname }} -o json
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: k8s_upgrade_ready
+  changed_when: false
+  retries: 60
+  delay: 5
+  until: >-
+    k8s_upgrade_ready.rc == 0 and
+    (k8s_upgrade_ready.stdout | from_json).status.nodeInfo.kubeletVersion == 'v' ~ k8s_upgrade_version and
+    ((k8s_upgrade_ready.stdout | from_json).status.conditions | selectattr('type', 'eq', 'Ready') | map(attribute='status') | first) == 'True'
+
+- name: Verify API readiness before uncordoning
+  ansible.builtin.command: kubectl --kubeconfig=/etc/kubernetes/admin.conf get --raw=/readyz
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  changed_when: false
+
+- name: Return the upgraded node to scheduling
+  ansible.builtin.command: kubectl --kubeconfig=/etc/kubernetes/admin.conf uncordon {{ inventory_hostname }}
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  changed_when: true
+
+- name: Remove the previous minor package repository after success
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_upgrade_node_version.split('.')[:2] | join('.') }}.asc]
+      https://pkgs.k8s.io/core:/stable:/v{{ k8s_upgrade_node_version.split('.')[:2] | join('.') }}/deb/ /
+    state: absent
+  when: k8s_upgrade_minor != (k8s_upgrade_node_version.split('.')[:2] | join('.'))

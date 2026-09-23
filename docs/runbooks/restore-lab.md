@@ -45,7 +45,7 @@ Use the dedicated `lab-*` targets. The production ApplicationSet includes produc
 
 ## Verified Bootstrap
 
-Both nodes run Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-142, cloned from Packer template `9011`. A new cluster was initialized without existing ArgoCD, ESO or media-operator CRDs, application Secrets or restore namespaces. ArgoCD installed its CRDs and all 14 lab Applications converged to Synced/Healthy. Its controllers run on the control-plane node to leave worker memory for the restored applications.
+Both nodes were bootstrapped on Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-142, cloned from Packer template `9011`. They now run Kubernetes 1.32.13 after the first [staged upgrade rehearsal](upgrading-kubernetes.md#current-platform-and-verified-rehearsal). A new cluster was initialized without existing ArgoCD, ESO or media-operator CRDs, application Secrets or restore namespaces. ArgoCD installed its CRDs and all 14 lab Applications converged to Synced/Healthy. Its controllers run on the control-plane node to leave worker memory for the restored applications.
 
 Nine preserved local volumes were imported onto the fresh worker; all 5,597 regular files matched their archive hashes before application startup. Seven externally held bootstrap Secrets were imported explicitly. Generated ESO output was excluded: restored Vault auto-unsealed through KMS, accepted the new cluster's Kubernetes identities, and ESO recreated its Secret. This is a planned rebuild with preserved inputs, not a claim that credentials can be recovered without those inputs.
 

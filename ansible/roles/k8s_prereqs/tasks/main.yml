@@ -117,6 +117,24 @@
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_prereqs_version_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_prereqs_version_minor }}/deb/ /"
     state: present
 
+- name: Check whether this machine already belongs to a cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: k8s_prereqs_kubelet_identity
+
+- name: Read the initialized node's kubelet version
+  ansible.builtin.command: kubelet --version
+  register: k8s_prereqs_existing_version
+  changed_when: false
+  when: k8s_prereqs_kubelet_identity.stat.exists
+
+- name: Require the upgrade playbook for an initialized node's version change
+  ansible.builtin.assert:
+    that:
+      - k8s_prereqs_existing_version.stdout == 'Kubernetes v' ~ k8s_prereqs_version
+    fail_msg: Use k8s-upgrade.yml before updating this initialized node's bootstrap version.
+  when: k8s_prereqs_kubelet_identity.stat.exists
+
 - name: Install kubeadm, kubelet, kubectl
   ansible.builtin.apt:
     name:
@@ -125,6 +143,9 @@
       - "kubectl={{ k8s_prereqs_version }}*"
     state: present
     update_cache: true
+    # A clone may contain held packages from an older image. Only an unjoined
+    # machine can replace them here; existing nodes use k8s-upgrade.yml.
+    allow_change_held_packages: "{{ not k8s_prereqs_kubelet_identity.stat.exists }}"
 
 - name: Hold kubeadm, kubelet, kubectl at current version
   ansible.builtin.dpkg_selections:

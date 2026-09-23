@@ -23,7 +23,8 @@ if [[ "${KEEP_RENDERED:-false}" == true ]]; then
 else
   trap 'rm -rf "$work" "$schema_work"' EXIT
 fi
-kube_version="$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')"
+kube_version="${KUBERNETES_VERSION:-$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')}"
+echo "==> Validating against Kubernetes $kube_version"
 
 echo "==> Validating the lab ApplicationSet contract"
 kustomize build k8s/bootstrap/restore-lab/applicationsets > "$work/lab-appset.yml" || exit 1

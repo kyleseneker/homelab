@@ -10,7 +10,7 @@ import unittest
 
 @unittest.skipUnless(shutil.which('ansible-playbook'), 'requires ansible-core')
 class WorkerBootstrap(unittest.TestCase):
-    def exercise(self, fail_join=False):
+    def exercise(self, fail_join=False, initialization=False):
         repo = Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -22,7 +22,7 @@ from pathlib import Path
 args = sys.argv[1:]
 with open(os.environ['BOOTSTRAP_TEST_LOG'], 'a') as output:
     output.write(json.dumps([Path(sys.argv[0]).name] + args) + '\\n')
-if args[:2] == ['token', 'create']:
+if args[:2] == ['token', 'create'] or args[:1] == ['init']:
     print('kubeadm join 127.0.0.1:6443 --token abcdef.0123456789abcdef --discovery-token-ca-cert-hash sha256:fixture')
 elif args[:1] == ['join']:
     sys.exit(int(os.environ['BOOTSTRAP_TEST_FAIL']))
@@ -39,6 +39,10 @@ elif Path(sys.argv[0]).name == 'kubectl':
             import yaml
             tasks = yaml.safe_load((repo / 'ansible/roles/k8s_worker/tasks/main.yml').read_text())
             tasks[0] = {'ansible.builtin.set_fact': {'k8s_worker_kubelet_conf': {'stat': {'exists': False}}}}
+            if initialization:
+                tasks = yaml.safe_load((repo / 'ansible/roles/k8s_control_plane/tasks/main.yml').read_text())
+                tasks = [t for t in tasks if t['name'] in ['Initialize the Kubernetes control plane', 'Revoke the unused initialization token']]
+                tasks.insert(0, {'ansible.builtin.set_fact': {'k8s_control_plane_init_check': {'stat': {'exists': False}}}})
             play = [{'hosts': 'workers', 'gather_facts': False, 'become': False, 'tasks': tasks}]
             (root / 'play.yml').write_text(yaml.safe_dump(play))
             env = dict(os.environ, PATH=str(binary) + os.pathsep + os.environ['PATH'],
@@ -50,7 +54,8 @@ elif Path(sys.argv[0]).name == 'kubectl':
                                     env=env, capture_output=True, text=True, timeout=90)
             calls = [json.loads(line) for line in (root / 'calls.jsonl').read_text().splitlines()]
             self.assertEqual(result.returncode == 0, not fail_join, result.stdout + result.stderr)
-            self.assertIn(['kubeadm', 'token', 'create', '--ttl', '15m', '--print-join-command'], calls)
+            if not initialization:
+                self.assertIn(['kubeadm', 'token', 'create', '--ttl', '15m', '--print-join-command'], calls)
             self.assertIn(['kubeadm', 'token', 'delete', 'abcdef.0123456789abcdef'], calls)
             self.assertNotIn('abcdef.0123456789abcdef', result.stdout + result.stderr)
 
@@ -59,3 +64,6 @@ elif Path(sys.argv[0]).name == 'kubectl':
 
     def test_failed_join_still_revokes_token(self):
         self.exercise(fail_join=True)
+
+    def test_initialization_token_is_redacted_and_revoked(self):
+        self.exercise(initialization=True)

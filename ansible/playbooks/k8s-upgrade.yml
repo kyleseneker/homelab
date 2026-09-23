@@ -1,0 +1,16 @@
+---
+- name: Upgrade control planes before workers
+  hosts: control_plane
+  serial: 1
+  any_errors_fatal: true
+  become: true
+  roles:
+    - k8s_upgrade
+
+- name: Upgrade workers one at a time
+  hosts: workers
+  serial: 1
+  any_errors_fatal: true
+  become: true
+  roles:
+    - k8s_upgrade

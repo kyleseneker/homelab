@@ -77,7 +77,15 @@ jobs:
             k8s/
 
   render:
+    name: render (${{ matrix.cluster }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - cluster: production
+            version_file: ansible/group_vars/all/vars.yml
+          - cluster: restore-lab
+            version_file: ansible/inventory/homelabrestore01/group_vars/k8s_cluster.yml
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
@@ -86,6 +94,15 @@ jobs:
           kustomize-version: "5.8.1"
       - uses: bmuschko/setup-kubeconform@e5d264ec1eafe2314e750c429a9da7639dd5a003 # v1
       - run: pip install pyyaml
+      - name: Select the cluster schema and Helm capability version
+        env:
+          VERSION_FILE: ${{ matrix.version_file }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import os, yaml
+          with open(os.environ['VERSION_FILE']) as source:
+              print('KUBERNETES_VERSION=' + yaml.safe_load(source)['k8s_control_plane_version'])
+          PY
       - run: ./scripts/render-manifests.sh
 
   trivy:
@@ -117,6 +134,8 @@ jobs:
         run: ansible-playbook --syntax-check -i localhost, packer/k8s-node/playbook.yml
       - name: Test worker-only bootstrap and token cleanup
         run: python3 -m unittest discover -s tests -p test_worker_bootstrap.py
+      - name: Test staged upgrade guards and API restart recovery
+        run: python3 -m unittest discover -s tests -p test_k8s_upgrade.py
 
   scripts:
     runs-on: ubuntu-latest
