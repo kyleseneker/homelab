@@ -12,6 +12,8 @@ homelab/
 ├── .lab/                            # Ignored lab key, kubeconfig and tunnel socket
 ├── scripts/
 │   ├── restore-lab-access.sh         # Isolated lab SSH and API access
+│   ├── bootstrap-restore-lab.py      # Guarded lab ArgoCD bootstrap
+│   ├── restore-lab-data.py           # Private lab rebuild inputs
 │   ├── vault-init.sh                # One-time Vault init + ESO K8s auth setup
 │   ├── render-manifests.sh          # Render every ApplicationSet manifest offline
 │   ├── check-alert-metrics.sh       # Verify alert selectors match live Prometheus series
@@ -71,13 +73,13 @@ homelab/
 │   ├── bootstrap/                   # Applied with kubectl, NOT reconciled by ArgoCD
 │   │   ├── argocd/                  # ArgoCD installation
 │   │   │   ├── kustomization.yml    # Kustomize overlay
-│   │   │   ├── namespace.yml        # argocd namespace
-│   │   │   ├── ingress.yml          # ArgoCD HTTPRoute
-│   │   │   └── custom-ca.yml        # Homelab CA trust for OIDC
+│   │   │   └── ingress.yml          # ArgoCD HTTPRoute
+│   │   ├── restore-lab/             # Lab ArgoCD and ApplicationSet overlays
 │   │   └── applicationsets/         # ApplicationSet definitions
 │   │       ├── kustomization.yml    # Kustomize wrapper
 │   │       └── cluster-apps.yml     # Git File Generator ApplicationSet
 │   ├── components/
+│   │   ├── argocd/                  # Shared pinned ArgoCD installation
 │   │   ├── gateway-api/             # Gateway API CRDs
 │   │   └── kyverno-policies/        # Shared ClusterPolicy manifests
 │   └── clusters/<cluster>/

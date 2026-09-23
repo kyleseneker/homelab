@@ -58,11 +58,13 @@ Use these dedicated targets for `homelabrestore01`; do not pass the lab to the p
 
 | Command | Description |
 |---------|-------------|
-| `make lab-host` | Configure the isolated bridge, firewall, template and scoped API identity |
+| `make lab-host` | Configure the isolated bridge, firewall and scoped API identity |
 | `make lab-init` | Initialize the separate Terraform workspace |
 | `make lab-plan` | Preview lab VM changes |
 | `make lab-infra` | Provision the two lab VMs |
 | `make lab-configure` | Bootstrap Kubernetes without production storage or applications |
+| `make lab-argocd` | Install the lab ArgoCD overlay with endpoint/node guards |
+| `make lab-apps` | Apply isolation policies and reconcile only lab Applications |
 | `make lab-tunnel` | Forward the lab API to localhost:16443 through Proxmox |
 | `make lab-kubeconfig` | Fetch credentials into `.lab/kubeconfig` |
 | `make lab-status` | Check lab node readiness |

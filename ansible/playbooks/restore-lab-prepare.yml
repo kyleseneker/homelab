@@ -1,5 +1,5 @@
 ---
-- name: Prepare disposable recovery nodes from the cloud-image template
+- name: Prepare disposable recovery nodes
   hosts: k8s_cluster
   gather_facts: false
   become: true

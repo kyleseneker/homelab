@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: restore-lab
+  namespace: argocd
+spec:
+  description: Isolated recovery lab applications
+  sourceRepos:
+    - https://github.com/kyleseneker/homelab.git
+    - https://bjw-s-labs.github.io/helm-charts
+    - https://charts.external-secrets.io
+    - ghcr.io/kyleseneker/media-operator
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: restore-*
+    - server: https://kubernetes.default.svc
+      namespace: local-path-storage
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: storage.k8s.io
+      kind: StorageClass

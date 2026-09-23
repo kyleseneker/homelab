@@ -1,13 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: argocd
-
 resources:
-  - namespace.yml
-  - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.0/manifests/install.yaml
+  - ../../components/argocd
   - ingress.yml
-
 patches:
   - target:
       kind: ConfigMap
@@ -18,8 +14,7 @@ patches:
       metadata:
         name: argocd-cmd-params-cm
       data:
-        server.insecure: "true"
-        controller.diff.server.side: "true"
+        server.insecure: 'true'
   - target:
       kind: ConfigMap
       name: argocd-cm
@@ -30,23 +25,6 @@ patches:
         name: argocd-cm
       data:
         url: https://argocd.homelab.local
-        resource.exclusions: |
-          - apiGroups:
-            - cilium.io
-            kinds:
-            - CiliumIdentity
-            - CiliumEndpoint
-            clusters:
-            - "*"
-        resource.customizations.ignoreDifferences.apps_Deployment: |
-          jqPathExpressions:
-            - .spec.template.spec.hostUsers
-        resource.customizations.ignoreDifferences.batch_CronJob: |
-          jqPathExpressions:
-            - .spec.jobTemplate.spec.template.spec.hostUsers
-        resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
-          jqPathExpressions:
-            - .spec.conversion
         oidc.config: |
           name: Authentik
           issuer: https://auth.homelab.local/application/o/argocd/
@@ -133,22 +111,6 @@ patches:
         trigger.on-health-degraded: |
           - when: app.status.health.status == 'Degraded'
             send: [app-health-degraded]
-  - target:
-      kind: Deployment
-      name: argocd-repo-server
-    patch: |
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: argocd-repo-server
-      spec:
-        template:
-          spec:
-            initContainers:
-              - name: copyutil
-                command: ["sh", "-c"]
-                args:
-                  - /bin/cp --update=none /usr/local/bin/argocd /var/run/argocd/argocd && /bin/ln -sf /var/run/argocd/argocd /var/run/argocd/argocd-cmp-server
   - target:
       kind: Deployment
       name: argocd-server

@@ -1,7 +1,7 @@
 proxmox_endpoint = "https://192.168.10.2:8006"
 target_node      = "homelabpve01"
 
-clone_template_id = 9010
+clone_template_id = 9011
 ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOmaW09xCiEsBZzDCfoQMEDXOgDEle6VXfuVwmGkrcNR homelabrestore01"
 
 bridge     = "vmbr1"
@@ -9,8 +9,8 @@ gateway    = "172.26.0.1"
 nameserver = "1.1.1.1"
 username   = "labadmin"
 
-# The cloud image does not contain the guest agent before Ansible runs.
-agent_enabled = false
+# The verified Packer template includes the guest agent.
+agent_enabled = true
 onboot        = false
 tags          = ["restore-lab", "k8s"]
 

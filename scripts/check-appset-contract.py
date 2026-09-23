@@ -62,8 +62,8 @@ def validate(data, directory, root=ROOT):
     return errors
 
 
-def main():
-    appset = ROOT / "k8s/bootstrap/applicationsets/cluster-apps.yml"
+def main(appset=None):
+    appset = Path(appset) if appset else ROOT / "k8s/bootstrap/applicationsets/cluster-apps.yml"
     src = appset.read_text()
     refs = set()
     for action in re.findall(r"\{\{(.*?)\}\}", src, re.S):
@@ -71,7 +71,11 @@ def main():
     errors = [f"ApplicationSet reads unknown field {key}" for key in refs - (COMMON | HELM | GIT | OPTIONAL | {"path"})]
     names = {}
     # Use the actual generator globs so this validates exactly what Argo discovers.
-    document = yaml.safe_load(src)
+    documents = [d for d in yaml.safe_load_all(src) if d and d.get("kind") == "ApplicationSet"]
+    if len(documents) != 1:
+        print("Expected exactly one ApplicationSet", file=sys.stderr)
+        return True
+    document = documents[0]
     files = set()
     for generator in document["spec"]["generators"]:
         for pattern in generator["git"]["files"]:
@@ -97,4 +101,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else None))

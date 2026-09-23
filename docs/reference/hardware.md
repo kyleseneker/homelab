@@ -85,10 +85,10 @@ Production allocation: 10 vCPU / 48 GB of 14C / 64 GB physical.
 
 | Node | Role | vCPU | RAM | Network |
 |------|------|------|-----|---------|
-| homelabrestore01-node-1 | Control plane | 2 | 3 GB | Internal `vmbr1` |
+| homelabrestore01-node-1 | Control plane | 2 | 4 GB | Internal `vmbr1` |
 | homelabrestore01-node-2 | Worker | 2 | 4 GB | Internal `vmbr1` |
 
-With the lab running, total VM allocation is 14 vCPU / 55 GB. The lab uses independent VM disks and a separate Terraform workspace; its VMs do not start automatically with the host. Template 9010 is the stopped cloud image used by the existing lab; stopped Packer template 9011 has passed clone/reboot acceptance and is ready for the clean lab rebuild. See the [restore lab runbook](../runbooks/restore-lab.md) for access, isolation and teardown.
+With the lab running, total VM allocation is 14 vCPU / 56 GB. The lab uses independent VM disks and a separate Terraform workspace; its VMs do not start automatically with the host. Both nodes use verified Packer template 9011. ArgoCD runs on the lab control plane; restored applications use worker-local disks. See the [restore lab runbook](../runbooks/restore-lab.md) for access, isolation and teardown.
 
 ## Networking
 

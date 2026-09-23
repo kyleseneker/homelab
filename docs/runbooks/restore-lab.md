@@ -1,6 +1,6 @@
 # Isolated Restore Lab
 
-The recovery lab uses two disposable VMs on the existing Proxmox host. It has passed a Sonarr database restore from offsite S3. The [recovery backlog](../roadmap/phase-1-foundations.md#12-verify-recovery) tracks the remaining controller, credential and platform recovery checks.
+The recovery lab uses two disposable VMs on the existing Proxmox host. It runs from a verified Packer template and has passed clean ArgoCD bootstrap, application-data preservation and offsite restore drills. The [recovery backlog](../roadmap/phase-1-foundations.md#12-verify-recovery) tracks the remaining controller, credential and platform recovery checks.
 
 ## Boundaries
 
@@ -35,18 +35,32 @@ This network boundary still permits public internet access. Before starting a re
     ```
 
 3. Create the separate HCP Terraform workspace shown above. Use the existing on-premises agent pool and Terraform version, and set its working directory to `terraform/hosts/homelabrestore01`. Do not connect it to automatic VCS applies.
-4. Configure the cluster in `terraform/hosts/homelabrestore01/terraform.tfvars`, using the adjacent example as a guide. Set `ssh_public_key` from `.lab/id_ed25519.pub`. As with production, `main.tf` wires the VM module and `terraform.tfvars` owns the host, template, network and node allocations. Set the workspace's sensitive `proxmox_api_token` variable from `/root/.restore-lab-api-token` on Proxmox. Keep the token out of Git and command output. This identity has VM administration rights on IDs 300/301, clone rights on template 9010, allocation rights on `local-lvm`, node audit rights, and use of `vmbr1`. It has no rights on production VM IDs.
-5. Run `make lab-init`, then `make lab-plan`. A first deployment must create only VMs 300 and 301. Run `make lab-infra` after reviewing that plan.
-6. Run `make lab-configure`. Template 9010 is a lab-only copy of the older Ubuntu cloud image in template 9000, with its NIC on `vmbr1`. The lab token cannot use the production bridge. The guest agent is disabled in the lab VM configuration so Terraform can finish before the prerequisite packages are installed. This playbook explicitly runs the base and Kubernetes prerequisite roles. The fresh Packer template is verified separately below; the existing recovery nodes still use the cloud image.
-7. Run `make lab-tunnel`, `make lab-kubeconfig`, and `make lab-status`.
+4. Configure the cluster in `terraform/hosts/homelabrestore01/terraform.tfvars`, using the adjacent example as a guide. Set `ssh_public_key` from `.lab/id_ed25519.pub`. As with production, `main.tf` wires the VM module and `terraform.tfvars` owns the host, template, network and node allocations. Set the workspace's sensitive `proxmox_api_token` variable from `/root/.restore-lab-api-token` on Proxmox. Keep the token out of Git and command output. This identity has VM administration rights on IDs 300/301, clone rights on template 9011, allocation rights on `local-lvm`, node audit rights, and use of `vmbr1`. It has no rights on production VM IDs.
+5. Build and verify Packer template `9011` if it is not already available; see [template acceptance](#packer-template-acceptance). Its ID must match Terraform's `clone_template_id` and Ansible's `pve_restore_lab_template_id`. Run `make lab-permissions` after building the template.
+6. Run `make lab-init`, then `make lab-plan`. A first deployment must create only VMs 300 and 301. Run `make lab-infra` after reviewing that plan.
+7. Run `make lab-configure` to initialize Kubernetes and join the worker using the shared roles. The Packer image already includes the guest agent and prerequisites; Ansible checks convergence.
+8. Run `make lab-tunnel`, `make lab-kubeconfig`, and `make lab-status`.
 
-Use the dedicated `lab-*` targets. The production ApplicationSet includes production storage, endpoints and credentials and must never be bootstrapped into this lab. The lab does not bootstrap ArgoCD or production applications automatically.
+Use the dedicated `lab-*` targets. The production ApplicationSet includes production storage, endpoints and credentials and must never be bootstrapped into this lab. `make lab-argocd` installs the shared ArgoCD base without production SSO, ingress or notification settings. `make lab-apps` applies the lab isolation policies before creating its restricted ApplicationSet. Both commands verify the lab kubeconfig endpoint and exact node identities.
 
 ## Verified Bootstrap
 
-Both nodes run Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-139. They returned Ready after the package-required reboot, and a second bootstrap run completed with zero changes. All five production/lab machine IDs and SSH host keys are distinct. CoreDNS and public HTTPS work from a lab pod; the private endpoints below are blocked. The lab API token returns permission denied for production VMs 200–202 and template 9000. Production remains at three Ready nodes and 53 Synced/Healthy Applications.
+Both nodes run Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-142, cloned from Packer template `9011`. A new cluster was initialized without existing ArgoCD, ESO or media-operator CRDs, application Secrets or restore namespaces. ArgoCD installed its CRDs and all 14 lab Applications converged to Synced/Healthy. Its controllers run on the control-plane node to leave worker memory for the restored applications.
 
-The raw cloud-image bootstrap, isolated Sonarr database restore, and fresh Packer template acceptance are verified. Replacing the existing lab nodes with the Packer template and bootstrapping ArgoCD/controller-driven Applications remain open.
+Nine preserved local volumes were imported onto the fresh worker; all 5,597 regular files matched their archive hashes before application startup. Seven externally held bootstrap Secrets were imported explicitly. Generated ESO output was excluded: restored Vault auto-unsealed through KMS, accepted the new cluster's Kubernetes identities, and ESO recreated its Secret. This is a planned rebuild with preserved inputs, not a claim that credentials can be recovered without those inputs.
+
+Sonarr records and 54 episode-file entries, the Prowlarr fixture connection, Authentik database users, qBittorrent login/category/history data, and media-operator Ready/Synced conditions passed. Both nodes and all 14 Applications recovered after node reboots. ESO initially reported provider errors while networking and Vault restarted; a fresh reconciliation verified SecretStore recovery and Secret recreation. Cross-node Service traffic, DNS, public HTTPS and the private-network boundary passed. Production remains at three Ready nodes and 53 Synced/Healthy Applications.
+
+### Repeat a Clean Rebuild
+
+1. Record current health and confirm the lab kubeconfig. Preserve application inputs with `python3 scripts/restore-lab-data.py export --work-dir .lab/rebuild`. Use a new private directory. The helper pauses lab ArgoCD reconciliation and its application controller, stops application deployments and refuses to copy while writers remain. It excludes generated ESO Secrets. If cancelling the rebuild, use its `resume` action to restore saved application/controller replicas and reconciliation annotations.
+2. Take full stopped-VM `vzdump` archives for IDs 300/301 on Proxmox and verify both with `zstd -t` and `vma verify`. Keep them until the new cluster passes acceptance; a Terraform replacement removes VM disks and their snapshots.
+3. Review and apply a lab-only destroy plan, run `make lab-permissions` to replace deleted VM ACLs, then review and apply the create plan. Require exactly IDs 300/301, template `9011`, and `vmbr1`. Verify the new SSH host keys through Proxmox before updating local trust.
+4. Run `make lab-configure lab-tunnel lab-kubeconfig lab-status`. Confirm fresh machine identities and absence of application CRDs/Secrets before `make lab-argocd`.
+5. Import with `python3 scripts/restore-lab-data.py import --work-dir .lab/rebuild`. It requires an empty worker storage directory, verifies every file hash, then restores local PV/PVC bindings and bootstrap Secrets. If extraction completed but verification was interrupted, `--resume` verifies the existing files without overwriting them.
+6. Run `make lab-apps`; wait for all 14 Applications to become Synced/Healthy. Verify application records, Vault/ESO authentication, network isolation and node reboots. Confirm Terraform has no further changes and production remains healthy before removing temporary migration and rollback copies.
+
+The shared ArgoCD installation lives in `k8s/components/argocd`; production and lab bootstrap overlays add their own settings. The lab ApplicationSet reuses the shared generator/template with only its source path and project changed. Bootstrap credentials and application data remain explicit recovery inputs; they are never committed to Git.
 
 ## Packer Template Acceptance
 
@@ -67,7 +81,7 @@ Two temporary full clones were booted with independent cloud-init addresses and 
 | Isolation | Public HTTPS works; TCP access to production API, NAS, host SSH and Management endpoints is blocked |
 | Existing systems | Three production and two original lab nodes Ready; all 53 production Applications Synced/Healthy |
 
-The acceptance clones and temporary build credentials were removed; stopped template `9011` is retained. The existing lab still selects `9010`. Adopt `9011` during the clean ArgoCD rebuild, preserving the current restored application data before replacing its nodes. This template test does not claim that application bootstrap has passed.
+The acceptance clones and temporary build credentials were removed; stopped template `9011` is retained. Both current lab nodes now select `9011`; their clean Kubernetes and ArgoCD bootstrap is covered above.
 
 ## Acceptance Checks
 
@@ -79,6 +93,10 @@ Before transferring backup data:
 - Public HTTPS and DNS work from the lab; connections to production API `192.168.10.50:6443`, NAS `192.168.1.158:2049`, host SSH `172.26.0.1:22` and Management `192.168.99.2:22` are blocked.
 - No NFS mounts or production credentials exist on the lab nodes.
 - All production nodes and applications remain healthy.
+
+## Pausing the GitOps-managed Lab
+
+Before any drill below scales or replaces application workloads, pause ArgoCD's application controller as well as reconciliation. An annotation alone can race with a reconciliation already in progress. `scripts/restore-lab-data.py export --work-dir .lab/<new-drill-directory>` saves replicas and annotations, stops the lab controller, then stops application writers and creates a private data checkpoint. Its `resume` action restores that saved state. Keep the controller stopped until restored data and isolation policies are ready; otherwise self-healing can restart workloads during recovery. The controller pause applies only to the lab.
 
 ## Worker Replacement Drill
 

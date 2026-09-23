@@ -25,6 +25,10 @@ else
 fi
 kube_version="$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')"
 
+echo "==> Validating the lab ApplicationSet contract"
+kustomize build k8s/bootstrap/restore-lab/applicationsets > "$work/lab-appset.yml" || exit 1
+python3 scripts/check-appset-contract.py "$work/lab-appset.yml" || exit 1
+
 echo "==> Rendering apps from config.yml"
 while IFS= read -r cfg; do
   dir="$(dirname "$cfg")"

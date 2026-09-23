@@ -6,9 +6,9 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 ## Start Here
 
-**Next software project: finish clean lab bootstrap.** The [isolated lab](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill) now has a verified fresh-machine and offsite application-recovery path. Rebuild it from verified Packer template `9011`, then bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets. Use the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery); the lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
+**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Use it to rehearse each minor-version step, check Cilium/chart compatibility and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
 
-**Next, upgrade Kubernetes to a supported release.** Use that lab to rehearse each minor-version step, check Cilium/chart compatibility and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
+Continue the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery) alongside upgrade work. The lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
 
 **Hardware is a separate workstream.** The [NAS mirror](phase-1-foundations.md#11-add-nas-drive-redundancy), [10G links](phase-3-network.md#31-enable-10g-networking) and [second MS-01](phase-4-compute-and-storage.md#41-add-a-second-compute-host) remain planned purchases. None is a prerequisite for starting the software lab on available capacity. Keep their design and migration tasks in their respective phases and pick them up when the hardware is available.
 

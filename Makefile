@@ -216,7 +216,7 @@ aws-apply: ## Provision AWS KMS key and IAM user for Vault auto-unseal
 
 LAB_TF_DIR := terraform/hosts/homelabrestore01
 
-.PHONY: lab-host lab-permissions lab-init lab-plan lab-infra lab-prepare lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-destroy
+.PHONY: lab-host lab-permissions lab-init lab-plan lab-infra lab-prepare lab-configure lab-tunnel lab-disconnect lab-kubeconfig lab-ssh lab-status lab-argocd lab-apps lab-destroy
 
 lab-host: ## Configure the isolated Proxmox bridge, firewall and lab API identity
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/restore-lab-host.yml
@@ -238,6 +238,12 @@ lab-prepare: ## Install lab prerequisites without initializing Kubernetes
 
 lab-configure: ## Bootstrap the lab without production storage or Applications
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/homelabrestore01/hosts.yml playbooks/restore-lab.yml
+
+lab-argocd: ## Install ArgoCD in the verified isolated lab
+	python3 scripts/bootstrap-restore-lab.py argocd
+
+lab-apps: ## Let ArgoCD reconcile only the isolated lab Applications
+	python3 scripts/bootstrap-restore-lab.py applications
 
 lab-tunnel: ## Open the lab API tunnel on localhost:16443
 	./scripts/restore-lab-access.sh tunnel
