@@ -269,8 +269,10 @@ to the disconnected namespace. A [fresh-machine static control-plane boot and re
 also passed with standalone kubelet.
 The subsequent [two-node recovery drill](restore-lab.md#node-and-cilium-recovery-drill)
 verified normal node registration and production Cilium networking after
-quarantining executable records in the recovered copy. Offsite application-volume
-recovery remains separate.
+quarantining executable records in the recovered copy. The [combined drill](restore-lab.md#combined-machine-and-application-recovery-drill)
+then restored offsite qBittorrent configuration/resume state on fresh machines and
+passed application/network checks through both node reboots. Payload/VPN and
+remaining application recovery stay separate.
 
 ## Single Node Failure
 

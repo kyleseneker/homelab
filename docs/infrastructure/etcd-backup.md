@@ -86,8 +86,9 @@ also passed from the complete offsite bundle. That drill uses standalone kubelet
 for containment. The subsequent [two-node recovery drill](../runbooks/restore-lab.md#node-and-cilium-recovery-drill)
 quarantined executable records in the recovered copy, registered fresh nodes, and
 verified the production Cilium configuration, DNS, cross-node Services, policy
-enforcement and a lab L2 Gateway through node reboots. Application-volume recovery
-remains a separate check.
+enforcement and a lab L2 Gateway through node reboots. The [combined drill](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill)
+also restored an offsite qBittorrent volume onto those fresh machines and verified
+application state after both node reboots. Other application coverage remains open.
 
 ## Upstream Documentation
 

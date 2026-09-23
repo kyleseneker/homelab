@@ -689,5 +689,6 @@ comparisons, zero-peer checks and blocked public/API/NAS probes, then passed aga
 after restart. The temporary namespace/PVC, recovered etcd/API state, downloaded
 copies and repository password were removed after verification. This extends the
 volume restore evidence to independent credentials and fresh storage. It does not
-prove download-payload recovery or combine this application restore with another
-fresh control-plane replacement in the same drill.
+prove download-payload recovery. The subsequent [combined drill](restore-lab.md#combined-machine-and-application-recovery-drill)
+repeated this application recovery after replacing both lab VMs, recovering the
+offsite control plane and converging Cilium, then passed both node reboots.

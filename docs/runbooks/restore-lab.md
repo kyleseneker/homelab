@@ -295,9 +295,74 @@ The two-node drill passed from the same completed offsite bundle:
 | Convergence | Shared worker join role completed with zero changes after recovery |
 | Lab rollback | Both original node identities and PV specifications restored; saved replicas and Sonarr/Prowlarr, Vault, Authentik and network checks passed; full Terraform plan had no changes; production remained healthy |
 
-Offsite application-volume recovery remains separate from this network drill.
+The [combined drill below](#combined-machine-and-application-recovery-drill) adds
+offsite application-volume recovery to these fresh machines.
 The Gateway check covers the isolated bridge; it does not establish physical
 network failover, multi-control-plane availability or application recovery.
+
+## Combined Machine and Application Recovery Drill
+
+Run the node/Cilium recovery and independent offsite-volume restore in the same
+fresh two-node environment. This closes the gap between testing replacement
+machines and testing an application on an already running lab. The bounded
+application fixture is qBittorrent configuration/resume state; its media payload
+and VPN remain separate recovery requirements.
+
+1. Follow the [two-node recovery procedure](#node-and-cilium-recovery-drill),
+   including verified rollback archives for both original VMs. Before blocking
+   routed egress, also cache the committed local-path provisioner/helper and
+   qBittorrent images on both fresh nodes through CRI.
+2. Recover the complete offsite etcd bundle, quarantine executable records, join
+   both fresh nodes and converge production Cilium/CoreDNS. Verify the network
+   fixture before installing application storage. Keep the Proxmox egress block
+   in place throughout application import and testing.
+3. Read only `backups/velero-repo-credentials` from this recovered API into a
+   protected process buffer. Use `export_kopia_password` from the existing
+   `verify-etcd-recovery.py` helper to validate its identity and write the private
+   password file. Use it with the HCP S3 export and
+   [read-only Kopia helper](backup-and-restore.md#independent-repository-credential-recovery).
+   Neither the repository password nor application files come from the original
+   lab VM archives or the live production cluster.
+4. Apply the shared lab local-path provisioner to the recovered cluster. Derive a
+   separate namespace and PVC from the committed qBittorrent lab manifests, pin
+   the test to the fresh worker and keep the namespace's deny-all policy. Do not
+   reuse historical PV records or their paths. Verify the new PVC/PV identity,
+   worker affinity and empty directory before importing.
+5. Prepare the downloaded volume using the existing no-transfer qBittorrent
+   procedure: fresh authentication, stopped resume records, disabled hooks and
+   discovery, loopback torrent interface, and no media/VPN mount. Import into the
+   new PVC; compare every prepared file hash before starting the application.
+6. Verify source torrent/category/path/history metadata, fresh login,
+   unauthenticated rejection and zero peers. Repeat after application restart,
+   then reboot each fresh VM separately. Require the same fresh node identities
+   and PVC binding, a new boot ID, working DNS/Service/Gateway traffic and the same
+   application checks after each reboot. Public, API and NAS probes from the
+   application must stay blocked.
+7. Save only nonsensitive evidence. Restore both original VM archives using the
+   node recovery rollback procedure; verify original node/PV identities,
+   applications, networking, Terraform convergence and production health before
+   removing temporary rollback archives, source copies and generated credentials.
+
+The combined drill passed using etcd set `recovery-20260922-202350.json` and
+qBittorrent Kopia snapshot `a3aa2dbe8202b4ba7d09b12c87bfa50b`:
+
+| Check | Verified result |
+|-------|-----------------|
+| Machines | Both original VMs replaced from template 9010; new machine IDs, system UUIDs and node registrations |
+| Control plane/network | Offsite static-pod recovery, workload quarantine, normal node join and production Cilium configuration; DNS, cross-node Service and lab Gateway passed |
+| Credentials/data | S3 credentials from HCP; Kopia password from this recovered API; application volume downloaded read-only from S3 without production/MinIO/NAS reads |
+| New storage | Shared provisioner created a new worker-local PVC/PV; target was empty; all 34 prepared-file hashes matched before startup |
+| Application | qBittorrent 5.2.3 retained source torrent/category/path/history metadata; fresh login passed and anonymous access was rejected; zero peers |
+| Restart/reboots | Checks passed after application restart and each node reboot; fresh node identities and the new PVC binding persisted; Cilium/Envoy healthy |
+| Isolation | Only expected infrastructure and fixtures ran; public, recovered API, production worker and NAS probes from the application timed out |
+| Lab rollback | Original node/PV identities and application data checks passed; original networking restored; Terraform reported no changes and production remained healthy; temporary drill copies removed |
+
+The measured interval from the start of the VM destruction apply to first
+successful restored-application API verification was **10 minutes 2 seconds**.
+It excludes rollback archive creation, the initial etcd download, later reboot
+acceptance and restoring the original lab. It is a measured drill phase, not an
+agreed production recovery-time target. No download payload, VPN bootstrap,
+physical-host rebuild or other application recovery is established by this fixture.
 
 ## Sonarr Recovery
 
@@ -426,7 +491,9 @@ Temporary containers, services, cgroups, networking, restored data and copied/ge
 credentials were removed afterward; both original lab nodes remain Ready.
 The [native control-plane](#native-control-plane-recovery-drill) and
 [node/Cilium recovery](#node-and-cilium-recovery-drill) drills extend these checks
-to replacement VMs. Offsite application-volume recovery remains in the backlog. The separate
+to replacement VMs. The [combined drill](#combined-machine-and-application-recovery-drill)
+then restored an offsite qBittorrent volume on those fresh machines; other
+application/integration coverage remains in the backlog. The separate
 [worker replacement drill](#worker-replacement-drill) verifies a fresh lab worker
 and restoration of its locally checkpointed volumes.
 

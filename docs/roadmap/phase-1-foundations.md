@@ -27,18 +27,17 @@ UPS/NUT, MinIO + offsite S3, etcd snapshots, and local SQLite-to-NFS backup brid
 
 ## 1.2 Verify Recovery
 
-Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining checks below. The runbooks retain the verified Sonarr offsite restore and controller-reconciliation procedures and results; this backlog tracks unfinished recovery work.
+Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining checks below. The runbooks retain the verified machine/network, offsite application-restore and controller-reconciliation procedures and results; this backlog tracks unfinished recovery work.
 
 - [ ] Build a fresh Packer template, replace the lab cloud-image template, and repeat identity, prerequisite and reboot checks
 - [ ] Bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets; confirm dependencies converge
 - [ ] Set acceptable data-loss and recovery-time targets for the [inventoried data](../architecture/backups.md#recovery-coverage); close the documented non-database and unprotected-volume gaps
 - [ ] Compare daily local dumps and weekly offsite schedules with those targets; adjust the schedule where needed
-- [ ] Combine the verified [independent offsite volume restore](../runbooks/backup-and-restore.md#independent-fresh-volume-repeat) with the [fresh control-plane and network recovery](../runbooks/restore-lab.md#node-and-cilium-recovery-drill) in one drill; extend application coverage beyond the verified fixtures
 - [ ] Recover production tracker definitions/credentials, download-client/notification connections and Vault/ESO bootstrap; validate the remaining Bazarr/Prowlarr profile IDs and verify production authentication
 - [ ] Rebuild Gluetun/VPN access and verify download-payload recovery before resuming qBittorrent transfers
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior
 - [ ] Verify Authentik ordinary password/MFA login, client application login, proxy outposts and worker behavior after the verified emergency-login/OIDC restore
-- [ ] Repeat S3 recovery using credentials available outside the production cluster, with MinIO and the original NAS unavailable; extend the verified Sonarr database procedure to the remaining required data
+- [ ] Extend the verified [independent and combined S3 recovery](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill) to remaining required application data, keeping production, MinIO and NAS data access unavailable
 - [ ] Keep an independently protected bootstrap credential copy and account/MFA recovery outside the homelab and HCP; HCP-based KMS/S3 retrieval is verified
 - [ ] Review backup credentials and S3 retention/deletion controls; versioning and Terraform deletion guards alone do not provide an immutable copy
 

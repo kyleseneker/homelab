@@ -6,7 +6,7 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 ## Start Here
 
-**First software project: build an isolated rebuild and restore lab.** Use disposable VMs, a separate kubeconfig, distinct credentials and separate writable storage paths. Build from the Packer template, bootstrap Kubernetes and ArgoCD, then restore one application from offsite backup and verify login and retained state. The deliverable is a repeatable procedure with measured recovery time. Start with [recovery verification](phase-1-foundations.md#12-verify-recovery); this lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
+**Next software project: finish clean lab bootstrap.** The [isolated lab](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill) now has a verified fresh-machine and offsite application-recovery path. Replace its cloud-image template with a fresh Packer build, then bootstrap ArgoCD and its Applications without preexisting CRDs or Secrets. Use the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery); the lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
 
 **Next, upgrade Kubernetes to a supported release.** Use that lab to rehearse each minor-version step, check Cilium/chart compatibility and prove a fresh node join before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
 
