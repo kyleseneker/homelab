@@ -6,10 +6,10 @@
 
 ## 2.1 Upgrade the unsupported platform
 
-Production and shared image defaults use Kubernetes 1.31.4. The lab has verified the first intermediate upgrade to 1.32.13; the [current inventory and rehearsal results](../runbooks/upgrading-kubernetes.md#current-platform-and-verified-rehearsal) record its limits. Kubernetes 1.31 reached end of life on 2025-11-11. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/1.31/).
+Production and shared image defaults use Kubernetes 1.31.4. The lab runs 1.33.13; the [current inventory and rehearsal results](../runbooks/upgrading-kubernetes.md#current-platform-and-verified-rehearsal) record its limits. Kubernetes 1.31 reached end of life on 2025-11-11. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/1.31/).
 
 - [ ] Select a supported destination and verify the complete compatibility matrix against primary release documentation.
-- [ ] Rehearse each intermediate minor upgrade with an isolated restore and a rollback/rebuild path.
+- [ ] Rehearse the remaining minor upgrades, starting with 1.33 → 1.34, with an isolated restore and a rollback/rebuild path.
 - [ ] Upgrade one minor at a time; retain and test compatible etcd backup/restore tooling.
 - [ ] Update Packer, Ansible, CLI pins, schema target and runbooks together. Demonstrate both an upgrade and a fresh node join.
 

@@ -2,24 +2,24 @@
 
 The bootstrap roles initialize nodes; changing their version variables does **not** perform a cluster upgrade. The separate `k8s-upgrade.yml` playbook performs an explicit, staged upgrade. Use a maintenance window and upgrade the control plane, then each worker. Update the repository pins and rebuild the Packer template only after the running cluster passes verification.
 
-Production and the shared image defaults still use Kubernetes **1.31.4**, an unsupported release. The lab has completed the first intermediate step to **1.32.13**, which is also end-of-life and is not the destination. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
+Production and the shared image defaults still use Kubernetes **1.31.4**, an unsupported release. The lab has completed intermediate steps through **1.33.13**, which is also end-of-life and is not the destination. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
 
 ## Current platform and verified rehearsal
 
 | Component | Production | Restore lab |
 |---|---|---|
-| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.31.4 | 1.32.13 |
+| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.31.4 | 1.33.13 |
 | containerd | 2.2.2 | 2.3.5 |
 | Cilium | 1.19.1 | 1.19.1 |
 | Gateway API CRDs | 1.4.0 | 1.4.0; Gateway controller disabled |
 | etcd | 3.5.15 | 3.5.24 |
 | Kyverno | 1.17.1, chart 3.7.1 | Not installed |
 
-The lab passed a 1.31.4 → 1.32.13 control-plane-first upgrade through the shared playbook. Both nodes report the target version and Ready, kube-proxy remains absent, and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic, Pod DNS, public HTTPS, private-network isolation, Sonarr records, Prowlarr integration, Authentik queries and Vault/ESO Secret recreation passed. Matching etcd 3.5.24 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
+The lab passed the 1.31.4 → 1.32.13 → 1.33.13 control-plane-first upgrades through the shared playbook. Both nodes report the target version and Ready, kube-proxy remains absent, and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic, Pod DNS, public HTTPS, private-network isolation, Sonarr records, Prowlarr integration, Authentik queries and Vault/ESO Secret recreation passed at both steps. On 1.33.13, qBittorrent also retained its torrent identities, categories and transfer history; authentication checks passed and transfers remained stopped with zero peers. Matching etcd 3.5.24 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
 
-[Cilium's pinned 1.19.1 compatibility table](https://raw.githubusercontent.com/cilium/cilium/v1.19.1/Documentation/network/kubernetes/compatibility.rst) includes Kubernetes 1.32. The [1.32 upgrade guide](https://v1-32.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) supports this single-minor transition. Production API deprecation metrics showed no requests to APIs marked for removal in 1.32; this observation does not cover unexercised clients.
+[Cilium's pinned 1.19.1 compatibility table](https://raw.githubusercontent.com/cilium/cilium/v1.19.1/Documentation/network/kubernetes/compatibility.rst) includes Kubernetes 1.32 and 1.33. The [1.33 upgrade guide](https://v1-33.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) covers the latest single-minor transition. Lab and production API deprecation metrics showed no requests to APIs marked for removal in 1.33; this observation does not cover unexercised clients.
 
-The lab currently omits production admission webhooks, Gateway routing, GPU and NFS workloads, and uses a different containerd patch line. Rehearse those integrations before production maintenance. A temporary clone of template `9011` installed 1.32.13 through the shared prerequisite role, joined through the worker role, rebooted Ready, and passed cross-node networking and isolation checks. Its short-lived join token and the unused original initialization token were revoked; the test node was removed. The bootstrap roles now revoke initialization tokens and reject package-version changes on initialized nodes. Template `9011` still contains the 1.31.4 baseline; build and verify a destination-version image before completing the migration. The next intermediate minor is 1.33, followed by 1.34 and a supported destination chosen against the complete controller compatibility matrix.
+The lab currently omits production admission webhooks, Gateway routing, GPU and NFS workloads, and uses a different containerd patch line. Rehearse those integrations before production maintenance. A temporary clone of template `9011` installed 1.33.13 through the shared prerequisite role, joined through the worker role, rebooted Ready, and passed cross-node networking and isolation checks. Its short-lived join token was revoked; the test node was removed. No bootstrap tokens remain in the lab. The bootstrap roles now revoke initialization tokens and reject package-version changes on initialized nodes. Template `9011` still contains the 1.31.4 baseline; build and verify a destination-version image before completing the migration. The next minor to rehearse is 1.34; choose the supported destination against the complete controller compatibility matrix.
 
 CI renders the manifests with both production and lab Kubernetes capabilities and validates both schema targets, reading their versions from Ansible inventory. Production package, Packer, CLI and etcd-backup pins remain at the production baseline until its own tested cutover.
 
@@ -33,13 +33,13 @@ CI renders the manifests with both production and lab Kubernetes capabilities an
 
 ## Run the shared upgrade playbook
 
-After selecting an exact patch and verifying a recovery checkpoint, use the separate upgrade playbook. For the isolated lab's first step:
+After selecting an exact patch and verifying a recovery checkpoint, use the separate upgrade playbook. For example, the lab's verified 1.32.13 → 1.33.13 step used:
 
 ```bash
 cd ansible
 ansible-playbook --vault-password-file ../.vault-password \
   -i inventory/homelabrestore01/hosts.yml playbooks/k8s-upgrade.yml \
-  -e k8s_upgrade_version=1.32.13 \
+  -e k8s_upgrade_version=1.33.13 \
   -e '{"k8s_upgrade_backup_verified": true}'
 ```
 
@@ -54,8 +54,8 @@ A lab-only upgrade changes the lab inventory's version overrides after verificat
 Select an exact patch and Debian package version for the **next** minor. Run this on the control plane first and later on each worker. Replace the values below before using them:
 
 ```bash
-TARGET_MINOR='1.32'
-TARGET_VERSION='1.32.REPLACE_ME'
+TARGET_MINOR='1.33'
+TARGET_VERSION='1.33.REPLACE_ME'
 TARGET_PACKAGE="${TARGET_VERSION}-1.1"
 
 sudo install -d -m 0755 /etc/apt/keyrings

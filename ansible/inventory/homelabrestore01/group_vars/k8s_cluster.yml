@@ -1,5 +1,5 @@
 ---
-k8s_control_plane_version: "1.32.13"
+k8s_control_plane_version: "1.33.13"
 k8s_prereqs_version: "{{ k8s_control_plane_version }}"
 k8s_prereqs_version_minor: "{{ k8s_control_plane_version.split('.')[:2] | join('.') }}"
 ansible_user: labadmin
