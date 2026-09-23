@@ -7,12 +7,16 @@ autoinstall:
   identity:
     hostname: k8s-node-template
     username: media
-    # mkpasswd --method=SHA-512 --rounds=4096 "packer"
-    # Build-only password. The final Packer playbook locks it before cloning.
-    password: "$6$rounds=4096$saltsalt$ZpiWnz4eiOpVbgfzMUB.VGnqFmQp7haJP8P7xmOGKYeCWxvyJmZFl4D5EJ0hzh1sMkGOXmyJH3cXZjRXdKqj1"
+    password: "!"
   ssh:
     install-server: true
-    allow-pw: true
+    allow-pw: false
+    authorized-keys:
+      - ${jsonencode(ssh_public_key)}
+%{ if build_network != null ~}
+  network:
+    ${indent(4, yamlencode(yamldecode(build_network)))}
+%{ endif ~}
   storage:
     layout:
       name: direct
@@ -22,8 +26,14 @@ autoinstall:
   late-commands:
     # Set shared IDs before the first SSH login; usermod cannot change the UID
     # of the active account used by the Ansible provisioner.
-    - "curtin in-target --target=/target -- groupmod -g ${media_gid} media"
-    - "curtin in-target --target=/target -- usermod -u ${media_uid} -g ${media_gid} media"
+    - >-
+      curtin in-target --target=/target -- sh -c
+      'if getent group media >/dev/null; then groupmod -g ${media_gid} media;
+      else groupadd -g ${media_gid} media; fi'
+    - >-
+      curtin in-target --target=/target -- sh -c
+      'if id media >/dev/null 2>&1; then usermod -u ${media_uid} -g ${media_gid} media;
+      else useradd -m -u ${media_uid} -g ${media_gid} -s /bin/bash media; fi'
     - "curtin in-target --target=/target -- chown -R ${media_uid}:${media_gid} /home/media"
     - "echo 'media ALL=(ALL) NOPASSWD:ALL' > /target/etc/sudoers.d/media"
     - "chmod 440 /target/etc/sudoers.d/media"

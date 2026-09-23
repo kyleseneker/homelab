@@ -2,6 +2,10 @@
 - name: Build and sanitize the Kubernetes node template
   hosts: all
   become: true
+  pre_tasks:
+    - name: Wait for first-boot initialization before provisioning
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
   roles:
     - base
     - k8s_prereqs
@@ -29,7 +33,7 @@
         mode: "0644"
         validate: /usr/sbin/sshd -t -f %s
 
-    - name: Lock the build-only media password
+    - name: Keep the media password locked
       ansible.builtin.user:
         name: media
         password: '!'

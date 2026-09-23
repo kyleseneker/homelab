@@ -9,6 +9,7 @@ crash.log
 # Packer
 *.auto.pkrvars.hcl
 packer_cache/
+/packer/k8s-node/downloaded_iso_path/
 
 # Ansible
 *.retry

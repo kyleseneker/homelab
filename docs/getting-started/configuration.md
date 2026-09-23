@@ -18,7 +18,16 @@ cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.au
 | `proxmox_api_token_id` | Proxmox API token ID | *(required)* |
 | `proxmox_api_token_secret` | Proxmox API token secret | *(required)* |
 | `proxmox_node` | Proxmox node to build the template on | *(required)* |
-| `template_id` | VM ID for the resulting template | `9000` |
+| `template_id` | Unused VM ID for the resulting template | `9000` |
+| `template_name` | Resulting template name | `k8s-node-template` |
+| `network_bridge` | Build and template network bridge | `vmbr0` |
+| `build_network` | Optional Netplan YAML string for installer networking | `null` (DHCP) |
+| `ssh_public_key` | Build SSH public key, removed before cloning | *(required)* |
+| `ssh_private_key_file` | Local path to matching build private key | *(required)* |
+| `ssh_bastion_host` | Optional bastion for isolated build networks | Empty |
+| `ssh_bastion_username` | Bastion SSH user | Empty |
+| `ssh_bastion_private_key_file` | Local path to bastion private key | Empty |
+| `iso_file` | Optional pre-uploaded, independently checksum-verified Proxmox ISO volume | Empty |
 | `iso_url` | Ubuntu 24.04 server ISO URL | Ubuntu 24.04.2 LTS |
 | `iso_checksum` | ISO checksum (file URL for automatic verification) | Ubuntu SHA256SUMS |
 | `iso_storage_pool` | Proxmox storage pool for the ISO | `local` |
@@ -30,7 +39,11 @@ cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.au
 | `media_gid` | GID for the media group | `988` |
 
 !!! note
-    The `proxmox_api_token_id` and `proxmox_api_token_secret` are the same credentials used by Terraform. The `template_id` must match the `clone_template_id` variable in `terraform/hosts/<cluster>/variables.tf`.
+    Use a build token authorized to administer the selected template VM, upload and remove seed ISOs (`Datastore.AllocateTemplate` and `Datastore.Allocate` on the ISO storage), allocate its disk, audit the node, and use the selected bridge. The Terraform clone token alone does not necessarily have these permissions. After validating the new template, set `clone_template_id` in the cluster's Terraform configuration to its ID.
+
+The installer configuration is attached as a temporary `cidata` ISO. Packer needs `xorriso`, `mkisofs`, or macOS `hdiutil` locally; no HTTP server or inbound installer network access is required. The installer accepts only the supplied SSH key. The final playbook removes that key, installer network configuration, cloud-init state, and machine/SSH host identities before conversion to a template. Clone access comes from Terraform's cloud-init SSH key.
+
+The adjacent `restore-lab.pkrvars.hcl.example` provides the lab bridge, installer address, and bastion settings; keep its private copy and credentials under ignored `.lab/`. For an isolated bridge without DHCP, provide `build_network` as a Netplan YAML string and configure the SSH bastion. Build on an unused VM ID; keep the previous template until the replacement passes clone and reboot checks.
 
 ## Terraform
 

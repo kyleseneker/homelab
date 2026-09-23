@@ -39,7 +39,7 @@ Configure Packer variables:
 cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.auto.pkrvars.hcl
 ```
 
-Edit `packer/k8s-node/k8s-node.auto.pkrvars.hcl` with your Proxmox API credentials, node name, ISO URL, and storage pools. See the [Configuration](configuration.md#packer) page for details.
+Edit `packer/k8s-node/k8s-node.auto.pkrvars.hcl` with your Proxmox API credentials, node name, ISO URL, storage pools, and build SSH public key/private key path. Choose an unused template ID. See the [Configuration](configuration.md#packer) page for details.
 
 Build the template:
 

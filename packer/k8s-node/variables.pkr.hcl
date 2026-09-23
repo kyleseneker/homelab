@@ -78,3 +78,59 @@ variable "media_gid" {
   default     = 988
   description = "GID for the shared media group"
 }
+
+variable "template_name" {
+  type        = string
+  default     = "k8s-node-template"
+  description = "Name for the resulting template"
+}
+
+variable "network_bridge" {
+  type        = string
+  default     = "vmbr0"
+  description = "Bridge used during the build and on the resulting template"
+}
+
+variable "build_network" {
+  type        = string
+  default     = null
+  description = "Optional Netplan YAML for the installer; null uses DHCP. Removed before cloning."
+}
+
+variable "ssh_public_key" {
+  type        = string
+  description = "Build SSH public key; removed before cloning"
+  validation {
+    condition     = can(regex("^ssh-(ed25519|rsa) ", var.ssh_public_key))
+    error_message = "Provide an OpenSSH ed25519 or RSA public key."
+  }
+}
+
+variable "ssh_private_key_file" {
+  type        = string
+  description = "Local path to the matching build SSH private key"
+}
+
+variable "ssh_bastion_host" {
+  type        = string
+  default     = ""
+  description = "Optional SSH bastion to reach the build VM"
+}
+
+variable "ssh_bastion_username" {
+  type        = string
+  default     = ""
+  description = "SSH user on the optional bastion"
+}
+
+variable "ssh_bastion_private_key_file" {
+  type        = string
+  default     = ""
+  description = "Local private key path for the optional bastion"
+}
+
+variable "iso_file" {
+  type        = string
+  default     = ""
+  description = "Optional pre-uploaded, independently checksum-verified Proxmox ISO volume; skips URL download/upload"
+}

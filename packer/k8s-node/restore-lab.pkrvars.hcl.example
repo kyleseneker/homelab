@@ -1,0 +1,26 @@
+# Copy to a private .pkrvars.hcl file and pass with packer build -var-file=...
+# Supply API credentials and build SSH keys separately, as in the main example.
+proxmox_url  = "https://192.168.10.2:8006/api2/json"
+proxmox_node = "homelabpve01"
+
+# Use an unused ID; retain the previous template until clone acceptance passes.
+template_id    = 9011
+template_name  = "restore-lab-packer-template"
+network_bridge = "vmbr1"
+
+ssh_bastion_host             = "192.168.10.2"
+ssh_bastion_username         = "root"
+ssh_bastion_private_key_file = "/absolute/path/to/proxmox-admin-key"
+
+build_network = <<-YAML
+version: 2
+ethernets:
+  ens18:
+    dhcp4: false
+    addresses: [172.26.0.12/24]
+    routes:
+      - to: default
+        via: 172.26.0.1
+    nameservers:
+      addresses: [1.1.1.1, 8.8.8.8]
+YAML

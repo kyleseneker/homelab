@@ -37,7 +37,7 @@ This network boundary still permits public internet access. Before starting a re
 3. Create the separate HCP Terraform workspace shown above. Use the existing on-premises agent pool and Terraform version, and set its working directory to `terraform/hosts/homelabrestore01`. Do not connect it to automatic VCS applies.
 4. Configure the cluster in `terraform/hosts/homelabrestore01/terraform.tfvars`, using the adjacent example as a guide. Set `ssh_public_key` from `.lab/id_ed25519.pub`. As with production, `main.tf` wires the VM module and `terraform.tfvars` owns the host, template, network and node allocations. Set the workspace's sensitive `proxmox_api_token` variable from `/root/.restore-lab-api-token` on Proxmox. Keep the token out of Git and command output. This identity has VM administration rights on IDs 300/301, clone rights on template 9010, allocation rights on `local-lvm`, node audit rights, and use of `vmbr1`. It has no rights on production VM IDs.
 5. Run `make lab-init`, then `make lab-plan`. A first deployment must create only VMs 300 and 301. Run `make lab-infra` after reviewing that plan.
-6. Run `make lab-configure`. Template 9010 is a lab-only copy of the older Ubuntu cloud image in template 9000, with its NIC on `vmbr1`. The lab token cannot use the production bridge. The guest agent is disabled in the lab VM configuration so Terraform can finish before the prerequisite packages are installed. This playbook explicitly runs the base and Kubernetes prerequisite roles. This does **not** complete the fresh Packer-image acceptance test.
+6. Run `make lab-configure`. Template 9010 is a lab-only copy of the older Ubuntu cloud image in template 9000, with its NIC on `vmbr1`. The lab token cannot use the production bridge. The guest agent is disabled in the lab VM configuration so Terraform can finish before the prerequisite packages are installed. This playbook explicitly runs the base and Kubernetes prerequisite roles. The fresh Packer template is verified separately below; the existing recovery nodes still use the cloud image.
 7. Run `make lab-tunnel`, `make lab-kubeconfig`, and `make lab-status`.
 
 Use the dedicated `lab-*` targets. The production ApplicationSet includes production storage, endpoints and credentials and must never be bootstrapped into this lab. The lab does not bootstrap ArgoCD or production applications automatically.
@@ -46,7 +46,28 @@ Use the dedicated `lab-*` targets. The production ApplicationSet includes produc
 
 Both nodes run Kubernetes 1.31.4 with Cilium 1.19.1, containerd 2.3.5 and kernel 6.8.0-139. They returned Ready after the package-required reboot, and a second bootstrap run completed with zero changes. All five production/lab machine IDs and SSH host keys are distinct. CoreDNS and public HTTPS work from a lab pod; the private endpoints below are blocked. The lab API token returns permission denied for production VMs 200–202 and template 9000. Production remains at three Ready nodes and 53 Synced/Healthy Applications.
 
-The raw cloud-image bootstrap and isolated Sonarr database restore are verified. The fresh Packer build and ArgoCD/controller-driven application bootstrap remain separate acceptance checks.
+The raw cloud-image bootstrap, isolated Sonarr database restore, and fresh Packer template acceptance are verified. Replacing the existing lab nodes with the Packer template and bootstrapping ArgoCD/controller-driven Applications remain open.
+
+## Packer Template Acceptance
+
+Template `9011` (`restore-lab-packer-template`) was built from the checksum-verified Ubuntu 24.04.2 installer using the shared Packer configuration and Ansible roles. It uses `vmbr1`; template `9000`, cloud-image template `9010`, and the existing recovery nodes were preserved.
+
+Use `packer/k8s-node/restore-lab.pkrvars.hcl.example` for the isolated network and bastion settings, together with the [Packer configuration](../getting-started/configuration.md#packer). Keep the actual variable file and a dedicated build key under `.lab/`. Select an unused template ID and verify the ISO checksum before using a pre-uploaded `iso_file`. Build credentials require VM administration on that ID, node audit, bridge use, disk allocation, and ISO upload/removal permissions. Revoke temporary build credentials after acceptance.
+
+The installer receives its configuration on a temporary seed ISO. The build uses key-only SSH, establishes the shared media UID/GID before first login, waits for cloud-init, and provisions the existing base, Kubernetes, NFS and iGPU roles. Cleanup removes installer settings, the build key, machine identity and SSH host keys. The generated seed ISO is removed when Packer finishes.
+
+Two temporary full clones were booted with independent cloud-init addresses and the lab administrator key, then rebooted:
+
+| Check | Verified result |
+|---|---|
+| Prerequisites | Kubernetes 1.31.4, containerd 2.3.5, kernel 6.8.0-142; guest agent active, swap disabled, systemd cgroups enabled, required kernel modules load |
+| Identity | Distinct machine IDs, system UUIDs and SSH host keys; machine IDs also differ from all five existing production/lab nodes; identities remain stable across reboot |
+| Access and cleanup | Assigned cloud-init addresses work; installer network override and disabled marker absent; build key rejected; media UID/GID 977/988; password and root SSH login disabled |
+| Cluster state | No inherited kubeadm credentials, cluster PKI or etcd member data |
+| Isolation | Public HTTPS works; TCP access to production API, NAS, host SSH and Management endpoints is blocked |
+| Existing systems | Three production and two original lab nodes Ready; all 53 production Applications Synced/Healthy |
+
+The acceptance clones and temporary build credentials were removed; stopped template `9011` is retained. The existing lab still selects `9010`. Adopt `9011` during the clean ArgoCD rebuild, preserving the current restored application data before replacing its nodes. This template test does not claim that application bootstrap has passed.
 
 ## Acceptance Checks
 
