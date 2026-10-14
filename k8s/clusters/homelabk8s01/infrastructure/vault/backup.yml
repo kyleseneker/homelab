@@ -99,7 +99,7 @@ spec:
                   mountPath: /tmp
           containers:
             - name: upload
-              image: amazon/aws-cli:2.36.19
+              image: amazon/aws-cli:2.38.1
               command:
                 - sh
                 - -ec
