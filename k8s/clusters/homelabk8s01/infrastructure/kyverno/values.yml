@@ -3,7 +3,12 @@ config:
 webhookLabels:
   app.kubernetes.io/managed-by: argocd
 admissionController:
-  replicas: 1
+  # The fail-closed webhook needs a replica during every drain; three is Kyverno's HA minimum.
+  replicas: 3
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: null
+    maxUnavailable: 1
   resources:
     requests:
       cpu: 100m
