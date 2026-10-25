@@ -1,0 +1,11 @@
+appName: media-operator-pvr
+namespace: arr
+sourceType: helm
+chartRepo: ghcr.io/kyleseneker/media-operator
+chartName: media-operator-pvr
+chartVersion: "0.35.0"
+createNamespace: false
+hasResources: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true

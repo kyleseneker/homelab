@@ -13,7 +13,7 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/instance: restore-media-operator
+              app.kubernetes.io/instance: restore-media-operator-pvr
       ports:
         - protocol: TCP
           port: 8989
@@ -26,7 +26,7 @@ metadata:
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/instance: restore-media-operator
+      app.kubernetes.io/instance: restore-media-operator-pvr
   egress:
     - toEntities:
         - kube-apiserver

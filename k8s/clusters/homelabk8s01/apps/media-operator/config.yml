@@ -1,11 +1,7 @@
 appName: media-operator
 namespace: arr
-sourceType: helm
-chartRepo: ghcr.io/kyleseneker/media-operator
-chartName: media-operator-pvr
-chartVersion: "0.35.0"
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/apps/media-operator
 createNamespace: false
-hasResources: true
 syncOptions:
   - ServerSideApply=true
-  - ServerSideDiff=true

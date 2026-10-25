@@ -431,7 +431,7 @@ To repeat after the database restore:
 
 1. Create `restore-sonarr-api-key` in `restore-sonarr` with key `api-key` matching the lab Sonarr API key. Supply its value through a private file or process input, not shell arguments or terminal output.
 2. Create `/config/restore-media/tv` inside Sonarr's local PVC, owned by 977:988. This empty directory substitutes for a media root; it contains no recovered media.
-3. Apply the lab `media-operator` resource Kustomization, then render/apply its pinned Helm chart with CRDs included. Use release `restore-media-operator`, namespace `restore-sonarr`, and the committed lab values. Every Kubernetes command must specify `.lab/kubeconfig`.
+3. Apply the lab `media-operator-pvr` resource Kustomization, then render/apply its pinned Helm chart with CRDs included. Use release `restore-media-operator-pvr`, namespace `restore-sonarr`, and the committed lab values. Every Kubernetes command must specify `.lab/kubeconfig`.
 4. Wait for the SonarrConfig CRD to become Established and the operator Deployment to become Ready, then apply the lab `media-config` Kustomization.
 5. Inspect both Ready and Synced conditions, their observed generation, and the actual Sonarr API settings. A successful Deployment alone does not demonstrate reconciliation.
 6. Change a managed setting through the lab API and remove only the lab root-folder API entry. Within the one-minute reconciliation interval, verify the setting and entry are restored. Compare series/episode identities with the source dump and confirm Sonarr still cannot reach public HTTPS, either Kubernetes API, or NAS NFS.

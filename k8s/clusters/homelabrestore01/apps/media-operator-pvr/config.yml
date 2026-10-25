@@ -1,4 +1,4 @@
-appName: restore-media-operator
+appName: restore-media-operator-pvr
 namespace: restore-sonarr
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/media-operator

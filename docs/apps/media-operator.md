@@ -4,7 +4,7 @@ Seven operators reconcile eight media application configurations from Git. They 
 
 | ArgoCD app | Chart | Custom resources |
 |------------|-------|------------------|
-| `media-operator` | `media-operator-pvr` | SonarrConfig, RadarrConfig |
+| `media-operator-pvr` | `media-operator-pvr` | SonarrConfig, RadarrConfig |
 | `media-operator-indexers` | `media-operator-indexers` | ProwlarrConfig |
 | `media-operator-downloads` | `media-operator-downloads` | QBittorrentConfig |
 | `media-operator-mediaservers` | `media-operator-mediaservers` | JellyfinConfig |
@@ -12,7 +12,7 @@ Seven operators reconcile eight media application configurations from Git. They 
 | `media-operator-subtitles` | `media-operator-subtitles` | BazarrConfig |
 | `media-operator-transcode` | `media-operator-transcode` | TdarrConfig |
 
-Charts come from `ghcr.io/kyleseneker/media-operator`; each `config.yml` pins its version. All watch `arr`, with metrics and ServiceMonitors enabled. The API group is `media-operator.dev/v1alpha1`. Custom resources live under `apps/arr/media-config/` and deploy as the `arr-media-config` Application.
+Charts come from `ghcr.io/kyleseneker/media-operator`; each `config.yml` pins its version. All watch `arr`, with metrics and ServiceMonitors enabled. The API group is `media-operator.dev/v1alpha1`. Custom resources live under `apps/arr/media-config/` and deploy as the `arr-media-config` Application. The `media-operator` Application holds the fleet-wide PrometheusRule (`MediaOperatorConfigNotSynced`, `MediaOperatorDriftNeverSettles`), which covers all seven operators.
 
 ## Ownership and reconciliation
 
