@@ -85,7 +85,7 @@ data:
 
     - Watch CVE feeds for images in the cluster (CVSS >= 9.0: alert immediately)
     - Review Helm chart changelogs before Renovate proposes updates
-    - Track K8s deprecations affecting v1.31.4
+    - Track K8s deprecations affecting v1.32.13
     - Post weekly intel brief to #ops (Fridays 5 PM)
 
   security-SKILL.md: |

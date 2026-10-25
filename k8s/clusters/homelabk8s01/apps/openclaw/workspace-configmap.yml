@@ -91,7 +91,7 @@ data:
 
     ## Cluster
     - **Name:** homelabk8s01
-    - **K8s:** 1.31.4 (kubeadm), 1 control plane + 2 workers
+    - **K8s:** 1.32.13 (kubeadm), 1 control plane + 2 workers
     - **CNI:** Cilium 1.19.1 (Gateway API + L2 announcements)
     - **Storage:** NFS from NAS at 192.168.1.158 (storageClass: nfs-client)
 
@@ -100,7 +100,7 @@ data:
     - Branch: main (protected — never push directly)
     - PRs: branch from main as `openclaw/<description>`
     - Commits: conventional, single line, no body, no Co-Authored-By
-    - Validate: `kubeconform -strict -kubernetes-version 1.31.4`
+    - Validate: `kubeconform -strict -kubernetes-version 1.32.13`
 
     ## Monitoring
     - Prometheus: http://kube-prometheus-stack-prometheus.monitoring.svc:9090

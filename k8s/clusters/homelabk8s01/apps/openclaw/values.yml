@@ -24,8 +24,8 @@ controllers:
           - |
             set -eu
             # Verify the pinned kubectl artifact before making it executable.
-            wget -qO /tools/kubectl https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl
-            wget -qO /tools/kubectl.sha256 https://dl.k8s.io/release/v1.31.4/bin/linux/amd64/kubectl.sha256
+            wget -qO /tools/kubectl https://dl.k8s.io/release/v1.32.13/bin/linux/amd64/kubectl
+            wget -qO /tools/kubectl.sha256 https://dl.k8s.io/release/v1.32.13/bin/linux/amd64/kubectl.sha256
             printf '%s  /tools/kubectl\n' "$(cat /tools/kubectl.sha256)" | sha256sum -c -
             chmod +x /tools/kubectl
             wget -qO /tools/kubeconform-linux-amd64.tar.gz https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz

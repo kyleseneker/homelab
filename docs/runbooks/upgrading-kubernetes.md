@@ -2,17 +2,17 @@
 
 The bootstrap roles initialize nodes; changing their version variables does **not** perform a cluster upgrade. The separate `k8s-upgrade.yml` playbook performs an explicit, staged upgrade. Use a maintenance window and upgrade the control plane, then each worker. Update the repository pins and rebuild the Packer template only after the running cluster passes verification.
 
-Production and the shared image defaults still use Kubernetes **1.31.4**, an unsupported release. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
+Production and the shared image defaults use Kubernetes **1.32.13**, which is also end-of-life. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
 
 ## Current platform and verified rehearsal
 
 | Component | Production | Restore lab |
 |---|---|---|
-| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.31.4 | 1.36.5 |
+| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.32.13 | 1.36.5 |
 | containerd | 2.2.2 | 2.3.5 |
 | Cilium | 1.19.1 | 1.20.4 |
 | Gateway API CRDs | 1.4.0 | 1.4.0; Gateway controller disabled |
-| etcd | 3.5.15 | 3.6.8 |
+| etcd | 3.5.24 | 3.6.8 |
 | Kyverno | 1.17.1, chart 3.7.1 | Not installed |
 
 The lab passed the 1.31.4 → 1.32.13 → 1.33.13 control-plane-first upgrades through the shared playbook. Both nodes report the target version and Ready, kube-proxy remains absent, and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic, Pod DNS, public HTTPS, private-network isolation, Sonarr records, Prowlarr integration, Authentik queries and Vault/ESO Secret recreation passed at both steps. On 1.33.13, qBittorrent also retained its torrent identities, categories and transfer history; authentication checks passed and transfers remained stopped with zero peers. Matching etcd 3.5.24 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
@@ -30,6 +30,8 @@ The lab then upgraded Cilium 1.19.1 → 1.19.10 → 1.20.4 through [the Cilium p
 The lab currently omits production admission webhooks, Gateway routing, GPU and NFS workloads, and uses a different containerd patch line. Rehearse those integrations before production maintenance. A temporary clone of template `9011` installed 1.33.13 through the shared prerequisite role, joined through the worker role, rebooted Ready, and passed cross-node networking and isolation checks. Its short-lived join token was revoked; the test node was removed. No bootstrap tokens remain in the lab. The bootstrap roles now revoke initialization tokens and reject package-version changes on initialized nodes. Template `9011` still contains the 1.31.4 baseline; build and verify a destination-version image before completing the migration. The next minor to rehearse is 1.37. Cilium 1.20 lists Kubernetes 1.33 through 1.36, so that step first needs a Cilium release tested with 1.37.
 
 CI renders the manifests with both production and lab Kubernetes capabilities and validates both schema targets, reading their versions from Ansible inventory. Production package, Packer, CLI and etcd-backup pins remain at the production baseline until its own tested cutover.
+
+Production completed 1.31.4 → 1.32.13 through the same playbook after a fresh off-host recovery set and a verified stopped backup of the control-plane VM. Three single-replica PDBs with `minAvailable: 1` (authentik-server, the VPA recommender and the Prometheus operator) would have blocked every drain; they now use `maxUnavailable: 1` like the other repository PDBs. Draining node-2 moved the single-replica Kyverno, whose fail-closed webhook refused new pods in other namespaces until it was ready on node-3. After the control-plane step, the Cilium 1.19.1 agent on node-2 logged `BUG: Unexpected failure to delete backends` and kept a deleted CoreDNS backend for the cluster DNS Service, so about half of its DNS lookups failed and authentik-server never became ready. Restarting that agent rebuilt the correct backends, and the worker play then finished. At 1.32.13 all three nodes are Ready, etcd 3.5.24 is healthy, all 54 Applications are Synced/Healthy, the Gateway serves its 19 routes, the GPU node exposes its devices to Jellyfin and Tdarr, and all 13 NFS claims are bound. The drain also exposed that the pinned MinIO image can no longer be pulled from quay.io; MinIO runs only where the image is cached.
 
 ## Upgrade Cilium
 
@@ -59,6 +61,8 @@ helm upgrade cilium cilium --repo https://helm.cilium.io --version <target> \
 
 - Confirm the live versions with `kubectl get nodes -o wide` and `kubectl version`; do not infer them from Git.
 - Verify a recent off-host etcd snapshot, `/etc/kubernetes/pki` backup, and application data backup can be restored. A completed Velero backup alone does not establish this. Follow [Backup and Restore](backup-and-restore.md).
+- Confirm no PodDisruptionBudget reports zero allowed disruptions, and note single-replica admission webhooks with `failurePolicy: Fail` on the nodes to be drained.
+- After the control-plane step, confirm every Cilium agent's backends for the cluster DNS Service match the `kube-dns` endpoints (`cilium-dbg service list`). Restart an agent that kept a deleted backend.
 - Before the 1.34 step, raise etcd to 3.5.32 or later; the [etcd 3.6 upgrade guide](https://etcd.io/docs/v3.6/upgrades/upgrade_3_6/) requires it before kubeadm 1.34 moves etcd to 3.6. Update the etcd backup tooling to 3.6 `etcdutl` with it.
 - Before the 1.35 step, confirm every node uses cgroup v2: `stat -fc %T /sys/fs/cgroup` reports `cgroup2fs`. kubeadm 1.35 fails preflight on cgroup v1.
 - Check the installed Cilium release's compatibility with both the current and next Kubernetes minor, plus Gateway API CRDs, containerd, Kyverno, and other admission webhooks. Use the [Cilium compatibility documentation](https://docs.cilium.io/en/stable/network/kubernetes/compatibility/) for the actual installed release.
