@@ -6,7 +6,7 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 ## Start Here
 
-**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Continue the lab rehearsal one minor at a time; the next step is 1.35 to 1.36. The lab's Cilium 1.20.4 is tested with 1.36. Close the admission/Gateway/runtime coverage gaps and verify the destination image and fresh node joins before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
+**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Continue the lab rehearsal one minor at a time; the next step is 1.36 to 1.37, which first needs a Cilium release tested with 1.37. Close the admission/Gateway/runtime coverage gaps and verify the destination image and fresh node joins before upgrading the household cluster. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
 
 Continue the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery) alongside upgrade work. The lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
 
