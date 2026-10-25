@@ -103,6 +103,7 @@ homelab/
 │       │   ├── loki/
 │       │   ├── alloy/
 │       │   ├── nut-exporter/
+│       │   ├── garage/
 │       │   ├── minio/
 │       │   ├── velero/
 │       │   ├── etcd-backup/

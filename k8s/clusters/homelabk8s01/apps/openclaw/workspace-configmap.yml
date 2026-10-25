@@ -130,7 +130,7 @@ data:
 
     **auth:** Authentik (PostgreSQL + Redis backends)
 
-    **backups:** Velero (MinIO S3 backend)
+    **backups:** Velero (Garage S3 backend; MinIO read-only until removed)
 
     **Infrastructure:** Vault (KMS-backed), External Secrets Operator,
     cert-manager, Kyverno + Kyverno policies, NFS provisioner,

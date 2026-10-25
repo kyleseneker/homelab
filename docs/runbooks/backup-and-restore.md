@@ -1,6 +1,6 @@
 # Backup & Restore
 
-This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with MinIO (local) and AWS S3 (offsite) as storage backends.
+This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with Garage (local) and AWS S3 (offsite) as storage backends. The legacy MinIO location `default` is read-only and keeps pre-cutover restore points until they expire around 2026-11-24.
 
 ## Automated Backup Schedules
 
@@ -8,11 +8,11 @@ Velero runs three automated backup schedules:
 
 | Schedule | Scope | Retention | Time | Target |
 |----------|-------|-----------|------|--------|
-| `daily-stateful` | `arr`, `monitoring`, `auth`, `openclaw` namespaces | 7 days | 3:00 AM daily | MinIO (local) |
-| `weekly-full-cluster` | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | 4:00 AM Sunday | MinIO (local) |
+| `daily-stateful` | `arr`, `monitoring`, `auth`, `openclaw` namespaces | 7 days | 3:00 AM daily | Garage (`local`) |
+| `weekly-full-cluster` | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | 4:00 AM Sunday | Garage (`local`) |
 | `weekly-offsite` | `arr`, `monitoring`, `auth`, `openclaw`, `argocd`, `vault`, `external-secrets` | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
 
-Times are UTC. The schedules capture Kubernetes objects and eligible mounted volume data through Kopia. Offsite is a selected recovery set, not a copy of the local schedule; it excludes the MinIO backup store to avoid copying local archives again. Local-path data requires the separate dump/restore procedure below.
+Times are UTC. The schedules capture Kubernetes objects and eligible mounted volume data through Kopia. Offsite is a selected recovery set, not a copy of the local schedule; it excludes the local backup store in `backups` to avoid copying local archives again. Local-path data requires the separate dump/restore procedure below.
 
 !!! info "Offsite backup"
     The `weekly-offsite` schedule writes to an S3 bucket (`velero-offsite-homelab`) in AWS us-east-1. Objects are stored in S3 Standard and transitioned to Standard-IA after 30 days via lifecycle policy. Storage, request, and restore charges depend on actual retained data and must be measured.
@@ -243,7 +243,7 @@ manual job; the first scheduled run supplies the CronJob success timestamp.
    the credential files and downloaded snapshot private. Select the desired
    `vault-raft-snapshots/` object, download it with the exported S3 identity, and
    compare SHA-256 with its `sha256` object metadata. This needs neither production
-   Kubernetes nor Velero, MinIO or NAS.
+   Kubernetes nor Velero, Garage or NAS.
 2. Prepare a separate Vault 1.21.2 Raft target with a **new empty** local PVC and
    the original KMS key/credentials. Isolate it from production clients and
    Kubernetes authentication. Preserve any surviving data before replacing it.
@@ -414,22 +414,22 @@ kubectl get pods -n backups -l name=node-agent -o wide
 kubectl logs -n backups -l name=node-agent
 ```
 
-### S3/MinIO Connectivity
+### S3/Garage Connectivity
 
-If backups fail with storage-related errors, verify MinIO is running and accessible:
+If backups fail with storage-related errors, verify Garage is running and accessible:
 
 ```bash
-# Check MinIO pod
-kubectl get pods -n backups -l app=minio
+# Check the Garage pod
+kubectl get pods -n backups -l app.kubernetes.io/name=garage
 
-# Check MinIO logs
-kubectl logs -n backups -l app=minio
+# Check Garage logs
+kubectl logs -n backups deploy/garage
 
 # Verify all BackupStorageLocations are available
 velero --namespace backups backup-location get
 ```
 
-A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the storage endpoint. Check the service, credentials, and network connectivity.
+A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the storage endpoint. Check the service, credentials, and network connectivity. The read-only MinIO location only matters when restoring a backup taken before the Garage cutover.
 
 ### Offsite (AWS S3) Connectivity
 

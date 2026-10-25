@@ -28,7 +28,8 @@ The NFS Provisioner dynamically creates PersistentVolumes backed by an NFS share
 - Prometheus time-series data (20Gi)
 - Grafana dashboards and plugin storage (2Gi)
 - Loki log data (10Gi)
-- MinIO object storage (50Gi)
+- Garage object data (50Gi) and metadata snapshots (1Gi)
+- Legacy MinIO object storage (50Gi), read-only until removed
 
 The provisioner must be running before the monitoring stack, backup services, or applications request PVCs. Nothing enforces that -- a PVC created first simply stays Pending until the provisioner appears.
 

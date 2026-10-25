@@ -60,7 +60,8 @@ data:
     | CertificateExpiringSoon | warning | TLS cert <14 days (1h) |
     | LokiDown | critical | Log aggregation down (5m) |
     | AlloyDown | warning | Log collector DaemonSet unavailable (5m) |
-    | MinIODown | critical | Backup storage down (5m) |
+    | GarageDown | critical | Local backup storage down (5m) |
+    | MinIODown | critical | Legacy read-only backup storage down (5m) |
     | PodCrashLooping | warning | >5 restarts/hour (10m) |
     | VeleroBackupFailed | critical | Backup failed in 24h |
     | VeleroBackupMissing | warning | >25h since last success |
@@ -166,7 +167,7 @@ data:
     | weekly-full-cluster | 04:00 UTC Sundays | all except kube-system, kube-public, nfs-provisioner, backups | 30 days |
     | weekly-offsite | 05:00 UTC Sundays | arr, monitoring, auth, openclaw, argocd, vault, external-secrets | 30 days |
 
-    Backend: MinIO in `backups` namespace (S3-compatible, 50Gi NFS).
+    Backend: Garage in `backups` namespace (S3-compatible, location `local`, 50Gi NFS data). MinIO's `default` location is read-only until its backups expire.
 
     ## Regular Checks
 
@@ -174,7 +175,7 @@ data:
     - Velero backup schedules active (not suspended/errored)
     - Vault seal status and KMS connectivity
     - All ExternalSecrets syncing without errors
-    - MinIO health and storage usage (backup target)
+    - Garage health and storage usage (backup target)
     - Authentik PostgreSQL/Redis health (auth DB failure = no SSO)
 
     ## Monthly Test Restores

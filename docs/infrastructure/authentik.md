@@ -62,7 +62,7 @@ Prerequisites: Authentik pods running in `auth`, DNS configured, and credentials
 
 ## Recovery and Backups
 
-`authentik-backup` runs at 01:45 UTC, creating a custom-format PostgreSQL dump on the `authentik-backups` NFS PVC. It publishes the archive only after `pg_dump` and archive-list validation succeed. A holder Deployment keeps it mounted for daily MinIO and weekly S3 backups. Alerts cover a missing/stale successful dump and an unavailable holder.
+`authentik-backup` runs at 01:45 UTC, creating a custom-format PostgreSQL dump on the `authentik-backups` NFS PVC. It publishes the archive only after `pg_dump` and archive-list validation succeed. A holder Deployment keeps it mounted for daily Garage and weekly S3 backups. Alerts cover a missing/stale successful dump and an unavailable holder.
 
 An S3 copy has been restored into empty lab PostgreSQL with source/restored table and key object counts matching. See [the recovery procedure and evidence](../runbooks/backup-and-restore.md#authentik-postgresql-recovery). Emergency administrator login and the restored ArgoCD provider’s OIDC code exchange also passed with an isolated lab callback. Preserve `AUTHENTIK_SECRET_KEY` separately; ordinary login/MFA, real clients and proxy/worker recovery remain unverified. The raw live PostgreSQL volume is not the logical recovery method.
 

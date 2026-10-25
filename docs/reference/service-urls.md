@@ -50,7 +50,9 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | qBittorrent | `http://arr-vpn-downloads.arr.svc.cluster.local:8080` |
 | Tdarr | `http://arr-tdarr.arr.svc.cluster.local:8265` |
 | Loki | `http://loki.monitoring.svc.cluster.local:3100` |
-| MinIO | `http://minio.backups.svc.cluster.local:9000` |
+| Garage (S3) | `http://garage.backups.svc.cluster.local:3900` |
+| Garage (admin, metrics) | `http://garage.backups.svc.cluster.local:3903` |
+| MinIO (legacy, read-only) | `http://minio.backups.svc.cluster.local:9000` |
 | Exportarr (Sonarr) | `http://arr-exportarr-sonarr.arr.svc.cluster.local:9707` |
 | Exportarr (Radarr) | `http://arr-exportarr-radarr.arr.svc.cluster.local:9708` |
 | Exportarr (Prowlarr) | `http://arr-exportarr-prowlarr.arr.svc.cluster.local:9709` |

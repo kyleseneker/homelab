@@ -101,7 +101,7 @@ spec:
             severity: critical
           annotations:
             summary: "MinIO is down"
-            description: "MinIO has had no available replicas for more than 5 minutes. Velero backup target is unavailable."
+            description: "MinIO has had no available replicas for more than 5 minutes. Pre-Garage restore points in its read-only location are unavailable."
 
         - alert: GarageDown
           expr: |

@@ -56,7 +56,7 @@ The KMS key and IAM credentials are provisioned with Terraform (`make aws-apply`
 
 Secrets are organized under the `homelab` KV v2 mount:
 
-- `infrastructure/` -- platform component secrets (MinIO, Velero, Authentik, Grafana, etc.)
+- `infrastructure/` -- platform component secrets (Garage, Velero, Authentik, Grafana, etc.)
 - `apps/` -- application secrets (VPN, Recyclarr, Exportarr, Homepage, etc.)
 
 ## Cluster Integration

@@ -24,7 +24,7 @@ flowchart TD
 
         subgraph nfsVols["NFS Volumes"]
             backupPVC["PVC: arr-config-backups"]
-            otherPVC["PVC: Loki, MinIO, ..."]
+            otherPVC["PVC: Loki, Garage, ..."]
         end
 
         subgraph localVols["Local-Path Config Volumes"]
@@ -168,7 +168,10 @@ Each application has its own PVC for configuration and database storage. Every *
 | Prometheus | `prometheus-data` | `local-path` | 20Gi | Metrics time-series data (15d retention) |
 | Loki | `loki-data` | `nfs-client` | 10Gi | Log storage (168h retention) |
 | Grafana | `grafana-data` | `nfs-client` | 2Gi | Dashboards and data source configuration |
-| MinIO | `minio-data` | `nfs-client` | 50Gi | S3 backup object storage |
+| Garage | `garage-data` | `nfs-client` | 50Gi | S3 backup object storage |
+| Garage | `garage-snapshots` | `nfs-client` | 1Gi | Garage metadata snapshots |
+| Garage | `garage-meta` | `local-path` | 1Gi | Garage SQLite metadata, kept off NFS |
+| MinIO | `minio` | `nfs-client` | 50Gi | Legacy read-only backup store, removed after its backups expire |
 | etcd snapshots | `etcd-snapshots` | `nfs-client` | 1Gi | Nightly etcd snapshots + PKI tarballs |
 | Authentik | PostgreSQL PVC | `nfs-client` | 5Gi | Identity provider database |
 | Vault | Vault data PVC | `nfs-client` | 1Gi | KV v2 secret storage |

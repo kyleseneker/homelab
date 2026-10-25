@@ -133,6 +133,11 @@ make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_USER
 make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_PASSWORD
 make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootUser
 make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword
+# Garage: rpcSecret and secretAccessKey are 32-byte hex, accessKeyId is GK plus 24 hex characters.
+make vault-put-secret SECRET_PATH=infrastructure/garage KEY=rpcSecret
+make vault-put-secret SECRET_PATH=infrastructure/garage KEY=adminToken
+make vault-put-secret SECRET_PATH=infrastructure/garage KEY=accessKeyId
+make vault-put-secret SECRET_PATH=infrastructure/garage KEY=secretAccessKey
 
 # Repeat for all secrets using the paths and keys in the manifests.
 ```

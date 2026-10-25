@@ -4,7 +4,7 @@
 
 **Goal:** Protect against the failures that would cause unrecoverable data loss or hardware damage.
 
-UPS/NUT, MinIO + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy and recovery drills remain open.
+UPS/NUT, Garage + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy and recovery drills remain open.
 
 **Addresses:** P1, P2, P7, K5, K16, K33, and K41 in the [assessment](assessment.md).
 
@@ -35,7 +35,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Rebuild Gluetun/VPN access and verify download-payload recovery before resuming qBittorrent transfers
 - [ ] Exercise the restored Tdarr flows on a copied media fixture, including library-specific replacement/deletion behavior
 - [ ] Verify Authentik ordinary password/MFA login, client application login, proxy outposts and worker behavior after the verified emergency-login/OIDC restore
-- [ ] Extend the verified [independent and combined S3 recovery](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill) to remaining required application data, keeping production, MinIO and NAS data access unavailable
+- [ ] Extend the verified [independent and combined S3 recovery](../runbooks/restore-lab.md#combined-machine-and-application-recovery-drill) to remaining required application data, keeping production, local object store and NAS data access unavailable
 - [ ] Keep an independently protected bootstrap credential copy and account/MFA recovery outside the homelab and HCP; HCP-based KMS/S3 retrieval is verified
 - [ ] Review backup credentials and S3 retention/deletion controls; versioning and Terraform deletion guards alone do not provide an immutable copy
 

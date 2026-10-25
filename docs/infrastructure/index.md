@@ -14,7 +14,8 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Metrics Server | kube-system | helm | metrics-server | 3.13.0 |
 | NFS Provisioner | nfs-provisioner | helm | nfs-subdir-external-provisioner | 4.0.18 |
 | Local-Path Provisioner | local-path-storage | kustomize | (plain manifests) | -- |
-| MinIO | backups | helm | minio | 5.4.0 |
+| Garage | backups | helm | app-template | 4.6.2 |
+| MinIO (legacy, read-only) | backups | helm | minio | 5.4.0 |
 | Velero | backups | helm | velero | 12.0.0 |
 | etcd Backup | backups | git | (CronJob) | -- |
 | Kyverno | kyverno | helm | kyverno | 3.7.1 |
@@ -42,7 +43,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 The dependency graph the retry loop is resolving:
 
 - **Bootstrap layer**: Vault, External Secrets, cert-manager, and the Gateway API CRDs. Almost everything else fails at least once until these exist.
-- **Platform layer**: storage provisioners, MinIO, Kyverno, metrics, and the GPU operator. These need CRDs and certificates from the layer above.
+- **Platform layer**: storage provisioners, Garage, legacy MinIO, Kyverno, metrics, and the GPU operator. These need CRDs and certificates from the layer above.
 - **Service layer**: the monitoring stack, Velero, Authentik, and the GPU device plugin -- all of which consume storage, certificates, or load balancer IPs.
 - **Consumers**: Alloy ships to Loki; Goldilocks needs the VPA CRDs. These settle last.
 

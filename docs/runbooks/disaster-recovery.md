@@ -12,7 +12,7 @@ Keep these outside Kubernetes and Vault itself:
 - Vault root/recovery material, the original AWS KMS key ID, and working credentials permitted to decrypt with that key.
 - AWS offsite credentials in a protected shared-credentials file, and the backup bucket/location/prefix details.
 - A tested Vault data backup, application restore records, and recent etcd snapshot/PKI pairs.
-- The NAS exports and retained PV directory mappings. MinIO runs **inside Kubernetes** on NFS; it is not a separate NAS service.
+- The NAS exports and retained PV directory mappings. Garage, and the read-only legacy MinIO, run **inside Kubernetes** with object data on NFS; they are not separate NAS services.
 
 KMS auto-unseal decrypts existing Vault storage. It does not reconstruct lost Vault data or initialize a new empty Vault. Daily [native S3 snapshots](backup-and-restore.md#production-native-snapshots) provide the current recovery path. A production snapshot passed isolated restoration, KMS auto-unseal, original-identity and authenticated-read checks. Retained quiesced file archives are historical fallback material. The HCP credential path below is independent of Kubernetes and Vault.
 
@@ -56,7 +56,7 @@ an independently protected copy. The local `.lab` export alone is not that copy.
     export KUBECONFIG="$(pwd)/kubeconfig"
     ```
 
-2. Restore NAS exports or provide replacement NFS storage. If the NAS survived, inventory retained PV paths and rebind the intended directories. Dynamic provisioning creates new directories; `Retain` alone does not reconnect a replacement PVC to its old data. For a local MinIO restore, recover its original data directory and credentials before expecting the bucket to appear.
+2. Restore NAS exports or provide replacement NFS storage. If the NAS survived, inventory retained PV paths and rebind the intended directories. Dynamic provisioning creates new directories; `Retain` alone does not reconnect a replacement PVC to its old data. For a local Garage restore, recover its data directory, latest metadata snapshot and credentials before expecting the bucket to appear. Pre-cutover restore points in MinIO need MinIO's original data directory and credentials.
 
 3. Bootstrap only the storage/backup dependencies needed for recovery, using the pinned versions and values from Git. Keep ordinary workloads and ApplicationSet self-heal/prune paused until their data is restored. Do not wait for all applications to become healthy: Vault → ESO → backup credentials is a circular dependency on a blank cluster.
 
@@ -71,9 +71,9 @@ an independently protected copy. The local `.lab` export alone is not that copy.
       --from-file=cloud=/secure/velero-offsite.credentials --dry-run=client -o yaml | kubectl apply -f -
     ```
 
-    Velero's chart also references `velero-cloud-credentials`; provide its original MinIO credential file or a temporary recovery values override that uses only offsite. Recoveries from S3 do not require a healthy MinIO default location. Do not commit bootstrap credential files or capture the generated Secret YAML in logs.
+    Velero's chart also references `velero-local-credentials` (Garage) and, until MinIO is removed, `velero-cloud-credentials`; provide those credential files or a temporary recovery values override that uses only offsite. Recoveries from S3 do not require a healthy local location. Do not commit bootstrap credential files or capture the generated Secret YAML in logs.
 
-5. Recover Vault from a [native S3 snapshot](backup-and-restore.md#production-native-snapshots) into a new local Raft target, or rebind surviving Raft storage. Native snapshot restoration initializes only a new empty target before importing; never initialize surviving or migrated data. The retained [file archive](backup-and-restore.md#offsite-vault-archive) is a historical fallback that needs the file-backend restore and Raft migration stages. Direct snapshots can be downloaded without Velero, MinIO or Kopia. Start Velero and its node agents for the remaining application backups, confirm the offsite location is `Available`, and let it synchronize backup metadata. Use the original KMS key, then verify `vault status` reports initialized and unsealed. **Do not run `make vault-init` on data intended for recovery.** If no usable Vault backup remains, explicitly take the full Vault data-loss path below.
+5. Recover Vault from a [native S3 snapshot](backup-and-restore.md#production-native-snapshots) into a new local Raft target, or rebind surviving Raft storage. Native snapshot restoration initializes only a new empty target before importing; never initialize surviving or migrated data. The retained [file archive](backup-and-restore.md#offsite-vault-archive) is a historical fallback that needs the file-backend restore and Raft migration stages. Direct snapshots can be downloaded without Velero, Garage or Kopia. Start Velero and its node agents for the remaining application backups, confirm the offsite location is `Available`, and let it synchronize backup metadata. Use the original KMS key, then verify `vault status` reports initialized and unsealed. **Do not run `make vault-init` on data intended for recovery.** If no usable Vault backup remains, explicitly take the full Vault data-loss path below.
 
 6. Re-establish ESO's Kubernetes authentication and policy/binding for the new cluster before relying on Secret synchronization. A recovered Vault may retain old cluster authentication configuration. Confirm ExternalSecrets are ready without printing their contents.
 
@@ -280,7 +280,7 @@ Inspect the Terraform plan and the failed VM before replacement; restarting Terr
 
 ## NAS Failure
 
-NFS-backed workloads may hang on I/O or volume mounts. MinIO is also affected. Vault uses local Raft storage and direct S3 snapshots. Restore exports and permissions before restarting dependent pods; mass deletion just recreates the same mount failures. Offsite recovery still needs replacement writable storage. The large media/download share is excluded from Velero and requires an independent NAS backup or re-acquisition strategy.
+NFS-backed workloads may hang on I/O or volume mounts. Garage's object data and the read-only MinIO are also affected. Vault uses local Raft storage and direct S3 snapshots. Restore exports and permissions before restarting dependent pods; mass deletion just recreates the same mount failures. Offsite recovery still needs replacement writable storage. The large media/download share is excluded from Velero and requires an independent NAS backup or re-acquisition strategy.
 
 ## Vault KMS Credential Loss
 

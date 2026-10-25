@@ -55,7 +55,8 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `apps/vpn` | `vpn-credentials` | `arr` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
 | `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
-| `infrastructure/minio` | `minio-credentials` | `backups` |
+| `infrastructure/garage` | `garage-secrets`, `velero-local-credentials` | `backups` |
+| `infrastructure/minio` | `minio-credentials` (legacy, read-only MinIO) | `backups` |
 | `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
 | `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
 | `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |

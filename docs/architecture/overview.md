@@ -57,7 +57,8 @@ flowchart LR
 | NFS Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |
 | Local-Path Provisioner | Node-local PVC provisioning for SQLite workloads | `local-path-storage` |
 | Metrics Server | Kubernetes resource metrics API | `kube-system` |
-| MinIO | S3-compatible object storage for backups | `backups` |
+| Garage | S3-compatible object storage for local Velero backups | `backups` |
+| MinIO | Legacy backup object storage, read-only until its backups expire | `backups` |
 | etcd Backup | Nightly etcd snapshot + PKI tarball CronJob | `backups` |
 | Intel GPU Operator | Intel GPU device driver management | `intel-gpu-operator` |
 | Intel GPU Plugin | Intel iGPU device plugin for workloads | `intel-gpu-operator` |

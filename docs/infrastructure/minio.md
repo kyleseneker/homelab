@@ -1,6 +1,9 @@
 # MinIO
 
-MinIO provides S3-compatible object storage within the cluster, serving as the backup target for Velero.
+!!! warning "Legacy, read-only"
+    [Garage](garage.md) replaced MinIO as Velero's local backup target ([ADR-025](../decisions/025-garage-velero-local-backups.md)). MinIO's community edition is no longer distributed as images, and its pinned image can no longer be pulled. Velero's `default` location now points at MinIO read-only, so restore points created before the cutover remain available until they expire around 2026-11-24. Remove MinIO, its location and the `MinIODown` alert after that date.
+
+MinIO provided S3-compatible object storage within the cluster, serving as the backup target for Velero.
 
 ## Details
 
@@ -24,7 +27,7 @@ MinIO provides S3-compatible object storage within the cluster, serving as the b
 
 ## Cluster Integration
 
-Velero connects to MinIO as its S3-compatible backup storage location at:
+Velero's read-only `default` location connects to MinIO at:
 
 ```
 http://minio.backups.svc.cluster.local:9000
