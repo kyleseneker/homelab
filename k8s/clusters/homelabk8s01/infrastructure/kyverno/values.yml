@@ -5,6 +5,11 @@ webhookLabels:
 admissionController:
   # The fail-closed webhook needs a replica during every drain; three is Kyverno's HA minimum.
   replicas: 3
+  # Workers alone cannot absorb a drained replica; allow the control plane too.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
   podDisruptionBudget:
     enabled: true
     minAvailable: null
