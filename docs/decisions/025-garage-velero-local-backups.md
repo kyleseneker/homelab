@@ -59,6 +59,12 @@ The offsite location and retention periods are unchanged.
   maintainers have stopped community releases.
 - **SeaweedFS**: Apache-2.0 with an official Helm chart and S3 gateway, but runs
   master, volume and filer services to serve one backup bucket.
+- **Rook-Ceph object storage**: Popular for distributed storage, and its gateway
+  serves S3, but ADR-006 already rejected it for this single-host cluster. It would
+  move local backups from the NAS onto VM disks on the same host as the workloads
+  they protect, replicate across VMs that share one failure domain, and need
+  per-node storage daemons and dedicated disks. Revisit with ADR-006 once multiple
+  physical hosts exist.
 - **Offsite S3 only**: Removes the local target, but every restore would download
   from AWS and depend on internet access, abandoning ADR-013's local-plus-offsite
   strategy.
