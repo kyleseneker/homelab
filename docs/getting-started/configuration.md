@@ -32,8 +32,8 @@ cp packer/k8s-node/k8s-node.auto.pkrvars.hcl.example packer/k8s-node/k8s-node.au
 | `iso_checksum` | ISO checksum (file URL for automatic verification) | Ubuntu SHA256SUMS |
 | `iso_storage_pool` | Proxmox storage pool for the ISO | `local` |
 | `disk_storage_pool` | Proxmox storage pool for the VM disk | `local-lvm` |
-| `k8s_version` | Kubernetes version to install (e.g. `1.33.13`) | `1.33.13` |
-| `k8s_version_minor` | Kubernetes minor version for apt repo (e.g. `1.33`) | `1.33` |
+| `k8s_version` | Kubernetes version to install (e.g. `1.34.12`) | `1.34.12` |
+| `k8s_version_minor` | Kubernetes minor version for apt repo (e.g. `1.34`) | `1.34` |
 | `timezone` | Timezone for the template | `America/Chicago` |
 | `media_uid` | UID for the media user | `977` |
 | `media_gid` | GID for the media group | `988` |
@@ -101,12 +101,12 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 | `base_timezone` | Timezone for all nodes | `America/Chicago` |
 | `base_media_uid` | UID for the shared media user across NFS and pods | `977` |
 | `base_media_gid` | GID for the shared media group across NFS and pods | `988` |
-| `k8s_control_plane_version` | Kubernetes version for `kubeadm init` | `1.33.13` |
+| `k8s_control_plane_version` | Kubernetes version for `kubeadm init` | `1.34.12` |
 | `k8s_control_plane_pod_network_cidr` | Pod CIDR passed to kubeadm | `10.244.0.0/16` |
 | `k8s_control_plane_service_cidr` | Service CIDR passed to kubeadm | `10.96.0.0/12` |
 | `k8s_control_plane_cilium_version` | Cilium version installed by the CLI | `1.19.10` |
-| `k8s_prereqs_version` | Kubernetes package version on every node | `1.33.13` |
-| `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.33` |
+| `k8s_prereqs_version` | Kubernetes package version on every node | `1.34.12` |
+| `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.34` |
 
 !!! note "Pod CIDR"
     `k8s_control_plane_pod_network_cidr` is what kubeadm records, but Cilium is installed with explicit `cluster-pool` IPAM in `ansible/roles/k8s_control_plane/files/cilium-values.yml` and allocates pod IPs from the existing `10.0.0.0/8` pool. Bootstrap and `make cilium-upgrade` share that file; do not change the pool in place on a populated cluster. The kubeadm value is not what pods actually get.

@@ -6,7 +6,7 @@ See the [hardware inventory](../reference/hardware.md), [network infrastructure]
 
 ## Start Here
 
-**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Continue the lab rehearsal one minor at a time; the next step is 1.36 to 1.37, which first needs a Cilium release tested with 1.37. Production has moved from 1.31.4 to 1.33.13 and continues one minor at a time; its next step is 1.33 to 1.34, which first raises etcd to 3.5.32 or later. Verify the destination image and fresh node joins before completing the migration. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
+**Next software project: upgrade Kubernetes to a supported release.** The [isolated lab](../runbooks/restore-lab.md#verified-bootstrap) now has verified Packer images, clean ArgoCD/application bootstrap and preserved-data recovery. Continue the lab rehearsal one minor at a time; the next step is 1.36 to 1.37, which first needs a Cilium release tested with 1.37. Production has moved from 1.31.4 to 1.34.12 and continues one minor at a time; its next step is 1.34 to 1.35, which first needs Cilium 1.20 and Gateway API CRDs v1.6.1 or later. Verify the destination image and fresh node joins before completing the migration. Follow [Phase 2.1](phase-2-kubernetes-hardening.md#21-upgrade-the-unsupported-platform).
 
 Continue the remaining [recovery checks](phase-1-foundations.md#12-verify-recovery) alongside upgrade work. The lab can later become the persistent [staging cluster](phase-6-platform-engineering.md#61-staging-cluster).
 

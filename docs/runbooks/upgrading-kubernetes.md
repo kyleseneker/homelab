@@ -2,17 +2,17 @@
 
 The bootstrap roles initialize nodes; changing their version variables does **not** perform a cluster upgrade. The separate `k8s-upgrade.yml` playbook performs an explicit, staged upgrade. Use a maintenance window and upgrade the control plane, then each worker. Update the repository pins and rebuild the Packer template only after the running cluster passes verification.
 
-Production and the shared image defaults use Kubernetes **1.33.13**, which is also end-of-life. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
+Production and the shared image defaults use Kubernetes **1.34.12**, which reaches end of life on 2026-10-27. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
 
 ## Current platform and verified rehearsal
 
 | Component | Production | Restore lab |
 |---|---|---|
-| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.33.13 | 1.36.5 |
+| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.34.12 | 1.36.5 |
 | containerd | 2.2.2 | 2.3.5 |
 | Cilium | 1.19.10 | 1.20.4 |
 | Gateway API CRDs | 1.4.0 | 1.4.0; Gateway controller disabled |
-| etcd | 3.5.24 | 3.6.8 |
+| etcd | 3.6.5 | 3.6.8 |
 | Kyverno | 1.17.1, chart 3.7.1 | Not installed |
 
 The lab passed the 1.31.4 → 1.32.13 → 1.33.13 control-plane-first upgrades through the shared playbook. Both nodes report the target version and Ready, kube-proxy remains absent, and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic, Pod DNS, public HTTPS, private-network isolation, Sonarr records, Prowlarr integration, Authentik queries and Vault/ESO Secret recreation passed at both steps. On 1.33.13, qBittorrent also retained its torrent identities, categories and transfer history; authentication checks passed and transfers remained stopped with zero peers. Matching etcd 3.5.24 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
@@ -36,6 +36,8 @@ Production completed 1.31.4 → 1.32.13 through the same playbook after a fresh 
 Production then upgraded Cilium 1.19.1 → 1.19.10 with the `cilium` CLI after a passing pre-flight (49 policies valid). All agents report OK, every agent's backends for the cluster DNS Service match the `kube-dns` endpoints, the Gateway serves its 19 routes and all Applications are Synced/Healthy. Its Helm history shows the original 1.16.5 install upgraded directly to 1.19.1 in March 2026, skipping two minors. The next Cilium step is 1.20.
 
 Production then completed 1.32.13 → 1.33.13 after a fresh recovery set and a verified control-plane VM backup, running the control-plane and worker plays separately. After the control-plane step every Cilium agent's DNS backends matched the replaced CoreDNS endpoints and short-name lookups succeeded. The drains finished without eviction refusals or webhook-blocked Pod creation. etcd remains 3.5.24. All three nodes are Ready at 1.33.13, all 55 Applications are Synced/Healthy, and the Gateway, GPU, NFS, Kyverno, Garage and Velero checks match the pre-upgrade baseline.
+
+Production then completed 1.33.13 → 1.34.12. After a fresh recovery set and control-plane VM backup, its etcd static Pod image was raised from 3.5.24-0 to 3.5.35-0; kubeadm then moved etcd to 3.6.5 and converted both experimental flags. The first worker drain stalled: one Kyverno admission replica could not be rescheduled because the remaining worker's CPU requests were at 99% and the control-plane taint blocked node-1. Allowing the admission controller on the control plane released the drain, and the rerun finished without eviction refusals. Garage was unavailable while its node drained, as ADR-025 expects; a Kopia maintenance run failed during that window and the next run succeeded. The etcd backup job now uses the 3.6.5 image and produced a verified recovery set, and the restore procedure uses `etcdutl`. All three nodes are Ready at 1.34.12, the admission replicas run one per node, and all 55 Applications are Synced/Healthy with the baseline checks intact.
 
 ## Upgrade Cilium
 
@@ -74,6 +76,7 @@ KUBECONFIG=kubeconfig cilium upgrade --version <target> \
 
 - Confirm the live versions with `kubectl get nodes -o wide` and `kubectl version`; do not infer them from Git.
 - Verify a recent off-host etcd snapshot, `/etc/kubernetes/pki` backup, and application data backup can be restored. A completed Velero backup alone does not establish this. Follow [Backup and Restore](backup-and-restore.md).
+- Check that each worker's PDB-protected Pods would fit elsewhere: draining one worker moves its Pods to the other worker and any workloads that tolerate the control plane. Compare CPU requests with allocatable capacity.
 - Confirm no PodDisruptionBudget reports zero allowed disruptions, and note single-replica admission webhooks with `failurePolicy: Fail` on the nodes to be drained.
 - After the control-plane step, confirm every Cilium agent's backends for the cluster DNS Service match the `kube-dns` endpoints (`cilium-dbg service list`). Restart an agent that kept a deleted backend.
 - Before the 1.34 step, raise etcd to 3.5.32 or later; the [etcd 3.6 upgrade guide](https://etcd.io/docs/v3.6/upgrades/upgrade_3_6/) requires it before kubeadm 1.34 moves etcd to 3.6. Update the etcd backup tooling to 3.6 `etcdutl` with it.
