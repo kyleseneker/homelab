@@ -7,9 +7,12 @@ initContainers:
         name: plugins
 configuration:
   backupStorageLocation:
+    # MinIO: read-only until its retained backups expire (ADR-025).
     - name: default
       provider: aws
       bucket: velero
+      default: false
+      accessMode: ReadOnly
       credential:
         name: velero-cloud-credentials
         key: cloud
@@ -30,7 +33,7 @@ configuration:
     - name: local
       provider: aws
       bucket: velero
-      default: false
+      default: true
       credential:
         name: velero-local-credentials
         key: cloud
@@ -66,7 +69,7 @@ schedules:
         - openclaw
       defaultVolumesToFsBackup: true
       ttl: 168h0m0s
-      storageLocation: default
+      storageLocation: local
   weekly-full-cluster:
     disabled: false
     schedule: 0 4 * * 0
@@ -80,7 +83,7 @@ schedules:
         - backups
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
-      storageLocation: default
+      storageLocation: local
   weekly-offsite:
     disabled: false
     schedule: 0 5 * * 0
@@ -90,7 +93,7 @@ schedules:
         - monitoring
         - auth
         - openclaw
-        # MinIO is itself a backup store; do not copy its archives into S3 again.
+        # The backups namespace holds the local backup store; do not copy its archives into S3 again.
         - argocd
         - vault
         - external-secrets
