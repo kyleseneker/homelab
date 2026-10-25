@@ -5,3 +5,4 @@ resources:
   - pdb.yml
   - velero-external-secret.yml
   - velero-offsite-external-secret.yml
+  - velero-local-external-secret.yml

@@ -103,6 +103,18 @@ spec:
             summary: "MinIO is down"
             description: "MinIO has had no available replicas for more than 5 minutes. Velero backup target is unavailable."
 
+        - alert: GarageDown
+          expr: |
+            (kube_deployment_spec_replicas{namespace="backups", deployment="garage"} > 0)
+            and
+            (kube_deployment_status_replicas_available{namespace="backups", deployment="garage"} == 0)
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Garage is down"
+            description: "Garage has had no available replicas for more than 5 minutes. Velero's local backup target is unavailable."
+
         - alert: PodCrashLooping
           expr: |
             increase(kube_pod_container_status_restarts_total[1h]) > 5

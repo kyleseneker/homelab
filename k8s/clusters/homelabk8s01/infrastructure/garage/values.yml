@@ -1,0 +1,115 @@
+defaultPodOptions:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+controllers:
+  main:
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: dxflrs/garage
+          tag: v2.5.0
+        env:
+          GARAGE_RPC_SECRET:
+            valueFrom:
+              secretKeyRef:
+                name: garage-secrets
+                key: rpcSecret
+          GARAGE_ADMIN_TOKEN:
+            valueFrom:
+              secretKeyRef:
+                name: garage-secrets
+                key: adminToken
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        # /health returns 503 until the setup job applies a layout; probe the listeners instead.
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: 3903
+              periodSeconds: 20
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: 3900
+              periodSeconds: 10
+service:
+  main:
+    controller: main
+    ports:
+      s3:
+        port: 3900
+      admin:
+        port: 3903
+serviceMonitor:
+  main:
+    service:
+      identifier: main
+    endpoints:
+      - port: admin
+        scheme: http
+        path: /metrics
+        interval: 1m
+configMaps:
+  config:
+    data:
+      garage.toml: |
+        metadata_dir = "/var/lib/garage/meta"
+        data_dir = "/var/lib/garage/data"
+        metadata_snapshots_dir = "/var/lib/garage/snapshots"
+        metadata_auto_snapshot_interval = "6h"
+        db_engine = "sqlite"
+        replication_factor = 1
+        rpc_bind_addr = "0.0.0.0:3901"
+        rpc_public_addr = "127.0.0.1:3901"
+
+        [s3_api]
+        s3_region = "garage"
+        api_bind_addr = "0.0.0.0:3900"
+
+        [admin]
+        api_bind_addr = "0.0.0.0:3903"
+persistence:
+  config:
+    type: configMap
+    identifier: config
+    globalMounts:
+      - path: /etc/garage.toml
+        subPath: garage.toml
+        readOnly: true
+  meta:
+    type: persistentVolumeClaim
+    existingClaim: garage-meta
+    globalMounts:
+      - path: /var/lib/garage/meta
+  data:
+    type: persistentVolumeClaim
+    existingClaim: garage-data
+    globalMounts:
+      - path: /var/lib/garage/data
+  snapshots:
+    type: persistentVolumeClaim
+    existingClaim: garage-snapshots
+    globalMounts:
+      - path: /var/lib/garage/snapshots
