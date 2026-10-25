@@ -51,13 +51,13 @@ variable "disk_storage_pool" {
 
 variable "k8s_version" {
   type        = string
-  default     = "1.32.13"
+  default     = "1.33.13"
   description = "Full Kubernetes version to install (e.g. 1.31.4)"
 }
 
 variable "k8s_version_minor" {
   type        = string
-  default     = "1.32"
+  default     = "1.33"
   description = "Kubernetes minor version for apt repository (e.g. 1.31)"
 }
 

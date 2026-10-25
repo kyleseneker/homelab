@@ -2,13 +2,13 @@
 
 The bootstrap roles initialize nodes; changing their version variables does **not** perform a cluster upgrade. The separate `k8s-upgrade.yml` playbook performs an explicit, staged upgrade. Use a maintenance window and upgrade the control plane, then each worker. Update the repository pins and rebuild the Packer template only after the running cluster passes verification.
 
-Production and the shared image defaults use Kubernetes **1.32.13**, which is also end-of-life. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
+Production and the shared image defaults use Kubernetes **1.33.13**, which is also end-of-life. The lab has completed intermediate steps through **1.36.5**, which is supported until 2027-06-28. This is a migration backlog item, not a recommendation for a new cluster. Select a supported destination using the [release history](https://kubernetes.io/releases/patch-releases/), then plan every intervening minor release. kubeadm does not support skipping minors. Follow the [upstream upgrade procedure](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) for each step.
 
 ## Current platform and verified rehearsal
 
 | Component | Production | Restore lab |
 |---|---|---|
-| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.32.13 | 1.36.5 |
+| Kubernetes API / kubeadm / kubelet / kubectl packages | 1.33.13 | 1.36.5 |
 | containerd | 2.2.2 | 2.3.5 |
 | Cilium | 1.19.10 | 1.20.4 |
 | Gateway API CRDs | 1.4.0 | 1.4.0; Gateway controller disabled |
@@ -34,6 +34,8 @@ CI renders the manifests with both production and lab Kubernetes capabilities an
 Production completed 1.31.4 → 1.32.13 through the same playbook after a fresh off-host recovery set and a verified stopped backup of the control-plane VM. Three single-replica PDBs with `minAvailable: 1` (authentik-server, the VPA recommender and the Prometheus operator) would have blocked every drain; they now use `maxUnavailable: 1` like the other repository PDBs. Draining node-2 moved the single-replica Kyverno, whose fail-closed webhook refused new pods in other namespaces until it was ready on node-3. After the control-plane step, the Cilium 1.19.1 agent on node-2 logged `BUG: Unexpected failure to delete backends` and kept a deleted CoreDNS backend for the cluster DNS Service, so about half of its DNS lookups failed and authentik-server never became ready. Restarting that agent rebuilt the correct backends, and the worker play then finished. At 1.32.13 all three nodes are Ready, etcd 3.5.24 is healthy, all 54 Applications are Synced/Healthy, the Gateway serves its 19 routes, the GPU node exposes its devices to Jellyfin and Tdarr, and all 13 NFS claims are bound. The drain also exposed that the pinned MinIO image can no longer be pulled from quay.io; MinIO runs only where the image is cached.
 
 Production then upgraded Cilium 1.19.1 → 1.19.10 with the `cilium` CLI after a passing pre-flight (49 policies valid). All agents report OK, every agent's backends for the cluster DNS Service match the `kube-dns` endpoints, the Gateway serves its 19 routes and all Applications are Synced/Healthy. Its Helm history shows the original 1.16.5 install upgraded directly to 1.19.1 in March 2026, skipping two minors. The next Cilium step is 1.20.
+
+Production then completed 1.32.13 → 1.33.13 after a fresh recovery set and a verified control-plane VM backup, running the control-plane and worker plays separately. After the control-plane step every Cilium agent's DNS backends matched the replaced CoreDNS endpoints and short-name lookups succeeded. The drains finished without eviction refusals or webhook-blocked Pod creation. etcd remains 3.5.24. All three nodes are Ready at 1.33.13, all 55 Applications are Synced/Healthy, and the Gateway, GPU, NFS, Kyverno, Garage and Velero checks match the pre-upgrade baseline.
 
 ## Upgrade Cilium
 

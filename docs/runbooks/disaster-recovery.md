@@ -97,7 +97,7 @@ This procedure is for the current **single-member** kubeadm control plane with i
 
 1. Obtain the snapshot from NAS or S3 without depending on a working Kubernetes API. On the control-plane host, put it at `/var/tmp/etcd-recovery/snapshot.db` with restrictive permissions. Retrieve the matching PKI tarball if certificates are lost; restore only that PKI after preserving any current files. Do not overwrite working certificates unnecessarily.
 
-2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.32.13 default is `registry.k8s.io/etcd:3.5.24-0`; verify the actual manifest before selecting a restore utility. This image ships both `/usr/local/bin/etcdctl` and `etcdutl` 3.5.24; the `etcdctl snapshot restore` command below supports the revision-bump and compaction flags. Recheck the shipped binaries and flags when changing versions. Prepare all artifacts before stopping the API.
+2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.33.13 default is `registry.k8s.io/etcd:3.5.24-0`; verify the actual manifest before selecting a restore utility. This image ships both `/usr/local/bin/etcdctl` and `etcdutl` 3.5.24; the `etcdctl snapshot restore` command below supports the revision-bump and compaction flags. Recheck the shipped binaries and flags when changing versions. Prepare all artifacts before stopping the API.
 
 3. On the control plane, move all control-plane manifests to a persistent directory **outside** the watched manifest directory. Keep kubelet running so it removes the static pods:
 
