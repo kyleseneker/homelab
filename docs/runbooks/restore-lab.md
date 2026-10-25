@@ -425,7 +425,7 @@ kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr \
 
 ## Media-operator Reconciliation
 
-The lab runs the same `media-operator-pvr` 0.34.3 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
+The lab runs the same `media-operator-pvr` 0.35.0 chart as production, watching only `restore-sonarr`. Its Secret access is scoped to that namespace. Metrics are disabled because the lab has no monitoring stack. The lab `SonarrConfig` uses a fresh API-key Secret, a local `/config/restore-media/tv` directory and the same declared media-management/download-handling settings as production. It does not declare production integrations or take ownership of Recyclarr's profiles.
 
 To repeat after the database restore:
 
@@ -444,7 +444,7 @@ This verifies Sonarr's bounded media-operator reconciliation. The following dril
 
 ## Recyclarr and Prowlarr Recovery
 
-The lab uses production's Recyclarr 8.7.1, Prowlarr 2.5.2 and indexer-operator 0.34.0 pins. Both clusters consume the same Recyclarr profile ConfigMap from `k8s/components/recyclarr-config`; URL environment overrides select the lab, while the default URLs preserve production behavior. The suspended lab CronJob runs only `sync sonarr`, stores its cache on local-path storage and uses a separate lab Secret. Run jobs sequentially against that cache.
+The lab uses production's Recyclarr 8.7.1, Prowlarr 2.5.2 and indexer-operator 0.35.0 pins. Both clusters consume the same Recyclarr profile ConfigMap from `k8s/components/recyclarr-config`; URL environment overrides select the lab, while the default URLs preserve production behavior. The suspended lab CronJob runs only `sync sonarr`, stores its cache on local-path storage and uses a separate lab Secret. Run jobs sequentially against that cache.
 
 Recyclarr repaired a deliberately disabled upgrade setting, adopted all 31 existing custom formats, and recreated the deleted `WEB-1080p` profile. Its new ID was **8**, replacing **7**. The lab series was temporarily assigned another profile to permit deletion, then reassociated with the recreated profile by name. A third sync reported no changes to profiles, formats, quality sizes or naming. This proves the configured profile can be recreated; consumers such as Seerr must resolve and verify the resulting ID rather than reuse production's numeric ID.
 
@@ -457,8 +457,8 @@ The operator reports Ready and Synced for the declared application and indexer. 
 1. Complete the Sonarr restore first. Create `restore-recyclarr-secrets` with a `secrets.yml` entry named `sonarr_api_key` containing the lab Sonarr key. Use private process input or a protected file. Use `radarr_api_key: unused-lab-only` for the shared configuration's unused Radarr reference; `sync sonarr` excludes that instance.
 2. Apply the lab Recyclarr resource Kustomization and render/apply its pinned Helm chart with release `restore-recyclarr` and the committed values. Run `kubectl --kubeconfig .lab/kubeconfig -n restore-sonarr create job --from=cronjob/restore-recyclarr <unique-job-name>`. Verify completion, logs, profile settings and custom-format counts; repeat to confirm no further changes. Leave the CronJob suspended.
 3. Create `restore-prowlarr-api-key` with a new `api-key` value. Apply the `indexer-fixture` and `prowlarr` resource Kustomizations, then render/apply Prowlarr's chart as `restore-prowlarr` with the committed values.
-4. Apply the `media-operator-indexers` resource Kustomization and render/apply its pinned chart as `restore-media-operator-indexers`, including CRDs. The 0.34.3 chart includes FlareSolverr RBAC; no separate workaround is required.
-5. Confirm Prowlarr's `/api/v1/appprofile` maps ID 1 to `Standard` before applying its CR. The CR currently requires a numeric app-profile ID. Apply `media-config`, then check Ready/Synced conditions at the current generation and verify actual application/indexer state through both APIs.
+4. Apply the `media-operator-indexers` resource Kustomization and render/apply its pinned chart as `restore-media-operator-indexers`, including CRDs. The 0.35.0 chart includes FlareSolverr RBAC; no separate workaround is required.
+5. The CR selects Prowlarr's built-in `Standard` sync profile by name, so its current ID is resolved during reconciliation; if the profile is missing, `Synced` should be false with no indexer writes. Apply `media-config`, then check Ready/Synced conditions at the current generation and verify actual application/indexer state through both APIs.
 6. Test the synchronized indexer through Sonarr. To verify repair, delete only `Recovery Fixture (Prowlarr)` from Sonarr and run Prowlarr's `ApplicationIndexerSync` command; confirm the indexer returns and the command completes. Never delete the restored production indexers as part of this test.
 7. Compare restored series/episode identities and the 54 episode-file records against the source dump. Retest blocked connections to the production API, NAS, lab API and unrelated public HTTPS from both applications.
 

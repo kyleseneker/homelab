@@ -29,7 +29,7 @@ spec:
       configContract: TorznabSettings
       enable: true
       # Confirm /api/v1/appprofile before applying to a rebuilt database.
-      appProfileId: 1
+      appProfileName: Standard
       priority: 25
       fields:
         - name: baseUrl
