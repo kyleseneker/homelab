@@ -213,7 +213,8 @@ prometheusOperator:
           memory: 64Mi
   podDisruptionBudget:
     enabled: true
-    minAvailable: 1
+    minAvailable: null
+    maxUnavailable: 1
 kubeStateMetrics:
   enabled: true
 kube-state-metrics:

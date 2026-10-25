@@ -1,5 +1,8 @@
 recommender:
   replicas: 1
+  podDisruptionBudget:
+    minAvailable: null
+    maxUnavailable: 1
   resources:
     requests:
       cpu: 25m
