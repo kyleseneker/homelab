@@ -104,7 +104,7 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 | `k8s_control_plane_version` | Kubernetes version for `kubeadm init` | `1.32.13` |
 | `k8s_control_plane_pod_network_cidr` | Pod CIDR passed to kubeadm | `10.244.0.0/16` |
 | `k8s_control_plane_service_cidr` | Service CIDR passed to kubeadm | `10.96.0.0/12` |
-| `k8s_control_plane_cilium_version` | Cilium version installed by the CLI | `1.19.1` |
+| `k8s_control_plane_cilium_version` | Cilium version installed by the CLI | `1.19.10` |
 | `k8s_prereqs_version` | Kubernetes package version on every node | `1.32.13` |
 | `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.32` |
 
