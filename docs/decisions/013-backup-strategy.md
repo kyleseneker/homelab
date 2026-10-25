@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The local Velero target is replaced by Garage; see [ADR-025](025-garage-velero-local-backups.md).
 
 ## Context
 

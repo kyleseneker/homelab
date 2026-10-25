@@ -145,6 +145,7 @@ nav:
       - Synthetic Monitoring: decisions/022-synthetic-monitoring-and-delivery.md
       - Scoped Autonomous Operations: decisions/023-scoped-autonomous-operations.md
       - Vault Integrated Storage: decisions/024-vault-integrated-storage.md
+      - Garage Local Backups: decisions/025-garage-velero-local-backups.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md
