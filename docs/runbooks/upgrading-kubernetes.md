@@ -10,7 +10,7 @@ Production and the shared image defaults still use Kubernetes **1.31.4**, an uns
 |---|---|---|
 | Kubernetes API / kubeadm / kubelet / kubectl packages | 1.31.4 | 1.34.12 |
 | containerd | 2.2.2 | 2.3.5 |
-| Cilium | 1.19.1 | 1.19.1 |
+| Cilium | 1.19.1 | 1.20.4 |
 | Gateway API CRDs | 1.4.0 | 1.4.0; Gateway controller disabled |
 | etcd | 3.5.15 | 3.6.5 |
 | Kyverno | 1.17.1, chart 3.7.1 | Not installed |
@@ -19,11 +19,37 @@ The lab passed the 1.31.4 → 1.32.13 → 1.33.13 control-plane-first upgrades t
 
 The 1.33.13 → 1.34.12 step moved etcd to 3.6. The [etcd 3.6 upgrade guide](https://etcd.io/docs/v3.6/upgrades/upgrade_3_6/) requires 3.5.32 or later first, so the lab etcd static Pod image was raised from 3.5.24-0 to 3.5.35-0 and verified healthy before the playbook ran. kubeadm then moved etcd to 3.6.5 and replaced `--experimental-initial-corrupt-check` with `--feature-gates=InitialCorruptCheck=true`. Once every member runs 3.6, binary rollback is no longer possible; recovery is a snapshot restore or the stopped-VM backups. At 1.34.12, both nodes report the target version and Ready, kube-proxy remains absent, Cilium reports OK and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic in both directions, Pod DNS, public HTTPS and blocked access to the production API and NAS passed, and the lab Sonarr and Prowlarr configurations reconciled. The Sonarr record, Authentik, Vault/ESO Secret recreation and qBittorrent checks were not repeated at this step. etcd 3.6.5 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
 
-[Cilium's pinned 1.19.1 compatibility table](https://raw.githubusercontent.com/cilium/cilium/v1.19.1/Documentation/network/kubernetes/compatibility.rst) lists Kubernetes 1.31 through 1.34 and does not list 1.35, so upgrade Cilium before the 1.35 step. The [1.34 upgrade guide](https://v1-34.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) covers the latest single-minor transition. Lab and production API deprecation metrics showed no requests to APIs with a scheduled removal release; this observation does not cover unexercised clients.
+The lab then upgraded Cilium 1.19.1 → 1.19.10 → 1.20.4 through [the Cilium procedure below](#upgrade-cilium). Pre-flight policy validation passed at each hop. On 1.20.4 both agents report OK and all 14 Applications remained Synced/Healthy. Cross-node Service and Pod traffic, Pod DNS, public HTTPS and the production API/NAS block passed. A pod under the `restore-sonarr` deny-all policy could not reach the internet or Sonarr, and the lab operators still reconciled Sonarr and Prowlarr through their allow rules. Gateway API is disabled in the lab, so the Gateway API CRD and TLSRoute changes were not exercised.
 
-The lab currently omits production admission webhooks, Gateway routing, GPU and NFS workloads, and uses a different containerd patch line. Rehearse those integrations before production maintenance. A temporary clone of template `9011` installed 1.33.13 through the shared prerequisite role, joined through the worker role, rebooted Ready, and passed cross-node networking and isolation checks. Its short-lived join token was revoked; the test node was removed. No bootstrap tokens remain in the lab. The bootstrap roles now revoke initialization tokens and reject package-version changes on initialized nodes. Template `9011` still contains the 1.31.4 baseline; build and verify a destination-version image before completing the migration. The next minor to rehearse is 1.35, after the Cilium upgrade.
+[Cilium 1.20's compatibility table](https://docs.cilium.io/en/v1.20/network/kubernetes/compatibility/) lists Kubernetes 1.33 through 1.36. Production's [pinned 1.19.1 table](https://raw.githubusercontent.com/cilium/cilium/v1.19.1/Documentation/network/kubernetes/compatibility.rst) lists 1.31 through 1.34, so production must upgrade Cilium before its 1.35 step. The [1.34 upgrade guide](https://v1-34.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/) covers the latest single-minor transition. Lab and production API deprecation metrics showed no requests to APIs with a scheduled removal release; this observation does not cover unexercised clients.
+
+The lab currently omits production admission webhooks, Gateway routing, GPU and NFS workloads, and uses a different containerd patch line. Rehearse those integrations before production maintenance. A temporary clone of template `9011` installed 1.33.13 through the shared prerequisite role, joined through the worker role, rebooted Ready, and passed cross-node networking and isolation checks. Its short-lived join token was revoked; the test node was removed. No bootstrap tokens remain in the lab. The bootstrap roles now revoke initialization tokens and reject package-version changes on initialized nodes. Template `9011` still contains the 1.31.4 baseline; build and verify a destination-version image before completing the migration. The next minor to rehearse is 1.35.
 
 CI renders the manifests with both production and lab Kubernetes capabilities and validates both schema targets, reading their versions from Ansible inventory. Production package, Packer, CLI and etcd-backup pins remain at the production baseline until its own tested cutover.
+
+## Upgrade Cilium
+
+Cilium supports upgrades only between consecutive minor releases, and its [upgrade guide](https://docs.cilium.io/en/v1.20/operations/upgrade/) requires the latest patch of the current minor first. Before each hop:
+
+1. Save the release values with `helm get values cilium -n kube-system -o yaml`. Do not use `--reuse-values` across minors. Releases installed by `cilium install` include values the CLI chose, such as `routingMode` and `cluster.name`.
+2. Check the target's upgrade notes against the cluster. For 1.20: no `cilium.io/v2alpha1` CiliumNodeConfig objects, no Kafka or `l7` policy rules, Gateway API CRDs at v1.6.1 or later when `gatewayAPI.enabled` is true (TLSRoute moves to `v1`), and no dashboards or alerts using the removed operator IPAM metrics. Production's Gateway API CRDs come from the shared `k8s/components/gateway-api`.
+3. Run the pre-flight check. Pass the API server address because kube-proxy is absent. Wait until its DaemonSet matches the agent count and its validator Deployment is ready, then delete it:
+
+```bash
+helm template cilium cilium --repo https://helm.cilium.io --version <target> \
+  --namespace kube-system --set preflight.enabled=true --set agent=false \
+  --set operator.enabled=false --set k8sServiceHost=<api-ip> --set k8sServicePort=6443 \
+  > preflight.yaml
+```
+
+4. Upgrade with the saved values. Set `upgradeCompatibility` to the Cilium minor the cluster was first installed with (`1.19` for the lab):
+
+```bash
+helm upgrade cilium cilium --repo https://helm.cilium.io --version <target> \
+  --namespace kube-system -f values.yaml --set upgradeCompatibility=<initial-minor>
+```
+
+5. Wait for the `cilium`, `cilium-envoy` and `cilium-operator` rollouts. Check `cilium-dbg status`, cross-node Service traffic, DNS and policy enforcement before the next hop. Roll back one minor at a time with `helm rollback cilium <revision> -n kube-system`.
 
 ## Before each minor upgrade
 
