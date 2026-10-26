@@ -444,7 +444,7 @@ This verifies Sonarr's bounded media-operator reconciliation. The following dril
 
 ## Recyclarr and Prowlarr Recovery
 
-The lab uses production's Recyclarr 8.7.1, Prowlarr 2.5.2 and indexer-operator 0.35.0 pins. Both clusters consume the same Recyclarr profile ConfigMap from `k8s/components/recyclarr-config`; URL environment overrides select the lab, while the default URLs preserve production behavior. The suspended lab CronJob runs only `sync sonarr`, stores its cache on local-path storage and uses a separate lab Secret. Run jobs sequentially against that cache.
+The lab uses production's Recyclarr 8.8.0, Prowlarr 2.5.2 and indexer-operator 0.35.0 pins. Both clusters consume the same Recyclarr profile ConfigMap from `k8s/components/recyclarr-config`; URL environment overrides select the lab, while the default URLs preserve production behavior. The suspended lab CronJob runs only `sync sonarr`, stores its cache on local-path storage and uses a separate lab Secret. Run jobs sequentially against that cache.
 
 Recyclarr repaired a deliberately disabled upgrade setting, adopted all 31 existing custom formats, and recreated the deleted `WEB-1080p` profile. Its new ID was **8**, replacing **7**. The lab series was temporarily assigned another profile to permit deletion, then reassociated with the recreated profile by name. A third sync reported no changes to profiles, formats, quality sizes or naming. This proves the configured profile can be recreated; consumers such as Seerr must resolve and verify the resulting ID rather than reuse production's numeric ID.
 
