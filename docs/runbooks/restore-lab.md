@@ -478,7 +478,7 @@ The [S3 logical-dump restore](backup-and-restore.md#authentik-postgresql-recover
 
 ## Tdarr Recovery
 
-The `tdarr` manifests run Tdarr 2.86.01 in `restore-tdarr`, using fresh local storage and namespace deny-all networking. Restore the native archive while the server is stopped, following the [Tdarr recovery procedure](backup-and-restore.md#tdarr-native-archive-recovery), before applying the Deployment. Supply a fresh lab API-key Secret; no production credentials, media volumes, GPUs or worker nodes are configured.
+The `tdarr` manifests run Tdarr 2.96.01 in `restore-tdarr`, using fresh local storage and namespace deny-all networking. Restore the native archive while the server is stopped, following the [Tdarr recovery procedure](backup-and-restore.md#tdarr-native-archive-recovery), before applying the Deployment. Supply a fresh lab API-key Secret; no production credentials, media volumes, GPUs or worker nodes are configured.
 
 The server loads the archived flows, libraries, variables and file metadata exactly; all archived plugin file hashes match. API authentication and isolation checks passed. Transcoding, media recovery and normal UI/SSO login remain outside this verification.
 
