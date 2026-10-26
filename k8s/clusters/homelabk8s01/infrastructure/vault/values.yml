@@ -1,6 +1,9 @@
 injector:
   enabled: false
 server:
+  # One auto-unsealed replica has no standbys to upgrade first, so let Argo roll it.
+  # Return to the chart's OnDelete default if this becomes a multi-node cluster.
+  updateStrategyType: RollingUpdate
   image:
     repository: hashicorp/vault
     tag: 1.21.4
