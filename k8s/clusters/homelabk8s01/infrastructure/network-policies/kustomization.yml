@@ -7,5 +7,4 @@ resources:
   - external-secrets.yml
   - kyverno.yml
   - monitoring.yml
-  - openclaw.yml
   - vault.yml

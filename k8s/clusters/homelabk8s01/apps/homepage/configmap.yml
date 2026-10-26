@@ -79,10 +79,6 @@ data:
               type: seerr
               url: http://arr-seerr.arr.svc.cluster.local:80
               key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
-        - OpenClaw:
-            icon: openclaw.svg
-            href: https://openclaw.homelab.local
-            description: AI agent platform
     - Media:
         - qBittorrent:
             icon: qbittorrent.svg

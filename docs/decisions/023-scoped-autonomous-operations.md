@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. OpenClaw was an experiment and has since been removed, so this boundary no longer applies.
 
 ## Context
 

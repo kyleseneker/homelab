@@ -82,7 +82,6 @@ alertmanager:
   alertmanagerSpec:
     secrets:
       - alertmanager-slack-webhook
-      - alertmanager-openclaw-hooks-token
       - alertmanager-heartbeat
     resources:
       requests:
@@ -116,15 +115,10 @@ alertmanager:
           matchers:
             - severity = "critical"
           repeat_interval: 1h
-          continue: true
         - receiver: slack-alerts
           matchers:
             - severity = "warning"
           repeat_interval: 4h
-          continue: true
-        - receiver: openclaw
-          matchers:
-            - severity =~ "warning|critical"
     inhibit_rules:
       - source_matchers:
           - severity = "critical"
@@ -161,13 +155,6 @@ alertmanager:
               {{ end }}
             color: '{{ if eq .Status "firing" }}{{ if eq .CommonLabels.severity "critical"
               }}danger{{ else }}warning{{ end }}{{ else }}good{{ end }}'
-      - name: openclaw
-        webhook_configs:
-          - url: http://openclaw.openclaw.svc.cluster.local:18789/webhook/alertmanager
-            send_resolved: true
-            http_config:
-              authorization:
-                credentials_file: /etc/alertmanager/secrets/alertmanager-openclaw-hooks-token/token
 nodeExporter:
   enabled: true
 prometheus-node-exporter:

@@ -40,7 +40,7 @@ The ExternalSecret syncs `alertmanager-slack-webhook` from Vault into the `monit
 | Repeat interval | 4h |
 | Inhibition | Critical suppresses warning for same alert+namespace |
 
-The `Watchdog` alert is sent every minute to the heartbeat URL from Vault. The external heartbeat service must be configured to notify on missing pings and tested by interrupting delivery. `InfoInhibitor` goes to the null receiver. Warning and critical alerts also go to OpenClaw after Slack routing.
+The `Watchdog` alert is sent every minute to the heartbeat URL from Vault. The external heartbeat service must be configured to notify on missing pings and tested by interrupting delivery. `InfoInhibitor` goes to the null receiver.
 
 ## Custom Homelab Rules
 

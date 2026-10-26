@@ -60,11 +60,9 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
 | `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
 | `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |
-| `apps/openclaw` | `alertmanager-openclaw-hooks-token` | `monitoring` |
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
-| `apps/arr`, `apps/openclaw` | `openclaw-secrets` | `openclaw` |
 
 The manifests define the complete property-level contract. Sonarr, Radarr and Prowlarr accept the shared API keys from Vault through injected environment variables. Bazarr and other first-boot generated credentials still require a tested adoption/bootstrap path. `make arr-keys-adopt` can adopt existing application keys without printing them or overwriting sibling fields.
 

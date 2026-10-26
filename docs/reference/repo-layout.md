@@ -118,7 +118,6 @@ homelab/
 │       └── apps/                    # User-facing applications
 │           ├── homepage/
 │           ├── uptime-kuma/
-│           ├── openclaw/
 │           ├── media-operator/      # Servarr operator (Sonarr/Radarr/Prowlarr config)
 │           ├── media-operator-downloads/  # Download-client operator
 │           └── arr/

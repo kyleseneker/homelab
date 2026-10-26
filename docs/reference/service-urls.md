@@ -22,7 +22,6 @@ These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). Al
 | Uptime Kuma | `https://status.homelab.local` |
 | Authentik | `https://auth.homelab.local` |
 | Vault | `https://vault.homelab.local` |
-| OpenClaw | `https://openclaw.homelab.local` |
 | Goldilocks | `https://goldilocks.homelab.local` |
 
 ## Outside the Cluster

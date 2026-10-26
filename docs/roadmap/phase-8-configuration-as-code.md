@@ -29,7 +29,7 @@ Configarr is not being adopted alongside this ownership model. Its overlapping c
 
 ## 8.3 Remove conflicting and obsolete ownership
 
-- [ ] Confirm notification wiring has exactly one owner and retire any legacy OpenClaw boot-time reconciler once the operator owns the same entries.
+- [ ] Confirm notification wiring has exactly one owner.
 - [ ] Keep desired settings in Git and secrets in Vault; document intentional UI-only exceptions.
 - [ ] Keep the supported CRD schemas and chart versions aligned in validation and Renovate.
 

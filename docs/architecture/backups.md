@@ -82,7 +82,7 @@ Velero uses the AWS plugin to communicate with Garage, MinIO and AWS over the S3
 
     Kopia also only reads volumes attached to a **running** pod. Each backup volume is kept mounted by a holder Deployment; without it the mechanism silently captures nothing.
 
-All schedule times below are UTC. Offsite excludes `backups` to avoid copying the local object store's archives; etcd snapshots already have a separate S3 upload. OpenClaw state is included in daily and offsite schedules.
+All schedule times below are UTC. Offsite excludes `backups` to avoid copying the local object store's archives; etcd snapshots already have a separate S3 upload.
 
 ## Backup Schedules
 
@@ -91,7 +91,7 @@ Three schedules cover granular daily recovery, broad on-site disaster recovery, 
 ```mermaid
 flowchart TD
     subgraph daily["Daily Stateful (3:00 AM)"]
-        dailyTarget["arr, monitoring, auth, openclaw"]
+        dailyTarget["arr, monitoring, auth"]
         dailyRetention["Retention: 7 days"]
     end
 
@@ -101,7 +101,7 @@ flowchart TD
     end
 
     subgraph offsite["Weekly Offsite (Sunday 5:00 AM)"]
-        offsiteTarget["arr, monitoring, auth, openclaw,\nargocd, vault, external-secrets"]
+        offsiteTarget["arr, monitoring, auth,\nargocd, vault, external-secrets"]
         offsiteRetention["Retention: 30 days"]
     end
 
@@ -114,9 +114,9 @@ flowchart TD
 
 | Schedule | Frequency | Time | Namespaces | Retention | Location |
 |----------|-----------|------|-----------|-----------|----------|
-| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth`, `openclaw` | 7 days | `local` |
+| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth` | 7 days | `local` |
 | `weekly-full-cluster` | Every Sunday | 4:00 AM | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | `local` |
-| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `openclaw`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
+| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
 
 The daily backup targets the namespaces with the most frequently changing state. The weekly full backup captures everything on-site; `backups` is excluded from it because backing the local object store up into itself is circular. The offsite backup narrows to what is needed to rebuild from nothing.
 
@@ -232,7 +232,7 @@ A green backup status is not a restore test. Record an isolated application rest
 
 ## Recovery Coverage
 
-The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `openclaw`, `argocd`, `vault` and `external-secrets`. The local object stores (Garage and legacy MinIO) and the NFS provisioner's root export are deliberately outside that schedule.
+The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object stores (Garage and legacy MinIO) and the NFS provisioner's root export are deliberately outside that schedule.
 
 | Namespace / PVC | Data and recovery mechanism | Remaining limitation |
 |-----------------|-----------------------------|----------------------|
@@ -260,7 +260,6 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `monitoring/uptime-kuma-data` | Daily SQLite online dump to `uptime-kuma-backups` | Application login/monitor restoration unverified |
 | `monitoring/uptime-kuma-backups` | NFS dump staging volume mounted by its holder | Captured offsite; still requires application-level restoration |
 | `nfs-provisioner/pvc-nfs-provisioner-nfs-subdir-external-provisioner` | Root export mount used by the provisioner | Not a separate copy of child PVC data; reconstruct provisioning from Git |
-| `openclaw/openclaw` | NFS workspace/runtime state captured by daily and offsite Velero | Restore with integrations and remediation disabled until credentials and scope are verified |
 | `vault/vault-raft-data` | Daily native online snapshot to S3, independent of Velero/NFS | Production S3 snapshot restored in isolation with original KMS/identity and matching values; HCP-independent credential escrow remains open |
 | `vault/data-vault-0` | Retained, unmounted pre-cutover file backend | Historical recovery material only; receives no new writes and is not a current rollback |
 

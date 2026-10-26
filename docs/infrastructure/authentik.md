@@ -37,7 +37,7 @@ Cross-namespace HTTPRoutes require `referencegrant.yml`. Cilium must permit both
 
 Grafana and ArgoCD authenticate with dedicated OIDC providers. Grafana accesses token/userinfo endpoints over the internal Service; ArgoCD uses the external HTTPS issuer with the homelab CA. Both retain local administrator login for recovery.
 
-Jellyfin and Seerr use their media login flow. Homepage, Vault, OpenClaw and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
+Jellyfin and Seerr use their media login flow. Homepage, Vault and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
 
 ## Secrets
 

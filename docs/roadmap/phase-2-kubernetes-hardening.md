@@ -16,7 +16,6 @@ Production and shared image defaults use Kubernetes 1.34.12. The lab runs 1.36.5
 ## 2.2 Make least privilege real
 
 - [ ] Deploy the audit/Alloy fixes and confirm secret and token payloads no longer enter new logs. Assess access to retained historical logs separately.
-- [ ] Verify that the deployed OpenClaw ServiceAccount cannot mutate nodes.
 - [ ] Exercise each Kyverno rule with violating regular and init containers, plus legitimate privileged infrastructure exceptions.
 - [ ] Replace blanket namespace exceptions incrementally where workloads actually conform; do not enable enforcement by breaking essential controllers.
 - [ ] Measure egress and management reachability before tightening policies in working namespaces.

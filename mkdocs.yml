@@ -79,7 +79,6 @@ nav:
       - FlareSolverr: apps/flaresolverr.md
       - Homepage: apps/homepage.md
       - Uptime Kuma: apps/uptime-kuma.md
-      - OpenClaw: apps/openclaw.md
   - Infrastructure:
       - infrastructure/index.md
       - Cilium Gateway: infrastructure/cilium-gateway.md

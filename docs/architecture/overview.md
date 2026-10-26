@@ -89,7 +89,6 @@ flowchart LR
 | Exportarr | Prometheus exporter for *arr app metrics | `arr` |
 | Homepage | Dashboard | `arr` |
 | Uptime Kuma | Synthetic monitoring and status page | `monitoring` |
-| OpenClaw | AI agents for cluster ops and media management | `openclaw` |
 
 ## Naming Conventions
 

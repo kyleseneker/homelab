@@ -23,7 +23,7 @@ The roadmap contains remaining work. Remove completed tasks; keep enduring opera
 | [3 — Network](phase-3-network.md) | 10G switch and DAC links, management VLAN, WireGuard, DNS automation and external access | In progress; WireGuard/Teleport implemented, 10G upgrade planned |
 | [4 — Compute & Storage](phase-4-compute-and-storage.md) | Second MS-01, three control planes, Vault Raft and NAS expansion | Planned |
 | [5 — Observability](phase-5-observability.md) | Distributed tracing, dashboards as code, SLO alerting and synthetic monitoring | In progress; dashboards and Blackbox probes implemented |
-| [6 — Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos testing, supply-chain verification and scoped automation | In progress; CI validation and scoped OpenClaw configuration implemented |
+| [6 — Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos testing, supply-chain verification | In progress; CI validation implemented |
 | [7 — Long-Term Vision](phase-7-long-term-vision.md) | Third host, Crossplane, multi-cluster management, dedicated GPU and full 10G fabric | Planned |
 | [8 — Configuration as Code](phase-8-configuration-as-code.md) | Media application configuration, Authentik blueprints and media-platform improvements | In progress; operators and blueprints implemented, fresh-install checks remain |
 

@@ -1,6 +1,6 @@
 # Applications
 
-The homelab runs an automated media management stack commonly referred to as the *arr stack. Most applications are deployed into the `arr` namespace via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2); Uptime Kuma runs in `monitoring` and OpenClaw in `openclaw`. Routing is provided by Cilium Gateway API with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
+The homelab runs an automated media management stack commonly referred to as the *arr stack. Most applications are deployed into the `arr` namespace via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2); Uptime Kuma runs in `monitoring`. Routing is provided by Cilium Gateway API with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
 
 Authentication is per route: several administrative UIs use the Authentik reverse proxy, while direct routes rely on native application authentication. See [Auth & SSO](../architecture/auth.md) for the route inventory and remaining gaps.
 
@@ -62,7 +62,6 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 | [Config Backup](config-backup.md) | `arr` | -- | Nightly SQLite/native-archive staging | `python` |
 | [Homepage](homepage.md) | `arr` | `home.homelab.local` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
 | [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.homelab.local` | Synthetic monitoring and status page | `louislam/uptime-kuma` |
-| [OpenClaw](openclaw.md) | `openclaw` | `openclaw.homelab.local` | AI agents for cluster ops and media management | `ghcr.io/openclaw/openclaw` |
 
 ## Deployment Ordering
 

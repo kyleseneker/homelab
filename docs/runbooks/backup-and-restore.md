@@ -8,9 +8,9 @@ Velero runs three automated backup schedules:
 
 | Schedule | Scope | Retention | Time | Target |
 |----------|-------|-----------|------|--------|
-| `daily-stateful` | `arr`, `monitoring`, `auth`, `openclaw` namespaces | 7 days | 3:00 AM daily | Garage (`local`) |
+| `daily-stateful` | `arr`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily | Garage (`local`) |
 | `weekly-full-cluster` | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | 4:00 AM Sunday | Garage (`local`) |
-| `weekly-offsite` | `arr`, `monitoring`, `auth`, `openclaw`, `argocd`, `vault`, `external-secrets` | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
+| `weekly-offsite` | `arr`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
 
 Times are UTC. The schedules capture Kubernetes objects and eligible mounted volume data through Kopia. Offsite is a selected recovery set, not a copy of the local schedule; it excludes the local backup store in `backups` to avoid copying local archives again. Local-path data requires the separate dump/restore procedure below.
 

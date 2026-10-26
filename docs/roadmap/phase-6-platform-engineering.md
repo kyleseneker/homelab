@@ -1,10 +1,10 @@
 # Phase 6 — Platform Engineering
 
-**Status:** In progress. CI renders manifests, validates schemas and tests tooling; scoped OpenClaw remediation is configured. Staging, Falco, chaos testing and admission-time signature verification remain planned.
+**Status:** In progress. CI renders manifests, validates schemas and tests tooling. Staging, Falco, chaos testing and admission-time signature verification remain planned.
 
 **Goal:** Build a platform engineering practice with repeatable promotion, runtime security, failure experiments and supply-chain verification.
 
-**Addresses:** K12, K13, K18, K22, K23 and K47 in the [assessment](assessment.md), alongside upgrade and recovery validation.
+**Addresses:** K12, K13, K18, K22 and K23 in the [assessment](assessment.md), alongside upgrade and recovery validation.
 
 ## 6.1 Staging Cluster
 
@@ -45,16 +45,9 @@ Use staging for destructive experiments. Expand production experiments only when
 
 Signature verification establishes provenance from a configured signer. Scanning and dependency updates address separate supply-chain concerns.
 
-## 6.5 Scoped Autonomous Operations
-
-- [ ] Verify Slack pairing and webhook authentication independently.
-- [ ] Record remediation target, reason, before/after state and outcome.
-- [ ] Review write-capable media API credentials separately from Kubernetes permissions.
-
 ## Definition of Done
 
 - [ ] The staging cluster is used for upgrades and promotion before production.
 - [ ] Falco alerts on tested anomalous runtime behavior.
 - [ ] Weekly scoped chaos experiments run and record recovery results.
 - [ ] Image signatures are verified at admission for the defined image set.
-- [ ] Autonomous remediation has verified access limits and recorded outcomes.

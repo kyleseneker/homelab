@@ -10,7 +10,7 @@ The embedded outpost proxies protected browser traffic. An outage can affect the
 |----------|--------|
 | OIDC apps (Grafana, ArgoCD) | **SSO login fails** -- fall back to local admin credentials, below |
 | *arr apps, qBittorrent, Tdarr, Goldilocks, Prometheus, Alertmanager | **Public route fails** if the proxy outpost is unavailable; use local port forwarding during recovery |
-| Homepage, Vault, OpenClaw, Uptime Kuma | **No edge dependency** -- native authentication still applies where configured |
+| Homepage, Vault, Uptime Kuma | **No edge dependency** -- native authentication still applies where configured |
 | Jellyfin | **Unaffected** -- has its own auth, no SSO dependency |
 
 ## Fallback: Local Admin Logins

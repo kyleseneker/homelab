@@ -1,5 +1,4 @@
 """Exercise embedded app scripts without a cluster or application credentials."""
-import json
 import os
 from pathlib import Path
 import sqlite3
@@ -20,100 +19,6 @@ def configmap_data(path):
         if document and document.get("kind") == "ConfigMap":
             return document["data"]
     raise AssertionError(f"No ConfigMap found in {path}")
-
-
-class OpenClawRuntimeTests(unittest.TestCase):
-    def test_hook_modules_resolve_to_the_bootstrapped_transform_directory(self):
-        config = json.loads(configmap_data(
-            APPS / "openclaw/openclaw-config.yml"
-        )["config.json5"])
-        values = yaml.safe_load((APPS / "openclaw/values.yml").read_text())
-        runtime_path = Path(values["controllers"]["main"]["containers"]["main"]
-                            ["env"]["OPENCLAW_CONFIG_PATH"])
-        root = runtime_path.parent / "hooks/transforms"
-        # OpenClaw resolves this option relative to its transform root, not a shell.
-        configured = root / config["hooks"].get("transformsDir", ".")
-        transforms = configmap_data(APPS / "openclaw/hooks-transforms-configmap.yml")
-        for mapping in config["hooks"]["mappings"]:
-            module = mapping["transform"]["module"]
-            self.assertEqual(configured / module, root / module)
-            self.assertIn(module, transforms)
-
-    def run_node(self, script):
-        result = subprocess.run(
-            ["node", "-"], input=script, text=True, capture_output=True, cwd=REPO
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_webhooks_read_context_payload(self):
-        transforms = configmap_data(APPS / "openclaw/hooks-transforms-configmap.yml")
-        self.run_node(
-            "const sources = " + json.dumps(transforms) + ";\n" + r"""
-const assert = require('node:assert/strict');
-(async () => {
-  const load = async name => (await import('data:text/javascript;base64,' +
-    Buffer.from(sources[name]).toString('base64'))).default;
-  const arr = await load('arr-webhook.js');
-  const alerts = await load('alertmanager-webhook.js');
-  assert.equal(arr({payload:{eventType:'Download',instanceName:'Sonarr',
-    series:{title:'Example'}}}).message, '[Sonarr] Download: Example');
-  assert.equal(arr({payload:{eventType:'Grab',instanceName:'Radarr',
-    movie:{title:'A Movie'}}}).message, '[Radarr] Grab: A Movie');
-  assert.match(alerts({payload:{status:'firing',alerts:[{
-    labels:{severity:'critical',alertname:'AppDown',namespace:'arr'},
-    annotations:{description:'unavailable'}}]}}).message,
-    /FIRING:\n\[CRITICAL\] AppDown \(arr\): unavailable/);
-  assert.match(alerts({payload:{status:'resolved',alerts:[{
-    labels:{alertname:'Test'}}]}}).message, /RESOLVED/);
-  assert.equal(alerts({payload:{}}).message,
-    'Alertmanager webhook received with no alerts.');
-})().catch(error => { console.error(error); process.exitCode = 1; });
-"""
-        )
-
-    def test_config_migration_preserves_token_and_reconciles_policy(self):
-        values = yaml.safe_load((APPS / "openclaw/values.yml").read_text())
-        script = values["controllers"]["main"]["initContainers"]["config"]["args"][0]
-        config = configmap_data(APPS / "openclaw/openclaw-config.yml")["config.json5"]
-        with tempfile.TemporaryDirectory() as directory:
-            fixture = Path(directory)
-            (fixture / "state").mkdir()
-            (fixture / "config").mkdir()
-            (fixture / "config/config.json5").write_text(config)
-            script = script.replace("/state/", f"{fixture}/state/")
-            script = script.replace("/config/", f"{fixture}/config/")
-            self.run_node(
-                "const fixture = " + json.dumps(str(fixture)) + ";\n"
-                + "const script = " + json.dumps(script) + ";\n" + r"""
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-const assert = require('node:assert/strict');
-const configPath = path.join(fixture, 'state/openclaw.json');
-const run = () => vm.runInNewContext(script, {require});
-run();
-let actual = JSON.parse(fs.readFileSync(configPath));
-assert.match(actual.gateway.auth.token, /^[a-f0-9]{64}$/);
-assert.equal(fs.statSync(configPath).mode & 0o777, 0o600);
-actual.gateway.auth.token = 'existing-ui-token';
-actual.channels.slack.dmPolicy = 'open';
-actual.channels.slack.allowFrom = ['*'];
-fs.writeFileSync(configPath, JSON.stringify(actual));
-run();
-actual = JSON.parse(fs.readFileSync(configPath));
-assert.equal(actual.gateway.auth.token, 'existing-ui-token');
-assert.equal(actual.channels.slack.dmPolicy, 'pairing');
-assert.equal(actual.channels.slack.allowFrom, undefined);
-assert.equal(fs.statSync(configPath + '.pre-gitops').mode & 0o777, 0o600);
-const migrationBackup = fs.readFileSync(configPath + '.pre-gitops', 'utf8');
-run();
-assert.equal(JSON.parse(fs.readFileSync(configPath)).gateway.auth.token, 'existing-ui-token');
-assert.equal(fs.readFileSync(configPath + '.pre-gitops', 'utf8'), migrationBackup);
-fs.writeFileSync(configPath, 'invalid-json');
-assert.throws(run);
-assert.equal(fs.readFileSync(configPath, 'utf8'), 'invalid-json');
-"""
-            )
 
 
 class RecyclarrRuntimeTests(unittest.TestCase):

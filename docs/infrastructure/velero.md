@@ -34,9 +34,9 @@ The legacy MinIO location `default` (`http://minio.backups.svc.cluster.local:900
 
 | Schedule | Cron | Scope | TTL |
 |----------|------|-------|-----|
-| `daily-stateful` | 03:00 UTC daily | `arr`, `monitoring`, `auth`, `openclaw` namespaces to `local` | 7 days |
+| `daily-stateful` | 03:00 UTC daily | `arr`, `monitoring`, `auth` namespaces to `local` | 7 days |
 | `weekly-full-cluster` | 04:00 UTC Sunday | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups`, to `local` | 30 days |
-| `weekly-offsite` | 05:00 UTC Sunday | `arr`, `monitoring`, `auth`, `openclaw`, `argocd`, `vault`, `external-secrets` to `offsite` | 30 days |
+| `weekly-offsite` | 05:00 UTC Sunday | `arr`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` to `offsite` | 30 days |
 
 ### Resources
 

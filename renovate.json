@@ -151,16 +151,6 @@
       "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+$/"
     },
     {
-      "description": "Group OpenClaw container images",
-      "matchDatasources": [
-        "docker"
-      ],
-      "matchPackageNames": [
-        "/^ghcr\\.io\\/openclaw\\//"
-      ],
-      "groupName": "openclaw"
-    },
-    {
       "description": "Keep the media-operator CRDs and managers on one release",
       "matchPackageNames": [
         "/^ghcr\\.io/kyleseneker/media-operator//"
