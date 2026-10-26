@@ -1,6 +1,9 @@
 injector:
   enabled: false
 server:
+  image:
+    repository: hashicorp/vault
+    tag: 1.21.4
   statefulSet:
     securityContext:
       pod:
