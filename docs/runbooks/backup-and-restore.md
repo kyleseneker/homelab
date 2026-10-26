@@ -244,7 +244,7 @@ manual job; the first scheduled run supplies the CronJob success timestamp.
    `vault-raft-snapshots/` object, download it with the exported S3 identity, and
    compare SHA-256 with its `sha256` object metadata. This needs neither production
    Kubernetes nor Velero, Garage or NAS.
-2. Prepare a separate Vault 1.21.2 Raft target with a **new empty** local PVC and
+2. Prepare a separate Vault 1.21.4 Raft target with a **new empty** local PVC and
    the original KMS key/credentials. Isolate it from production clients and
    Kubernetes authentication. Preserve any surviving data before replacing it.
 3. Only for this empty snapshot target, run `vault operator init` and capture its

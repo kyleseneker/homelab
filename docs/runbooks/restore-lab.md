@@ -490,7 +490,7 @@ Fresh login, torrent/category/path/history comparisons, network isolation and pe
 
 ## Vault Recovery
 
-The `infrastructure/vault` base restores Vault 1.21.2 in `restore-vault` on a
+The `infrastructure/vault` base restores Vault 1.21.4 in `restore-vault` on a
 fresh local PVC, with a cluster-internal Service and no external route. Import the
 quiesced encrypted archive before starting the Deployment and supply the original
 KMS credentials privately. DNS, the regional KMS HTTPS endpoint and the lab API
