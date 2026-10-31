@@ -159,8 +159,8 @@ jobs:
       - name: Test container security policy regressions
         env:
           # Match the appVersion of the pinned Kyverno chart.
-          KYVERNO_VERSION: v1.18.2
-          KYVERNO_SHA256: cb2feb8356149fd2fe774c894ccf0969f4a60a83867dd913af724f74ffbbc18b
+          KYVERNO_VERSION: v1.19.2
+          KYVERNO_SHA256: 357eaf1df8bc24ddd5a73979fadeaae6a032e8710f11af264229756e4956bf4a
         run: |
           cli_dir="$(mktemp -d)"
           trap 'rm -rf "$cli_dir"' EXIT
