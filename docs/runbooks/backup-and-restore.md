@@ -605,7 +605,7 @@ The dump was retrieved from S3, without reading NAS data during restoration. Rec
 
 ### Verified Application and OIDC Recovery
 
-After restoring the database, create `restore-authentik-server` in `restore-auth` with the original `AUTHENTIK_SECRET_KEY` under `secret-key`, using private process input. Apply `k8s/clusters/homelabrestore01/apps/authentik-server` with the lab kubeconfig. This is a separate deployment step: it starts the matching Authentik 2026.2.1 server and permits only lab PostgreSQL and DNS egress. The database Service is internal; server access uses a localhost-only port-forward. No worker or embedded outpost runs, and no production blueprints are mounted.
+After restoring the database, create `restore-authentik-server` in `restore-auth` with the original `AUTHENTIK_SECRET_KEY` under `secret-key`, using private process input. Apply `k8s/clusters/homelabrestore01/apps/authentik-server` with the lab kubeconfig. This is a separate deployment step: it starts the matching Authentik 2026.8.5 server and permits only lab PostgreSQL and DNS egress. The database Service is internal; server access uses a localhost-only port-forward. No worker or embedded outpost runs, and no production blueprints are mounted.
 
 The application recovery check passed against the S3-restored database:
 
