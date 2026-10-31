@@ -76,7 +76,7 @@ KUBECONFIG=kubeconfig cilium upgrade --version <target> \
   --set upgradeCompatibility=1.19
 ```
 
-5. Wait for the `cilium`, `cilium-envoy` and `cilium-operator` rollouts. The workloads carry no ConfigMap checksum, so after a `cilium-config` change restart all three and confirm `cilium_drift_checker_config_delta` in `cilium-dbg metrics list` is 0. Check `cilium-dbg status`, cross-node Service traffic, DNS and policy enforcement before the next hop. Roll back one minor at a time: `helm rollback cilium <revision> -n kube-system` in the lab, and `cilium upgrade --version <previous>` in production, where Helm's apply conflicts with the CLI's field ownership.
+5. Wait for the `cilium`, `cilium-envoy` and `cilium-operator` rollouts. The workloads carry no ConfigMap checksum, so after a `cilium-config` change restart all three, as `make cilium-upgrade` does, and confirm `cilium_drift_checker_config_delta` in `cilium-dbg metrics list` is 0. Check `cilium-dbg status`, cross-node Service traffic, DNS and policy enforcement before the next hop. Roll back one minor at a time: `helm rollback cilium <revision> -n kube-system` in the lab, and `cilium upgrade --version <previous>` in production, where Helm's apply conflicts with the CLI's field ownership.
 
 ## Before each minor upgrade
 

@@ -15,6 +15,8 @@ export KUBECONFIG ?= $(CURDIR)/kubeconfig
 
 CP_IP      = $(shell cd $(TF_DIR) && terraform output -raw control_plane_ip 2>/dev/null || echo "unknown")
 CILIUM_VER := $(shell grep k8s_control_plane_cilium_version $(ANSIBLE_DIR)/group_vars/all/vars.yml | awk -F'"' '{print $$2}')
+# Production's configuration already uses 1.19 defaults; see the Cilium upgrade runbook.
+CILIUM_UPGRADE_COMPAT ?= 1.19
 
 .PHONY: help docs docs-serve
 
@@ -157,7 +159,12 @@ k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 
 cilium-upgrade: ## Upgrade Cilium and enable Gateway API + L2 announcements on existing cluster
 	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
-	cilium upgrade --version $(CILIUM_VER) --values ansible/roles/k8s_control_plane/files/cilium-values.yml --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443
+	cilium upgrade --version $(CILIUM_VER) --values ansible/roles/k8s_control_plane/files/cilium-values.yml --set k8sServiceHost=$(CP_IP) --set k8sServicePort=6443 --set upgradeCompatibility=$(CILIUM_UPGRADE_COMPAT)
+	@# The workloads carry no ConfigMap checksum, so restart them to apply cilium-config changes.
+	kubectl -n kube-system rollout restart daemonset/cilium daemonset/cilium-envoy deployment/cilium-operator
+	kubectl -n kube-system rollout status daemonset/cilium --timeout=10m
+	kubectl -n kube-system rollout status daemonset/cilium-envoy --timeout=10m
+	kubectl -n kube-system rollout status deployment/cilium-operator --timeout=5m
 	cilium status --wait
 
 k8s-ssh-cp: ## SSH into control plane
