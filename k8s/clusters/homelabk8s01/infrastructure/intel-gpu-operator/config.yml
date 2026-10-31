@@ -3,7 +3,7 @@ namespace: intel-gpu-operator
 sourceType: helm
 chartRepo: https://intel.github.io/helm-charts
 chartName: intel-device-plugins-operator
-chartVersion: 0.36.0
+chartVersion: 0.37.1
 createNamespace: true
 hasResources: true
 syncOptions:
