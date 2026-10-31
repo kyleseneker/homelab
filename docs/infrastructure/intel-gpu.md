@@ -34,7 +34,7 @@ The operator and the plugin DaemonSet run under their own ServiceAccounts (`inte
 ### Upgrade Notes
 
 - **Removed webhook entries:** cert-manager's cainjector co-owns the `caBundle` of every entry in the operator's webhook configurations. When a chart release drops an entry, Argo's server-side apply cannot remove it and the sync fails with `webhooks[N].sideEffects: Required value`. Remove the dropped entries from the live configurations with a JSON patch, then let Argo retry. The 0.37.1 upgrade dropped the DLB and FPGA entries this way.
-- **Removed CRDs:** Argo applies the chart's CRDs without tracking them, so CRDs a release drops are not pruned. Delete them by hand once no custom resources use them. The FPGA and DLB CRDs dropped in 0.37.1 remain until then.
+- **Removed CRDs:** Argo applies the chart's CRDs without tracking them, so CRDs a release drops are not pruned. Delete them by hand once no custom resources use them, as was done for the FPGA and DLB CRDs dropped in 0.37.1.
 
 ## Cluster Integration
 
