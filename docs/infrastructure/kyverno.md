@@ -13,7 +13,7 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 
 ## Key Configuration
 
-- **Admission Controller**: 1 replica
+- **Admission Controller**: 3 replicas, one per node including the control plane, with a `maxUnavailable: 1` PDB. Required anti-affinity keeps a drained node's replica Pending until that node returns, so the fail-closed webhook keeps two replicas through each drain and the spread restores itself. Rollouts replace pods in place (`maxSurge: 0`) because no node has room for a surge replica.
 - **Resources** (across all controllers):
     - Requests: ~250m CPU, ~320Mi memory
     - Limits: ~896Mi memory

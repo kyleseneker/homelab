@@ -10,6 +10,24 @@ admissionController:
     - key: node-role.kubernetes.io/control-plane
       operator: Exists
       effect: NoSchedule
+  # One replica per node: a drained node's replica waits Pending and returns with
+  # the node instead of doubling up elsewhere.
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution: null
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/component
+              operator: In
+              values:
+                - admission-controller
+        topologyKey: kubernetes.io/hostname
+  # With every node holding a replica there is no room for a surge pod.
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   podDisruptionBudget:
     enabled: true
     minAvailable: null
