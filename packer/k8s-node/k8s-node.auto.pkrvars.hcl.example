@@ -1,9 +1,6 @@
 proxmox_url              = "https://192.168.10.2:8006/api2/json"
-proxmox_api_token_id     = "terraform@pam!terraform"
-proxmox_api_token_secret = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 proxmox_node             = "homelabpve01"
 template_id              = 9000
 k8s_version              = "1.35.10"
 k8s_version_minor        = "1.35"
-ssh_public_key          = "ssh-ed25519 REPLACE_WITH_BUILD_PUBLIC_KEY"
-ssh_private_key_file    = "/absolute/path/to/build-key"
+# make packer-build supplies a temporary API token and build key; see scripts/packer-build.sh.

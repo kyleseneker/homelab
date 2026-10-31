@@ -78,8 +78,8 @@ packer-init: ## Initialize Packer plugins
 packer-validate: ## Validate Packer template
 	cd $(PACKER_DIR) && packer validate .
 
-packer-build: ## Build K8s node VM template on Proxmox
-	cd $(PACKER_DIR) && packer build .
+packer-build: ## Build K8s node VM template on Proxmox with a temporary build token
+	./scripts/packer-build.sh $(PACKER_ARGS)
 
 # ---------------------------------------------------------------------------
 # Proxmox host  (override with PVE_HOST=<name>)
