@@ -3,7 +3,7 @@ namespace: arr
 sourceType: helm
 chartRepo: ghcr.io/seerr-team/seerr
 chartName: seerr-chart
-chartVersion: "3.3.0"
+chartVersion: "3.10.1"
 createNamespace: false
 hasResources: true
 syncOptions:
