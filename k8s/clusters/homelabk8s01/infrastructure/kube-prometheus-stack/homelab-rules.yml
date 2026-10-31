@@ -128,7 +128,9 @@ spec:
         - alert: ArgoCDVersionDrift
           expr: |
             count by (container) (
-              kube_pod_container_info{namespace="argocd", image_spec=~"quay\\.io/argoproj/argocd:.*", image_spec!="quay.io/argoproj/argocd:v3.5.6"}
+              kube_pod_container_info{namespace="argocd", image_spec=~"quay\\.io/argoproj/argocd:.*"}
+              unless
+              kube_pod_container_info{namespace="argocd", image_spec="quay.io/argoproj/argocd:v3.5.6"}
             ) > 0
           for: 1d
           labels:
