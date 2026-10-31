@@ -134,3 +134,14 @@ patches:
                 configMap:
                   name: custom-ca-certs
                   optional: true
+  # External Secrets owns this Secret (CreateOrMerge). Applying the empty upstream
+  # copy here stripped the Slack token on every bootstrap.
+  - target:
+      kind: Secret
+      name: argocd-notifications-secret
+    patch: |
+      $patch: delete
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: argocd-notifications-secret

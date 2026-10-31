@@ -64,6 +64,8 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
 
+Two ArgoCD Secrets are shared with other writers. `argocd-secret` comes from the bootstrap and also holds ArgoCD's own keys, so its ExternalSecret uses `creationPolicy: Merge`. `argocd-notifications-secret` is left out of the bootstrap render and its ExternalSecret uses `CreateOrMerge`: a server-side bootstrap apply of the empty upstream Secret removed the merged Slack token.
+
 The manifests define the complete property-level contract. Sonarr, Radarr and Prowlarr accept the shared API keys from Vault through injected environment variables. Bazarr and other first-boot generated credentials still require a tested adoption/bootstrap path. `make arr-keys-adopt` can adopt existing application keys without printing them or overwriting sibling fields.
 
 ## Workflow
