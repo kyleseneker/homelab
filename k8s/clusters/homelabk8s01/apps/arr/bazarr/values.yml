@@ -4,7 +4,7 @@ controllers:
       main:
         image:
           repository: lscr.io/linuxserver/bazarr
-          tag: 1.6.0
+          tag: 1.6.2
         env:
           SONARR_HTTP_TIMEOUT: '300'
           RADARR_HTTP_TIMEOUT: '300'

@@ -4,7 +4,7 @@ controllers:
       main:
         image:
           repository: lscr.io/linuxserver/radarr
-          tag: 6.3.0
+          tag: 6.4.4
         envFrom:
           - configMapRef:
               name: arr-env
