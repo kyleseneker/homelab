@@ -3,7 +3,7 @@ namespace: monitoring
 sourceType: helm
 chartRepo: https://grafana.github.io/helm-charts
 chartName: alloy
-chartVersion: 1.6.2
+chartVersion: 1.15.0
 createNamespace: true
 syncOptions:
   - ServerSideApply=true
