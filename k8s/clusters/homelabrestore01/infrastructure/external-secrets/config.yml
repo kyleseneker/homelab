@@ -3,7 +3,7 @@ namespace: restore-vault
 sourceType: helm
 chartRepo: https://charts.external-secrets.io
 chartName: external-secrets
-chartVersion: 2.2.0
+chartVersion: 2.14.0
 createNamespace: false
 hasResources: true
 syncOptions:

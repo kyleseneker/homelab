@@ -137,7 +137,7 @@ is exposed.
    `restore-external-secrets` role with audience `vault`, a ten-minute maximum
    token lifetime, and read access only to `homelab/data/infrastructure/grafana`.
    The restored production ESO role/policy remain separate.
-3. Render/apply ESO chart 2.2.0 as `restore-external-secrets` in `restore-vault`,
+3. Render/apply ESO chart 2.14.0 as `restore-external-secrets` in `restore-vault`,
    using `infrastructure/external-secrets/values.yml` under the lab cluster. Install
    its CRDs with server-side apply, then apply that directory's Kustomization.
    The controller uses namespace-scoped RBAC and a SecretStore; cluster stores,
