@@ -3,7 +3,7 @@ namespace: monitoring
 sourceType: helm
 chartRepo: https://prometheus-community.github.io/helm-charts
 chartName: kube-prometheus-stack
-chartVersion: 83.7.0
+chartVersion: 84.5.0
 createNamespace: true
 hasResources: true
 syncOptions:
