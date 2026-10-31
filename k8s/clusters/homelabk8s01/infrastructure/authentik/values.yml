@@ -30,6 +30,11 @@ worker:
       memory: 2Gi
 postgresql:
   enabled: true
+  # Pinned to the Debian 12 build: later charts move to trixie, whose newer glibc
+  # changes en_US.utf8 collation and would require reindexing the database.
+  image:
+    repository: library/postgres
+    tag: 17.11-bookworm
   auth:
     existingSecret: authentik-credentials
     secretKeys:

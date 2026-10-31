@@ -176,7 +176,8 @@
         "docker"
       ],
       "matchPackageNames": [
-        "postgres"
+        "postgres",
+        "library/postgres"
       ],
       "allowedVersions": "/^17\\./"
     },
