@@ -3,7 +3,7 @@ namespace: cert-manager
 sourceType: helm
 chartRepo: https://charts.jetstack.io
 chartName: cert-manager
-chartVersion: v1.20.0
+chartVersion: v1.21.3
 createNamespace: true
 hasResources: true
 syncOptions:
