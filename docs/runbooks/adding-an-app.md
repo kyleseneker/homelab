@@ -23,7 +23,7 @@ namespace: arr
 sourceType: helm
 chartRepo: https://bjw-s-labs.github.io/helm-charts
 chartName: app-template
-chartVersion: "4.6.2"
+chartVersion: "5.3.0"
 createNamespace: false
 hasResources: false
 syncOptions:
@@ -37,7 +37,7 @@ syncOptions:
 |-------|-------------|
 | `appName` | Unique name for the ArgoCD Application (prefix with `arr-` for media apps) |
 | `namespace` | Target namespace (`arr` for media apps, or set `createNamespace: true` for a new one) |
-| `chartVersion` | Helm chart version -- always quote it (`"4.6.2"`) |
+| `chartVersion` | Helm chart version -- always quote it (`"5.3.0"`) |
 | `hasResources` | Set to `true` if the app has supporting resources (PDBs, ExternalSecrets, HTTPRoutes) |
 | `createNamespace` | `true` for single-app namespaces, `false` for `arr` (managed by arr-prereqs) |
 

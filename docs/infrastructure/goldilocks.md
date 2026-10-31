@@ -8,7 +8,7 @@ Goldilocks automatically creates VPA objects for all workloads in the cluster an
 |-------|-------|
 | Chart | `goldilocks` |
 | Repository | <https://charts.fairwinds.com/stable> |
-| Version | 10.3.0 |
+| Version | 11.2.0 |
 | Namespace | `goldilocks` |
 
 ## Key Configuration

@@ -8,7 +8,7 @@ Exposes UPS telemetry to Prometheus by querying the NUT (Network UPS Tools) serv
 |-------|-------|
 | Chart | `app-template` |
 | Repository | <https://bjw-s-labs.github.io/helm-charts> |
-| Version | 4.6.2 |
+| Version | 5.3.0 |
 | Image | `ghcr.io/druggeri/nut_exporter` |
 | Namespace | `monitoring` |
 | Metrics port | 9199 |

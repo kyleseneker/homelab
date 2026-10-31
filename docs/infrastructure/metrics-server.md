@@ -8,7 +8,7 @@ Metrics Server collects resource usage metrics (CPU and memory) from the kubelet
 |-------|-------|
 | Chart | `metrics-server` |
 | Repository | <https://kubernetes-sigs.github.io/metrics-server> |
-| Version | 3.13.0 |
+| Version | 3.14.0 |
 | Namespace | `kube-system` |
 
 ## Key Configuration

@@ -8,7 +8,7 @@ cert-manager automates the issuance and renewal of TLS certificates within the c
 |-------|-------|
 | Chart | `cert-manager` |
 | Repository | <https://charts.jetstack.io> |
-| Version | v1.20.0 |
+| Version | v1.21.3 |
 | Namespace | `cert-manager` (CreateNamespace=true) |
 
 ## Key Configuration

@@ -8,7 +8,7 @@ Alloy is a telemetry collector that runs as a DaemonSet, collecting pod logs fro
 |-------|-------|
 | Chart | `alloy` |
 | Repository | <https://grafana.github.io/helm-charts> |
-| Version | 1.6.2 |
+| Version | 1.15.0 |
 | Namespace | `monitoring` (CreateNamespace=true) |
 
 ## Key Configuration

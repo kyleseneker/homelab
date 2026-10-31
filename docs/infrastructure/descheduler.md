@@ -8,7 +8,7 @@ The Kubernetes Descheduler runs as a CronJob and evicts pods that violate schedu
 |-------|-------|
 | Chart | `descheduler` |
 | Repository | <https://kubernetes-sigs.github.io/descheduler/> |
-| Version | 0.35.1 |
+| Version | 0.36.0 |
 | Namespace | `kube-system` |
 
 ## Key Configuration
@@ -28,7 +28,11 @@ The Kubernetes Descheduler runs as a CronJob and evicts pods that violate schedu
 
 ## Interaction with PDBs
 
-The Descheduler respects PodDisruptionBudgets. It will not evict pods if doing so would violate a PDB constraint. The PDBs defined for Loki, Vault, and other critical services will prevent those pods from being evicted during rebalancing.
+The Descheduler respects PodDisruptionBudgets. It will not evict pods if doing so would violate a PDB constraint. Single-replica services such as Loki and Vault use `maxUnavailable: 1` so their PDBs never block a node drain; they limit evictions to one pod at a time but do not prevent them.
+
+## Versioning
+
+Each descheduler minor is built against the matching Kubernetes minor (0.36 for 1.36). Renovate holds the chart within one minor of the cluster; raise the `allowedVersions` cap in `renovate.json` with each Kubernetes upgrade.
 
 ## Upstream Documentation
 

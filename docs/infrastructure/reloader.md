@@ -8,7 +8,7 @@ Reloader watches for changes to ConfigMaps and Secrets referenced by Deployments
 |-------|-------|
 | Chart | `reloader` |
 | Repository | <https://stakater.github.io/stakater-charts> |
-| Version | 2.2.9 |
+| Version | 2.2.19 |
 | Namespace | `kube-system` |
 
 ## Key Configuration

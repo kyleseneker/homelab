@@ -8,7 +8,7 @@ The Vertical Pod Autoscaler analyzes historical pod resource usage and produces 
 |-------|-------|
 | Chart | `vertical-pod-autoscaler` |
 | Repository | <https://kubernetes.github.io/autoscaler> |
-| Version | 0.8.1 |
+| Version | 0.11.0 |
 | Namespace | `kube-system` |
 
 ## Key Configuration
@@ -29,6 +29,10 @@ The recommender watches pods that have a corresponding `VerticalPodAutoscaler` C
 4. Makes those recommendations available to Goldilocks; custom VPA recommendation metrics are not configured
 
 Recommendations stabilize after several hours of usage data. Initial values should be treated as preliminary.
+
+### Version Hold
+
+Renovate holds the chart below 0.12. Chart 0.12 removes the `namespaces` get/list permission that the 1.7 recommender still uses to clean up checkpoints of deleted VPAs, and VPA 1.8 (chart 0.13 and later) supports only Kubernetes 1.36 and newer. Lift the cap after the cluster reaches 1.36, stepping one chart minor at a time.
 
 ## VPA CR Lifecycle
 

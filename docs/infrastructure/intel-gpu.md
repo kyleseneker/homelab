@@ -8,7 +8,7 @@ The Intel GPU stack enables iGPU passthrough for hardware-accelerated video tran
 |-------|-------|
 | Charts | `intel-device-plugins-operator`, `intel-device-plugins-gpu` |
 | Repository | <https://intel.github.io/helm-charts> |
-| Version | 0.35.0 (both) |
+| Version | 0.37.1 (both) |
 | Namespace | `intel-gpu-operator` (CreateNamespace=true) |
 
 ## Key Configuration
@@ -28,6 +28,13 @@ Deploys the `GpuDevicePlugin` custom resource that the operator reconciles into 
 - **Diff handling**: Server-side diff includes mutation webhooks for this Application. The whole `GpuDevicePlugin.spec` is not ignored: image, sharing and scheduling changes must remain visible to GitOps. The operator defaults a missing image and reconciles a DaemonSet; it does not own arbitrary changes to the desired CR spec.
 
 Both applications share the same retry policy and `SkipDryRunOnMissingResource` setting.
+
+The operator and the plugin DaemonSet run under their own ServiceAccounts (`inteldeviceplugins-controller-manager` and `inteldeviceplugins-plugin`). Monitoring is exposed as a single `gpu.intel.com/monitoring` resource; no workload requests it.
+
+### Upgrade Notes
+
+- **Removed webhook entries:** cert-manager's cainjector co-owns the `caBundle` of every entry in the operator's webhook configurations. When a chart release drops an entry, Argo's server-side apply cannot remove it and the sync fails with `webhooks[N].sideEffects: Required value`. Remove the dropped entries from the live configurations with a JSON patch, then let Argo retry. The 0.37.1 upgrade dropped the DLB and FPGA entries this way.
+- **Removed CRDs:** Argo applies the chart's CRDs without tracking them, so CRDs a release drops are not pruned. Delete them by hand once no custom resources use them. The FPGA and DLB CRDs dropped in 0.37.1 remain until then.
 
 ## Cluster Integration
 

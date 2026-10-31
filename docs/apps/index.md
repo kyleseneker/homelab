@@ -1,6 +1,6 @@
 # Applications
 
-The homelab runs an automated media management stack commonly referred to as the *arr stack. Most applications are deployed into the `arr` namespace via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v4.6.2); Uptime Kuma runs in `monitoring`. Routing is provided by Cilium Gateway API with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
+The homelab runs an automated media management stack commonly referred to as the *arr stack. Most applications are deployed into the `arr` namespace via ArgoCD, using the [bjw-s app-template](https://bjw-s-labs.github.io/helm-charts) Helm chart (v5.3.0); Uptime Kuma runs in `monitoring`. Routing is provided by Cilium Gateway API with TLS certificates issued by cert-manager (`homelab-ca-issuer`).
 
 Authentication is per route: several administrative UIs use the Authentik reverse proxy, while direct routes rely on native application authentication. See [Auth & SSO](../architecture/auth.md) for the route inventory and remaining gaps.
 

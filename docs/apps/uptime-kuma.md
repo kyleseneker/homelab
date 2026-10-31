@@ -6,7 +6,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `louislam/uptime-kuma` |
 | Port | 3001 |
 | HTTPRoute | `status.homelab.local` |

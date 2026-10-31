@@ -6,7 +6,7 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `lscr.io/linuxserver/jellyfin` |
 | Port | 8096 |
 | Service type | LoadBalancer |

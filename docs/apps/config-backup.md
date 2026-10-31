@@ -9,7 +9,7 @@ Nightly SQLite dumps for six applications and a native Tdarr archive are staged 
 | Type | CronJobs + holder Deployment (`sourceType: git`) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-config-backup` |
-| Image | `python:3.14-alpine` |
+| Image | `python:3.15-alpine` |
 | Target PVC | `arr-config-backups` (`nfs-client`, 2Gi) |
 | Schedules | Staggered, 01:30--01:36 UTC daily |
 

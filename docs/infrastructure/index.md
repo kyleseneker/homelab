@@ -6,32 +6,34 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 
 | Component | Namespace | Source | Chart / Type | Version |
 |-----------|-----------|--------|--------------|---------|
-| Vault | vault | helm | vault | 0.32.0 |
-| External Secrets | external-secrets | helm | external-secrets | 2.2.0 |
-| cert-manager | cert-manager | helm | cert-manager | v1.20.0 |
+| Vault | vault | helm | vault | 0.34.1 |
+| External Secrets | external-secrets | helm | external-secrets | 2.14.0 |
+| cert-manager | cert-manager | helm | cert-manager | v1.21.3 |
+| trust-manager | cert-manager | helm | trust-manager | v0.26.0 |
 | Gateway API CRDs | -- | git | (plain manifests) | -- |
 | Gateway + Cilium L2 | default | git | (plain manifests) | -- |
-| Metrics Server | kube-system | helm | metrics-server | 3.13.0 |
+| Metrics Server | kube-system | helm | metrics-server | 3.14.0 |
 | NFS Provisioner | nfs-provisioner | helm | nfs-subdir-external-provisioner | 4.0.18 |
 | Local-Path Provisioner | local-path-storage | kustomize | (plain manifests) | -- |
-| Garage | backups | helm | app-template | 4.6.2 |
+| Garage | backups | helm | app-template | 5.3.0 |
 | MinIO (legacy, read-only) | backups | helm | minio | 5.4.0 |
-| Velero | backups | helm | velero | 12.0.0 |
+| Velero | backups | helm | velero | 12.2.2 |
 | etcd Backup | backups | git | (CronJob) | -- |
-| Kyverno | kyverno | helm | kyverno | 3.7.1 |
+| Kyverno | kyverno | helm | kyverno | 3.9.2 |
 | Kyverno Policies | -- | git | (plain manifests) | -- |
 | Network Policies | (multiple) | git | (plain manifests) | -- |
-| Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.35.0 |
-| Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.35.0 |
-| kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 82.13.6 |
+| Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.37.1 |
+| Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.37.1 |
+| kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 83.7.0 |
 | Loki | monitoring | helm | loki | 6.55.0 |
-| Alloy | monitoring | helm | alloy | 1.6.2 |
-| NUT Exporter | monitoring | helm | app-template | 4.6.2 |
+| Alloy | monitoring | helm | alloy | 1.15.0 |
+| Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 11.20.2 |
+| NUT Exporter | monitoring | helm | app-template | 5.3.0 |
 | Authentik | auth | helm | authentik | 2026.2.1 |
-| Reloader | kube-system | helm | reloader | 2.2.9 |
-| Descheduler | kube-system | helm | descheduler | 0.35.1 |
-| VPA | kube-system | helm | vertical-pod-autoscaler | 0.8.1 |
-| Goldilocks | goldilocks | helm | goldilocks | 10.3.0 |
+| Reloader | kube-system | helm | reloader | 2.2.19 |
+| Descheduler | kube-system | helm | descheduler | 0.36.0 |
+| VPA | kube-system | helm | vertical-pod-autoscaler | 0.11.0 |
+| Goldilocks | goldilocks | helm | goldilocks | 11.2.0 |
 
 ## Deployment Ordering
 

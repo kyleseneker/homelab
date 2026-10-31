@@ -6,7 +6,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/unpackerr/unpackerr` |
 | Port | 5656 (health/metrics only) |
 | HTTPRoute | -- (internal only) |

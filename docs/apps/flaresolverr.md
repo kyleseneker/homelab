@@ -6,7 +6,7 @@ FlareSolverr is a proxy server that bypasses Cloudflare and DDoS-GUARD protectio
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v4.6.2 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
+| Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/flaresolverr/flaresolverr` |
 | Port | 8191 |
 | HTTPRoute | -- (internal only) |
