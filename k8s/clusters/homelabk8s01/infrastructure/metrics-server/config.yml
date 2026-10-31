@@ -3,7 +3,7 @@ namespace: kube-system
 sourceType: helm
 chartRepo: https://kubernetes-sigs.github.io/metrics-server/
 chartName: metrics-server
-chartVersion: 3.13.0
+chartVersion: 3.14.0
 createNamespace: true
 syncOptions:
   - ServerSideApply=true
