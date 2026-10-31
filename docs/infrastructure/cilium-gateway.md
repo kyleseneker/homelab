@@ -35,7 +35,7 @@ Cilium's L2 announcement policy advertises LoadBalancer IPs via ARP on the local
 
 The Gateway API CRDs are installed from upstream manifests via the `gateway-api` ArgoCD Application in `k8s/components/gateway-api/`. They must exist before the Gateway resource is created; if the Gateway syncs first it fails and ArgoCD retries until the CRDs land.
 
-The directory vendors the unmodified standard-channel files for the resources Cilium requires: GatewayClass, Gateway, HTTPRoute, GRPCRoute and ReferenceGrant. It omits `safe-upgrades.gateway.networking.k8s.io`, the ValidatingAdmissionPolicy that upstream bundles from v1.5. That policy blocks CRD downgrades below v1.5, and the bootstrap's `kubectl wait --for=condition=Established` over this directory cannot wait on a non-CRD object. Upgrade the CRDs one minor at a time and keep every version the running Cilium release requires: Cilium 1.19 checks ReferenceGrant `v1beta1` at operator startup.
+The directory vendors the unmodified standard-channel files for the resources Cilium 1.19 requires: GatewayClass, Gateway, HTTPRoute, GRPCRoute and ReferenceGrant. Cilium 1.20 also requires TLSRoute and BackendTLSPolicy; the [Cilium upgrade procedure](../runbooks/upgrading-kubernetes.md#upgrade-cilium) covers when to add them. It omits `safe-upgrades.gateway.networking.k8s.io`, the ValidatingAdmissionPolicy that upstream bundles from v1.5. That policy blocks CRD downgrades below v1.5, and the bootstrap's `kubectl wait --for=condition=Established` over this directory cannot wait on a non-CRD object. Upgrade the CRDs one minor at a time and keep every version the running Cilium release requires: Cilium 1.19 checks ReferenceGrant `v1beta1` at operator startup.
 
 ## Cluster Integration
 
