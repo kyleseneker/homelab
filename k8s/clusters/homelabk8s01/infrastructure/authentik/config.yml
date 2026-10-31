@@ -3,7 +3,7 @@ namespace: auth
 sourceType: helm
 chartRepo: https://charts.goauthentik.io
 chartName: authentik
-chartVersion: 2026.5.6
+chartVersion: 2026.8.5
 createNamespace: false
 hasResources: true
 syncOptions:
