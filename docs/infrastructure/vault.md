@@ -41,7 +41,7 @@ This runs `scripts/vault-init.sh`, which:
 Then run `scripts/vault-snapshot-auth.sh` with an administrative Vault CLI session
 to configure the read-only backup role. Repeat this after rebuilding auth bindings.
 
-Store the root token in a password manager.
+Store the root token in a password manager. Since Vault 2.0, `vault operator generate-root` needs a valid Vault token as well as the recovery key, so the recovery key alone can no longer replace a lost root token. Keep the root token (or another administrative token) usable; `enable_unauthenticated_access` is deliberately left unset.
 
 !!! warning "Bootstrap dependency"
     The `vault-aws-kms` Kubernetes Secret must exist in the `vault` namespace before the Vault pod starts. See the [disaster recovery runbook](../runbooks/disaster-recovery.md#complete-cluster-rebuild) for the bootstrap procedure.
