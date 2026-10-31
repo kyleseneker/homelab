@@ -13,7 +13,7 @@ Production and the shared image defaults use Kubernetes **1.35.10**, which enter
 | Cilium | 1.20.4 | 1.20.4 |
 | Gateway API CRDs | 1.6.3 | 1.4.0; Gateway controller disabled |
 | etcd | 3.6.6 | 3.6.8 |
-| Kyverno | 1.17.1, chart 3.7.1 | Not installed |
+| Kyverno | 1.18.2, chart 3.8.2 | Not installed |
 
 The lab passed the 1.31.4 → 1.32.13 → 1.33.13 control-plane-first upgrades through the shared playbook. Both nodes report the target version and Ready, kube-proxy remains absent, and all 14 ArgoCD Applications returned to Synced/Healthy. Cross-node Service traffic, Pod DNS, public HTTPS, private-network isolation, Sonarr records, Prowlarr integration, Authentik queries and Vault/ESO Secret recreation passed at both steps. On 1.33.13, qBittorrent also retained its torrent identities, categories and transfer history; authentication checks passed and transfers remained stopped with zero peers. Matching etcd 3.5.24 tools saved a snapshot, verified its integrity and restored it into an isolated data directory without starting a second server.
 

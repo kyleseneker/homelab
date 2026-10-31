@@ -8,7 +8,7 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 |-------|-------|
 | Chart | `kyverno` |
 | Repository | <https://kyverno.github.io/kyverno/> |
-| Version | 3.7.1 |
+| Version | 3.8.2 |
 | Namespace | `kyverno` |
 
 ## Key Configuration
