@@ -141,14 +141,16 @@ class APIResponseTests(unittest.TestCase):
             with self.subTest(result=result), self.assertRaises(audit.AuditError):
                 audit.has_series(result)
 
-    def test_query_is_encoded_and_exec_scope_is_preserved(self):
+    def test_query_is_encoded_and_sent_through_the_service_proxy(self):
         response = json.dumps({"status": "success", "data": count_result()})
         query = 'count({path="two words & ? \\\"quoted\\\""})'
         with patch.object(audit.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, response, "")) as run:
             audit.Prometheus(ROOT).request("query", query)
         command = run.call_args.args[0]
-        self.assertEqual(command[-4:-1], ["--", "wget", "-qO-"])
-        self.assertIn("exec", command)
+        self.assertEqual(command[-3:-1], ["get", "--raw"])
+        self.assertNotIn("exec", command)
+        self.assertEqual(urlparse(command[-1]).path, "/api/v1/namespaces/monitoring/services/"
+                         "kube-prometheus-stack-prometheus:http-web/proxy/api/v1/query")
         self.assertEqual(parse_qs(urlparse(command[-1]).query), {"query": [query]})
         self.assertEqual(run.call_args.kwargs["timeout"], 45)
 
@@ -189,7 +191,8 @@ print(json.dumps({"status": "success", "data": data}, indent=2))
             self.assertIn("ZLast", result.stdout)
             self.assertIn("1 missing-series pairs, 0 query-error pairs out of 2 audited", result.stdout)
             queries = [json.loads(line) for line in (root / "queries.jsonl").read_text().splitlines()]
-            self.assertIn(["/api/v1/query", 'count({__name__="last_metric"})'], queries)
+            self.assertIn(["/api/v1/namespaces/monitoring/services/kube-prometheus-stack-prometheus:http-web"
+                           "/proxy/api/v1/query", 'count({__name__="last_metric"})'], queries)
 
     def test_absence_only_selectors_are_skipped_but_sibling_selector_is_audited(self):
         class Client:

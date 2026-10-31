@@ -31,22 +31,26 @@ class AuditError(Exception):
 
 
 class Prometheus:
+    # Query through the API server's service proxy: the Prometheus image is
+    # distroless from kube-prometheus-stack 85, so there is no wget to exec.
     def __init__(self, root):
         self.command = [
             "kubectl", "--kubeconfig", os.environ.get("KUBECONFIG", str(root / "kubeconfig")),
-            "-n", os.environ.get("PROM_NS", "monitoring"), "exec", "-c", "prometheus",
-            os.environ.get("PROM_STS", "statefulset/prometheus-kube-prometheus-stack-prometheus"),
-            "--", "wget", "-qO-",
+            "get", "--raw",
         ]
+        self.base = "/api/v1/namespaces/{}/services/{}/proxy/api/v1/".format(
+            os.environ.get("PROM_NS", "monitoring"),
+            os.environ.get("PROM_SERVICE", "kube-prometheus-stack-prometheus:http-web"),
+        )
 
     def request(self, endpoint, expression):
-        url = "http://localhost:9090/api/v1/" + endpoint + "?" + urlencode({"query": expression})
+        url = self.base + endpoint + "?" + urlencode({"query": expression})
         try:
             result = subprocess.run(self.command + [url], capture_output=True, text=True, timeout=45)
         except (OSError, subprocess.TimeoutExpired) as error:
             raise AuditError(f"{endpoint}: {error}") from error
         if result.returncode:
-            detail = result.stderr.strip() or f"kubectl/wget exited {result.returncode}"
+            detail = result.stderr.strip() or f"kubectl exited {result.returncode}"
             raise AuditError(f"{endpoint}: {detail}")
         try:
             response = json.loads(result.stdout)
