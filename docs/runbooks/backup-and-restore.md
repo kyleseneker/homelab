@@ -595,7 +595,7 @@ Keep the original `AUTHENTIK_SECRET_KEY` and bootstrap credentials available ind
 | S3 retrieval | 2026-09-21 14:48:50–14:48:55 UTC; dump age approximately 6 minutes 34 seconds |
 | Restored archive | 15,770,027 bytes |
 | SHA-256 | `2e1aefd9a2cffc9cd33a997a48d591df86178cb17fedcc3fb252d9d01d7e7753` |
-| Destination | Fresh local-path PVC, PostgreSQL 17.9, database `authentik_restore` |
+| Destination | Fresh local-path PVC, PostgreSQL 17.11, database `authentik_restore` |
 | Restore result | Exit 0 in a single transaction; verified at 2026-09-21 14:50:19 UTC |
 | Counts matching production | 212 tables, 3 users, 13 applications, 13 providers, 14 flows, 692 migrations |
 | Retrieval through database verification | Approximately 1 minute 28 seconds, with lab Kubernetes/PostgreSQL already ready |

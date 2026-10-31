@@ -8,12 +8,18 @@ Authentik provides identity for native OIDC clients and authenticates browser tr
 |-------|-------|
 | Chart | `authentik` |
 | Repository | <https://charts.goauthentik.io> |
-| Version | 2026.2.1 |
+| Version | 2026.8.5 |
 | Namespace | `auth` |
 
 ## Architecture
 
 The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This chart deploys no Redis. A single PostgreSQL instance and the outpost are availability dependencies; a PodDisruptionBudget does not make them redundant.
+
+`values.yml` pins the bundled PostgreSQL image to `17.11-bookworm`. Chart 2026.8 defaults to a Debian 13 (trixie) image, whose newer glibc changes the `en_US.utf8` collation the database was created with (version 2.36) and would require a full reindex. Change the base image only as a planned step that refreshes the collation version. The subchart's Bitnami FIPS setting is turned off because the official image does not use it.
+
+### Upgrades
+
+Upgrade one minor release at a time (2026.2 → 2026.5 → 2026.8), as upstream requires, with a fresh `authentik-backup` dump before each step. The worker applies migrations and blueprints on startup. Afterwards, check that every blueprint instance is `successful`, that the OIDC issuers still report `https://`, and that the blackbox probes for proxied routes still return their login redirect. Since 2026.8, Authentik honors forwarded headers only from `AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS`; the defaults cover the pod and node networks the Cilium Gateway connects from.
 
 ### Proxy Authentication
 
