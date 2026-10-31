@@ -1,3 +1,4 @@
 ---
 k8s_prereqs_version: "1.35.10"
 k8s_prereqs_version_minor: "1.35"
+k8s_prereqs_containerd_version: "2.3.6"

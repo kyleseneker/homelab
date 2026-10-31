@@ -80,6 +80,19 @@ KUBECONFIG=kubeconfig cilium upgrade --version <target> \
 
 5. Wait for the `cilium`, `cilium-envoy` and `cilium-operator` rollouts. The workloads carry no ConfigMap checksum, so after a `cilium-config` change restart all three, as `make cilium-upgrade` does, and confirm `cilium_drift_checker_config_delta` in `cilium-dbg metrics list` is 0. Check `cilium-dbg status`, cross-node Service traffic, DNS and policy enforcement before the next hop. Roll back one minor at a time: `helm rollback cilium <revision> -n kube-system` in the lab, and `cilium upgrade --version <previous>` in production, where Helm's apply conflicts with the CLI's field ownership.
 
+## Upgrade containerd
+
+Every node holds `containerd.io` at `k8s_prereqs_containerd_version`, and the bootstrap role refuses to change an initialized node's runtime. Check the [containerd support table](https://github.com/containerd/containerd/blob/main/RELEASES.md) against both the current and next Kubernetes minor, then upgrade one minor at a time with the rolling playbook, control plane first:
+
+```bash
+cd ansible
+ansible-playbook --vault-password-file ../.vault-password \
+  -i inventory/homelabk8s01/hosts.yml playbooks/containerd-upgrade.yml \
+  -e containerd_upgrade_version=<target>
+```
+
+It rejects skipped minors and downgrades, drains each node through the eviction API, installs and holds the target package while keeping the existing `config.toml`, restarts containerd and kubelet, and uncordons only after the node reports the target runtime and Ready. A failed node stays cordoned. Update the pin, rebuild the Packer template and record the version together.
+
 ## Before each minor upgrade
 
 - Confirm the live versions with `kubectl get nodes -o wide` and `kubectl version`; do not infer them from Git.

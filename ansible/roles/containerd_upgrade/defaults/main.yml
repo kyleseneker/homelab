@@ -1,0 +1,3 @@
+---
+# An explicit input keeps a pin change from becoming a runtime upgrade.
+containerd_upgrade_version: ""

@@ -2,6 +2,8 @@
 k8s_control_plane_version: "1.36.5"
 k8s_prereqs_version: "{{ k8s_control_plane_version }}"
 k8s_prereqs_version_minor: "{{ k8s_control_plane_version.split('.')[:2] | join('.') }}"
+# The lab nodes were built from template 9011 with containerd 2.3.5.
+k8s_prereqs_containerd_version: "2.3.5"
 k8s_control_plane_cilium_version: "1.20.4"
 ansible_user: labadmin
 ansible_ssh_private_key_file: "{{ inventory_dir }}/../../../.lab/id_ed25519"

@@ -61,11 +61,36 @@
     repo: "deb [signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
 
+- name: Check whether this machine already belongs to a cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: k8s_prereqs_kubelet_identity
+
+- name: Read the initialized node's containerd package version
+  ansible.builtin.command: dpkg-query -W -f=${Version} containerd.io
+  register: k8s_prereqs_existing_containerd
+  changed_when: false
+  when: k8s_prereqs_kubelet_identity.stat.exists
+
+- name: Require the containerd upgrade playbook for an initialized node's runtime change
+  ansible.builtin.assert:
+    that:
+      - k8s_prereqs_existing_containerd.stdout.startswith(k8s_prereqs_containerd_version ~ '-')
+    fail_msg: Use containerd-upgrade.yml before updating this initialized node's containerd version.
+  when: k8s_prereqs_kubelet_identity.stat.exists
+
 - name: Install containerd
   ansible.builtin.apt:
-    name: containerd.io
+    name: "containerd.io={{ k8s_prereqs_containerd_version }}-*"
     state: present
     update_cache: true
+    # Matches the Kubernetes packages: only an unjoined clone may replace a held runtime.
+    allow_change_held_packages: "{{ not k8s_prereqs_kubelet_identity.stat.exists }}"
+
+- name: Hold containerd at the pinned version
+  ansible.builtin.dpkg_selections:
+    name: containerd.io
+    selection: hold
 
 - name: Create containerd config directory
   ansible.builtin.file:
@@ -116,11 +141,6 @@
   ansible.builtin.apt_repository:
     repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-v{{ k8s_prereqs_version_minor }}.asc] https://pkgs.k8s.io/core:/stable:/v{{ k8s_prereqs_version_minor }}/deb/ /"
     state: present
-
-- name: Check whether this machine already belongs to a cluster
-  ansible.builtin.stat:
-    path: /etc/kubernetes/kubelet.conf
-  register: k8s_prereqs_kubelet_identity
 
 - name: Read the initialized node's kubelet version
   ansible.builtin.command: kubelet --version

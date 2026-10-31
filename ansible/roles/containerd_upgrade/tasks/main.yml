@@ -1,0 +1,78 @@
+---
+- name: Require an exact containerd target
+  ansible.builtin.assert:
+    that:
+      - containerd_upgrade_version is match('^[0-9]+\.[0-9]+\.[0-9]+$')
+      - groups['control_plane'] | length == 1
+    fail_msg: Choose an exact target, for example -e containerd_upgrade_version=2.3.6.
+
+- name: Read the installed containerd package version
+  ansible.builtin.command: dpkg-query -W -f=${Version} containerd.io
+  register: containerd_upgrade_installed
+  changed_when: false
+
+- name: Set the node's current containerd version
+  ansible.builtin.set_fact:
+    containerd_upgrade_current: "{{ containerd_upgrade_installed.stdout | regex_replace('-.*$', '') }}"
+
+- name: Reject skipped minors and downgrades
+  ansible.builtin.assert:
+    that:
+      - containerd_upgrade_version is version(containerd_upgrade_current, '>=')
+      - containerd_upgrade_version.split('.')[0] == containerd_upgrade_current.split('.')[0]
+      - (containerd_upgrade_version.split('.')[1] | int) - (containerd_upgrade_current.split('.')[1] | int) in [0, 1]
+    fail_msg: Upgrade containerd one minor at a time from {{ containerd_upgrade_current }}.
+
+- name: Replace the runtime on a drained node
+  when: containerd_upgrade_current != containerd_upgrade_version
+  block:
+    - name: Drain this node through the eviction API
+      ansible.builtin.command: >-
+        kubectl --kubeconfig=/etc/kubernetes/admin.conf drain {{ inventory_hostname }}
+        --ignore-daemonsets --delete-emptydir-data --timeout=300s
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      changed_when: true
+
+    - name: Install the target containerd
+      ansible.builtin.apt:
+        name: "containerd.io={{ containerd_upgrade_version }}-*"
+        state: present
+        update_cache: true
+        allow_change_held_packages: true
+
+    - name: Hold the upgraded containerd
+      ansible.builtin.dpkg_selections:
+        name: containerd.io
+        selection: hold
+
+    - name: Restart containerd and kubelet on the new runtime
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+        daemon_reload: true
+      loop:
+        - containerd
+        - kubelet
+
+    - name: Wait for this node to report the target runtime and readiness
+      ansible.builtin.command: >-
+        kubectl --kubeconfig=/etc/kubernetes/admin.conf --request-timeout=10s get node {{ inventory_hostname }} -o json
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      register: containerd_upgrade_ready
+      changed_when: false
+      retries: 60
+      delay: 5
+      until: >-
+        containerd_upgrade_ready.rc == 0 and
+        (containerd_upgrade_ready.stdout | from_json).status.nodeInfo.containerRuntimeVersion == 'containerd://' ~ containerd_upgrade_version and
+        ((containerd_upgrade_ready.stdout | from_json).status.conditions | selectattr('type', 'eq', 'Ready') | map(attribute='status') | first) == 'True'
+
+    - name: Verify API readiness before uncordoning
+      ansible.builtin.command: kubectl --kubeconfig=/etc/kubernetes/admin.conf get --raw=/readyz
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      changed_when: false
+
+    - name: Return the upgraded node to scheduling
+      ansible.builtin.command: kubectl --kubeconfig=/etc/kubernetes/admin.conf uncordon {{ inventory_hostname }}
+      delegate_to: "{{ groups['control_plane'][0] }}"
+      changed_when: true

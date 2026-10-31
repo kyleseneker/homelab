@@ -107,6 +107,7 @@ The `tags` and `pci_mappings` fields are used to pass an Intel iGPU through to a
 | `k8s_control_plane_cilium_version` | Cilium version installed by the CLI | `1.20.4` |
 | `k8s_prereqs_version` | Kubernetes package version on every node | `1.35.10` |
 | `k8s_prereqs_version_minor` | Kubernetes minor version for the apt repo | `1.35` |
+| `k8s_prereqs_containerd_version` | Held `containerd.io` version; initialized nodes change it only through `containerd-upgrade.yml` | `2.3.6` |
 
 !!! note "Pod CIDR"
     `k8s_control_plane_pod_network_cidr` is what kubeadm records, but Cilium is installed with explicit `cluster-pool` IPAM in `ansible/roles/k8s_control_plane/files/cilium-values.yml` and allocates pod IPs from the existing `10.0.0.0/8` pool. Bootstrap and `make cilium-upgrade` share that file; do not change the pool in place on a populated cluster. The kubeadm value is not what pods actually get.
