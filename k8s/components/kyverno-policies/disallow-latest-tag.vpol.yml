@@ -1,0 +1,62 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Container images must not use the ':latest' tag or omit a tag entirely.
+      Images should use a specific tag or SHA-256 digest for reproducibility. A registry port does not count as an image tag.
+spec:
+  # Audit beside the legacy ClusterPolicy until their reports agree.
+  validationActions:
+    - Audit
+  failurePolicy: Ignore
+  evaluation:
+    background:
+      enabled: true
+  autogen:
+    podControllers:
+      controllers:
+        - daemonsets
+        - deployments
+        - jobs
+        - cronjobs
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - kyverno
+            - argocd
+  matchConditions:
+    - name: skip-cilium-connectivity-tests
+      expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  variables:
+    - name: allContainers
+      expression: >-
+        object.spec.containers + object.spec.?initContainers.orValue([]) +
+        object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: >-
+        variables.allContainers.all(c,
+          c.image.matches('^([^@]+@sha256:[a-fA-F0-9]{64}|[^@]+:[^/:@]+)$') &&
+          !c.image.endsWith(':latest'))
+      message: Container images must specify a non-latest tag or a SHA-256 digest.

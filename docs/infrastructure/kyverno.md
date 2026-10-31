@@ -23,6 +23,8 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 
 Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`). All policies run in **Enforce** mode -- non-compliant pods are rejected at admission time.
 
+Kyverno 1.19 deprecates `ClusterPolicy`. Each policy has an equivalent `ValidatingPolicy` (`policies.kyverno.io/v1`, same name, `*.vpol.yml`) that runs beside it in Audit mode with `failurePolicy: Ignore`, so it records results without affecting admission while its reports are compared with the legacy policy's. The ValidatingPolicies autogenerate rules for the same pod controllers, exclude the same namespaces, and match `cilium-test-*` through `namespaceObject`, because autogen rewrites `object.metadata` for controllers. At cutover they switch to `Deny` with `failurePolicy: Fail`, matching the fail-closed legacy webhooks, and the `ClusterPolicy` files are removed.
+
 | Policy | What It Checks | Excluded Namespaces |
 |--------|----------------|---------------------|
 | `require-resource-limits` | All containers have CPU and memory limits | backups, local-path-storage |
@@ -47,10 +49,10 @@ Exclusions exist for workloads where compliance is not feasible:
 
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag. Run with the Kyverno CLI matching the chart application version (currently 1.17.1):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/container-security-cel` runs the same cases and expectations against the ValidatingPolicies. Run both with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
-kyverno test tests/kyverno/container-security
+kyverno test tests/kyverno
 ```
 
 Before enabling stronger checks, also apply the policies locally to rendered workload manifests with their destination namespaces. Include init containers from dependency charts; admission failures can otherwise block upgrades. Helm test hooks are a separate test execution concern.
