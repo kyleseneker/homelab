@@ -118,7 +118,7 @@ jobs:
           exit-code: "1"
           format: table
           trivyignores: .trivyignore.yaml
-          version: v0.74.0
+          version: v0.76.1
 
   ansible:
     runs-on: ubuntu-latest
