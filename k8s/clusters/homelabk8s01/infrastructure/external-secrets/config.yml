@@ -3,7 +3,7 @@ namespace: external-secrets
 sourceType: helm
 chartRepo: https://charts.external-secrets.io
 chartName: external-secrets
-chartVersion: 2.7.0
+chartVersion: 2.8.0
 createNamespace: true
 hasResources: true
 syncOptions:
