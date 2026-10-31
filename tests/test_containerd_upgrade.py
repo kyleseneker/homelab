@@ -18,12 +18,13 @@ def tasks_through(role, last):
     return tasks[: end + 1]
 
 
-def run(tasks, variables, installed="2.2.2-1~ubuntu.24.04~noble"):
-    with tempfile.TemporaryDirectory() as directory:
-        p = Path(directory)
-        stub = p / "dpkg-query"
-        stub.write_text("#!/bin/sh\nprintf '%s' " + repr(installed) + "\n")
-        stub.chmod(0o700)
+def run(tasks, variables, installed="2.2.2-1~ubuntu.24.04~noble", stubs=None, directory=None):
+    with tempfile.TemporaryDirectory() as scratch:
+        p = Path(directory or scratch)
+        binaries = {"dpkg-query": "#!/bin/sh\nprintf '%s' " + repr(installed) + "\n", **(stubs or {})}
+        for name, body in binaries.items():
+            (p / name).write_text(body)
+            (p / name).chmod(0o700)
         (p / "inventory").write_text(
             "[control_plane]\nfixture-control ansible_connection=local\n"
         )
@@ -123,6 +124,46 @@ class ContainerdBootstrapGuardTests(GuardAssertions):
 
     def test_version_prefix_is_not_a_match(self):
         self.assertRejected(self.exercise("2.3.6", "2.3.60-1~ubuntu.24.04~noble"), "containerd-upgrade.yml")
+
+
+KUBEADM_IMAGES = """#!/bin/sh
+printf '%s\\n' registry.k8s.io/kube-apiserver:v1.35.10 registry.k8s.io/coredns/coredns:v1.13.1 registry.k8s.io/pause:3.10.1 registry.k8s.io/etcd:3.6.6-0
+"""
+
+
+@unittest.skipUnless(shutil.which("ansible-playbook"), "requires ansible-core")
+class ContainerdSandboxTests(unittest.TestCase):
+    def test_sandbox_follows_kubeadm_pause_image(self):
+        names = (
+            "Read kubeadm's images for the pinned Kubernetes version",
+            "Use kubeadm's pause image as the containerd sandbox",
+        )
+        tasks = [
+            t
+            for t in yaml.safe_load((ROOT / "ansible/roles/k8s_prereqs/tasks/main.yml").read_text())
+            if t["name"] in names
+        ]
+        self.assertEqual(len(tasks), 2)
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory) / "config.toml"
+            config.write_text(
+                "    [plugins.'io.containerd.cri.v1.images'.pinned_images]\n"
+                "      sandbox = 'registry.k8s.io/pause:3.10.2'\n"
+                "\n"
+                "            sandboxer = 'podsandbox'\n"
+            )
+            tasks[1]["ansible.builtin.lineinfile"]["path"] = str(config)
+            tasks[1].pop("notify")
+            code, output = run(
+                tasks,
+                {"k8s_prereqs_version": "1.35.10"},
+                stubs={"kubeadm": KUBEADM_IMAGES},
+                directory=directory,
+            )
+            self.assertEqual(code, 0, output)
+            lines = config.read_text().splitlines()
+            self.assertEqual(lines[1], "      sandbox = 'registry.k8s.io/pause:3.10.1'")
+            self.assertEqual(lines[3], "            sandboxer = 'podsandbox'")
 
 
 if __name__ == "__main__":

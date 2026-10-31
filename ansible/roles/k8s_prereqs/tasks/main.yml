@@ -176,6 +176,20 @@
     - kubeadm
     - kubectl
 
+- name: Read kubeadm's images for the pinned Kubernetes version
+  ansible.builtin.command: kubeadm config images list --kubernetes-version v{{ k8s_prereqs_version }}
+  register: k8s_prereqs_kubeadm_images
+  changed_when: false
+
+# containerd's generated default follows its own release, so pin the sandbox to kubeadm's.
+- name: Use kubeadm's pause image as the containerd sandbox
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: '^(\s*)sandbox\s*='
+    line: "\\1sandbox = '{{ k8s_prereqs_kubeadm_images.stdout_lines | select('search', '/pause:') | first }}'"
+    backrefs: true
+  notify: Restart containerd
+
 - name: Allow unsafe sysctls for VPN containers
   ansible.builtin.lineinfile:
     path: /etc/default/kubelet
