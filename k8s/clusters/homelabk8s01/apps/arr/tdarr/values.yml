@@ -4,11 +4,15 @@ controllers:
       main:
         image:
           repository: ghcr.io/haveagitgat/tdarr
-          tag: 2.96.01
+          tag: 3.04.00
         envFrom:
           - configMapRef:
               name: arr-env
         env:
+          # Tdarr 3 enables API authentication on a fresh config, and /app/configs
+          # is not persisted. The route is behind Authentik and the media-operator
+          # and Homepage call the API without a key.
+          auth: 'false'
           serverIP: 0.0.0.0
           serverPort: '8266'
           webUIPort: '8265'
