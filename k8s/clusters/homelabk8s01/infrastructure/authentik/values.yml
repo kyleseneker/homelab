@@ -41,6 +41,9 @@ postgresql:
       adminPasswordKey: postgresql-password
       userPasswordKey: postgresql-password
   primary:
+    # The subchart defaults to Bitnami's FIPS mode, which the official image does not use.
+    fips:
+      openssl: "off"
     podSecurityContext:
       enabled: true
       fsGroup: 988
