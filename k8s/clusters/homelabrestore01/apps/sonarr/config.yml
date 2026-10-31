@@ -3,7 +3,7 @@ namespace: restore-sonarr
 sourceType: helm
 chartRepo: https://bjw-s-labs.github.io/helm-charts
 chartName: app-template
-chartVersion: 4.6.2
+chartVersion: 5.3.0
 createNamespace: false
 hasResources: true
 syncOptions:
