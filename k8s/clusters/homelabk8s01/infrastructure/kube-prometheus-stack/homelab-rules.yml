@@ -125,6 +125,18 @@ spec:
             summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
             description: "Container {{ $labels.container }} in pod {{ $labels.pod }} (namespace {{ $labels.namespace }}) has restarted {{ $value | printf \"%.0f\" }} times in the last hour."
 
+        - alert: ArgoCDVersionDrift
+          expr: |
+            count by (container) (
+              kube_pod_container_info{namespace="argocd", image_spec=~"quay\\.io/argoproj/argocd:.*", image_spec!="quay.io/argoproj/argocd:v3.5.0"}
+            ) > 0
+          for: 1d
+          labels:
+            severity: warning
+          annotations:
+            summary: "Argo CD is not running the pinned version"
+            description: "{{ $labels.container }} does not run the Argo CD version pinned in k8s/components/argocd. The bootstrap is applied manually: review `make k8s-bootstrap-drift`, then apply it."
+
     - name: homelab-backup-health
       rules:
         - alert: VeleroBackupFailed

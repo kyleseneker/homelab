@@ -41,11 +41,23 @@
       "customType": "regex",
       "description": "ArgoCD install manifest version",
       "managerFilePatterns": [
-        "/k8s/bootstrap/.+\\.yml$/"
+        "/k8s/(bootstrap|components)/.+\\.yml$/"
       ],
       "matchStrings": [
         "https://raw\\.githubusercontent\\.com/(?<depName>[^/]+/[^/]+)/(?<currentValue>[^/]+)/manifests/"
       ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "ArgoCD version the drift alert expects; updated with the install manifest",
+      "managerFilePatterns": [
+        "/k8s/clusters/homelabk8s01/infrastructure/kube-prometheus-stack/homelab-rules\\.yml$/"
+      ],
+      "matchStrings": [
+        "quay\\.io/argoproj/argocd:(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)\""
+      ],
+      "depNameTemplate": "argoproj/argo-cd",
       "datasourceTemplate": "github-releases"
     },
     {

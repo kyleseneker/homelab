@@ -78,7 +78,7 @@ Two patterns based on whether a namespace is shared:
 - **Chart-created namespaces:** `CreateNamespace=true` ensures namespaces exist. Some Applications additionally own namespace manifests for labels or annotations; check their Kustomize resources. Monitoring is shared by several Applications.
 - **Shared namespace** (arr): A dedicated `arr/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
 
-Bootstrap resources are outside this ApplicationSet. After changing `k8s/bootstrap`, use `make k8s-bootstrap-drift` to review drift and explicitly reconcile the bootstrap manifests. Changes there do not deploy through an ordinary application sync.
+Bootstrap resources are outside this ApplicationSet. After changing `k8s/bootstrap`, use `make k8s-bootstrap-drift` to review drift and explicitly reconcile the bootstrap manifests. Changes there do not deploy through an ordinary application sync. Renovate's Argo CD updates land in `k8s/components/argocd` and also need this step; the `ArgoCDVersionDrift` alert fires when the running version has differed from the pin for a day.
 
 ## Git Push to Cluster State
 
