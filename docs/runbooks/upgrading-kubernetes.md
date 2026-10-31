@@ -11,7 +11,7 @@ Production and the shared image defaults use Kubernetes **1.34.12**, which reach
 | Kubernetes API / kubeadm / kubelet / kubectl packages | 1.34.12 | 1.36.5 |
 | containerd | 2.2.2 | 2.3.5 |
 | Cilium | 1.19.10 | 1.20.4 |
-| Gateway API CRDs | 1.5.1 | 1.4.0; Gateway controller disabled |
+| Gateway API CRDs | 1.6.3 | 1.4.0; Gateway controller disabled |
 | etcd | 3.6.5 | 3.6.8 |
 | Kyverno | 1.17.1, chart 3.7.1 | Not installed |
 
