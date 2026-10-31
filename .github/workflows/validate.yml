@@ -160,7 +160,7 @@ jobs:
         env:
           # Match the appVersion of the pinned Kyverno chart.
           KYVERNO_VERSION: v1.18.2
-          KYVERNO_SHA256: d0c0f52e8fc8d66a3663b63942b131e5f91b63f7644b3e446546f79142d1b7a3
+          KYVERNO_SHA256: cb2feb8356149fd2fe774c894ccf0969f4a60a83867dd913af724f74ffbbc18b
         run: |
           cli_dir="$(mktemp -d)"
           trap 'rm -rf "$cli_dir"' EXIT
