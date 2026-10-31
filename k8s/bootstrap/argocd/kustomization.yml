@@ -76,7 +76,7 @@ patches:
                 "title": "{{.app.metadata.name}} synced successfully",
                 "title_link": "{{.context.argocdUrl}}/applications/argocd/{{.app.metadata.name}}",
                 "fields": [
-                  {"title": "Revision", "value": "{{.app.status.operationState.syncResult.revision | trunc 7}}", "short": true},
+                  {"title": "Revision", "value": "{{with .app.status.operationState.syncResult}}{{if .revisions}}{{last .revisions | trunc 7}}{{else}}{{.revision | trunc 7}}{{end}}{{end}}", "short": true},
                   {"title": "Namespace", "value": "{{.app.spec.destination.namespace}}", "short": true}
                 ]
               }]
