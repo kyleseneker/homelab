@@ -159,6 +159,56 @@
       "pinDigests": false
     },
     {
+      "description": "Postgres 18 changes the on-disk format; hold at 17 until the dump-and-restore cutover",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "postgres"
+      ],
+      "allowedVersions": "/^17\\./"
+    },
+    {
+      "description": "Descheduler is built per Kubernetes minor; stay within one minor of the cluster (1.35)",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "descheduler"
+      ],
+      "allowedVersions": "<0.37.0"
+    },
+    {
+      "description": "VPA chart 0.12 drops RBAC its 1.7 recommender still needs for checkpoint cleanup, and VPA 1.8 needs Kubernetes 1.36",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "vertical-pod-autoscaler"
+      ],
+      "allowedVersions": "<0.12.0"
+    },
+    {
+      "description": "kube-prometheus-stack 84 brings the Grafana 13 migration; lift one major at a time",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "kube-prometheus-stack"
+      ],
+      "allowedVersions": "<84.0.0"
+    },
+    {
+      "description": "Loki 7 leaves the grafana chart repo; hold until the move to the community chart",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "loki"
+      ],
+      "allowedVersions": "<7.0.0"
+    },
+    {
       "description": "etcd backup tooling follows kubeadm; update during a staged Kubernetes upgrade",
       "matchPackageNames": [
         "registry.k8s.io/etcd"
