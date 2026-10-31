@@ -37,7 +37,7 @@ The job runs three containers in sequence, pinned to the control-plane node with
    publishes that marker or starts offsite pruning.
 
 Snapshot and archive files are mode 0640 in group 1000 so the non-root uploader
-can read them. Snapshot tooling is pinned to kubeadm 1.34.12's etcd 3.6.5-0;
+can read them. Snapshot tooling is pinned to kubeadm 1.35.10's etcd 3.6.6-0;
 the prepare/upload helper uses Python already present in the pinned AWS CLI image.
 The helper is delivered by a generated ConfigMap, so its hash is part of the next
 Job's Pod specification.
@@ -57,7 +57,7 @@ The job is pinned to the control-plane node. If that node is unavailable, the Po
 
 ## Restore
 
-See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). The pinned `registry.k8s.io/etcd:3.6.5-0` image ships both `etcdctl` and `etcdutl`; restores use `etcdutl snapshot restore`, which supports revision bump and compaction; revalidate the image and tooling together during upgrades.
+See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). The pinned `registry.k8s.io/etcd:3.6.6-0` image ships both `etcdctl` and `etcdutl`; restores use `etcdutl snapshot restore`, which supports revision bump and compaction; revalidate the image and tooling together during upgrades.
 
 For machine-loss recovery, download the completion manifest and all three named
 artifacts into a private directory using independently recovered S3 credentials.

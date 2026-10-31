@@ -97,7 +97,7 @@ This procedure is for the current **single-member** kubeadm control plane with i
 
 1. Obtain the snapshot from NAS or S3 without depending on a working Kubernetes API. On the control-plane host, put it at `/var/tmp/etcd-recovery/snapshot.db` with restrictive permissions. Retrieve the matching PKI tarball if certificates are lost; restore only that PKI after preserving any current files. Do not overwrite working certificates unnecessarily.
 
-2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.34.12 default is `registry.k8s.io/etcd:3.6.5-0`; verify the actual manifest before selecting a restore utility. This image ships both `/usr/local/bin/etcdctl` and `etcdutl` 3.6.5. In etcd 3.6, `etcdctl snapshot` only saves snapshots; use `etcdutl` for status and restore, which supports the revision-bump and compaction flags below. Recheck the shipped binaries and flags when changing versions. Prepare all artifacts before stopping the API.
+2. Record the `--name`, `--initial-advertise-peer-urls`, `--initial-cluster`, `--data-dir`, and image from `/etc/kubernetes/manifests/etcd.yaml`. The pinned kubeadm 1.35.10 default is `registry.k8s.io/etcd:3.6.6-0`; verify the actual manifest before selecting a restore utility. This image ships both `/usr/local/bin/etcdctl` and `etcdutl` 3.6.6. In etcd 3.6, `etcdctl snapshot` only saves snapshots; use `etcdutl` for status and restore, which supports the revision-bump and compaction flags below. Recheck the shipped binaries and flags when changing versions. Prepare all artifacts before stopping the API.
 
 3. On the control plane, move all control-plane manifests to a persistent directory **outside** the watched manifest directory. Keep kubelet running so it removes the static pods:
 
@@ -115,7 +115,7 @@ This procedure is for the current **single-member** kubeadm control plane with i
 4. Verify the snapshot, then restore into a **new** data directory. Set the member variables to the exact values recorded from the original manifest; the values below are placeholders, not commands to paste unchanged:
 
     ```bash
-    ETCD_IMAGE=registry.k8s.io/etcd:3.6.5-0
+    ETCD_IMAGE=registry.k8s.io/etcd:3.6.6-0
     ETCD_NAME='<original --name>'
     ETCD_PEER_URL='<original --initial-advertise-peer-urls>'
     ETCD_INITIAL_CLUSTER="${ETCD_NAME}=${ETCD_PEER_URL}"

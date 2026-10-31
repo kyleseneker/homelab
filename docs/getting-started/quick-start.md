@@ -1,6 +1,6 @@
 # Quick Start
 
-A walkthrough from a configured Proxmox host to the Kubernetes platform managed by ArgoCD. The repository currently pins Kubernetes 1.34.12; complete the [staged upgrade plan](../runbooks/upgrading-kubernetes.md) before treating this as a supported fresh-install baseline.
+A walkthrough from a configured Proxmox host to the Kubernetes platform managed by ArgoCD. The repository currently pins Kubernetes 1.35.10; complete the [staged upgrade plan](../runbooks/upgrading-kubernetes.md) before treating this as a supported fresh-install baseline.
 
 ## 1. Install Dependencies
 

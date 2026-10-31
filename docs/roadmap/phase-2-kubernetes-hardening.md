@@ -6,7 +6,7 @@
 
 ## 2.1 Upgrade the unsupported platform
 
-Production and shared image defaults use Kubernetes 1.34.12. The lab runs 1.36.5; the [current inventory and rehearsal results](../runbooks/upgrading-kubernetes.md#current-platform-and-verified-rehearsal) record its limits. Kubernetes 1.34 reaches end of life on 2026-10-27. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/).
+Production and shared image defaults use Kubernetes 1.35.10. The lab runs 1.36.5; the [current inventory and rehearsal results](../runbooks/upgrading-kubernetes.md#current-platform-and-verified-rehearsal) record its limits. Kubernetes 1.35 reaches end of life on 2027-02-28. A version-string change does not upgrade existing nodes. Follow the [staged upgrade runbook](../runbooks/upgrading-kubernetes.md) and the [upstream release status](https://kubernetes.io/releases/).
 
 - [ ] Select a supported destination and verify the complete compatibility matrix against primary release documentation.
 - [ ] Rehearse the remaining minor upgrades, starting with 1.36 → 1.37, with an isolated restore and a rollback/rebuild path.
