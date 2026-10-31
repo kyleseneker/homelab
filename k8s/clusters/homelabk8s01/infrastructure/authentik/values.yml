@@ -10,6 +10,9 @@ global:
       value: "true"
     - name: AUTHENTIK_ERROR_REPORTING__ENABLED
       value: "false"
+    # Seeds the Base URL system setting on a fresh install; required from 2026.11.
+    - name: AUTHENTIK_WEB__BASE_URL
+      value: https://auth.homelab.local
 server:
   replicas: 1
   resources:

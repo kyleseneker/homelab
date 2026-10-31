@@ -21,6 +21,8 @@ The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This c
 
 Upgrade one minor release at a time (2026.2 → 2026.5 → 2026.8), as upstream requires, with a fresh `authentik-backup` dump before each step. The worker applies migrations and blueprints on startup. Afterwards, check that every blueprint instance is `successful`, that the OIDC issuers still report `https://`, and that the blackbox probes for proxied routes still return their login redirect. Since 2026.8, Authentik honors forwarded headers only from `AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS`; the defaults cover the pod and node networks the Cilium Gateway connects from.
 
+The **Base URL** system setting holds `https://auth.homelab.local`. Authentik 2026.11 refuses to start without it; `AUTHENTIK_WEB__BASE_URL` in `values.yml` seeds it on a fresh install and is ignored once the setting has a value.
+
 ### Proxy Authentication
 
 The public HTTPRoute points to `ak-outpost-authentik-embedded-outpost` in `auth` on port 9000. The outpost authenticates the browser and forwards the request to the provider's internal Service URL:
