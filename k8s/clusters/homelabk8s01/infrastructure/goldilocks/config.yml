@@ -3,7 +3,7 @@ namespace: goldilocks
 sourceType: helm
 chartRepo: https://charts.fairwinds.com/stable
 chartName: goldilocks
-chartVersion: 10.3.0
+chartVersion: 11.2.0
 createNamespace: true
 syncOptions:
   - ServerSideApply=true
