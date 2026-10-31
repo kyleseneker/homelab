@@ -42,7 +42,7 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | IDs | Current assessment | Next step |
 |---|---|---|
 | K1, K4 | One control plane and single-voter Vault are single-instance dependencies. | [Phase 4](phase-4-compute-and-storage.md): three members and tested failover; a 2+1 placement across two hosts cannot survive loss of either host |
-| K2, K34 | Kyverno policies enforce regular/init-container requirements, with explicit infrastructure exceptions. | Verify rendered-workload coverage, real admission outcomes and necessary exceptions in [Phase 2](phase-2-kubernetes-hardening.md); migrate the deprecated ClusterPolicies to ValidatingPolicies |
+| K2, K34 | Kyverno policies enforce regular/init-container requirements, with explicit infrastructure exceptions. | Verify rendered-workload coverage, real admission outcomes and necessary exceptions in [Phase 2](phase-2-kubernetes-hardening.md) |
 | K3, K9 | Namespace budgets are not measured; singleton PDBs and node-local state constrain maintenance. | Size quotas from observed demand, document singleton drain procedures and spread eligible multi-replica services |
 | K5, K16, K29, K31, K36 | Etcd snapshots and local/offsite Velero schedules are implemented, including distinct S3 prefixes and control-plane node-agent coverage. | Close the documented recovery coverage gaps, prove independent S3 credential recovery, and test backup-age/failure alerts in [Phase 1](phase-1-foundations.md) |
 | K6, K21, K26 | Authentik uses PostgreSQL; proxy/OIDC configuration and application routes are represented in Git. | Verify empty-database login and the documented emergency-access procedure |

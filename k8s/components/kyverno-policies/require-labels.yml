@@ -1,5 +1,5 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-labels
   annotations:
@@ -10,29 +10,48 @@ metadata:
       Pods must have the 'app.kubernetes.io/name' label for consistent
       identification across monitoring, networking, and service discovery.
 spec:
-  validationFailureAction: Enforce
-  background: true
-  rules:
-    - name: require-app-label
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kyverno
-                - argocd
-                - cilium-test-*
-                - backups
-                - intel-gpu-operator
-                - nfs-provisioner
-      validate:
-        message: "The label 'app.kubernetes.io/name' is required."
-        pattern:
-          metadata:
-            labels:
-              app.kubernetes.io/name: "?*"
+  validationActions:
+    - Deny
+  # Fail closed, like the legacy policies' webhooks.
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  autogen:
+    podControllers:
+      controllers:
+        - daemonsets
+        - deployments
+        - jobs
+        - cronjobs
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - kyverno
+            - argocd
+            - backups
+            - intel-gpu-operator
+            - nfs-provisioner
+  matchConditions:
+    - name: skip-cilium-connectivity-tests
+      expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  validations:
+    - expression: object.metadata.?labels[?'app.kubernetes.io/name'].orValue('') != ''
+      message: The label 'app.kubernetes.io/name' is required.

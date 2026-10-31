@@ -81,7 +81,7 @@ homelab/
 │   ├── components/
 │   │   ├── argocd/                  # Shared pinned ArgoCD installation
 │   │   ├── gateway-api/             # Gateway API CRDs
-│   │   └── kyverno-policies/        # Shared ClusterPolicy manifests
+│   │   └── kyverno-policies/        # Shared ValidatingPolicy manifests
 │   └── clusters/<cluster>/
 │       ├── infrastructure/          # Platform components
 │       │   ├── vault/

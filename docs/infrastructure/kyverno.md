@@ -21,9 +21,9 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 
 ## Policies
 
-Policies are deployed as `ClusterPolicy` resources via a separate ArgoCD Application (`kyverno-policies`). All policies run in **Enforce** mode -- non-compliant pods are rejected at admission time.
+Policies are deployed as `ValidatingPolicy` resources (`policies.kyverno.io/v1`) via a separate ArgoCD Application (`kyverno-policies`). All policies use `validationActions: [Deny]` with `failurePolicy: Fail` -- non-compliant pods are rejected at admission time, and the webhook fails closed.
 
-Kyverno 1.19 deprecates `ClusterPolicy`. Each policy has an equivalent `ValidatingPolicy` (`policies.kyverno.io/v1`, same name, `*.vpol.yml`) that runs beside it in Audit mode with `failurePolicy: Ignore`, so it records results without affecting admission while its reports are compared with the legacy policy's. The ValidatingPolicies autogenerate rules for the same pod controllers, exclude the same namespaces, and match `cilium-test-*` through `namespaceObject`, because autogen rewrites `object.metadata` for controllers. At cutover they switch to `Deny` with `failurePolicy: Fail`, matching the fail-closed legacy webhooks, and the `ClusterPolicy` files are removed.
+Each policy autogenerates rules for DaemonSets, Deployments, Jobs, CronJobs, ReplicaSets, ReplicationControllers and StatefulSets, so a non-compliant controller is rejected before it creates Pods. Exact namespace exclusions use `matchConstraints.namespaceSelector`; `cilium-test-*` is matched through `namespaceObject`, because autogen rewrites `object.metadata` for controllers. Unlike the legacy `ClusterPolicy`, which allowed updates to objects that already violated it, a ValidatingPolicy denies those updates too: fix existing violations before tightening a policy. Kyverno 1.19 deprecated `ClusterPolicy`; these policies replaced the original five on 2026-10-31 after running beside them in Audit mode with identical results on every workload.
 
 | Policy | What It Checks | Excluded Namespaces |
 |--------|----------------|---------------------|
@@ -49,7 +49,7 @@ Exclusions exist for workloads where compliance is not feasible:
 
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/container-security-cel` runs the same cases and expectations against the ValidatingPolicies. Run both with the Kyverno CLI matching the chart application version (currently 1.19.2):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. Run it with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
 kyverno test tests/kyverno

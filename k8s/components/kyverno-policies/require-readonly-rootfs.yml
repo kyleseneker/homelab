@@ -1,5 +1,5 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-readonly-rootfs
   annotations:
@@ -10,39 +10,58 @@ metadata:
       Containers should use a read-only root filesystem to prevent modification
       of the container filesystem at runtime.
 spec:
-  validationFailureAction: Enforce
-  background: true
-  rules:
-    - name: validate-readonly-rootfs
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      exclude:
-        any:
-          - resources:
-              namespaces:
-                - kube-system
-                - kyverno
-                - argocd
-                - cilium-test-*
-                - arr
-                - auth
-                - backups
-                - monitoring
-                - nfs-provisioner
-                - local-path-storage
-      validate:
-        message: "Containers must set securityContext.readOnlyRootFilesystem to true."
-        pattern:
-          spec:
-            containers:
-              - securityContext:
-                  readOnlyRootFilesystem: true
-            =(initContainers):
-              - securityContext:
-                  readOnlyRootFilesystem: true
-            =(ephemeralContainers):
-              - securityContext:
-                  readOnlyRootFilesystem: true
+  validationActions:
+    - Deny
+  # Fail closed, like the legacy policies' webhooks.
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  autogen:
+    podControllers:
+      controllers:
+        - daemonsets
+        - deployments
+        - jobs
+        - cronjobs
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+            - kyverno
+            - argocd
+            - arr
+            - auth
+            - backups
+            - monitoring
+            - nfs-provisioner
+            - local-path-storage
+  matchConditions:
+    - name: skip-cilium-connectivity-tests
+      expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  variables:
+    - name: allContainers
+      expression: >-
+        object.spec.containers + object.spec.?initContainers.orValue([]) +
+        object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: >-
+        variables.allContainers.all(c,
+          c.?securityContext.?readOnlyRootFilesystem.orValue(false) == true)
+      message: Containers must set securityContext.readOnlyRootFilesystem to true.

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. On 2026-10-31 the policies moved from the deprecated `ClusterPolicy` type to CEL-based `ValidatingPolicy`; the decision to use Kyverno is unchanged.
 
 ## Context
 
