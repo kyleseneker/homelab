@@ -214,3 +214,79 @@ data:
             - !KeyOf qbit-provider
             - !KeyOf prometheus-provider
             - !KeyOf alertmanager-provider
+  oidc-clients.yaml: |
+    version: 1
+    metadata:
+      name: oidc-clients
+    entries:
+      - model: authentik_providers_oauth2.oauth2provider
+        id: argocd-provider
+        identifiers:
+          name: argocd
+        attrs:
+          client_type: confidential
+          client_id: argocd
+          client_secret: !Env ARGOCD_OIDC_CLIENT_SECRET
+          redirect_uris:
+            - matching_mode: strict
+              url: https://argocd.homelab.local/auth/callback
+            - matching_mode: strict
+              url: https://argocd.home.seneker.io/auth/callback
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          signing_key:
+            !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          sub_mode: hashed_user_id
+          issuer_mode: per_provider
+          access_code_validity: minutes=1
+          access_token_validity: minutes=60
+          refresh_token_validity: days=30
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-offline_access]]
+      - model: authentik_core.application
+        identifiers:
+          slug: argocd
+        attrs:
+          name: ArgoCD
+          provider: !KeyOf argocd-provider
+      - model: authentik_providers_oauth2.oauth2provider
+        id: grafana-provider
+        identifiers:
+          name: grafana
+        attrs:
+          client_type: confidential
+          client_id: grafana
+          client_secret: !Env GRAFANA_OIDC_CLIENT_SECRET
+          redirect_uris:
+            - matching_mode: strict
+              url: https://grafana.homelab.local/login/generic_oauth
+            - matching_mode: strict
+              url: https://grafana.home.seneker.io/login/generic_oauth
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+          signing_key:
+            !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          include_claims_in_id_token: true
+          sub_mode: hashed_user_id
+          issuer_mode: per_provider
+          access_code_validity: minutes=1
+          access_token_validity: minutes=5
+          refresh_token_validity: days=30
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      - model: authentik_core.application
+        identifiers:
+          slug: grafana
+        attrs:
+          name: Grafana
+          provider: !KeyOf grafana-provider

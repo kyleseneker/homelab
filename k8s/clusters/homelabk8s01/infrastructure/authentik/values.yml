@@ -2,6 +2,10 @@ blueprints:
   configMaps:
     - authentik-blueprints
 global:
+  # Restart Authentik when authentik-credentials changes; blueprints read OIDC
+  # client secrets from it through !Env.
+  deploymentAnnotations:
+    reloader.stakater.com/auto: "true"
   envFrom:
     - secretRef:
         name: authentik-credentials
