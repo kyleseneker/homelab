@@ -16,6 +16,9 @@ table inet restore_lab {
     }
     chain forward {
         type filter hook forward priority -10; policy accept;
+        # With the Proxmox firewall on, bridged frames also traverse this hook
+        # (bridge-nf-call-iptables); traffic between lab VMs stays on vmbr1.
+        iifname "vmbr1" oifname "vmbr1" accept
         # IP forwarding must not create a new route between existing VLANs.
         iifname "vmbr0" oifname "vmbr0.99" counter drop
         iifname "vmbr0.99" oifname "vmbr0" counter drop
