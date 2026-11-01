@@ -5,6 +5,8 @@ metadata:
   namespace: default
   annotations:
     cert-manager.io/cluster-issuer: homelab-ca-issuer
+    # Apple platforms reject TLS server certificates without the serverAuth EKU.
+    cert-manager.io/usages: "digital signature,key encipherment,server auth"
 spec:
   gatewayClassName: cilium
   listeners:
