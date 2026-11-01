@@ -17,20 +17,20 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 - **Retention**: 15 days or 15GB of persisted blocks, whichever limit is reached first (WAL/head need extra space)
 - **Storage**: 20Gi PVC using the `local-path` StorageClass; node-pinned and without a filesystem quota
-- **Ingress**: `prometheus.homelab.local`
+- **Ingress**: `prometheus.home.seneker.io`
 - **Service discovery**: `serviceMonitorSelector` and `podMonitorSelector` are configured to match all monitors across all namespaces, not just those created by the Helm chart.
 
 ### Grafana
 
 - **Admin credentials**: Sourced from the ExternalSecret `grafana-admin` (synced from Vault, `admin-user` and `admin-password` keys).
 - **Storage**: 2Gi PVC using `nfs-client`
-- **Ingress**: `grafana.homelab.local`
+- **Ingress**: `grafana.home.seneker.io`
 - **Security context**: Runs as UID/GID 472
 - **Data sources**: Loki is pre-configured as a data source pointing to `http://loki.monitoring.svc.cluster.local:3100`.
 
 ### Alertmanager
 
-- **Ingress**: `alertmanager.homelab.local`
+- **Ingress**: `alertmanager.home.seneker.io`
 - **Notifications**: Slack `#alerts` channel via Incoming Webhook (see [alerting.md](alerting.md))
 - **Secrets**: Webhook URL mounted from `alertmanager-slack-webhook` ExternalSecret (synced from Vault)
 - **Custom rules**: Homelab-specific `PrometheusRule` in `homelab-rules.yml` (app health, infra, backups, node health)

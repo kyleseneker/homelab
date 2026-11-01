@@ -9,7 +9,7 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `lscr.io/linuxserver/sonarr` |
 | Port | 8989 |
-| HTTPRoute | `sonarr.homelab.local` |
+| HTTPRoute | `sonarr.home.seneker.io` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-sonarr` |
 | Internal URL | `http://arr-sonarr.arr.svc.cluster.local:8989` |

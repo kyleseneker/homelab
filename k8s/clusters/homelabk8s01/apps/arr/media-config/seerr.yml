@@ -24,7 +24,7 @@ spec:
       key: password
   main:
     applicationTitle: Seerr
-    applicationUrl: https://seerr.homelab.local
+    applicationUrl: https://seerr.home.seneker.io
     localLogin: true
     mediaServerLogin: true
   sonarr:

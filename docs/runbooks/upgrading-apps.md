@@ -83,7 +83,7 @@ ArgoCD will sync the application back to the previous version.
 
 ### ArgoCD UI
 
-1. Open the ArgoCD UI at `https://argocd.homelab.local`.
+1. Open the ArgoCD UI at `https://argocd.home.seneker.io`.
 2. Select the application.
 3. Click **History and Rollback**.
 4. Select the previous successful sync and click **Rollback**.
@@ -107,5 +107,5 @@ After any upgrade:
     kubectl logs -n arr -l app.kubernetes.io/instance=arr-sonarr
     ```
 
-3. Verify the web UI loads by navigating to the app's URL (e.g., `https://sonarr.homelab.local`).
+3. Verify the web UI loads by navigating to the app's URL (e.g., `https://sonarr.home.seneker.io`).
 4. Check ArgoCD sync status to confirm the app is `Healthy` and `Synced`.

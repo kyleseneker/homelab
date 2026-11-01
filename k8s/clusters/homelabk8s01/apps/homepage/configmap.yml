@@ -6,7 +6,7 @@ metadata:
 data:
   settings.yaml: |
     title: Homelab
-    favicon: https://jellyfin.homelab.local/web/favicon.ico
+    favicon: https://jellyfin.home.seneker.io/web/favicon.ico
     theme: dark
     color: slate
     headerStyle: clean
@@ -62,7 +62,7 @@ data:
     - Apps:
         - Jellyfin:
             icon: jellyfin.svg
-            href: https://jellyfin.homelab.local
+            href: https://jellyfin.home.seneker.io
             description: Media server
             widget:
               type: jellyfin
@@ -73,7 +73,7 @@ data:
               fields: ["movies", "series", "episodes"]
         - Seerr:
             icon: seerr.svg
-            href: https://seerr.homelab.local
+            href: https://seerr.home.seneker.io
             description: Media requests
             widget:
               type: seerr
@@ -82,7 +82,7 @@ data:
     - Media:
         - qBittorrent:
             icon: qbittorrent.svg
-            href: https://qbit.homelab.local
+            href: https://qbit.home.seneker.io
             description: Torrent client
             widget:
               type: qbittorrent
@@ -91,7 +91,7 @@ data:
               password: "{{HOMEPAGE_VAR_QBIT_PASSWORD}}"
         - Sonarr:
             icon: sonarr.svg
-            href: https://sonarr.homelab.local
+            href: https://sonarr.home.seneker.io
             description: TV shows
             widget:
               type: sonarr
@@ -99,7 +99,7 @@ data:
               key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
         - Radarr:
             icon: radarr.svg
-            href: https://radarr.homelab.local
+            href: https://radarr.home.seneker.io
             description: Movies
             widget:
               type: radarr
@@ -107,7 +107,7 @@ data:
               key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
         - Prowlarr:
             icon: prowlarr.svg
-            href: https://prowlarr.homelab.local
+            href: https://prowlarr.home.seneker.io
             description: Indexer manager
             widget:
               type: prowlarr
@@ -115,7 +115,7 @@ data:
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
         - Bazarr:
             icon: bazarr.svg
-            href: https://bazarr.homelab.local
+            href: https://bazarr.home.seneker.io
             description: Subtitles
             widget:
               type: bazarr
@@ -123,7 +123,7 @@ data:
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
         - Tdarr:
             icon: tdarr.png
-            href: https://tdarr.homelab.local
+            href: https://tdarr.home.seneker.io
             description: Transcoding
             widget:
               type: tdarr
@@ -131,23 +131,23 @@ data:
     - Observability:
         - Grafana:
             icon: grafana.svg
-            href: https://grafana.homelab.local
+            href: https://grafana.home.seneker.io
             description: Dashboards
         - Prometheus:
             icon: prometheus.svg
-            href: https://prometheus.homelab.local
+            href: https://prometheus.home.seneker.io
             description: Metrics
         - Alertmanager:
             icon: alertmanager.svg
-            href: https://alertmanager.homelab.local
+            href: https://alertmanager.home.seneker.io
             description: Alert routing
         - Loki:
             icon: loki.svg
-            href: https://grafana.homelab.local/explore
+            href: https://grafana.home.seneker.io/explore
             description: Logs (via Grafana)
         - Uptime Kuma:
             icon: uptime-kuma.svg
-            href: https://status.homelab.local
+            href: https://status.home.seneker.io
             description: Status monitoring
             widget:
               type: uptimekuma
@@ -155,12 +155,12 @@ data:
               slug: default
         - Goldilocks:
             icon: goldilocks.svg
-            href: https://goldilocks.homelab.local
+            href: https://goldilocks.home.seneker.io
             description: Resource recommendations
     - Infrastructure:
         - ArgoCD:
             icon: argo-cd.svg
-            href: https://argocd.homelab.local
+            href: https://argocd.home.seneker.io
             description: GitOps
         - Proxmox:
             icon: proxmox.svg
@@ -168,13 +168,13 @@ data:
             description: Hypervisor
         - Vault:
             icon: vault.svg
-            href: https://vault.homelab.local
+            href: https://vault.home.seneker.io
             description: Secrets management
         - Authentik:
             icon: authentik.png
-            href: https://auth.homelab.local
+            href: https://auth.home.seneker.io
             description: SSO / Identity
         - Homepage:
             icon: homepage.png
-            href: https://home.homelab.local
+            href: https://dash.home.seneker.io
             description: Dashboard

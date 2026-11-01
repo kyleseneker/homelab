@@ -9,7 +9,7 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Namespace | `arr` |
 | ArgoCD app | `arr-vpn-downloads` |
-| HTTPRoute | `qbit.homelab.local` |
+| HTTPRoute | `qbit.home.seneker.io` |
 
 ### Containers
 
@@ -49,7 +49,7 @@ flowchart TB
 
     vpn["PIA VPN\n(CA Montreal)"] <-->|"WireGuard/OpenVPN"| gluetun
     qbit -->|"traffic via tunnel"| gluetun
-    gateway["Cilium Gateway"] -->|"qbit.homelab.local"| netns
+    gateway["Cilium Gateway"] -->|"qbit.home.seneker.io"| netns
 ```
 
 ## Key Configuration

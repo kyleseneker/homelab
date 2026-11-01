@@ -10,7 +10,7 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 | Image | `lscr.io/linuxserver/jellyfin` |
 | Port | 8096 |
 | Service type | LoadBalancer |
-| HTTPRoute | `jellyfin.homelab.local` |
+| HTTPRoute | `jellyfin.home.seneker.io` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-jellyfin` |
 

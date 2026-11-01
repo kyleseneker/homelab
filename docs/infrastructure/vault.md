@@ -16,7 +16,7 @@ HashiCorp Vault provides centralized secrets storage for the cluster. All applic
 - **Mode**: Integrated Raft (one voter; not highly available)
 - **Storage**: Local-path PVC `vault-raft-data` (1Gi; protected from Argo pruning)
 - **Seal**: AWS KMS auto-unseal (key: `alias/vault-unseal-homelab`)
-- **UI**: Enabled at `vault.homelab.local`
+- **UI**: Enabled at `vault.home.seneker.io`
 - **Injector**: Disabled (using External Secrets Operator instead)
 - **Resources**:
     - Requests: 50m CPU, 64Mi memory

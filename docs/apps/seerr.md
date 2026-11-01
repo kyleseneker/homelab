@@ -9,7 +9,7 @@ Seerr is a media request management application (the unified successor to Jellys
 | Helm chart | `seerr-chart` v3.10.1 ([seerr-team](https://github.com/seerr-team/seerr)) |
 | Image | `ghcr.io/seerr-team/seerr` |
 | Port | 80 |
-| HTTPRoute | `seerr.homelab.local` |
+| HTTPRoute | `seerr.home.seneker.io` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-seerr` |
 | Internal URL | `http://arr-seerr.arr.svc.cluster.local:80` |

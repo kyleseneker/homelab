@@ -10,7 +10,7 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/haveagitgat/tdarr` |
 | Ports | 8265 (web UI), 8266 (server) |
-| HTTPRoute | `tdarr.homelab.local`, proxied through the Authentik outpost |
+| HTTPRoute | `tdarr.home.seneker.io`, proxied through the Authentik outpost |
 | Namespace | `arr` |
 | ArgoCD app | `arr-tdarr` |
 | Internal URL | `http://arr-tdarr.arr.svc.cluster.local:8265` |

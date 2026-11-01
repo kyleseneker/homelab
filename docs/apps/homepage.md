@@ -9,7 +9,7 @@ Homepage is a dashboard that aggregates all homelab services into a single page 
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/gethomepage/homepage` |
 | Port | 3000 |
-| HTTPRoute | `home.homelab.local` |
+| HTTPRoute | `dash.home.seneker.io` |
 | Namespace | `arr` |
 | ArgoCD app | `homepage` |
 
@@ -30,7 +30,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 
 ## Key Configuration
 
-- `HOMEPAGE_ALLOWED_HOSTS`: `home.homelab.local` -- restricts which hostnames the server responds to.
+- `HOMEPAGE_ALLOWED_HOSTS`: `home.homelab.local,dash.home.seneker.io` -- restricts which hostnames the server responds to.
 - API keys for service widgets are injected as environment variables from the `homepage-secrets` Secret. These are referenced in the configuration files as `{{HOMEPAGE_VAR_*}}` placeholders.
 - A `homepage` ServiceAccount is created for Kubernetes widget integration, allowing the dashboard to display cluster resource information.
 
@@ -67,7 +67,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
     # ESO syncs it to K8s automatically via homepage-external-secret.yml
     ```
 
-2. Open `https://home.homelab.local` and verify all service widgets display correctly.
+2. Open `https://dash.home.seneker.io` and verify all service widgets display correctly.
 3. If any widget shows an error, confirm the corresponding API key is correct and the target service is reachable from the `arr` namespace.
 
 !!! note

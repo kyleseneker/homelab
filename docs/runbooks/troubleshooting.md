@@ -61,7 +61,7 @@ Check which fields are out of sync in the ArgoCD UI (App > Diff). If the drift i
 
 If an application is stuck, force a sync with replacement from the ArgoCD UI:
 
-1. Open `https://argocd.homelab.local`
+1. Open `https://argocd.home.seneker.io`
 2. Select the application
 3. Click **Sync**, enable **Replace**, and click **Synchronize**
 
@@ -159,7 +159,7 @@ kubectl get httproute -n <namespace>
 kubectl get gateway homelab-gateway -n default
 
 # Verify DNS resolves to the Cilium L2 VIP
-dig <app-name>.homelab.local
+dig <app-name>.home.seneker.io
 ```
 
 **Common causes:**

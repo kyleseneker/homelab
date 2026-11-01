@@ -9,7 +9,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `louislam/uptime-kuma` |
 | Port | 3001 |
-| HTTPRoute | `status.homelab.local` |
+| HTTPRoute | `status.home.seneker.io` |
 | Namespace | `monitoring` |
 | ArgoCD app | `uptime-kuma` |
 
@@ -34,30 +34,30 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 
 ## Post-Deploy Setup
 
-1. Add `status.homelab.local` to DNS (if not using a wildcard record).
+1. Add a UniFi DNS record for `status.home.seneker.io`.
 2. Confirm the direct route and intended visibility of the public status page.
-3. Open `https://status.homelab.local` and create an admin account.
+3. Open `https://status.home.seneker.io` and create an admin account.
 4. Add HTTP monitors for each service:
 
     | Monitor | URL |
     |---------|-----|
-    | Jellyfin | `https://jellyfin.homelab.local` |
-    | Sonarr | `https://sonarr.homelab.local` |
-    | Radarr | `https://radarr.homelab.local` |
-    | Prowlarr | `https://prowlarr.homelab.local` |
-    | Bazarr | `https://bazarr.homelab.local` |
-    | Seerr | `https://seerr.homelab.local` |
-    | qBittorrent | `https://qbit.homelab.local` |
-    | Tdarr | `http://tdarr.homelab.local` |
-    | Grafana | `https://grafana.homelab.local` |
-    | Prometheus | `https://prometheus.homelab.local` |
-    | Alertmanager | `https://alertmanager.homelab.local` |
-    | Uptime Kuma | `https://status.homelab.local` |
-    | Goldilocks | `https://goldilocks.homelab.local` |
-    | ArgoCD | `https://argocd.homelab.local` |
-    | Vault | `https://vault.homelab.local` |
-    | Authentik | `https://auth.homelab.local` |
-    | Homepage | `https://home.homelab.local` |
+    | Jellyfin | `https://jellyfin.home.seneker.io` |
+    | Sonarr | `https://sonarr.home.seneker.io` |
+    | Radarr | `https://radarr.home.seneker.io` |
+    | Prowlarr | `https://prowlarr.home.seneker.io` |
+    | Bazarr | `https://bazarr.home.seneker.io` |
+    | Seerr | `https://seerr.home.seneker.io` |
+    | qBittorrent | `https://qbit.home.seneker.io` |
+    | Tdarr | `https://tdarr.home.seneker.io` |
+    | Grafana | `https://grafana.home.seneker.io` |
+    | Prometheus | `https://prometheus.home.seneker.io` |
+    | Alertmanager | `https://alertmanager.home.seneker.io` |
+    | Uptime Kuma | `https://status.home.seneker.io` |
+    | Goldilocks | `https://goldilocks.home.seneker.io` |
+    | ArgoCD | `https://argocd.home.seneker.io` |
+    | Vault | `https://vault.home.seneker.io` |
+    | Authentik | `https://auth.home.seneker.io` |
+    | Homepage | `https://dash.home.seneker.io` |
 
 !!! note
     Uptime Kuma monitors from within the cluster. Install the homelab CA before relying on HTTPS validation; do not treat checks that ignore certificate errors as TLS coverage. The CA-backed Blackbox probes provide separate route/TLS checks. Internal HTTP checks can diagnose service reachability but do not test the gateway.

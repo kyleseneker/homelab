@@ -47,7 +47,7 @@ Each exporter runs as a separate Deployment (one app-template controller per tar
     make arr-keys-adopt
     ```
 
-3. Verify targets appear in Prometheus: `https://prometheus.homelab.local/targets`
+3. Verify targets appear in Prometheus: `https://prometheus.home.seneker.io/targets`
 
 ## Dependencies
 

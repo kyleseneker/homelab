@@ -34,7 +34,7 @@ FlareSolverr is a proxy server that bypasses Cloudflare and DDoS-GUARD protectio
 
 FlareSolverr itself requires no configuration. To connect it to Prowlarr:
 
-1. Open `https://prowlarr.homelab.local`.
+1. Open `https://prowlarr.home.seneker.io`.
 2. Go to **Settings > Indexers**.
 3. Click **+** and select **FlareSolverr**.
 4. Set the **Tag** (e.g., `flaresolverr`) and the **Host**: `http://arr-flaresolverr.arr.svc.cluster.local:8191`.

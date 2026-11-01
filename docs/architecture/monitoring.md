@@ -55,7 +55,7 @@ Prometheus is deployed via the `kube-prometheus-stack` Helm chart and serves as 
 |---------|-------|
 | Retention | 15 days or 15GB of persisted blocks, whichever is reached first |
 | Storage | 20Gi PVC (`local-path`) |
-| Access | `prometheus.homelab.local` |
+| Access | `prometheus.home.seneker.io` |
 
 Prometheus scrapes metrics from:
 
@@ -80,7 +80,7 @@ Alertmanager receives alerts from Prometheus and handles deduplication, grouping
 
 | Setting | Value |
 |---------|-------|
-| Access | `alertmanager.homelab.local` |
+| Access | `alertmanager.home.seneker.io` |
 | Deployment | Part of kube-prometheus-stack |
 
 ### Node Exporter
@@ -195,7 +195,7 @@ Grafana provides a unified interface for exploring both metrics (Prometheus) and
 
 | Setting | Value |
 |---------|-------|
-| Access | `grafana.homelab.local` |
+| Access | `grafana.home.seneker.io` |
 | Storage | 2Gi PVC (`nfs-client`) |
 | Admin Credentials | ExternalSecret (`grafana-admin`, synced from Vault) |
 
@@ -221,7 +221,7 @@ The Vertical Pod Autoscaler (VPA) recommender analyzes historical CPU and memory
 
 - **VPA Recommender**: Runs in `kube-system`, computes target/lower-bound/upper-bound recommendations, writes recommendations to VPA status; custom recommendation metrics are not configured in this repository
 - **Goldilocks Controller**: Watches all namespaces (except `kube-node-lease`, `kube-public`) and creates `VerticalPodAutoscaler` CRs with `updateMode: "Off"`
-- **Goldilocks Dashboard**: Web UI for browsing per-workload recommendations at `goldilocks.homelab.local`, protected by the Authentik outpost
+- **Goldilocks Dashboard**: Web UI for browsing per-workload recommendations at `goldilocks.home.seneker.io`, protected by the Authentik outpost
 
 VPA runs in recommend-only mode -- no pods are ever mutated. Recommendations are advisory and applied through manual manifest updates.
 

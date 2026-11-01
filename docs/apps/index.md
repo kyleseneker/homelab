@@ -46,22 +46,22 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 
 | Application | Namespace | URL | Description | Image |
 |-------------|-----------|-----|-------------|-------|
-| [Jellyfin](jellyfin.md) | `arr` | `jellyfin.homelab.local` | Media server for movies, TV, and music | `lscr.io/linuxserver/jellyfin` |
-| [Sonarr](sonarr.md) | `arr` | `sonarr.homelab.local` | TV series management and automation | `lscr.io/linuxserver/sonarr` |
-| [Radarr](radarr.md) | `arr` | `radarr.homelab.local` | Movie management and automation | `lscr.io/linuxserver/radarr` |
-| [Prowlarr](prowlarr.md) | `arr` | `prowlarr.homelab.local` | Centralized indexer manager | `lscr.io/linuxserver/prowlarr` |
-| [Bazarr](bazarr.md) | `arr` | `bazarr.homelab.local` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr` |
-| [Seerr](seerr.md) | `arr` | `seerr.homelab.local` | Media request management | `seerr-chart` (own chart) |
-| [Downloads](downloads.md) | `arr` | `qbit.homelab.local` | VPN-routed torrent client (qBittorrent) | `qmcgaw/gluetun`, `lscr.io/linuxserver/qbittorrent` |
+| [Jellyfin](jellyfin.md) | `arr` | `jellyfin.home.seneker.io` | Media server for movies, TV, and music | `lscr.io/linuxserver/jellyfin` |
+| [Sonarr](sonarr.md) | `arr` | `sonarr.home.seneker.io` | TV series management and automation | `lscr.io/linuxserver/sonarr` |
+| [Radarr](radarr.md) | `arr` | `radarr.home.seneker.io` | Movie management and automation | `lscr.io/linuxserver/radarr` |
+| [Prowlarr](prowlarr.md) | `arr` | `prowlarr.home.seneker.io` | Centralized indexer manager | `lscr.io/linuxserver/prowlarr` |
+| [Bazarr](bazarr.md) | `arr` | `bazarr.home.seneker.io` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr` |
+| [Seerr](seerr.md) | `arr` | `seerr.home.seneker.io` | Media request management | `seerr-chart` (own chart) |
+| [Downloads](downloads.md) | `arr` | `qbit.home.seneker.io` | VPN-routed torrent client (qBittorrent) | `qmcgaw/gluetun`, `lscr.io/linuxserver/qbittorrent` |
 | [Recyclarr](recyclarr.md) | `arr` | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr` |
-| [Tdarr](tdarr.md) | `arr` | `tdarr.homelab.local` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr` |
+| [Tdarr](tdarr.md) | `arr` | `tdarr.home.seneker.io` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr` |
 | [Unpackerr](unpackerr.md) | `arr` | -- | Automatic extraction of compressed downloads | `ghcr.io/unpackerr/unpackerr` |
 | [Exportarr](exportarr.md) | `arr` | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr` |
 | [FlareSolverr](flaresolverr.md) | `arr` | -- | Captcha-solving proxy for Prowlarr indexers | `ghcr.io/flaresolverr/flaresolverr` |
 | [Media Operator](media-operator.md) | `arr` | -- | Eight application configurations through seven operators | Media Operator OCI charts |
 | [Config Backup](config-backup.md) | `arr` | -- | Nightly SQLite/native-archive staging | `python` |
-| [Homepage](homepage.md) | `arr` | `home.homelab.local` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
-| [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.homelab.local` | Synthetic monitoring and status page | `louislam/uptime-kuma` |
+| [Homepage](homepage.md) | `arr` | `dash.home.seneker.io` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
+| [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.home.seneker.io` | Synthetic monitoring and status page | `louislam/uptime-kuma` |
 
 ## Deployment Ordering
 

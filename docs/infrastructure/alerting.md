@@ -111,7 +111,7 @@ spec:
 
 ## Silencing Alerts
 
-To temporarily silence an alert, use the Alertmanager UI at `alertmanager.homelab.local`:
+To temporarily silence an alert, use the Alertmanager UI at `alertmanager.home.seneker.io`:
 
 1. Navigate to **Silences** > **New Silence**
 2. Add a matcher (e.g., `alertname = HighNodeCPU`)

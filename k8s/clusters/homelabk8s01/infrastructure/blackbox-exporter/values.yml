@@ -19,11 +19,6 @@ serviceMonitor:
   enabled: false
   selfMonitor:
     enabled: true
-extraConfigmapMounts:
-  - name: homelab-ca
-    mountPath: /etc/homelab-ca
-    configMap: custom-ca-certs
-    readOnly: true
 config:
   modules:
     http_2xx:
@@ -34,8 +29,6 @@ config:
         valid_status_codes: [200]
         follow_redirects: false
         preferred_ip_protocol: ip4
-        tls_config:
-          ca_file: /etc/homelab-ca/homelab-ca.crt
     http_auth_redirect:
       prober: http
       timeout: 10s

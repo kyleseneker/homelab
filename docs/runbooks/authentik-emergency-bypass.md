@@ -24,7 +24,7 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath="{.data.password}" | base64 -d; echo
 ```
 
-Log in at `https://argocd.homelab.local` as `admin`. If the initial secret has been deleted, reset the password by patching `argocd-secret` with a bcrypt hash of the new password.
+Log in at `https://argocd.home.seneker.io` as `admin`. If the initial secret has been deleted, reset the password by patching `argocd-secret` with a bcrypt hash of the new password.
 
 ### Grafana
 
@@ -35,7 +35,7 @@ kubectl -n monitoring get secret grafana-admin \
   -o jsonpath="{.data.admin-password}" | base64 -d; echo
 ```
 
-Log in at `https://grafana.homelab.local` using the "sign in with username" link below the OAuth button.
+Log in at `https://grafana.home.seneker.io` using the "sign in with username" link below the OAuth button.
 
 !!! warning "Recover credentials before rebuilding"
     Existing Kubernetes Secrets survive a Vault outage, so Grafana's current credential can still be retrieved. ArgoCD's local admin credential is independent of Vault. A cluster rebuild is a different matter; see [Disaster Recovery](disaster-recovery.md).

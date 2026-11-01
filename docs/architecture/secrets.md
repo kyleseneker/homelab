@@ -80,7 +80,7 @@ flowchart TD
 ```
 
 ```bash
-# Port-forward to Vault (or use ingress at vault.homelab.local)
+# Port-forward to Vault (or use ingress at vault.home.seneker.io)
 kubectl port-forward -n vault svc/vault 8200:8200
 
 # Write or update a secret

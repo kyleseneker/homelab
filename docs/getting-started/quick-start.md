@@ -152,7 +152,7 @@ All ExternalSecrets should show `SecretSynced` status.
 
 ## 11. Access ArgoCD
 
-Open [https://argocd.homelab.local](https://argocd.homelab.local) in your browser.
+Open [https://argocd.home.seneker.io](https://argocd.home.seneker.io) in your browser.
 
 Retrieve the initial admin password:
 

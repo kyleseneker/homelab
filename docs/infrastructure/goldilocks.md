@@ -36,7 +36,7 @@ When workloads are added or removed, Goldilocks creates or deletes the correspon
 
 ## Accessing the Dashboard
 
-The Goldilocks dashboard is exposed via Gateway API HTTPRoute at `https://goldilocks.homelab.local`.
+The Goldilocks dashboard is exposed via Gateway API HTTPRoute at `https://goldilocks.home.seneker.io`.
 
 ## Cluster Integration
 

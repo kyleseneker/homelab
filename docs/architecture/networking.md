@@ -6,17 +6,24 @@ This document covers the networking stack from external client access down to in
 
 ```mermaid
 flowchart TD
-    client["Client Browser"] -->|"HTTPS request\n*.homelab.local"| dns["DNS Resolution"]
+    client["Client Browser"] -->|"HTTPS request\n*.home.seneker.io"| dns["UniFi DNS"]
     dns --> ciliumVIP["Cilium L2 VIP\n192.168.10.200-250"]
     ciliumVIP --> gateway["Cilium Gateway\n(homelab-gateway)"]
-    gateway -->|"TLS termination"| certManager["cert-manager\n(homelab-ca-issuer)"]
+    gateway -->|"TLS termination"| certManager["cert-manager\n(letsencrypt-production)"]
     gateway -->|"Route by hostname\n(HTTPRoute)"| appSvc["Application Service"]
     appSvc --> appPod["Application Pod"]
 ```
 
 ## Cilium Gateway API
 
-Cilium serves as both the CNI and the gateway controller. The `homelab-gateway` Gateway resource accepts HTTPS traffic on port 443 for `*.homelab.local` and terminates TLS using a cert-manager-issued wildcard certificate.
+Cilium serves as both the CNI and the gateway controller. The `homelab-gateway` Gateway accepts HTTPS on port 443 through two listeners, each terminating TLS with its own wildcard certificate:
+
+| Listener | Hostnames | Certificate |
+|----------|-----------|-------------|
+| `https-home` | `*.home.seneker.io` | `home-gateway-tls`, from Let's Encrypt |
+| `https` | `*.homelab.local` | `homelab-gateway-tls`, from the homelab CA |
+
+Services use their `home.seneker.io` names, which every device trusts without extra setup. The `homelab.local` names are being retired. Routes that still list one serve both names, and the old names of SSO-protected apps redirect to the new ones (`gateway/homelab-local-redirects.yml`).
 
 Each application defines an HTTPRoute that binds to the gateway and routes by hostname:
 
@@ -30,12 +37,12 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - <app>.homelab.local
+      - <app>.home.seneker.io
 ```
 
-An HTTP-to-HTTPS redirect is configured via a separate HTTPRoute on the gateway's HTTP listener.
+An HTTP-to-HTTPS redirect is configured via a separate HTTPRoute on the gateway's `http` and `http-home` listeners.
 
 ### Key Resources
 
@@ -57,9 +64,12 @@ Cilium replaces MetalLB for LoadBalancer IP allocation. It operates in Layer 2 m
 !!! note "L2 Limitations"
     In L2 mode, all traffic for a given VIP is handled by a single node (the current ARP responder). Failover occurs when the node becomes unavailable, at which point another node takes over the VIP.
 
-## Cert-Manager and the CA Chain
+## Gateway Certificates
 
-TLS certificates are issued by a self-signed CA chain managed entirely within the cluster by cert-manager.
+`gateway/certificates.yml` declares both gateway certificates explicitly. See [cert-manager](../infrastructure/cert-manager.md) for the issuers.
+
+- **`home-gateway-tls`** covers `*.home.seneker.io`. The `letsencrypt-production` ClusterIssuer obtains it with an ACME DNS-01 challenge in Route 53. cert-manager's AWS credentials can change only the `_acme-challenge.home.seneker.io` TXT record, so the public zone never holds a service address.
+- **`homelab-gateway-tls`** covers `*.homelab.local` and is signed by the in-cluster CA chain below.
 
 ```mermaid
 flowchart TD
@@ -76,38 +86,36 @@ flowchart TD
 | `selfsigned-issuer` | ClusterIssuer | Bootstrap issuer that signs the CA certificate |
 | `homelab-ca` | Certificate | The root CA certificate, signed by the self-signed issuer |
 | `homelab-ca-secret` | Secret | Stores the CA key pair, referenced by the CA issuer |
-| `homelab-ca-issuer` | ClusterIssuer | Issues TLS certificates for the Gateway using the CA |
-
-The Gateway resource includes a `cert-manager.io/cluster-issuer: homelab-ca-issuer` annotation. cert-manager automatically provisions a wildcard TLS certificate for `*.homelab.local` and stores it in the `homelab-gateway-tls` Secret.
+| `homelab-ca-issuer` | ClusterIssuer | Issues `homelab-gateway-tls` |
 
 !!! tip "Trusting the CA"
-    To avoid browser warnings, import the `homelab-ca` certificate into your operating system or browser trust store. The CA certificate can be extracted from the `homelab-ca-secret` Secret in the `cert-manager` namespace.
+    Only the `homelab.local` names need the homelab CA. To avoid browser warnings on them, import the `homelab-ca` certificate into your operating system or browser trust store, as described in [Trusting the CA](../getting-started/trust-ca.md).
 
 ## DNS
 
-All services use the `*.homelab.local` domain pattern. DNS resolution is handled at the network level (router or local DNS server) pointing `*.homelab.local` to the Cilium L2 VIP assigned to the `homelab-gateway` Gateway.
+Service names resolve only on the home network and the VPN. The UniFi gateway holds one A record per hostname, pointing to the Cilium L2 VIP assigned to `homelab-gateway`. Public DNS for `home.seneker.io` holds no host records, so the names do not resolve anywhere else. Add a UniFi record with each new route.
 
 ### Application Hostnames
 
 | Application | Hostname |
 |------------|----------|
-| Jellyfin | `jellyfin.homelab.local` |
-| Sonarr | `sonarr.homelab.local` |
-| Radarr | `radarr.homelab.local` |
-| Prowlarr | `prowlarr.homelab.local` |
-| Bazarr | `bazarr.homelab.local` |
-| Seerr | `seerr.homelab.local` |
-| qBittorrent | `qbit.homelab.local` |
-| Tdarr | `tdarr.homelab.local` |
-| Homepage | `home.homelab.local` |
-| Uptime Kuma | `status.homelab.local` |
-| Authentik | `auth.homelab.local` |
-| Grafana | `grafana.homelab.local` |
-| Prometheus | `prometheus.homelab.local` |
-| Alertmanager | `alertmanager.homelab.local` |
-| Vault | `vault.homelab.local` |
-| Goldilocks | `goldilocks.homelab.local` |
-| ArgoCD | `argocd.homelab.local` |
+| Jellyfin | `jellyfin.home.seneker.io` |
+| Sonarr | `sonarr.home.seneker.io` |
+| Radarr | `radarr.home.seneker.io` |
+| Prowlarr | `prowlarr.home.seneker.io` |
+| Bazarr | `bazarr.home.seneker.io` |
+| Seerr | `seerr.home.seneker.io` |
+| qBittorrent | `qbit.home.seneker.io` |
+| Tdarr | `tdarr.home.seneker.io` |
+| Homepage | `dash.home.seneker.io` |
+| Uptime Kuma | `status.home.seneker.io` |
+| Authentik | `auth.home.seneker.io` |
+| Grafana | `grafana.home.seneker.io` |
+| Prometheus | `prometheus.home.seneker.io` |
+| Alertmanager | `alertmanager.home.seneker.io` |
+| Vault | `vault.home.seneker.io` |
+| Goldilocks | `goldilocks.home.seneker.io` |
+| ArgoCD | `argocd.home.seneker.io` |
 
 ## Network Policies
 

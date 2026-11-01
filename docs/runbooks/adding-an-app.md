@@ -101,9 +101,9 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - <app-name>.homelab.local
+      - <app-name>.home.seneker.io
     rules:
       - matches:
           - path:
@@ -190,7 +190,7 @@ If the application requires secrets (API keys, credentials, etc.):
 
 ## Step 5: Add a DNS Entry
 
-Add a DNS record for the new hostname (`<app-name>.homelab.local`) pointing to the Cilium L2 VIP assigned to the `homelab-gateway`. The gateway IP can be found with:
+Add a DNS record for the new hostname (`<app-name>.home.seneker.io`) pointing to the Cilium L2 VIP assigned to the `homelab-gateway`. The gateway IP can be found with:
 
 ```bash
 kubectl get gateway homelab-gateway -n default -o jsonpath='{.status.addresses[0].value}'
@@ -204,7 +204,7 @@ git commit -m "add <app-name>"
 git push
 ```
 
-The ApplicationSet's Git File Generator automatically discovers the new `config.yml` and generates an Application. Monitor the deployment in the ArgoCD UI at `https://argocd.homelab.local`.
+The ApplicationSet's Git File Generator automatically discovers the new `config.yml` and generates an Application. Monitor the deployment in the ArgoCD UI at `https://argocd.home.seneker.io`.
 
 ## Verification
 
@@ -220,4 +220,4 @@ The ApplicationSet's Git File Generator automatically discovers the new `config.
     kubectl get pods -n arr -l app.kubernetes.io/instance=arr-<app-name>
     ```
 
-3. Open the web UI at `https://<app-name>.homelab.local` and confirm it loads.
+3. Open the web UI at `https://<app-name>.home.seneker.io` and confirm it loads.

@@ -42,7 +42,7 @@ spec:
   targets:
     staticConfig:
       static:
-        - https://argocd.homelab.local
-        - https://home.homelab.local
-        - https://grafana.homelab.local/api/health
-        - https://jellyfin.homelab.local/health
+        - https://argocd.home.seneker.io
+        - https://dash.home.seneker.io
+        - https://grafana.home.seneker.io/api/health
+        - https://jellyfin.home.seneker.io/health
