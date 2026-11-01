@@ -12,6 +12,8 @@ The cluster needs metrics collection, log aggregation, dashboarding, and alertin
 
 Use the kube-prometheus-stack Helm chart (Prometheus, Grafana, Alertmanager, Node Exporter, kube-state-metrics) for metrics and alerting, Loki in single-binary mode for log storage, and Alloy as a DaemonSet log collector that ships pod logs and API server audit logs to Loki. Grafana serves as the unified dashboard for both metrics and logs.
 
+Loki's chart comes from the grafana-community repository ([ADR-027](027-loki-community-chart.md)).
+
 ## Alternatives Considered
 
 - **VictoriaMetrics**: Drop-in Prometheus replacement with better compression and lower resource usage. Strong choice, but kube-prometheus-stack's bundled Grafana dashboards, alerting rules, and recording rules provide significant out-of-the-box value that would need to be recreated.

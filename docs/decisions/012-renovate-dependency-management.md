@@ -21,7 +21,7 @@ Use the free Mend Renovate GitHub App to scan the repository on a weekly schedul
 ## Rationale
 
 - **Broad ecosystem support**: Renovate's built-in ArgoCD manager detects `targetRevision` in Application manifests. Custom regex managers cover the remaining patterns (inline `image: name:tag`, separate `repository`/`tag` lines, GitHub release URLs).
-- **Grouping strategy**: Related updates are grouped into single PRs to reduce noise: all bjw-s app-template consumers, all linuxserver images, Grafana stack charts (Loki + Alloy), and Intel GPU charts each produce one PR instead of many.
+- **Grouping strategy**: Related updates are grouped into single PRs to reduce noise: all bjw-s app-template consumers, all linuxserver images, the kube-prometheus-stack and Alloy charts, and Intel GPU charts each produce one PR instead of many. kube-prometheus-stack and Loki majors open one PR per major so they are taken in order.
 - **No automerge**: Every update goes through manual review. This is deliberate — Helm chart major versions and container image updates can introduce breaking changes that automated tests cannot fully validate in this environment.
 - **Dependency dashboard**: Renovate maintains a GitHub issue as a dashboard listing all pending updates, their status, and any errors. Provides visibility without checking individual PRs.
 - **Digest pinning**: Renovate proposes digest pins for container images and tracks both tag and digest updates, allowing reviewed image versions to be reproduced.

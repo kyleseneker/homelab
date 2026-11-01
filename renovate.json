@@ -114,7 +114,6 @@
       ],
       "matchPackageNames": [
         "kube-prometheus-stack",
-        "loki",
         "alloy"
       ],
       "groupName": "monitoring stack"
@@ -202,24 +201,15 @@
       "allowedVersions": "<0.12.0"
     },
     {
-      "description": "kube-prometheus-stack majors can carry migrations; open one PR per major so they are taken in order",
+      "description": "kube-prometheus-stack and Loki majors can carry migrations; open one PR per major so they are taken in order",
       "matchDatasources": [
         "helm"
       ],
       "matchPackageNames": [
-        "kube-prometheus-stack"
-      ],
-      "separateMultipleMajor": true
-    },
-    {
-      "description": "Loki 7 leaves the grafana chart repo; hold until the move to the community chart",
-      "matchDatasources": [
-        "helm"
-      ],
-      "matchPackageNames": [
+        "kube-prometheus-stack",
         "loki"
       ],
-      "allowedVersions": "<7.0.0"
+      "separateMultipleMajor": true
     },
     {
       "description": "etcd backup tooling follows kubeadm; update during a staged Kubernetes upgrade",

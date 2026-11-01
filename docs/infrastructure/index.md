@@ -25,7 +25,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.37.1 |
 | Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.37.1 |
 | kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 92.17.0 |
-| Loki | monitoring | helm | loki | 6.55.0 |
+| Loki | monitoring | helm | loki | 20.2.1 |
 | Alloy | monitoring | helm | alloy | 1.15.0 |
 | Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 11.20.2 |
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
