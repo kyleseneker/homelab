@@ -1,2 +1,4 @@
 ---
 tfc_agent_token: "{{ vault_tfc_agent_token }}"
+# ADR-016 hypervisor enforcement; see the hypervisor isolation runbook.
+pve_firewall_enabled: true
