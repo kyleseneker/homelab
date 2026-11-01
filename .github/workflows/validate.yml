@@ -56,25 +56,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - run: pip install yamllint
+      # Schema validation runs in the render jobs, against CRDs from every
+      # pinned chart; this job only lints.
       - run: yamllint -c .yamllint.yml k8s/
-      - uses: bmuschko/setup-kubeconform@e5d264ec1eafe2314e750c429a9da7639dd5a003 # v1
-      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
-      - run: pip install pyyaml
-      - run: ./scripts/gen-crd-schemas.sh
-      - run: |
-          kube_version=$(python3 -c 'import yaml; print(yaml.safe_load(open("ansible/group_vars/all/vars.yml"))["k8s_control_plane_version"])')
-          kubeconform -strict \
-            -kubernetes-version "$kube_version" \
-            -schema-location default \
-            -schema-location './.crd-schemas/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            -skip Kustomization,CustomResourceDefinition \
-            -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
-            -ignore-filename-pattern '.*config\.yml$' \
-            -ignore-filename-pattern '.*values\.yml$' \
-            -ignore-filename-pattern '.*slack-app-manifest\.json$' \
-            -summary \
-            k8s/
 
   render:
     name: render (${{ matrix.cluster }})
