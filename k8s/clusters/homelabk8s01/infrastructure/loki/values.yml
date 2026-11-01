@@ -1,4 +1,4 @@
-deploymentMode: SingleBinary
+deploymentMode: Monolithic
 loki:
   podSecurityContext:
     runAsUser: 10001
