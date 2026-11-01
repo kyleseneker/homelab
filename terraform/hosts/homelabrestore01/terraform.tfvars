@@ -14,6 +14,10 @@ agent_enabled = true
 onboot        = false
 tags          = ["restore-lab", "k8s"]
 
+# ADR-016 anti-spoofing: each NIC may send only from its node address and the
+# lab Gateway pool used by recovery drills.
+l2_pool_cidrs = ["172.26.0.240/28"]
+
 nodes = {
   homelabrestore01-node-1 = {
     role      = "control-plane"
