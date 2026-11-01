@@ -11,6 +11,10 @@ iface {{ pve_network_bridge }} inet static
 	bridge-ports {{ pve_network_physical_port }}
 	bridge-stp off
 	bridge-fd 0
+{% if pve_network_vlan_aware | bool %}
+	bridge-vlan-aware yes
+	bridge-vids {{ pve_network_trunk_vlans | join(' ') }}
+{% endif %}
 
 auto {{ pve_network_bridge }}.{{ pve_network_management_vlan }}
 iface {{ pve_network_bridge }}.{{ pve_network_management_vlan }} inet static

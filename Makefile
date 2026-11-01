@@ -85,12 +85,18 @@ packer-build: ## Build K8s node VM template on Proxmox with a temporary build to
 # Proxmox host  (override with PVE_HOST=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: pve-configure pve-ssh
+.PHONY: pve-configure pve-firewall pve-network pve-ssh
 
 PLAYBOOK_VAULT_ARGS := $(if $(wildcard $(VAULT_PW_FILE)),$(VAULT_ARGS),)
 
 pve-configure: ## Configure Proxmox host (repos, IOMMU, network, UPS, API token, TFC agent)
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml
+
+pve-firewall: ## Apply the Proxmox datacenter firewall switch (ADR-016)
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_firewall
+
+pve-network: ## Apply Proxmox host networking; console-attended (ADR-016)
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_network
 
 pve-ssh: ## SSH into Proxmox host
 	ssh root@$$(cd $(ANSIBLE_DIR) && grep ansible_host inventory/$(PVE_HOST)/hosts.yml | head -1 | awk '{print $$2}')

@@ -1,0 +1,25 @@
+---
+- name: Read host firewall options
+  ansible.builtin.command: pvesh get /nodes/{{ pve_firewall_node }}/firewall/options --output-format json
+  register: pve_firewall_host_options
+  changed_when: false
+
+# The host firewall defaults to enabled once the datacenter switch is on, with a
+# DROP input policy, so it is disabled explicitly before that switch flips.
+- name: Keep the host firewall disabled
+  ansible.builtin.command: pvesh set /nodes/{{ pve_firewall_node }}/firewall/options --enable 0
+  when: (pve_firewall_host_options.stdout | from_json).enable | default(1) | int != 0
+  changed_when: true
+
+- name: Read datacenter firewall options
+  ansible.builtin.command: pvesh get /cluster/firewall/options --output-format json
+  register: pve_firewall_cluster_options
+  changed_when: false
+
+- name: Set the datacenter firewall switch
+  ansible.builtin.command: >-
+    pvesh set /cluster/firewall/options --enable {{ pve_firewall_enabled | bool | ternary(1, 0) }}
+  when: >-
+    (pve_firewall_cluster_options.stdout | from_json).enable | default(0) | int
+    != (pve_firewall_enabled | bool | ternary(1, 0))
+  changed_when: true

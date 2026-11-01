@@ -4,6 +4,8 @@
   roles:
     - role: pve_network
       tags: [pve_network]
+    - role: pve_firewall
+      tags: [pve_firewall]
     - pve_repos
     - pve_iommu
     - role: pve_disable_wireless

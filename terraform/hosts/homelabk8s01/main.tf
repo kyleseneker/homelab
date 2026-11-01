@@ -19,4 +19,8 @@ module "vm" {
   onboot            = var.onboot
   tags              = concat(var.tags, [each.value.role], each.value.tags)
   pci_mappings      = each.value.pci_mappings
+
+  # ADR-016 hypervisor enforcement: an access-port NIC and anti-spoofing filters.
+  vlan_id                 = var.nic_vlan_id
+  firewall_ipfilter_cidrs = length(var.l2_pool_cidrs) > 0 ? concat([split("/", each.value.ip)[0]], var.l2_pool_cidrs) : []
 }

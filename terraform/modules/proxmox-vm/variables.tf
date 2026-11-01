@@ -89,3 +89,21 @@ variable "agent_enabled" {
   type    = bool
   default = true
 }
+
+variable "vlan_id" {
+  type        = number
+  default     = null
+  description = "VLAN tag for the NIC. Set only on a VLAN-aware bridge, where 1 makes an access port on the untagged native VLAN"
+}
+
+variable "firewall_ipfilter_cidrs" {
+  type        = list(string)
+  default     = []
+  description = "Source addresses the NIC may send from (ipfilter-net0). Empty leaves the Proxmox VM firewall off"
+}
+
+variable "firewall_macfilter" {
+  type        = bool
+  default     = true
+  description = "Proxmox MAC filtering, a per-VM option; disable for VMs whose NICs carry macvlan child MACs"
+}

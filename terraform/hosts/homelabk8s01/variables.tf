@@ -82,3 +82,15 @@ variable "tags" {
   default     = ["k8s"]
   description = "Tags shared by every cluster VM, in addition to its role and node tags"
 }
+
+variable "nic_vlan_id" {
+  type        = number
+  default     = null
+  description = "VLAN tag for the VM NICs. Set to 1 only once the bridge is VLAN-aware, making each NIC an access port on the native VLAN (ADR-016)"
+}
+
+variable "l2_pool_cidrs" {
+  type        = list(string)
+  default     = []
+  description = "Cilium L2 LoadBalancer pool; with the node's own address, the only sources its NIC may send from. Empty leaves the VM firewall off (ADR-016)"
+}
