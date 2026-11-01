@@ -29,6 +29,7 @@ spec:
   secretName: home-gateway-tls
   dnsNames:
     - "*.home.seneker.io"
+    - home.seneker.io
   privateKey:
     algorithm: ECDSA
     size: 256

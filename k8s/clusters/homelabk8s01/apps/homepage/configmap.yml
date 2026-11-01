@@ -176,5 +176,5 @@ data:
             description: SSO / Identity
         - Homepage:
             icon: homepage.png
-            href: https://dash.home.seneker.io
+            href: https://home.seneker.io
             description: Dashboard

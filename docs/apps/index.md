@@ -60,7 +60,7 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 | [FlareSolverr](flaresolverr.md) | `arr` | -- | Captcha-solving proxy for Prowlarr indexers | `ghcr.io/flaresolverr/flaresolverr` |
 | [Media Operator](media-operator.md) | `arr` | -- | Eight application configurations through seven operators | Media Operator OCI charts |
 | [Config Backup](config-backup.md) | `arr` | -- | Nightly SQLite/native-archive staging | `python` |
-| [Homepage](homepage.md) | `arr` | `dash.home.seneker.io` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
+| [Homepage](homepage.md) | `arr` | `home.seneker.io` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
 | [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.home.seneker.io` | Synthetic monitoring and status page | `louislam/uptime-kuma` |
 
 ## Deployment Ordering

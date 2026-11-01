@@ -43,6 +43,6 @@ spec:
     staticConfig:
       static:
         - https://argocd.home.seneker.io
-        - https://dash.home.seneker.io
+        - https://home.seneker.io
         - https://grafana.home.seneker.io/api/health
         - https://jellyfin.home.seneker.io/health

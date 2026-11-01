@@ -57,7 +57,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | ArgoCD | `https://argocd.home.seneker.io` |
     | Vault | `https://vault.home.seneker.io` |
     | Authentik | `https://auth.home.seneker.io` |
-    | Homepage | `https://dash.home.seneker.io` |
+    | Homepage | `https://home.seneker.io` |
 
 !!! note
     Uptime Kuma monitors from within the cluster. Install the homelab CA before relying on HTTPS validation; do not treat checks that ignore certificate errors as TLS coverage. The CA-backed Blackbox probes provide separate route/TLS checks. Internal HTTP checks can diagnose service reachability but do not test the gateway.

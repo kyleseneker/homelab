@@ -21,6 +21,7 @@ Cilium serves as both the CNI and the gateway controller. The `homelab-gateway` 
 | Listener | Hostnames | Certificate |
 |----------|-----------|-------------|
 | `https-home` | `*.home.seneker.io` | `home-gateway-tls`, from Let's Encrypt |
+| `https-home-root` | `home.seneker.io`, which serves Homepage | `home-gateway-tls` |
 | `https` | `*.homelab.local` | `homelab-gateway-tls`, from the homelab CA |
 
 Services use their `home.seneker.io` names, which every device trusts without extra setup. The `homelab.local` names are being retired. Routes that still list one serve both names, and the old names of SSO-protected apps redirect to the new ones (`gateway/homelab-local-redirects.yml`).
@@ -42,7 +43,7 @@ route:
       - <app>.home.seneker.io
 ```
 
-An HTTP-to-HTTPS redirect is configured via a separate HTTPRoute on the gateway's `http` and `http-home` listeners.
+An HTTP-to-HTTPS redirect is configured via a separate HTTPRoute on the gateway's HTTP listeners.
 
 ### Key Resources
 
@@ -68,7 +69,7 @@ Cilium replaces MetalLB for LoadBalancer IP allocation. It operates in Layer 2 m
 
 `gateway/certificates.yml` declares both gateway certificates explicitly. See [cert-manager](../infrastructure/cert-manager.md) for the issuers.
 
-- **`home-gateway-tls`** covers `*.home.seneker.io`. The `letsencrypt-production` ClusterIssuer obtains it with an ACME DNS-01 challenge in Route 53. cert-manager's AWS credentials can change only the `_acme-challenge.home.seneker.io` TXT record, so the public zone never holds a service address.
+- **`home-gateway-tls`** covers `*.home.seneker.io` and `home.seneker.io`, because a wildcard does not match the bare name. The `letsencrypt-production` ClusterIssuer obtains it with an ACME DNS-01 challenge in Route 53. cert-manager's AWS credentials can change only the `_acme-challenge.home.seneker.io` TXT record, so the public zone never holds a service address.
 - **`homelab-gateway-tls`** covers `*.homelab.local` and is signed by the in-cluster CA chain below.
 
 ```mermaid
@@ -107,7 +108,7 @@ Service names resolve only on the home network and the VPN. The UniFi gateway ho
 | Seerr | `seerr.home.seneker.io` |
 | qBittorrent | `qbit.home.seneker.io` |
 | Tdarr | `tdarr.home.seneker.io` |
-| Homepage | `dash.home.seneker.io` |
+| Homepage | `home.seneker.io` |
 | Uptime Kuma | `status.home.seneker.io` |
 | Authentik | `auth.home.seneker.io` |
 | Grafana | `grafana.home.seneker.io` |

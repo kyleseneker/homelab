@@ -46,3 +46,24 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    # A wildcard listener does not match the bare name, which serves Homepage.
+    - name: https-home-root
+      protocol: HTTPS
+      port: 443
+      hostname: home.seneker.io
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: home-gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: http-home-root
+      protocol: HTTP
+      port: 80
+      hostname: home.seneker.io
+      allowedRoutes:
+        namespaces:
+          from: All
