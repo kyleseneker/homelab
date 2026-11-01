@@ -3,3 +3,7 @@ misconfigurations:
     paths:
       - clusters/homelabk8s01/apps/homepage/configmap.yml
     statement: Homepage widget password fields contain environment placeholders, not credentials; path is relative to the k8s scan root.
+  - id: KSV-0109
+    paths:
+      - clusters/homelabk8s01/infrastructure/authentik/blueprints-configmap.yml
+    statement: OIDC client_secret attributes are !Env references that authentik resolves from the authentik-credentials Secret (Vault via External Secrets), not credentials; path is relative to the k8s scan root.
