@@ -331,19 +331,3 @@ resource "aws_iam_user_policy_attachment" "cert_manager_dns01" {
   user       = aws_iam_user.cert_manager_dns01.name
   policy_arn = aws_iam_policy.cert_manager_dns01.arn
 }
-
-# One-time adoption of the registration and of the hosted zone Route 53 created
-# with it. Remove these blocks and the lookup after the first apply.
-data "aws_route53_zone" "registered" {
-  name = var.household_domain
-}
-
-import {
-  to = aws_route53_zone.household
-  id = data.aws_route53_zone.registered.zone_id
-}
-
-import {
-  to = aws_route53domains_registered_domain.household
-  id = var.household_domain
-}
