@@ -6,6 +6,8 @@ cd "$ROOT"
 
 OUT="${1:-$ROOT/.crd-schemas}"
 mkdir -p "$OUT"
+# Schemas from an earlier run could otherwise outlive the CRD versions pinned now.
+rm -f "$OUT"/*.json
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -30,7 +32,16 @@ while IFS= read -r cfg; do
   count=$((count+1))
 done < <(grep -rl 'chartRepo: ghcr.io/kyleseneker/media-operator' k8s/clusters/*/apps/*/config.yml | sort)
 
-python3 - "$work" "$OUT" <<'PY'
+# Cilium's operator installs its CRDs at runtime, so no chart carries them.
+# Take them from the source at the version the cluster is installed with.
+cilium_ver="$(val ansible/group_vars/all/vars.yml k8s_control_plane_cilium_version)"
+cilium_crds=pkg/k8s/apis/cilium.io/client/crds
+{ git clone -q --depth 1 --branch "v${cilium_ver}" --filter=blob:none --sparse \
+    https://github.com/cilium/cilium.git "$work/cilium" &&
+  git -C "$work/cilium" sparse-checkout set --no-cone "/${cilium_crds}/"; } >/dev/null 2>&1 || {
+  echo "  FAILED to fetch Cilium ${cilium_ver} CRDs" >&2; exit 1; }
+
+CILIUM_CRDS="$work/cilium/$cilium_crds" python3 - "$work" "$OUT" <<'PY'
 import glob, json, os, sys, yaml
 
 # Kyverno CRD enums contain a plain '=' scalar, tagged specially by YAML1.1.
@@ -40,6 +51,7 @@ n = 0
 paths = glob.glob(os.path.join(work, "*", "crds", "*.yaml"))
 paths += glob.glob(os.path.join(work, "*", "crds", "*.yml"))
 paths += glob.glob("k8s/components/gateway-api/*.yml")
+paths += glob.glob(os.path.join(os.environ["CILIUM_CRDS"], "*", "*.yaml"))
 if os.environ.get("RENDERED_MANIFESTS_DIR"):
     paths += glob.glob(os.path.join(os.environ["RENDERED_MANIFESTS_DIR"], "rendered-*.yml"))
 for path in sorted(paths):
@@ -59,4 +71,4 @@ for path in sorted(paths):
 print(f"  {n} CRD schemas written to {out}")
 PY
 
-echo "  ($count charts pulled)"
+echo "  ($count charts pulled, Cilium ${cilium_ver} CRDs)"

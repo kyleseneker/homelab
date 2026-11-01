@@ -182,7 +182,7 @@ k8s-render: ## Render every ApplicationSet manifest locally (same check CI runs)
 k8s-check-alerts: ## Audit current series referenced by local alert and recording rules
 	./scripts/check-alert-metrics.sh
 
-k8s-crd-schemas: ## Generate kubeconform schemas from the deployed media-operator charts
+k8s-crd-schemas: ## Generate kubeconform schemas from the media-operator charts, Gateway API and Cilium CRDs
 	./scripts/gen-crd-schemas.sh
 
 vault-init: ## Initialize Vault and configure ESO integration (one-time)

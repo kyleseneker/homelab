@@ -116,10 +116,11 @@ if ! RENDERED_MANIFESTS_DIR="$work" ./scripts/gen-crd-schemas.sh "$schema_work";
   echo "  FAIL could not generate schemas from pinned CRDs"
   fail=$((fail+1))
 else
+  # Every CRD schema comes from a pinned chart or source, so validation follows
+  # the versions the clusters run rather than a third-party catalog.
   if ! kubeconform -strict -kubernetes-version "$kube_version" \
       -schema-location default \
       -schema-location "$schema_work/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json" \
-      -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
       -skip Kustomization,CustomResourceDefinition \
       -ignore-filename-pattern '.*kustomization\.(yml|yaml)$' \
       -ignore-filename-pattern '.*config\.yml$' \

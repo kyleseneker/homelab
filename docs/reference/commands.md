@@ -78,7 +78,7 @@ Use these dedicated targets for `homelabrestore01`; do not pass the lab to the p
 |---------|-------------|
 | `make k8s-render` | Render Helm/Kustomize resources and validate their schemas without contacting the cluster |
 | `make k8s-bootstrap-drift` | Compare manually managed bootstrap resources with the live cluster; differences and API errors fail |
-| `make k8s-crd-schemas` | Generate schemas from pinned media-operator charts and vendored Gateway CRDs |
+| `make k8s-crd-schemas` | Generate schemas from pinned media-operator charts, vendored Gateway CRDs and Cilium CRDs at the pinned Cilium version |
 | `make k8s-check-alerts` | Audit current series referenced by local alert and recording rules |
 
 Run `make k8s-render` before pushing any change under `k8s/`. It is the only check that exercises `config.yml` and `values.yml`, which kubeconform skips.
