@@ -20,7 +20,7 @@ The roadmap contains remaining work. Remove completed tasks; keep enduring opera
 |---|---|---|
 | [1 — Foundations](phase-1-foundations.md) | UPS, NAS drive redundancy, offsite backups, etcd snapshots and recovery | In progress; backup mechanisms implemented, mirror and restore checks remain |
 | [2 — Kubernetes Hardening](phase-2-kubernetes-hardening.md) | Supported upgrades, policy coverage, quotas, certificate alerts and egress controls | In progress; enforcement and alerting implemented |
-| [3 — Network](phase-3-network.md) | 10G switch and DAC links, management VLAN, WireGuard, DNS automation and external access | In progress; WireGuard/Teleport implemented, 10G upgrade planned |
+| [3 — Network](phase-3-network.md) | 10G switch and DAC links, management and IoT VLANs, WireGuard, DNS automation and external access | In progress; WireGuard/Teleport and the IoT VLAN implemented, device move and 10G upgrade planned |
 | [4 — Compute & Storage](phase-4-compute-and-storage.md) | Second MS-01, three control planes, Vault Raft and NAS expansion | Planned |
 | [5 — Observability](phase-5-observability.md) | Distributed tracing, dashboards as code, SLO alerting and synthetic monitoring | In progress; dashboards and Blackbox probes implemented |
 | [6 — Platform Engineering](phase-6-platform-engineering.md) | Staging cluster, Falco, chaos testing, supply-chain verification | In progress; CI validation implemented |

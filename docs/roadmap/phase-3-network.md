@@ -1,6 +1,6 @@
 # Phase 3 -- Network
 
-**Status:** In progress. WireGuard, Teleport, and management-VLAN access are implemented; 10G networking and DNS automation remain planned.
+**Status:** In progress. WireGuard, Teleport, management-VLAN access and the IoT VLAN are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking and DNS automation remain planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
@@ -99,6 +99,17 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] Document and rehearse the production address migration, using the lab's verified separate pod/service ranges as a baseline
 - [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
 
+## 3.7 Move Smart Home Devices to the IoT VLAN
+
+- [ ] Move each Wi-Fi smart home device from the household SSID to the IoT SSID, re-provisioning through its vendor app or factory reset where it stores only one network
+- [ ] Verify app control, casting and AirPlay from household clients, and vendor-cloud control from off the LAN
+- [ ] From a client on VLAN 20, confirm that Default (including the NAS), Homelab and Management refuse new connections
+- [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md) with anything that had to stay on Default and why
+
+| | |
+|---|---|
+| **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients and the NAS that serves the cluster's NFS storage. |
+
 ---
 
 ## Definition of Done
@@ -109,3 +120,4 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] External access path chosen and implemented for Jellyfin
 - [ ] Intel AMT connected and remote management tested
 - [ ] Management reachability and pod/service/VPN address boundaries verified
+- [ ] Smart home devices on the IoT VLAN with isolation verified

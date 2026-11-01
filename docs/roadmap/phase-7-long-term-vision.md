@@ -15,5 +15,4 @@ Items worth tracking but not planned in detail. These become relevant as earlier
 | **Full 10G fabric** | Replace USW-16-PoE with a switch that has SFP+ uplinks; extend 10G to the NAS and compute hosts | As the rack grows beyond the initial 10G links in Phase 3.1 |
 | **IPv6** | Dual-stack networking across VLANs and Kubernetes | When the ISP provides native IPv6 and external access is in use |
 | **GitOps for network config** | Version-control UniFi firewall rules and VLAN configuration | When network changes are frequent enough to warrant it |
-| **IoT VLAN** | Dedicated VLAN for smart home devices, isolated from household and homelab traffic | When IoT devices are added to the network |
 | **HPA for workloads** | Horizontal Pod Autoscaler for Authentik, Grafana, and high-traffic apps, with shared/external state configured where required | When traffic patterns justify scaling beyond fixed replica counts |

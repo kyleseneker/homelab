@@ -20,8 +20,9 @@ flowchart TD
     end
 
     subgraph wifi ["Wi-Fi"]
-        U6a["U6 Extender"]
-        U6b["U6 Extender"]
+        U6a["U6 Extender<br/>Dining Room"]
+        U6b["U6 Extender<br/>Office"]
+        U6c["U6 Extender<br/>Master Bedroom"]
     end
 
     DR7 -->|"GbE"| SW
@@ -30,6 +31,7 @@ flowchart TD
     SW --> PDU
     DR7 -.->|"Wi-Fi backhaul"| U6a
     DR7 -.->|"Wi-Fi backhaul"| U6b
+    DR7 -.->|"Wi-Fi backhaul"| U6c
 ```
 
 All physical links are Gigabit Ethernet. See [Hardware Inventory](../reference/hardware.md) for full device specs.
@@ -40,11 +42,12 @@ All physical links are Gigabit Ethernet. See [Hardware Inventory](../reference/h
 |---------|------|--------|---------|
 | 1 | Default | 192.168.1.0/24 | Household devices, NAS data plane, Wi-Fi clients |
 | 10 | Homelab | 192.168.10.0/24 | Proxmox host, Kubernetes VMs, cluster services |
+| 20 | IoT | 192.168.20.0/24 | Smart home devices ([ADR-026](../decisions/026-iot-vlan.md)) |
 | 99 | Management | 192.168.99.0/24 | Infrastructure management interfaces (Proxmox, switch, PDU) |
 
 The NAS sits on the Default VLAN (192.168.1.158) because it serves both household devices and the Kubernetes cluster. The UNAS Pro does not support dual-homing, so its management interface remains on the Default VLAN.
 
-The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface.
+The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface. Default and IoT are excluded from it.
 
 ### DHCP Scopes
 
@@ -52,9 +55,22 @@ The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data tra
 |------|-------|-------|
 | Default | 192.168.1.6 -- 192.168.1.254 | Household devices |
 | Homelab | 192.168.10.161 -- 192.168.10.190 | Aligned to `192.168.10.160/27` |
+| IoT | 192.168.20.100 -- 192.168.20.200 | `.2`--`.99` and `.201`--`.254` left for fixed addresses |
 | Management | 192.168.99.6 -- 192.168.99.254 | Switch and PDU take addresses here |
 
 The Homelab scope is deliberately narrow. It sits above the statically addressed infrastructure (`.2` Proxmox, `.50`--`.52` nodes) and below the Cilium LoadBalancer pool (`.200`--`.250`), so DHCP cannot issue an address that collides with a node or a live service VIP. The `/27` boundary is what the Management access firewall rule matches on.
+
+### Wi-Fi Networks
+
+Every SSID is broadcast from all access points.
+
+| SSID | VLAN | Bands | Security |
+|------|------|-------|----------|
+| Household | Default (1) | 2.4 / 5 / 6 GHz | WPA2/WPA3 transition |
+| Homelab | Homelab (10) | 2.4 / 5 / 6 GHz | WPA2/WPA3 transition |
+| IoT | IoT (20) | 2.4 GHz only | WPA2 only |
+
+The IoT SSID uses the settings older smart-device radios need, so the household SSID keeps WPA3 and 5/6 GHz. See [ADR-026](../decisions/026-iot-vlan.md).
 
 ### Switch Port Assignments
 
@@ -63,7 +79,7 @@ USW-16-PoE, from the switch MAC forwarding table and port configuration:
 | Port | Device | VLAN |
 |------|--------|------|
 | 1 | Uplink to Dream Router 7 | Trunk |
-| 2 | MS-01 `nic0` | Native Homelab (10), tagged Management (99) |
+| 2 | MS-01 `nic0` | Native Homelab (10), tagged Management (99); Default and IoT excluded |
 | 4 | Reserved for out-of-band management | Native Management (99) |
 | 5 | USP PDU Pro | Management (99) |
 | 7 | UNAS Pro | Default (1) |
@@ -76,7 +92,7 @@ Configured in the UniFi Network controller on the Dream Router 7. Rules are eval
 
 ### Zone Defaults
 
-The Management and Homelab zones block all traffic to and from other zones by default (except External and Gateway). This provides isolation without explicit deny rules.
+The Management, Homelab and IoT zones block all traffic to and from other zones by default (except External and Gateway). This provides isolation without explicit deny rules.
 
 ### Custom Rules
 
@@ -87,6 +103,10 @@ The Management and Homelab zones block all traffic to and from other zones by de
 | 3 | Homelab -- 192.168.10.160/27 | Management | Allow | Workstation access to management interfaces |
 | 4 | Vpn | Management | Allow | Remote management over WireGuard/Teleport |
 | 5 | Vpn | Homelab | Allow | Remote access to cluster services over WireGuard/Teleport |
+| 6 | Internal | IoT | Allow | Household control of smart home devices |
+| 7 | Vpn | Internal | Allow | Remote access to household devices and the NAS over WireGuard/Teleport |
+
+Rule 6 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the NAS, the cluster or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
 Rules 2 and 3 are scoped rather than zone-wide. Rule 2 permits only the NAS IP, so Homelab devices cannot reach other Default VLAN hosts. Rule 3 permits only the Homelab DHCP block, which excludes the Proxmox host and the Kubernetes nodes -- neither the hypervisor nor pod traffic masquerading behind a node IP can reach the Management VLAN.
 
@@ -102,14 +122,18 @@ Static entries for each `*.homelab.local` service are configured in the UniFi Ne
 
 See [Networking - Application Hostnames](networking.md#application-hostnames) for the full hostname list.
 
+### Multicast DNS
+
+The gateway's mDNS proxy runs in automatic mode for every network with all predefined services enabled (AirPlay, Chromecast, HomeKit, Matter and others), so household clients discover services advertised on the IoT VLAN. Matter is the exception: its controller needs an interface on the devices' VLAN rather than the proxy; see [ADR-026](../decisions/026-iot-vlan.md#consequences).
+
 ## Remote Access
 
 | Method | Status | Reaches |
 |--------|--------|---------|
-| WireGuard VPN | Server enabled on Dream Router 7, `192.168.3.0/24` | Homelab and Management |
-| UniFi Teleport | Enabled | Homelab and Management |
+| WireGuard VPN | Server enabled on Dream Router 7, `192.168.3.0/24` | Homelab, Management and Default |
+| UniFi Teleport | Enabled | Homelab, Management and Default |
 
-Both land in the `Vpn` firewall zone, which rules 4 and 5 above permit into Homelab and Management. A VPN client therefore reaches cluster services, the Proxmox web UI on either interface, and the switch and PDU management pages.
+Both land in the `Vpn` firewall zone, which rules 4, 5 and 7 above permit into Homelab, Management and Internal. A VPN client therefore reaches cluster services, the Proxmox web UI on either interface, the switch and PDU management pages, and household devices including the NAS. The IoT VLAN is not reachable over the VPN.
 
 There is no inbound path from the internet: no port forwards, no static routes, no reverse proxy. All `*.homelab.local` records resolve to a private address, so remote access requires the VPN.
 

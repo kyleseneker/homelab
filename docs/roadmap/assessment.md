@@ -30,9 +30,9 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | IDs | Current assessment | Next step |
 |---|---|---|
 | N1, N7 | VLAN 99 and management access are configured. Management-service isolation still needs an endpoint-by-endpoint check. | Test Proxmox, NAS and AMT reachability from management clients and ordinary workloads; close unintended paths |
-| N2 | A dedicated IoT VLAN is planned for smart home devices. | [Phase 7](phase-7-long-term-vision.md), when those devices are added |
+| N2 | The IoT VLAN and its SSID are configured ([ADR-026](../decisions/026-iot-vlan.md)), but smart home devices still join the household SSID on Default. | Move devices and verify isolation in [Phase 3](phase-3-network.md#37-move-smart-home-devices-to-the-iot-vlan) |
 | N3 | Internal DNS records and Gateway address allocations are manual. | Record recoverable allocations and select a supported DNS automation path in [Phase 3](phase-3-network.md#33-automate-internal-dns) |
-| N4 | WireGuard and Teleport are implemented with Homelab and Management access. | Record an off-LAN DNS, TLS, login and management-access check |
+| N4 | WireGuard and Teleport are implemented with Homelab, Management and Default access. | Record an off-LAN DNS, TLS, login and management-access check |
 | N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#34-plan-external-access-for-jellyfin) |
 | N6 | Cilium egress policies cover selected namespaces and destinations. | Inventory coverage and required traffic before tightening policies |
 | N8 | The configured Cilium pool, `10.0.0.0/8`, contains the Kubernetes service range, `10.96.0.0/12`. | Inventory production and routed/VPN ranges, then rehearse the production migration using the lab's verified non-overlapping ranges |
