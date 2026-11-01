@@ -49,7 +49,9 @@ sidecar:
       cpu: 10m
       memory: 32Mi
     limits:
-      cpu: 50m
+      # The sidecar reconnects its watch every 60s; at 50m those short bursts
+      # were throttled in about 90% of CFS periods.
+      cpu: 200m
       memory: 128Mi
 lokiCanary:
   resources:
