@@ -5,6 +5,9 @@ locals {
   # as strings. Matching that form keeps the ordered list stable: a diff would
   # replace the set, briefly leaving ipfilter with no allowed source.
   ipfilter_cidrs = sort([for c in var.firewall_ipfilter_cidrs : trimsuffix(c, "/32")])
+
+  vxlan_filter_enabled = local.firewall_enabled && length(var.firewall_vxlan_peers) > 0
+  vxlan_peers          = sort([for c in var.firewall_vxlan_peers : trimsuffix(c, "/32")])
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
@@ -115,4 +118,49 @@ resource "proxmox_virtual_environment_firewall_options" "vm" {
   radv          = false
 
   depends_on = [proxmox_virtual_environment_firewall_ipset.ipfilter_net0]
+}
+
+# Cilium's VXLAN overlay is unauthenticated: a packet that reaches UDP 8472 is
+# delivered into the pod network, past network policy. Only the cluster's nodes
+# may send it.
+resource "proxmox_virtual_environment_firewall_ipset" "vxlan_peers" {
+  count = local.vxlan_filter_enabled ? 1 : 0
+
+  node_name = var.target_node
+  vm_id     = proxmox_virtual_environment_vm.vm.vm_id
+  name      = "vxlan-peers"
+  comment   = "Managed by Terraform"
+
+  dynamic "cidr" {
+    for_each = local.vxlan_peers
+    content {
+      name = cidr.value
+    }
+  }
+}
+
+resource "proxmox_virtual_environment_firewall_rules" "vm" {
+  count = local.vxlan_filter_enabled ? 1 : 0
+
+  node_name = var.target_node
+  vm_id     = proxmox_virtual_environment_vm.vm.vm_id
+
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "udp"
+    dport   = "8472"
+    source  = "+guest/vxlan-peers"
+    comment = "Cilium VXLAN from cluster nodes"
+  }
+
+  rule {
+    type    = "in"
+    action  = "DROP"
+    proto   = "udp"
+    dport   = "8472"
+    comment = "Cilium VXLAN from any other source"
+  }
+
+  depends_on = [proxmox_virtual_environment_firewall_ipset.vxlan_peers]
 }

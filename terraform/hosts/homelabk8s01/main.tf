@@ -23,4 +23,5 @@ module "vm" {
   # ADR-016 hypervisor enforcement: an access-port NIC and anti-spoofing filters.
   vlan_id                 = var.nic_vlan_id
   firewall_ipfilter_cidrs = length(var.l2_pool_cidrs) > 0 ? concat([split("/", each.value.ip)[0]], var.l2_pool_cidrs) : []
+  firewall_vxlan_peers    = [for n in values(var.nodes) : split("/", n.ip)[0]]
 }

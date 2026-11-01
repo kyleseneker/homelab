@@ -107,3 +107,9 @@ variable "firewall_macfilter" {
   default     = true
   description = "Proxmox MAC filtering, a per-VM option; disable for VMs whose NICs carry macvlan child MACs"
 }
+
+variable "firewall_vxlan_peers" {
+  type        = list(string)
+  default     = []
+  description = "Node addresses that may send Cilium VXLAN (UDP 8472) to the VM; other sources are dropped. Empty leaves the port unfiltered. Needs the VM firewall"
+}
