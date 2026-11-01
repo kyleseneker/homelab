@@ -3,7 +3,7 @@ namespace: monitoring
 sourceType: helm
 chartRepo: https://grafana-community.github.io/helm-charts
 chartName: loki
-chartVersion: 9.5.13
+chartVersion: 10.2.2
 createNamespace: true
 hasResources: true
 syncOptions:
