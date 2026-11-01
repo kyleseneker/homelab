@@ -170,7 +170,7 @@
       "pinDigests": false
     },
     {
-      "description": "Postgres 18 changes the on-disk format; hold at 17 until the dump-and-restore cutover",
+      "description": "Postgres follows the Authentik chart's default major (17); a new major needs a dump and restore, done with the Authentik upgrade that moves the chart to it",
       "matchDatasources": [
         "docker"
       ],

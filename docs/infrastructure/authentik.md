@@ -21,6 +21,16 @@ The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This c
 
 Upgrade one minor release at a time (2026.2 → 2026.5 → 2026.8), as upstream requires, with a fresh `authentik-backup` dump before each step. The worker applies migrations and blueprints on startup. Afterwards, check that every blueprint instance is `successful`, that the OIDC issuers still report `https://`, and that the blackbox probes for proxied routes still return their login redirect. Since 2026.8, Authentik honors forwarded headers only from `AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS`; the defaults cover the pod and node networks the Cilium Gateway connects from.
 
+PostgreSQL stays on the major version the Authentik chart defaults to (17 through chart 2026.8.5), and Renovate holds it there. Change the major as part of the Authentik upgrade whose chart moves to it, by dump and restore: a data directory from an older major does not start on a newer server.
+
+1. Rehearse in the restore lab. Its `authentik-database` starts from a fresh PVC and sets `PGDATA` explicitly, so the 18 image's new default data path does not apply.
+2. Scale the server and worker to 0 and take a final `pg_dump`.
+3. Move `/bitnami/postgresql/data` aside on the same PVC, so the new image initializes an empty directory. The chart sets `PGDATA` explicitly, so the new default path does not apply here either.
+4. Bump `backup.yml` to the same major in the same change. `pg_dump` refuses to dump a newer server.
+5. Restore with `pg_restore`, run `ANALYZE`, then scale back up.
+
+The new cluster is also the point to move from bookworm to trixie, since a restore builds every index under the new collation.
+
 The **Base URL** system setting holds `https://auth.homelab.local`. Authentik 2026.11 refuses to start without it; `AUTHENTIK_WEB__BASE_URL` in `values.yml` seeds it on a fresh install and is ignored once the setting has a value.
 
 ### Proxy Authentication
