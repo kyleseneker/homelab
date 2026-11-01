@@ -15,7 +15,7 @@ data:
           name: tdarr-edge-auth
         attrs:
           mode: proxy
-          external_host: https://tdarr.homelab.local
+          external_host: https://tdarr.home.seneker.io
           internal_host: http://arr-tdarr.arr.svc.cluster.local:8265
           internal_host_ssl_validation: false
           authorization_flow:
@@ -34,7 +34,7 @@ data:
           name: goldilocks-edge-auth
         attrs:
           mode: proxy
-          external_host: https://goldilocks.homelab.local
+          external_host: https://goldilocks.home.seneker.io
           internal_host: http://goldilocks-dashboard.goldilocks.svc.cluster.local:80
           internal_host_ssl_validation: false
           authorization_flow:
@@ -53,7 +53,7 @@ data:
           name: sonarr-edge-auth
         attrs:
           mode: proxy
-          external_host: https://sonarr.homelab.local
+          external_host: https://sonarr.home.seneker.io
           internal_host: http://arr-sonarr.arr.svc.cluster.local:8989
           internal_host_ssl_validation: false
           skip_path_regex: |-
@@ -76,7 +76,7 @@ data:
           name: radarr-edge-auth
         attrs:
           mode: proxy
-          external_host: https://radarr.homelab.local
+          external_host: https://radarr.home.seneker.io
           internal_host: http://arr-radarr.arr.svc.cluster.local:7878
           internal_host_ssl_validation: false
           skip_path_regex: |-
@@ -99,7 +99,7 @@ data:
           name: prowlarr-edge-auth
         attrs:
           mode: proxy
-          external_host: https://prowlarr.homelab.local
+          external_host: https://prowlarr.home.seneker.io
           internal_host: http://arr-prowlarr.arr.svc.cluster.local:9696
           internal_host_ssl_validation: false
           skip_path_regex: |-
@@ -122,7 +122,7 @@ data:
           name: bazarr-edge-auth
         attrs:
           mode: proxy
-          external_host: https://bazarr.homelab.local
+          external_host: https://bazarr.home.seneker.io
           internal_host: http://arr-bazarr.arr.svc.cluster.local:6767
           internal_host_ssl_validation: false
           skip_path_regex: |-
@@ -145,7 +145,7 @@ data:
           name: qbit-edge-auth
         attrs:
           mode: proxy
-          external_host: https://qbit.homelab.local
+          external_host: https://qbit.home.seneker.io
           internal_host: http://arr-vpn-downloads.arr.svc.cluster.local:8080
           internal_host_ssl_validation: false
           skip_path_regex: |-
@@ -168,7 +168,7 @@ data:
           name: prometheus-edge-auth
         attrs:
           mode: proxy
-          external_host: https://prometheus.homelab.local
+          external_host: https://prometheus.home.seneker.io
           internal_host: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
           internal_host_ssl_validation: false
           authorization_flow:
@@ -187,7 +187,7 @@ data:
           name: alertmanager-edge-auth
         attrs:
           mode: proxy
-          external_host: https://alertmanager.homelab.local
+          external_host: https://alertmanager.home.seneker.io
           internal_host: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
           internal_host_ssl_validation: false
           authorization_flow:
@@ -204,6 +204,10 @@ data:
         identifiers:
           name: authentik Embedded Outpost
         attrs:
+          # Replaces the whole config; omitted keys take Authentik's defaults.
+          config:
+            authentik_host: https://auth.home.seneker.io
+            authentik_host_browser: https://auth.home.seneker.io
           providers:
             - !KeyOf tdarr-provider
             - !KeyOf goldilocks-provider

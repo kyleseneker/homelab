@@ -15,15 +15,15 @@ spec:
   targets:
     staticConfig:
       static:
-        - https://sonarr.homelab.local
-        - https://radarr.homelab.local
-        - https://prowlarr.homelab.local
-        - https://bazarr.homelab.local
-        - https://qbit.homelab.local
-        - https://tdarr.homelab.local
-        - https://goldilocks.homelab.local
-        - https://prometheus.homelab.local
-        - https://alertmanager.homelab.local
+        - https://sonarr.home.seneker.io
+        - https://radarr.home.seneker.io
+        - https://prowlarr.home.seneker.io
+        - https://bazarr.home.seneker.io
+        - https://qbit.home.seneker.io
+        - https://tdarr.home.seneker.io
+        - https://goldilocks.home.seneker.io
+        - https://prometheus.home.seneker.io
+        - https://alertmanager.home.seneker.io
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: Probe

@@ -123,9 +123,9 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - qbit.homelab.local
+      - qbit.home.seneker.io
     rules:
       - matches:
           - path:

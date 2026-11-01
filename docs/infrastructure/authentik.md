@@ -31,7 +31,7 @@ PostgreSQL stays on the major version the Authentik chart defaults to (17 throug
 
 The new cluster is also the point to move from bookworm to trixie, since a restore builds every index under the new collation.
 
-The **Base URL** system setting holds `https://auth.homelab.local`. Authentik 2026.11 refuses to start without it; `AUTHENTIK_WEB__BASE_URL` in `values.yml` seeds it on a fresh install and is ignored once the setting has a value.
+The **Base URL** system setting holds `https://auth.home.seneker.io`. Authentik 2026.11 refuses to start without it; `AUTHENTIK_WEB__BASE_URL` in `values.yml` seeds it on a fresh install and is ignored once the setting has a value.
 
 ### Proxy Authentication
 
@@ -45,7 +45,9 @@ Browser -> Cilium Gateway -> Authentik outpost -> backend Service
 
 **Protected web routes:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Goldilocks, Prometheus and Alertmanager.
 
-`blueprints-configmap.yml` declares one provider in `proxy` mode and one application for each route, and owns the complete provider assignment on the existing outpost. Forward-auth mode expects an auth subrequest from the gateway and is not used here. The blueprint must not depend on a manually created `homelab-forward-auth` provider.
+`blueprints-configmap.yml` declares one provider in `proxy` mode and one application for each route. It also owns the outpost's complete provider assignment and its Authentik URLs, `https://auth.home.seneker.io` for both the API and browser redirects. Forward-auth mode expects an auth subrequest from the gateway and is not used here. The blueprint must not depend on a manually created `homelab-forward-auth` provider.
+
+A proxy provider answers on exactly one hostname, its `external_host`. The protected routes use their `home.seneker.io` names, and `gateway/homelab-local-redirects.yml` redirects the old `homelab.local` names to them.
 
 The *arr and qBittorrent proxy providers exempt API/feed/ping paths from browser login. Their native authentication must remain enabled. The outpost is still in their network path. A successful login redirect proves the auth entry point is reachable; it does not prove the backend is healthy.
 
@@ -53,7 +55,9 @@ Cross-namespace HTTPRoutes require `referencegrant.yml`. Cilium must permit both
 
 ### Native OIDC and Direct Routes
 
-Grafana and ArgoCD authenticate with dedicated OIDC providers. Grafana accesses token/userinfo endpoints over the internal Service; ArgoCD uses the external HTTPS issuer with the homelab CA. Both retain local administrator login for recovery.
+Grafana and ArgoCD authenticate with dedicated OIDC providers, declared in the `oidc-clients.yaml` blueprint. The blueprint reads each client secret from `authentik-credentials` through `!Env`, so Authentik and the client share one Vault value. Grafana accesses token/userinfo endpoints over the internal Service. ArgoCD uses the external issuer `https://auth.home.seneker.io/application/o/argocd/` and trusts it through the system roots. Both retain local administrator login for recovery.
+
+Each provider allows both the `homelab.local` and `home.seneker.io` callbacks. The issuer follows the hostname the client calls, so a client's configured issuer must match the Authentik name it uses. ArgoCD caches the issuer for session checks: after changing `oidc.config`, restart `argocd-server`, or every sign-in loops back to the login page.
 
 Jellyfin and Seerr use their media login flow. Homepage, Vault and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
 
@@ -61,7 +65,7 @@ Jellyfin and Seerr use their media login flow. Homepage, Vault and Uptime Kuma h
 
 | Secret | Namespace | Keys |
 |--------|-----------|------|
-| `authentik-credentials` | `auth` | Authentik environment variables and PostgreSQL credentials; see the ExternalSecret manifest |
+| `authentik-credentials` | `auth` | Authentik environment variables, PostgreSQL credentials and the OIDC client secrets the blueprint reads; see the ExternalSecret manifest |
 | `grafana-oidc-secret` | `monitoring` | `GRAFANA_OIDC_CLIENT_SECRET` |
 | `argocd-secret` (merge) | `argocd` | `oidc.authentik.clientSecret` |
 
@@ -71,11 +75,11 @@ External Secrets Operator syncs these from Vault. Bootstrap credentials initiali
 
 Prerequisites: Authentik pods running in `auth`, DNS configured, and credentials populated in Vault.
 
-1. Sign in to `https://auth.homelab.local/if/admin/` with the bootstrapped administrator account. Use the initial setup flow only if the installation has not initialized an account.
-2. Confirm the `edge-auth.yaml` blueprint applies successfully and all nine providers exist in proxy mode. ConfigMap data keys must end in `.yaml`.
-3. Verify the outpost integration and the Service referenced by the routes exist. Set its browser-facing Authentik URL to `https://auth.homelab.local` and verify the blueprint's provider assignments. The repository does not yet declare the integration setup or outpost host configuration.
-4. Create or verify the Grafana OAuth2 provider (`client_id: grafana`, redirect URI `https://grafana.homelab.local/login/generic_oauth`) and ArgoCD provider (`client_id: argocd`, redirect URI `https://argocd.homelab.local/auth/callback`). These OIDC provider definitions are not yet part of the blueprint.
-5. Store each client secret at its corresponding Vault path using `make vault-put-secret`; the ExternalSecret manifests identify the paths and keys. Ensure token claims contain the `authentik Admins` group expected by both clients.
+1. Store each OIDC client secret at its Vault path using `make vault-put-secret` before the first start, because the `oidc-clients.yaml` blueprint reads them when it imports. The ExternalSecret manifests identify the paths and keys.
+2. Sign in to `https://auth.home.seneker.io/if/admin/` with the bootstrapped administrator account. Use the initial setup flow only if the installation has not initialized an account.
+3. Confirm the `edge-auth.yaml` and `oidc-clients.yaml` blueprints apply successfully, all nine providers exist in proxy mode, and the Grafana and ArgoCD providers exist. ConfigMap data keys must end in `.yaml`.
+4. Verify the outpost integration and the Service referenced by the routes exist. The repository does not declare the integration setup.
+5. Ensure token claims contain the `authentik Admins` group expected by both OIDC clients.
 6. Test a fresh browser login, native OIDC role mapping, an unauthenticated API request, and backend reachability separately. The [SSO runbook](../runbooks/adding-app-to-sso.md) gives the network checks.
 
 ## Recovery and Backups

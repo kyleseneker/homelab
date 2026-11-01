@@ -46,6 +46,4 @@ config:
         preferred_ip_protocol: ip4
         fail_if_header_not_matches:
           - header: Location
-            regexp: '^(/outpost\.goauthentik\.io/start|https://[^/]+/outpost\.goauthentik\.io/start|https://auth\.homelab\.local/application/o/authorize/)'
-        tls_config:
-          ca_file: /etc/homelab-ca/homelab-ca.crt
+            regexp: '^(/outpost\.goauthentik\.io/start|https://[^/]+/outpost\.goauthentik\.io/start|https://auth\.home\.seneker\.io/application/o/authorize/)'

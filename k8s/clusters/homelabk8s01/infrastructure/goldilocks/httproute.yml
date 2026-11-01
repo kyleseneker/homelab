@@ -9,9 +9,9 @@ spec:
       kind: Gateway
       name: homelab-gateway
       namespace: default
-      sectionName: https
+      sectionName: https-home
   hostnames:
-    - goldilocks.homelab.local
+    - goldilocks.home.seneker.io
   rules:
     - matches:
         - path:

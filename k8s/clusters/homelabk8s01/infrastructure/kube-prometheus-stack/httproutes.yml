@@ -9,9 +9,9 @@ spec:
       kind: Gateway
       name: homelab-gateway
       namespace: default
-      sectionName: https
+      sectionName: https-home
   hostnames:
-    - prometheus.homelab.local
+    - prometheus.home.seneker.io
   rules:
     - matches:
         - path:
@@ -68,9 +68,9 @@ spec:
       kind: Gateway
       name: homelab-gateway
       namespace: default
-      sectionName: https
+      sectionName: https-home
   hostnames:
-    - alertmanager.homelab.local
+    - alertmanager.home.seneker.io
   rules:
     - matches:
         - path:

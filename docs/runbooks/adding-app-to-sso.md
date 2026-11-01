@@ -12,11 +12,11 @@ This needs a proxy provider in **`proxy`** mode. A provider in `forward_domain` 
 
 Add a provider and application to `infrastructure/authentik/blueprints-configmap.yml`. Keys in that ConfigMap must end in `.yaml` -- authentik ignores `.yml`, and the blueprint will silently never apply.
 
-Set `internal_host` to the app's in-cluster Service URL and `external_host` to its public hostname. Re-assert the outpost's full provider list, including the providers already on it, because the list is replaced rather than merged.
+Set `internal_host` to the app's in-cluster Service URL and `external_host` to `https://<app>.home.seneker.io`. A provider answers on that one hostname only. Re-assert the outpost's full provider list, including the providers already on it, because the list is replaced rather than merged.
 
 ### 2. Point the HTTPRoute at the outpost
 
-Replace the route's `backendRefs` with the outpost Service in the `auth` namespace on port 9000. A backendRef that crosses namespaces needs a matching `ReferenceGrant` in `auth`, or the route reports `ResolvedRefs=False` and the gateway serves a 500.
+Attach the route to the gateway's `https-home` listener with the `<app>.home.seneker.io` hostname, and add a UniFi DNS record for it pointing to the gateway VIP. Replace the route's `backendRefs` with the outpost Service in the `auth` namespace on port 9000. A backendRef that crosses namespaces needs a matching `ReferenceGrant` in `auth`, or the route reports `ResolvedRefs=False` and the gateway serves a 500.
 
 ### 3. Allow the outpost to reach the app
 
@@ -40,33 +40,34 @@ kubectl -n auth exec deploy/authentik-server -- \
 
 A time near the timeout means a policy is still blocking the path.
 
+Add the app's URL to the `sso-protected` Probe in `infrastructure/blackbox-exporter/probes.yml`, so a missing login redirect alerts.
+
 ## Native OIDC (apps with built-in support)
 
 For apps that support OAuth2/OIDC natively (for example, Grafana and ArgoCD).
 
-### 1. Create OIDC Provider in Authentik
+### 1. Store the Client Secret in Vault
 
-1. Go to **Applications > Providers** in the Authentik admin UI
-2. Create a new **OAuth2/OpenID Provider**
-   - Set client ID, generate client secret
-   - Set redirect URI to the app's OAuth callback URL
-   - Scopes: `openid`, `email`, `profile`
-3. Create a matching **Application** linked to the provider
+1. Generate a client secret and write it to Vault: `vault kv put homelab/infrastructure/<app>-oidc <key>=<client_secret>`
+2. Add it to `infrastructure/authentik/authentik-external-secret.yml` as `<APP>_OIDC_CLIENT_SECRET`, and create the app's own ExternalSecret from the same Vault path. Both sides then read one value.
 
-### 2. Store the Client Secret in Vault
+### 2. Declare the Provider in the Blueprint
 
-1. Write the client secret to Vault: `vault kv put homelab/infrastructure/<app>-oidc <key>=<client_secret>`
-2. Create an ExternalSecret manifest referencing the Vault path and commit it
+Add an OAuth2 provider and an application to the `oidc-clients.yaml` key of `infrastructure/authentik/blueprints-configmap.yml`, following the Grafana and ArgoCD entries:
+
+- a confidential client with `client_secret: !Env <APP>_OIDC_CLIENT_SECRET`
+- a strict redirect URI on the app's `home.seneker.io` callback
+- the `openid`, `email` and `profile` scope mappings, found by their managed names
 
 ### 3. Configure the App
 
 Add the OIDC configuration to the app's Helm values or configuration, using:
 
-- **`auth_url`** (browser redirect): `https://auth.homelab.local/application/o/authorize/`
+- **`auth_url`** (browser redirect): `https://auth.home.seneker.io/application/o/authorize/`
 - **`token_url`** (server-to-server): `http://authentik-server.auth.svc.cluster.local/application/o/token/`
 - **`api_url`** (server-to-server): `http://authentik-server.auth.svc.cluster.local/application/o/userinfo/`
 
-This split is used by Grafana and requires Cilium egress to Authentik and ingress on the server's port. ArgoCD discovers endpoints from its external HTTPS issuer instead; mount the homelab CA through trust-manager and retain TLS verification. Prefer HTTPS with verified trust when the application supports it.
+This split is used by Grafana and requires Cilium egress to Authentik and ingress on the server's port. ArgoCD discovers endpoints from its external issuer on `auth.home.seneker.io` instead, verified against the system roots. Prefer HTTPS with verified trust when the application supports it.
 
 ## When NOT to Add SSO
 

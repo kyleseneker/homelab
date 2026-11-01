@@ -89,9 +89,9 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - tdarr.homelab.local
+      - tdarr.home.seneker.io
     rules:
       - matches:
           - path:

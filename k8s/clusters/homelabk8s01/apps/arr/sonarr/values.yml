@@ -74,9 +74,9 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - sonarr.homelab.local
+      - sonarr.home.seneker.io
     rules:
       - matches:
           - path:
