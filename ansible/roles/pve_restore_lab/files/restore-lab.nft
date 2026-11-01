@@ -28,6 +28,14 @@ table inet restore_lab {
         oifname "vmbr1" ct state established,related accept
         oifname "vmbr1" counter drop
     }
+    chain prerouting_raw {
+        type filter hook prerouting priority raw; policy accept;
+        # With the Proxmox firewall on, a VM's packets reach conntrack first while
+        # bridged through its fwbr. A separate zone keeps lab egress's NAT
+        # decision at the routed POSTROUTING, where it is masqueraded
+        # (Proxmox network configuration guide, masquerading with the firewall).
+        iifname "fwbr*" ct zone set 1
+    }
     chain postrouting {
         type nat hook postrouting priority srcnat; policy accept;
         ip saddr 172.26.0.0/24 oifname "vmbr0" masquerade
