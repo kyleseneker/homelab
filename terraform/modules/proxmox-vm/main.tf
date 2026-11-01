@@ -1,5 +1,10 @@
 locals {
   firewall_enabled = length(var.firewall_ipfilter_cidrs) > 0
+
+  # Proxmox stores ipset entries without a /32 suffix and returns them sorted
+  # as strings. Matching that form keeps the ordered list stable: a diff would
+  # replace the set, briefly leaving ipfilter with no allowed source.
+  ipfilter_cidrs = sort([for c in var.firewall_ipfilter_cidrs : trimsuffix(c, "/32")])
 }
 
 resource "proxmox_virtual_environment_vm" "vm" {
@@ -85,7 +90,7 @@ resource "proxmox_virtual_environment_firewall_ipset" "ipfilter_net0" {
   comment   = "Managed by Terraform"
 
   dynamic "cidr" {
-    for_each = var.firewall_ipfilter_cidrs
+    for_each = local.ipfilter_cidrs
     content {
       name = cidr.value
     }
