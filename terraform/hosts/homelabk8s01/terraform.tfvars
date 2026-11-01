@@ -7,6 +7,17 @@ ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJfcTkmi2Wd832gavFsAGSL
 gateway    = "192.168.10.1"
 nameserver = "192.168.10.1"
 
+# ADR-016 anti-spoofing: each NIC may send only from its node address and the
+# Cilium L2 LoadBalancer pool (192.168.10.200 -- .250).
+l2_pool_cidrs = [
+  "192.168.10.200/29",
+  "192.168.10.208/28",
+  "192.168.10.224/28",
+  "192.168.10.240/29",
+  "192.168.10.248/31",
+  "192.168.10.250/32",
+]
+
 nodes = {
   homelabk8s01-node-1 = {
     role   = "control-plane"
