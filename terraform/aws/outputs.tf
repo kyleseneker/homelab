@@ -49,3 +49,24 @@ output "velero_offsite_secret_access_key" {
   value       = aws_iam_access_key.velero_offsite.secret
   sensitive   = true
 }
+
+output "household_zone_id" {
+  description = "Route 53 hosted zone ID for the household domain"
+  value       = aws_route53_zone.household.zone_id
+}
+
+output "household_name_servers" {
+  description = "Name servers for the household domain"
+  value       = aws_route53_zone.household.name_servers
+}
+
+output "cert_manager_dns01_access_key_id" {
+  description = "AWS access key ID for the cert-manager-dns01 IAM user"
+  value       = aws_iam_access_key.cert_manager_dns01.id
+}
+
+output "cert_manager_dns01_secret_access_key" {
+  description = "AWS secret access key for the cert-manager-dns01 IAM user"
+  value       = aws_iam_access_key.cert_manager_dns01.secret
+  sensitive   = true
+}

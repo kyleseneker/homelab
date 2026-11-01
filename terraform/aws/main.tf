@@ -226,3 +226,124 @@ resource "aws_iam_user_policy_attachment" "velero_offsite" {
   user       = aws_iam_user.velero_offsite.name
   policy_arn = aws_iam_policy.velero_offsite.arn
 }
+
+# Household domain, registered through the Route 53 console and adopted here.
+# Terraform never registers or deletes it: destroy only removes it from state.
+resource "aws_route53domains_registered_domain" "household" {
+  domain_name = var.household_domain
+
+  auto_renew         = true
+  transfer_lock      = true
+  admin_privacy      = true
+  registrant_privacy = true
+  tech_privacy       = true
+
+  dynamic "name_server" {
+    for_each = aws_route53_zone.household.name_servers
+    content {
+      name = name_server.value
+    }
+  }
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+# Public hosted zone created by the registration. Homelab service records stay
+# in the UniFi gateway's local DNS; this zone only carries ACME challenges and
+# anything deliberately public.
+resource "aws_route53_zone" "household" {
+  name    = var.household_domain
+  comment = "Household domain; homelab records are internal-only"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+# Dedicated IAM user for cert-manager's ACME DNS-01 challenges
+resource "aws_iam_user" "cert_manager_dns01" {
+  name = "cert-manager-dns01-${var.environment}"
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_iam_access_key" "cert_manager_dns01" {
+  user = aws_iam_user.cert_manager_dns01.name
+}
+
+# Only the TXT record ACME validates for the homelab wildcard certificate
+# (*.home.<domain>); public records elsewhere in the zone stay out of reach of a
+# compromised cluster. The ClusterIssuer
+# names the zone ID, so no zone lookup permission is needed.
+data "aws_iam_policy_document" "cert_manager_dns01" {
+  statement {
+    sid       = "ReadChangeStatus"
+    effect    = "Allow"
+    actions   = ["route53:GetChange"]
+    resources = ["arn:aws:route53:::change/*"]
+  }
+
+  statement {
+    sid       = "ListZoneRecords"
+    effect    = "Allow"
+    actions   = ["route53:ListResourceRecordSets"]
+    resources = [aws_route53_zone.household.arn]
+  }
+
+  statement {
+    sid       = "WriteChallengeRecord"
+    effect    = "Allow"
+    actions   = ["route53:ChangeResourceRecordSets"]
+    resources = [aws_route53_zone.household.arn]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "route53:ChangeResourceRecordSetsNormalizedRecordNames"
+      values   = ["_acme-challenge.${var.homelab_subdomain}.${var.household_domain}"]
+    }
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "route53:ChangeResourceRecordSetsRecordTypes"
+      values   = ["TXT"]
+    }
+  }
+}
+
+resource "aws_iam_policy" "cert_manager_dns01" {
+  name        = "cert-manager-dns01-${var.environment}"
+  description = "cert-manager ACME DNS-01: the homelab challenge TXT record only"
+  policy      = data.aws_iam_policy_document.cert_manager_dns01.json
+}
+
+resource "aws_iam_user_policy_attachment" "cert_manager_dns01" {
+  user       = aws_iam_user.cert_manager_dns01.name
+  policy_arn = aws_iam_policy.cert_manager_dns01.arn
+}
+
+# One-time adoption of the registration and of the hosted zone Route 53 created
+# with it. Remove these blocks and the lookup after the first apply.
+data "aws_route53_zone" "registered" {
+  name = var.household_domain
+}
+
+import {
+  to = aws_route53_zone.household
+  id = data.aws_route53_zone.registered.zone_id
+}
+
+import {
+  to = aws_route53domains_registered_domain.household
+  id = var.household_domain
+}
