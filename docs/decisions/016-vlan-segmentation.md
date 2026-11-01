@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. The IoT VLAN (20) is recorded separately in [ADR-026](026-iot-vlan.md).
 
 ## Context
 

@@ -146,6 +146,7 @@ nav:
       - Scoped Autonomous Operations: decisions/023-scoped-autonomous-operations.md
       - Vault Integrated Storage: decisions/024-vault-integrated-storage.md
       - Garage Local Backups: decisions/025-garage-velero-local-backups.md
+      - IoT VLAN: decisions/026-iot-vlan.md
       - Loki Community Chart: decisions/027-loki-community-chart.md
   - Roadmap:
       - roadmap/index.md
