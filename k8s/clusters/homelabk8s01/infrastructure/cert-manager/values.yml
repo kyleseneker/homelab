@@ -6,6 +6,11 @@ prometheus:
     enabled: true
 config:
   enableGatewayAPI: true
+# The UniFi gateway's DNS holds internal-only home.seneker.io records, so the
+# DNS-01 self-check asks public resolvers instead (ADR-030).
+extraArgs:
+  - --dns01-recursive-nameservers-only
+  - --dns01-recursive-nameservers=1.1.1.1:53,9.9.9.9:53
 global:
   podSecurityContext:
     runAsNonRoot: true

@@ -1,0 +1,51 @@
+# ADR-030: publicly trusted certificates for *.home.seneker.io via ACME DNS-01.
+# The IAM user behind route53-dns01-credentials may only write the
+# _acme-challenge.home.seneker.io TXT record, so the zone ID is named here
+# rather than looked up.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-account
+    solvers:
+      - selector:
+          dnsZones:
+            - home.seneker.io
+        dns01:
+          route53:
+            region: us-east-1
+            hostedZoneID: Z0022461IGQ0MZX9X06U
+            accessKeyIDSecretRef:
+              name: route53-dns01-credentials
+              key: access-key-id
+            secretAccessKeySecretRef:
+              name: route53-dns01-credentials
+              key: secret-access-key
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-production-account
+    solvers:
+      - selector:
+          dnsZones:
+            - home.seneker.io
+        dns01:
+          route53:
+            region: us-east-1
+            hostedZoneID: Z0022461IGQ0MZX9X06U
+            accessKeyIDSecretRef:
+              name: route53-dns01-credentials
+              key: access-key-id
+            secretAccessKeySecretRef:
+              name: route53-dns01-credentials
+              key: secret-access-key
