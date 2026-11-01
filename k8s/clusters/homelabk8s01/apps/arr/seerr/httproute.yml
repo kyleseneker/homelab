@@ -10,8 +10,14 @@ spec:
       name: homelab-gateway
       namespace: default
       sectionName: https
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: homelab-gateway
+      namespace: default
+      sectionName: https-home
   hostnames:
     - seerr.homelab.local
+    - seerr.home.seneker.io
   rules:
     - backendRefs:
         - group: ""
