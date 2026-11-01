@@ -24,10 +24,10 @@ patches:
       metadata:
         name: argocd-cm
       data:
-        url: https://argocd.homelab.local
+        url: https://argocd.home.seneker.io
         oidc.config: |
           name: Authentik
-          issuer: https://auth.homelab.local/application/o/argocd/
+          issuer: https://auth.home.seneker.io/application/o/argocd/
           clientID: argocd
           clientSecret: $oidc.authentik.clientSecret
           requestedScopes:
@@ -60,7 +60,7 @@ patches:
         service.slack: |
           token: $slack-token
         context: |
-          argocdUrl: https://argocd.homelab.local
+          argocdUrl: https://argocd.home.seneker.io
         subscriptions: |
           - recipients:
               - slack:alerts
