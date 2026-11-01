@@ -36,8 +36,7 @@ spec:
   usages:
     - digital signature
     - server auth
-  # Switch to letsencrypt-production once staging issuance succeeds.
   issuerRef:
-    name: letsencrypt-staging
+    name: letsencrypt-production
     kind: ClusterIssuer
     group: cert-manager.io

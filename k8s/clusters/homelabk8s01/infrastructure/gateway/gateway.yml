@@ -3,10 +3,6 @@ kind: Gateway
 metadata:
   name: homelab-gateway
   namespace: default
-  annotations:
-    cert-manager.io/cluster-issuer: homelab-ca-issuer
-    # Apple platforms reject TLS server certificates without the serverAuth EKU.
-    cert-manager.io/usages: "digital signature,key encipherment,server auth"
 spec:
   gatewayClassName: cilium
   listeners:
@@ -27,6 +23,26 @@ spec:
       protocol: HTTP
       port: 80
       hostname: "*.homelab.local"
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-home
+      protocol: HTTPS
+      port: 443
+      hostname: "*.home.seneker.io"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ""
+            kind: Secret
+            name: home-gateway-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: http-home
+      protocol: HTTP
+      port: 80
+      hostname: "*.home.seneker.io"
       allowedRoutes:
         namespaces:
           from: All
