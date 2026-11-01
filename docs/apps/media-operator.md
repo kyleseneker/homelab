@@ -24,14 +24,16 @@ Application APIs must be reachable and credentials valid before reconciliation s
 
 The repository does not yet demonstrate a fully unattended rebuild. Generated API keys, initial account setup, and restored database state must agree with Vault. Run the adoption step after application initialization or restore, then verify all eight CRs become ready.
 
-Seerr declares Sonarr's `WEB-1080p` and Radarr's `HD Bluray + WEB` profiles by name. The pinned [v0.35.0 release](https://github.com/kyleseneker/media-operator/releases/tag/v0.35.0) resolves each name against the application's quality-profile API before writing the connection. Run Recyclarr first so the profiles exist. Missing or ambiguous names and API failures leave the existing connection intact and report a reconciliation failure; ID-only configurations remain supported upstream.
+Seerr declares Sonarr's `WEB-1080p` and Radarr's `HD Bluray + WEB` profiles by name. From the [v0.35.0 release](https://github.com/kyleseneker/media-operator/releases/tag/v0.35.0), the operator resolves each name against the application's quality-profile API before writing the connection. Run Recyclarr first so the profiles exist. Missing or ambiguous names and API failures leave the existing connection intact and report a reconciliation failure; ID-only configurations remain supported upstream.
 
 The v0.34.1 controller passed a lab check against the restored Sonarr: stale ID `7` resolved to recreated ID `8`, name-only configuration selected `8`, and a nonexistent name produced no connection writes. That check used a temporary Seerr API fixture, so it does not establish full Seerr application recovery. Production Sonarr and Radarr connections also reconciled successfully with the new controller.
 
 The Bazarr English profile ID also requires validation during a clean rebuild. Prowlarr indexers select the built-in `Standard` sync profile by name, so a rebuilt Prowlarr resolves its current ID; a missing or renamed profile blocks indexer writes and reports a reconciliation failure. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-The operators are pinned to 0.35.0 in production and restore-lab configurations.
-This adds name-based references: Prowlarr indexers use `appProfileName` instead
+The operators are pinned to 0.35.1 in production and restore-lab configurations.
+0.35.1 restores Seerr's first-time setup on Seerr 3.5 and later, which replaced
+the library sync and enable calls; without it, a rebuilt Seerr stays
+uninitialized. 0.35.0 added name-based references: Prowlarr indexers use `appProfileName` instead
 of a numeric profile ID. Missing or ambiguous names now fail reconciliation
 instead of silently dropping the association, and ownership records no longer
 duplicate across reconciliation stages. It retains safe pruning and ownership
