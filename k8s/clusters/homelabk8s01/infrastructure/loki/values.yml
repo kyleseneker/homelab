@@ -74,3 +74,9 @@ write:
 monitoring:
   serviceMonitor:
     enabled: true
+memberlist:
+  service:
+    # The single replica is its own only memberlist peer. Resolve it before it
+    # is ready so the startup join succeeds at once instead of retrying until
+    # then; from chart 13, Loki exits if those retries run out.
+    publishNotReadyAddresses: true
