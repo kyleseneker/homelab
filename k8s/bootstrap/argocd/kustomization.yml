@@ -111,6 +111,18 @@ patches:
         trigger.on-health-degraded: |
           - when: app.status.health.status == 'Degraded'
             send: [app-health-degraded]
+  # Declared so the bootstrap owns the type: the server is reached only through
+  # the Gateway route, never on its own LoadBalancer address.
+  - target:
+      kind: Service
+      name: argocd-server
+    patch: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: argocd-server
+      spec:
+        type: ClusterIP
   - target:
       kind: Deployment
       name: argocd-server
