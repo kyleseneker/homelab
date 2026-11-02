@@ -60,7 +60,7 @@ Cilium replaces MetalLB for LoadBalancer IP allocation. It operates in Layer 2 m
 
 - **IP Address Pool:** `192.168.10.200` - `192.168.10.250`
 - **Mode:** L2 ARP announcement
-- **Consumers:** The `homelab-gateway` Gateway and any LoadBalancer services (e.g., Jellyfin)
+- **Consumers:** The `homelab-gateway` Gateway and any LoadBalancer Service
 
 !!! note "L2 Limitations"
     In L2 mode, all traffic for a given VIP is handled by a single node (the current ARP responder). Failover occurs when the node becomes unavailable, at which point another node takes over the VIP.

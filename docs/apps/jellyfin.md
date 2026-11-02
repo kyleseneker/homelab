@@ -9,7 +9,7 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `lscr.io/linuxserver/jellyfin` |
 | Port | 8096 |
-| Service type | LoadBalancer |
+| Service type | ClusterIP |
 | HTTPRoute | `jellyfin.home.seneker.io` |
 | Namespace | `arr` |
 | ArgoCD app | `arr-jellyfin` |
@@ -38,7 +38,7 @@ GPU limit: `gpu.intel.com/i915: 1`
 ## Key Configuration
 
 - Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
-- The service is type `LoadBalancer`, giving Jellyfin a dedicated IP via Cilium L2 in addition to the Gateway API HTTPRoute.
+- The service is `ClusterIP`. Clients reach Jellyfin only through the Gateway at `jellyfin.home.seneker.io`, which has a publicly trusted certificate.
 - Startup probe allows up to 30 failures at 10-second intervals (5 minutes) to account for library scanning on first boot.
 
 ## Post-Deploy Verification
