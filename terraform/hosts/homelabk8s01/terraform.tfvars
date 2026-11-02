@@ -7,6 +7,9 @@ ssh_public_key    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJfcTkmi2Wd832gavFsAGSL
 gateway    = "192.168.10.1"
 nameserver = "192.168.10.1"
 
+# ADR-016: vmbr0 is VLAN-aware, so each node NIC is an access port on the native VLAN.
+nic_vlan_id = 1
+
 # ADR-016 anti-spoofing: each NIC may send only from its node address and the
 # Cilium L2 LoadBalancer pool (192.168.10.200 -- .250).
 l2_pool_cidrs = [
