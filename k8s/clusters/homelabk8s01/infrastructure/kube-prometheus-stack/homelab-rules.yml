@@ -91,18 +91,6 @@ spec:
             summary: "Alloy log collection is incomplete"
             description: "{{ $value }} expected Alloy collectors are unavailable. With node-scoped discovery, those nodes have no pod log collection."
 
-        - alert: MinIODown
-          expr: |
-            (kube_deployment_spec_replicas{namespace="backups", deployment=~".*minio.*"} > 0)
-            and
-            (kube_deployment_status_replicas_available{namespace="backups", deployment=~".*minio.*"} == 0)
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: "MinIO is down"
-            description: "MinIO has had no available replicas for more than 5 minutes. Pre-Garage restore points in its read-only location are unavailable."
-
         - alert: GarageDown
           expr: |
             (kube_deployment_spec_replicas{namespace="backups", deployment="garage"} > 0)
