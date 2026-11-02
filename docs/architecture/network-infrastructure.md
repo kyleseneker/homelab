@@ -47,7 +47,7 @@ All physical links are Gigabit Ethernet. See [Hardware Inventory](../reference/h
 
 The NAS sits on the Default VLAN (192.168.1.158) because it serves both household devices and the Kubernetes cluster. The UNAS Pro does not support dual-homing, so its management interface remains on the Default VLAN.
 
-The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface. Default and IoT are excluded from it.
+The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface. Default and IoT are excluded from it. On the host, `vmbr0` is VLAN-aware: the uplink and the host carry VLANs 1 and 99, and each VM NIC carries only the untagged native VLAN.
 
 ### DHCP Scopes
 
@@ -99,16 +99,27 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | # | Source | Destination | Action | Purpose |
 |---|--------|-------------|--------|---------|
 | 1 | Internal | Homelab | Allow | Home network access to homelab services |
-| 2 | Homelab | Internal -- 192.168.1.158 (NAS) | Allow | Kubernetes NFS access to NAS |
+| 2 | Homelab | Internal -- 192.168.1.158 (NAS) | Allow, with return | Kubernetes NFS access to NAS |
 | 3 | Homelab -- 192.168.10.160/27 | Management | Allow | Workstation access to management interfaces |
 | 4 | Vpn | Management | Allow | Remote management over WireGuard/Teleport |
 | 5 | Vpn | Homelab | Allow | Remote access to cluster services over WireGuard/Teleport |
 | 6 | Internal | IoT | Allow | Household control of smart home devices |
 | 7 | Vpn | Internal | Allow | Remote access to household devices and the NAS over WireGuard/Teleport |
+| 8 | IoT | Gateway -- all TCP/UDP except 53, 67, 123, 5353 | Block | IoT devices reach the gateway only for DNS, DHCP, NTP and mDNS |
+| 9 | Homelab, except 192.168.10.160/27 | Gateway -- all TCP/UDP except 53, 67, 123, 5353 (IPv4) | Block | Nodes, the Proxmox host and pod traffic stay off the UniFi console and SSH |
+| 10 | Homelab | Gateway -- all TCP/UDP except 53, 67, 123, 5353 (IPv6) | Block | The same over IPv6 link-local |
+| 11 | Internal | Gateway -- TCP 22 | Block | Household clients keep the web console; gateway SSH is for the workstation block and VPN |
+| 12 | Internal -- 192.168.1.158 (NAS) | Homelab -- 192.168.10.50 -- .52 (nodes) | Allow | NFSv3 lock callbacks from the NAS |
+| 13 | Internal, except 192.168.1.158 (NAS) | Homelab, except 192.168.10.201 | Block | Household clients reach only the gateway VIP |
+| 14 | Internal | Homelab -- 192.168.10.201, all TCP/UDP except 80, 443 | Block | The gateway VIP serves HTTP and HTTPS only |
+
+Rules 8 -- 11, 13 and 14 match only new connections, so replies to traffic in the other direction are unaffected. Rules 8 -- 11 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
 
 Rule 6 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the NAS, the cluster or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
-Rules 2 and 3 are scoped rather than zone-wide. Rule 2 permits only the NAS IP, so Homelab devices cannot reach other Default VLAN hosts. Rule 3 permits only the Homelab DHCP block, which excludes the Proxmox host and the Kubernetes nodes -- neither the hypervisor nor pod traffic masquerading behind a node IP can reach the Management VLAN.
+Within Internal -> Homelab, the order is rules 12, 13, 14, then 1. Rules 13 and 14 refuse new household connections anywhere except the gateway VIP on 80 and 443, so rule 1 carries only those and the replies to connections Homelab starts. Administration happens from the Homelab Wi-Fi or the VPN. The limit uses block rules because an allow rule restricted by address and port did not match traffic in this zone pair. UniFi appends new policies to the end of a zone pair, so the order is set explicitly, through the Integration API (`firewall/policies/ordering`) or the UI. Rule 13 also excludes the NAS, so the NFS lock callbacks in rule 12 do not depend on that order.
+
+Rules 2 and 3 are scoped rather than zone-wide. Rule 2 permits only the NAS IP, so Homelab devices cannot reach other Default VLAN hosts. It generates the return policy that carries the NAS's NFS replies. The NFS mounts are NFSv3 with server-side locking, so the NAS also opens connections back to the nodes for lock grants and reboot notifications, on dynamic ports; rule 12 permits exactly that. Rule 3 permits only the Homelab DHCP block, which excludes the Proxmox host and the Kubernetes nodes -- neither the hypervisor nor pod traffic masquerading behind a node IP can reach the Management VLAN. Each node's NIC carries a Proxmox anti-spoofing filter, so a node can send only from its own address and the Cilium L2 pool, never from a workstation-block address ([ADR-016](../decisions/016-vlan-segmentation.md#hypervisor-enforcement)). The host's bridge filters VLANs and each node NIC is an access port on the native VLAN, so a node cannot reach the Management VLAN at Layer 2 either; rule 3's boundary holds below the firewall.
 
 Scoping rule 3 to the DHCP block rather than a single address is deliberate. The workstation uses a rotating private Wi-Fi address, so a MAC-pinned reservation or single-IP rule stops matching whenever the address rotates. Any address the workstation can be issued falls inside the block.
 
@@ -118,13 +129,15 @@ Management VLAN outbound to External and Gateway is allowed by zone defaults (fo
 
 ## DNS
 
-Static entries for each `*.homelab.local` service are configured in the UniFi Network controller's local DNS records, pointing to the Cilium L2 gateway VIP.
+Static entries for each service are configured in the UniFi Network controller's local DNS records, pointing to the Cilium L2 gateway VIP. Services use `*.home.seneker.io` names ([ADR-030](../decisions/030-public-domain-and-certificates.md)). The `homelab.local` records stay until those names are retired.
+
+`seneker.io` is a public domain in Route 53, but `home.seneker.io` names exist only in these local records; public DNS returns nothing for them. The public zone carries only the ACME challenge record and deliberately public sites.
 
 See [Networking - Application Hostnames](networking.md#application-hostnames) for the full hostname list.
 
 ### Multicast DNS
 
-The gateway's mDNS proxy runs in automatic mode for every network with all predefined services enabled (AirPlay, Chromecast, HomeKit, Matter and others), so household clients discover services advertised on the IoT VLAN. Matter is the exception: its controller needs an interface on the devices' VLAN rather than the proxy; see [ADR-026](../decisions/026-iot-vlan.md#consequences).
+The gateway's mDNS proxy runs in automatic mode with all predefined services enabled (AirPlay, Chromecast, HomeKit, Matter and others). It forwards only on Default and IoT, so household clients discover services advertised on the IoT VLAN and nothing is reflected into Homelab or Management. The scope is each network's mDNS forwarding flag (`mdnsForwardingEnabled` in the Integration API's network object); the site-level `mdns` setting's network list does not control it. Matter is the exception: its controller needs an interface on the devices' VLAN rather than the proxy; see [ADR-026](../decisions/026-iot-vlan.md#consequences).
 
 ## Remote Access
 

@@ -2,27 +2,27 @@
 
 ## External URLs (Browser Access)
 
-These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`). All require DNS entries pointing to the Cilium L2 LoadBalancer IP and trusting the homelab CA certificate.
+These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`), with DNS entries in the UniFi gateway pointing to the gateway VIP. Services are moving to `home.seneker.io` names with publicly trusted certificates, which work on any device ([ADR-030](../decisions/030-public-domain-and-certificates.md)). The `homelab.local` names stay live during the move and need the `homelab-ca` root certificate installed. For the SSO-protected apps, whose proxy providers answer on one hostname, they redirect to the `home.seneker.io` name.
 
-| Service | URL |
-|---------|-----|
-| ArgoCD | `https://argocd.homelab.local` |
-| Homepage | `https://home.homelab.local` |
-| Jellyfin | `https://jellyfin.homelab.local` |
-| Seerr | `https://seerr.homelab.local` |
-| Sonarr | `https://sonarr.homelab.local` |
-| Radarr | `https://radarr.homelab.local` |
-| Prowlarr | `https://prowlarr.homelab.local` |
-| Bazarr | `https://bazarr.homelab.local` |
-| Tdarr | `https://tdarr.homelab.local` |
-| qBittorrent | `https://qbit.homelab.local` |
-| Grafana | `https://grafana.homelab.local` |
-| Prometheus | `https://prometheus.homelab.local` |
-| Alertmanager | `https://alertmanager.homelab.local` |
-| Uptime Kuma | `https://status.homelab.local` |
-| Authentik | `https://auth.homelab.local` |
-| Vault | `https://vault.homelab.local` |
-| Goldilocks | `https://goldilocks.homelab.local` |
+| Service | `homelab.local` URL | `home.seneker.io` URL |
+|---------|-----|---------------|
+| ArgoCD | `https://argocd.homelab.local` | `https://argocd.home.seneker.io` |
+| Homepage | `https://home.homelab.local` | `https://home.seneker.io` |
+| Jellyfin | `https://jellyfin.homelab.local` | `https://jellyfin.home.seneker.io` |
+| Seerr | `https://seerr.homelab.local` | `https://seerr.home.seneker.io` |
+| Sonarr | `https://sonarr.homelab.local` | `https://sonarr.home.seneker.io` |
+| Radarr | `https://radarr.homelab.local` | `https://radarr.home.seneker.io` |
+| Prowlarr | `https://prowlarr.homelab.local` | `https://prowlarr.home.seneker.io` |
+| Bazarr | `https://bazarr.homelab.local` | `https://bazarr.home.seneker.io` |
+| Tdarr | `https://tdarr.homelab.local` | `https://tdarr.home.seneker.io` |
+| qBittorrent | `https://qbit.homelab.local` | `https://qbit.home.seneker.io` |
+| Grafana | `https://grafana.homelab.local` | `https://grafana.home.seneker.io` |
+| Prometheus | `https://prometheus.homelab.local` | `https://prometheus.home.seneker.io` |
+| Alertmanager | `https://alertmanager.homelab.local` | `https://alertmanager.home.seneker.io` |
+| Uptime Kuma | `https://status.homelab.local` | `https://status.home.seneker.io` |
+| Authentik | `https://auth.homelab.local` | `https://auth.home.seneker.io` |
+| Vault | `https://vault.homelab.local` | -- |
+| Goldilocks | `https://goldilocks.homelab.local` | `https://goldilocks.home.seneker.io` |
 
 ## Outside the Cluster
 

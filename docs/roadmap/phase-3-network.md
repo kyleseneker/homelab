@@ -101,6 +101,7 @@ AMT is configured in firmware. This completes the physical management connection
 
 ## 3.7 Move Smart Home Devices to the IoT VLAN
 
+- [ ] Before moving devices, set the IoT SSID to a long random pre-shared key or per-device keys ([ADR-026](../decisions/026-iot-vlan.md)), so devices are provisioned only once
 - [ ] Move each Wi-Fi smart home device from the household SSID to the IoT SSID, re-provisioning through its vendor app or factory reset where it stores only one network
 - [ ] Verify app control, casting and AirPlay from household clients, and vendor-cloud control from off the LAN
 - [ ] From a client on VLAN 20, confirm that Default (including the NAS), Homelab and Management refuse new connections
@@ -109,6 +110,16 @@ AMT is configured in firmware. This completes the physical management connection
 | | |
 |---|---|
 | **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients and the NAS that serves the cluster's NFS storage. |
+
+
+## 3.8 Move Services to home.seneker.io
+
+- [ ] Verify a household iPhone reaches each service without installing anything (Jellyfin, Seerr, the status page, Homepage, Grafana and the Authentik login verified)
+- [ ] Retire the `homelab.local` names, the internal CA chain, the trust-manager Bundle and the CA trust guide
+
+| | |
+|---|---|
+| **Why** | Household devices do not trust the internal CA, and `.local` is reserved for Multicast DNS. Publicly trusted certificates on a real domain work on every device with nothing to install. |
 
 ---
 
@@ -121,3 +132,4 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] Intel AMT connected and remote management tested
 - [ ] Management reachability and pod/service/VPN address boundaries verified
 - [ ] Smart home devices on the IoT VLAN with isolation verified
+- [ ] Household services served at `home.seneker.io` with publicly trusted certificates

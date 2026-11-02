@@ -30,7 +30,7 @@ The DHCP scope leaves 192.168.20.2 -- .99 and .201 -- .254 free for fixed addres
 
 ### Wireless
 
-A dedicated IoT SSID is broadcast from every access point: 2.4 GHz only, WPA2-PSK without WPA3 transition mode, PMF optional and client isolation off. The household and homelab SSIDs keep 2.4/5/6 GHz with WPA2/WPA3 transition. The IoT SSID uses the settings older radios need, so the household SSID does not have to.
+A dedicated IoT SSID is broadcast from every access point: 2.4 GHz only, WPA2-PSK without WPA3 transition mode, PMF optional and client isolation off. The household and homelab SSIDs keep 2.4/5/6 GHz with WPA2/WPA3 transition. The IoT SSID uses the settings older radios need, so the household SSID does not have to. Because WPA2-PSK lets anyone who captures a handshake guess the key offline, the IoT SSID uses a long random pre-shared key, or UniFi per-device keys, distinct from the household key.
 
 No switch port carries VLAN 20. The MS-01's trunk (port 2) explicitly excludes it, so no homelab host has an interface on the IoT network.
 
@@ -43,15 +43,15 @@ The IoT zone follows the Homelab and Management pattern: zone defaults block tra
 | Internal | IoT | Allow | Custom rule `Internal to IoT` |
 | IoT | Internal | Return traffic only | Zone default |
 | IoT | External | Allow; invalid traffic blocked | Zone default |
-| IoT | Gateway | Allow, including mDNS on UDP 5353 | Zone default |
+| IoT | Gateway | DHCP, DNS, NTP, mDNS and ICMP only | Custom rules ahead of the zone default |
 | IoT | Homelab, Management, Vpn | Block | Zone default |
 | Homelab, Management, Vpn | IoT | Block | Zone default |
 
-Household clients can open device apps, cast to and configure devices. IoT devices reach their clouds but cannot open connections into the household network, the NAS, the cluster or the management interfaces.
+Household clients can open device apps, cast to and configure devices. IoT devices reach their clouds but cannot open connections into the household network, the NAS, the cluster or the management interfaces. The zone default alone would allow IoT devices every gateway port, including the UniFi console and SSH, so custom rules narrow it to the network services devices need ([ADR-016](016-vlan-segmentation.md#firewall-rules)).
 
 ### Discovery
 
-The gateway's mDNS proxy runs in automatic mode for all networks with every predefined service enabled, including AirPlay, Chromecast, HomeKit and Matter. Household clients therefore discover services advertised on VLAN 20.
+The gateway's mDNS proxy covers the Default and IoT networks, with the predefined services devices use, including AirPlay, Chromecast, HomeKit and Matter. Household clients therefore discover services advertised on VLAN 20. The proxy stays off Homelab and Management, so discovery traffic is never reflected into them.
 
 ## Alternatives Considered
 
@@ -72,8 +72,9 @@ The gateway's mDNS proxy runs in automatic mode for all networks with every pred
 
 - Devices are protected only once moved. Many store a single network and must be re-provisioned through their vendor app or factory reset to join the IoT SSID.
 - VPN clients cannot reach VLAN 20. Remote control of devices goes through vendor clouds unless a rule or a controller reachable over the VPN provides it.
-- Cross-VLAN discovery depends on the mDNS proxy, which does not cover every protocol. Matter relies on link-local multicast that does not cross VLANs; its controller needs Wi-Fi devices and Thread border routers on its own VLAN, and the Matter server's documentation advises against mDNS forwarders ([Home Assistant Matter integration](https://www.home-assistant.io/integrations/matter/), [matter.js server OS requirements](https://github.com/matter-js/matterjs-server/blob/main/docs/os_requirements.md)). A local controller for such protocols needs its own interface on VLAN 20. No homelab host has one today.
+- Cross-VLAN discovery depends on the mDNS proxy, which does not cover every protocol. Matter relies on link-local multicast that does not cross VLANs; its controller needs Wi-Fi devices and Thread border routers on its own VLAN, and the Matter server's documentation advises against mDNS forwarders ([Home Assistant Matter integration](https://www.home-assistant.io/integrations/matter/), [matter.js server OS requirements](https://github.com/matter-js/matterjs-server/blob/main/docs/os_requirements.md)). A local controller for such protocols needs its own interface on VLAN 20.
 - Matter and Thread use link-local IPv6 and prefixes advertised by Thread border routers on the VLAN itself, so the missing gateway IPv6 does not block them. IPv6 multicast and Router Advertisements must still pass on VLAN 20. The matter.js documentation says IGMP/MLD snooping "may help or hinder" Matter traffic, so check snooping first when multicast discovery fails here.
-- The IoT SSID offers no WPA3 protection; its pre-shared key is the only barrier to joining. Keep it distinct from the household SSID's key.
+- The IoT SSID offers no WPA3 protection. The key's length, or per-device keys, is what stops offline guessing.
+- Workloads attached to VLAN 20 from the cluster ([ADR-028](028-multus-iot-attachments.md)) are reachable by IoT devices at Layer 2, without the zone firewall in between. Their exposure is bounded by the hypervisor filter that ADR defines.
 - Devices with 5 GHz radios still connect at 2.4 GHz on this SSID.
 - The zone, SSID and rule live in the UniFi controller, outside Git, like the rest of the network configuration ([Phase 7](../roadmap/phase-7-long-term-vision.md) tracks GitOps for network config).

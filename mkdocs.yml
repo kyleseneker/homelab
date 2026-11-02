@@ -120,6 +120,7 @@ nav:
       - Backup & Restore: runbooks/backup-and-restore.md
       - Adding App to SSO: runbooks/adding-app-to-sso.md
       - Authentik Emergency Bypass: runbooks/authentik-emergency-bypass.md
+      - Hypervisor Network Isolation: runbooks/hypervisor-network-isolation.md
   - Decisions:
       - kubeadm Bootstrap: decisions/001-kubeadm-cluster-bootstrap.md
       - Cilium as CNI: decisions/002-cilium-cni.md
@@ -148,6 +149,9 @@ nav:
       - Garage Local Backups: decisions/025-garage-velero-local-backups.md
       - IoT VLAN: decisions/026-iot-vlan.md
       - Loki Community Chart: decisions/027-loki-community-chart.md
+      - Multus IoT Attachments: decisions/028-multus-iot-attachments.md
+      - Home Assistant: decisions/029-home-assistant.md
+      - Public Domain and Certificates: decisions/030-public-domain-and-certificates.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md

@@ -22,6 +22,7 @@ Production and shared image defaults use Kubernetes 1.35.10. The lab runs 1.36.5
 - [ ] Inventory provisioning API-token permissions, endpoint TLS trust and floating tool/runtime versions; reduce broad credentials and replace trust bypasses with configured CA trust.
 - [ ] Verify Secret rotation updates dependent workloads, including reloads or restarts where required.
 - [ ] Evaluate an image registry allowlist after enumerating the current image sources. A permitted registry is not proof of trustworthy provenance.
+- [ ] Add baseline admission policies denying privileged containers, host namespaces, `hostPath` and added capabilities, with explicit per-workload exceptions for the infrastructure that needs them (Cilium, the GPU plugin, storage provisioners, Alloy, and Multus once [ADR-028](../decisions/028-multus-iot-attachments.md) lands). Audit rendered workloads first; a ValidatingPolicy also denies updates to objects that already violate it.
 
 ## 2.3 Budget resources and maintenance
 
