@@ -1,6 +1,6 @@
 # Backup & Restore
 
-This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with Garage (local) and AWS S3 (offsite) as storage backends. The legacy MinIO location `default` is read-only and keeps pre-cutover restore points until they expire around 2026-11-24.
+This runbook covers backup schedules, manual backup procedures, and restore operations using Velero with Garage (local) and AWS S3 (offsite) as storage backends.
 
 ## Automated Backup Schedules
 
@@ -115,8 +115,9 @@ deletion; choose a retention policy before automating recurring uploads.
 
 The temporary server had no Service, service-account token, production mounts or
 API access; its network policy allowed only DNS/KMS. This proves manual offsite
-Vault recovery without the production cluster, MinIO or NAS, while still relying
-on HCP access and independently held Vault administrative credentials.
+Vault recovery without the production cluster, local backup store or NAS, while
+still relying on HCP access and independently held Vault administrative
+credentials.
 
 ### Kubernetes Auth and ESO Recovery
 
@@ -429,7 +430,7 @@ kubectl logs -n backups deploy/garage
 velero --namespace backups backup-location get
 ```
 
-A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the storage endpoint. Check the service, credentials, and network connectivity. The read-only MinIO location only matters when restoring a backup taken before the Garage cutover.
+A `BackupStorageLocation` in `Unavailable` status indicates that Velero cannot reach the storage endpoint. Check the service, credentials, and network connectivity.
 
 ### Offsite (AWS S3) Connectivity
 
@@ -513,7 +514,7 @@ kopia snapshot restore <snapshot-id>/sonarr <new-private-directory> \
 
 Record the dump's original timestamp before copying it. For an offline SQLite dump in WAL mode, open it with `mode=ro&immutable=1` for integrity checks; never use immutable mode against a live writer. Install only into a stopped application on a fresh volume, following the [lab procedure](restore-lab.md#sonarr-recovery).
 
-This drill needed neither MinIO nor NAS data access, but the original services were not shut down. Backup credentials were obtained from the running production cluster. It therefore proves S3 database recovery across the lab's network boundary, not full site-loss recovery with externally escrowed credentials. Repeat with independently available credentials as part of the remaining recovery acceptance checks.
+This drill needed no local backup store or NAS data access, but the original services were not shut down. Backup credentials were obtained from the running production cluster. It therefore proves S3 database recovery across the lab's network boundary, not full site-loss recovery with externally escrowed credentials. Repeat with independently available credentials as part of the remaining recovery acceptance checks.
 
 ### Independent Repository Credential Recovery
 
@@ -556,10 +557,11 @@ HCP Terraform access for S3 credentials and a trusted recovery machine.
 
 This path passed for the qBittorrent volume below using repository credentials
 from `recovery-20260922-202350.json` and S3 credentials from HCP. Retrieval and
-application recovery did not query the production cluster or read MinIO/NAS.
-This provides credential independence from the live cluster, not independence
-from HCP or a substitute for separately protected recovery credentials. A rotated
-repository password must still match the selected backup repository.
+application recovery did not query the production cluster or read the local
+backup store/NAS. This provides credential independence from the live cluster,
+not independence from HCP or a substitute for separately protected recovery
+credentials. A rotated repository password must still match the selected backup
+repository.
 
 ## Authentik PostgreSQL Recovery
 

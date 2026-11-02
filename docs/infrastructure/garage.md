@@ -1,6 +1,6 @@
 # Garage
 
-Garage provides S3-compatible object storage within the cluster, serving as Velero's local backup target. It replaced [MinIO](minio.md) ([ADR-025](../decisions/025-garage-velero-local-backups.md)).
+Garage provides S3-compatible object storage within the cluster, serving as Velero's local backup target ([ADR-025](../decisions/025-garage-velero-local-backups.md)).
 
 ## Details
 
@@ -38,7 +38,7 @@ The idempotent `garage-setup` Job runs as an Argo CD `PostSync` hook. Through th
 Readiness and liveness probes check the S3 and admin listeners. `/health` returns `503` until a layout is applied, so probing it would block the first sync. The `GarageDown` alert fires when the Deployment has no available replica for 5 minutes, and a ServiceMonitor scrapes Garage's metrics.
 
 !!! info "Why Garage?"
-    MinIO's community edition is no longer distributed as images. Garage is actively maintained, publishes official images and implements the S3 operations Velero and Kopia use. Object data stays on the NAS like MinIO's did; only the metadata database is local, because an embedded database should not sit on NFS. It uses SQLite, which Garage recommends over LMDB for robustness after unclean shutdowns. A Velero backup and restore through Garage was verified before cutover.
+    Garage is actively maintained, publishes official images and implements the S3 operations Velero and Kopia use. Object data stays on the NAS; only the metadata database is local, because an embedded database should not sit on NFS. It uses SQLite, which Garage recommends over LMDB for robustness after unclean shutdowns. A Velero backup and restore through Garage was verified before cutover.
 
 ## Upstream Documentation
 

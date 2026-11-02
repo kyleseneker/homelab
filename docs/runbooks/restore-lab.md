@@ -389,7 +389,7 @@ qBittorrent Kopia snapshot `a3aa2dbe8202b4ba7d09b12c87bfa50b`:
 |-------|-----------------|
 | Machines | Both original VMs replaced from template 9010; new machine IDs, system UUIDs and node registrations |
 | Control plane/network | Offsite static-pod recovery, workload quarantine, normal node join and production Cilium configuration; DNS, cross-node Service and lab Gateway passed |
-| Credentials/data | S3 credentials from HCP; Kopia password from this recovered API; application volume downloaded read-only from S3 without production/MinIO/NAS reads |
+| Credentials/data | S3 credentials from HCP; Kopia password from this recovered API; application volume downloaded read-only from S3 without production, local backup store or NAS reads |
 | New storage | Shared provisioner created a new worker-local PVC/PV; target was empty; all 34 prepared-file hashes matched before startup |
 | Application | qBittorrent 5.2.3 retained source torrent/category/path/history metadata; fresh login passed and anonymous access was rejected; zero peers |
 | Restart/reboots | Checks passed after application restart and each node reboot; fresh node identities and the new PVC binding persisted; Cilium/Envoy healthy |

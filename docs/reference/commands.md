@@ -120,7 +120,7 @@ Vault helper commands own and clean up their port-forward. If port 8200 is occup
 ```bash
 read -rs VAL
 export VAL
-make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword
+make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_PASSWORD
 unset VAL
 ```
 

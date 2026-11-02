@@ -95,7 +95,6 @@ nav:
       - Alloy: infrastructure/alloy.md
       - NUT Exporter: infrastructure/nut-exporter.md
       - Garage: infrastructure/garage.md
-      - MinIO: infrastructure/minio.md
       - Velero: infrastructure/velero.md
       - etcd Backup: infrastructure/etcd-backup.md
       - Metrics Server: infrastructure/metrics-server.md

@@ -11,7 +11,7 @@ Rotate a credential at its authority and update its consumers in a planned order
     ```bash
     read -rs VAL
     export VAL
-    make vault-put-secret SECRET_PATH=infrastructure/minio KEY=rootPassword
+    make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_PASSWORD
     unset VAL
     ```
 

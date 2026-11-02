@@ -23,8 +23,6 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 - **s3ForcePathStyle**: `true`
 - **Credentials**: Sourced from the ExternalSecret `velero-local-credentials`, rendered from Vault `infrastructure/garage`
 
-The legacy MinIO location `default` (`http://minio.backups.svc.cluster.local:9000`, credentials `velero-cloud-credentials`) is read-only. It keeps pre-cutover restore points available until they expire around 2026-11-24 ([ADR-025](../decisions/025-garage-velero-local-backups.md)).
-
 ### Volume Backup
 
 - **Default method**: File system backup via Kopia (`defaultVolumesToFsBackup: true`)
@@ -55,7 +53,7 @@ Velero depends on Garage for its default backup storage location. The backup wor
 4. Both resource manifests and volume data are stored in Garage, which persists object data to NFS.
 
 !!! warning "Restore prerequisites"
-    Recovery credentials must be available outside Vault. Offsite-only bootstrap does not require a working Garage, MinIO or ESO. KMS auto-unseal requires existing Vault data; it does not recreate it. Follow the staged [disaster recovery procedure](../runbooks/disaster-recovery.md#complete-cluster-rebuild), and do not start ordinary workloads until their data is restored.
+    Recovery credentials must be available outside Vault. Offsite-only bootstrap does not require a working Garage or ESO. KMS auto-unseal requires existing Vault data; it does not recreate it. Follow the staged [disaster recovery procedure](../runbooks/disaster-recovery.md#complete-cluster-rebuild), and do not start ordinary workloads until their data is restored.
 
 Local-path/hostPath data is not captured by file-system backup. SQLite/native dumps and mounted holder pods bridge part of that gap; live NFS databases still require application-consistency and restore validation. See [Backup Architecture](../architecture/backups.md).
 

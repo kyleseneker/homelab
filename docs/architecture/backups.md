@@ -1,10 +1,10 @@
 # Backups
 
-This document covers the backup architecture: Velero to Garage on-site, Velero to AWS S3 offsite, and a separate etcd snapshot CronJob. Garage replaced MinIO as the on-site target ([ADR-025](../decisions/025-garage-velero-local-backups.md)); MinIO remains read-only until its retained backups expire.
+This document covers the backup architecture: Velero to Garage on-site ([ADR-025](../decisions/025-garage-velero-local-backups.md)), Velero to AWS S3 offsite, and a separate etcd snapshot CronJob.
 
 ## Backup Architecture
 
-Velero orchestrates cluster backups against two writable storage locations -- Garage inside the cluster for fast local recovery, and an AWS S3 bucket for offsite copies that survive losing the NAS. The legacy MinIO location stays read-only for restores until its last retained backup expires (around 2026-11-24).
+Velero orchestrates cluster backups against two storage locations -- Garage inside the cluster for fast local recovery, and an AWS S3 bucket for offsite copies that survive losing the NAS.
 
 ```mermaid
 flowchart LR
@@ -15,7 +15,6 @@ flowchart LR
     end
 
     velero -->|"local BSL (default)"| garage["Garage\n(in-cluster S3)"]
-    velero -.->|"default BSL (read-only)"| minio["MinIO\n(legacy)"]
     velero -->|"offsite BSL"| s3["AWS S3\nvelero-offsite-homelab"]
     garage --> nfsStorage["NFS Storage\n50Gi data + metadata snapshots (nfs-client)"]
     etcdCron -->|"snapshot + PKI"| nfsSnap["NFS\netcd-snapshots PVC"]
@@ -28,7 +27,6 @@ flowchart LR
 |-----------|-----------|---------|
 | Velero | `backups` | Backup orchestration, scheduling, and restore |
 | Garage | `backups` | S3-compatible object storage backend (on-site) |
-| MinIO | `backups` | Legacy on-site store, read-only until its retained backups expire |
 | AWS S3 | -- | Offsite backup target (`velero-offsite-homelab`, us-east-1) |
 | Velero AWS Plugin | `backups` | S3 API compatibility layer for both locations |
 | Kopia (File System Backup) | `backups` | PVC data backup via file system copy |
@@ -39,7 +37,6 @@ flowchart LR
 | Name | Provider | Bucket | Prefix | Region |
 |------|----------|--------|--------|--------|
 | `local` (default) | aws (Garage) | `velero` | -- | `garage` (path-style) |
-| `default` (read-only) | aws (MinIO) | `velero` | -- | `minio` (path-style) |
 | `offsite` | aws (S3) | `velero-offsite-homelab` | `velero` | `us-east-1` |
 
 !!! warning "The offsite prefix is load-bearing"
@@ -57,20 +54,18 @@ Garage runs as a **single node** in the `backups` namespace, providing an S3-com
 | Data | 50Gi PVC (`nfs-client`) |
 | Credentials | ExternalSecret (`garage-secrets`, synced from Vault `infrastructure/garage`) |
 
-MinIO still runs in standalone mode on its original 50Gi `nfs-client` PVC. Its location is read-only and receives no new backups.
-
 ## Velero Configuration
 
-Velero uses the AWS plugin to communicate with Garage, MinIO and AWS over the S3 API. File system backup (powered by Kopia) handles PVC data.
+Velero uses the AWS plugin to communicate with Garage and AWS over the S3 API. File system backup (powered by Kopia) handles PVC data.
 
 | Setting | Value |
 |---------|-------|
 | Namespace | `backups` |
 | Plugin | `velero-plugin-for-aws` |
-| Backup Storage | Garage (`local`), AWS S3 (`offsite`) and read-only MinIO (`default`) |
+| Backup Storage | Garage (`local`) and AWS S3 (`offsite`) |
 | Volume Backup Method | File System Backup (Kopia) |
 | Node Agent | DaemonSet, tolerates the control-plane taint so it runs on all three nodes |
-| Credentials | ExternalSecrets `velero-local-credentials`, `velero-offsite-credentials` and legacy `velero-cloud-credentials` |
+| Credentials | ExternalSecrets `velero-local-credentials` and `velero-offsite-credentials` |
 
 !!! info "Why Kopia?"
     Velero's file system backup (formerly Restic, now Kopia) copies PVC data at the file level. This works with supported mounted volumes, including NFS, without requiring volume snapshot support from the storage provider.
@@ -232,7 +227,7 @@ A green backup status is not a restore test. Record an isolated application rest
 
 ## Recovery Coverage
 
-The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object stores (Garage and legacy MinIO) and the NFS provisioner's root export are deliberately outside that schedule.
+The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object store (Garage) and the NFS provisioner's root export are deliberately outside that schedule.
 
 | Namespace / PVC | Data and recovery mechanism | Remaining limitation |
 |-----------------|-----------------------------|----------------------|
@@ -253,7 +248,6 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `backups/etcd-snapshots` | Daily complete etcd/PKI/host-configuration set, uploaded directly to `etcd-snapshots/` in S3 | Seven completed sets retained; offsite static control-plane boot, normal node registration and Cilium networking verified on replacement VMs; combined offsite qBittorrent recovery verified on those fresh machines; other application coverage remains open |
 | `backups/garage-data` | Local Velero object store data | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `backups/garage-meta` | Garage SQLite metadata on `local-path`, snapshotted every 6 hours to `backups/garage-snapshots` | Skipped by Velero like other local-path volumes; rebuilding on another node requires restoring the latest snapshot with the data volume |
-| `backups/minio` | Legacy local Velero object store, read-only | Holds restore points from before the Garage cutover until they expire around 2026-11-24; removed afterwards |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |
 | `monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` | Local-path TSDB, skipped by Velero | Historical metrics have no independent backup |
 | `monitoring/storage-loki-0` | Live NFS volume backup | Log/index consistency and application restore unverified |

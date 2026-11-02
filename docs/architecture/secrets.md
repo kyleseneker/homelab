@@ -56,8 +56,6 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
 | `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
 | `infrastructure/garage` | `garage-secrets`, `velero-local-credentials` | `backups` |
-| `infrastructure/minio` | `minio-credentials` (legacy, read-only MinIO) | `backups` |
-| `infrastructure/velero` | `velero-cloud-credentials` | `backups` |
 | `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
 | `infrastructure/alertmanager-heartbeat` | `alertmanager-heartbeat` | `monitoring` |
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
@@ -84,12 +82,12 @@ flowchart TD
 kubectl port-forward -n vault svc/vault 8200:8200
 
 # Write or update a secret
-vault kv put homelab/infrastructure/minio \
-  rootUser=minioadmin \
-  rootPassword=new_password
+vault kv put homelab/infrastructure/grafana \
+  admin-user=admin \
+  admin-password=new_password
 
 # Force an immediate sync (optional, otherwise waits for refreshInterval)
-kubectl annotate externalsecret -n backups minio-credentials \
+kubectl annotate externalsecret -n monitoring grafana-admin \
   force-sync=$(date +%s) --overwrite
 ```
 

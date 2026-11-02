@@ -47,10 +47,11 @@ External Secrets (ADR-007). Before switching, a test backup and restore through
 Garage must succeed. The AWS plugin sends `CRC32` request checksums by default; if
 Garage rejects them, set `checksumAlgorithm` to empty for this location only.
 
-Keep the MinIO location read-only for restores until its retained local backups
-expire (30 days), then remove MinIO. Do not repoint the existing location: Velero
-removes its records of backups that are no longer present in the location's storage.
-The offsite location and retention periods are unchanged.
+Do not repoint MinIO's location at Garage: Velero removes its records of backups that
+are no longer present in the location's storage. Remove MinIO and its location once
+Garage holds verified backups, without keeping MinIO's retained local backups; the
+weekly offsite backups cover the same period. The offsite location and retention
+periods are unchanged.
 
 ## Alternatives Considered
 
@@ -85,6 +86,5 @@ The offsite location and retention periods are unchanged.
   repository. Deploying with app-template avoids that dependency but makes this
   repository own Garage's configuration file.
 - Existing local backups are not migrated. Restore points created before the
-  cutover remain available only while MinIO still runs.
-- Alerts, recovery helpers and documentation that name MinIO change with the
-  cutover.
+  cutover are deleted with MinIO; the weekly offsite backups cover that period for
+  the namespaces they include.
