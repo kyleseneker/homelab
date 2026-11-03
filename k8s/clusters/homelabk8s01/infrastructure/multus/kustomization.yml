@@ -1,0 +1,110 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# multus-cni's v4.3.1 thick manifest, pinned to the release commit; the patches
+# below are this cluster's only changes to it (ADR-028).
+resources:
+  - https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/d61706810cc8be60381dcb66e6a2428d5eb2795a/deployments/multus-daemonset-thick.yml
+# The release manifest references the floating snapshot-thick image.
+images:
+  - name: ghcr.io/k8snetworkplumbingwg/multus-cni
+    newTag: v4.3.1-thick
+    digest: sha256:a357a79359b80ddd5f4699117946cacf3b54f5baecf7944535594863e875fc25
+patches:
+  # Multus only reads attachment definitions, where upstream grants every verb
+  # on them. It writes a pod's network-status annotation through the status
+  # subresource, so it needs no update on pods themselves; a Kyverno policy
+  # limits those status writes to that annotation.
+  - target:
+      kind: ClusterRole
+      name: multus
+    patch: |
+      - op: replace
+        path: /rules/0
+        value:
+          apiGroups:
+            - k8s.cni.cncf.io
+          resources:
+            - network-attachment-definitions
+          verbs:
+            - get
+            - list
+            - watch
+      - op: replace
+        path: /rules/1
+        value:
+          apiGroups:
+            - ""
+          resources:
+            - pods
+          verbs:
+            - get
+            - list
+            - watch
+      - op: add
+        path: /rules/-
+        value:
+          apiGroups:
+            - ""
+          resources:
+            - pods/status
+          verbs:
+            - update
+  # namespaceIsolation limits a pod to definitions in its own namespace, and a
+  # globalNamespaces value naming no namespace removes the default namespace's
+  # exemption. Cilium's configuration is the readiness indicator, so Multus never
+  # serves a pod before Cilium is ready on the node.
+  - target:
+      kind: ConfigMap
+      name: multus-daemon-config
+    patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: multus-daemon-config
+      data:
+        daemon-config.json: |
+          {
+              "chrootDir": "/hostroot",
+              "cniVersion": "0.3.1",
+              "logLevel": "error",
+              "logToStderr": true,
+              "cniConfigDir": "/host/etc/cni/net.d",
+              "multusAutoconfigDir": "/host/etc/cni/net.d",
+              "multusConfigFile": "auto",
+              "socketDir": "/host/run/multus/",
+              "readinessindicatorfile": "/host/etc/cni/net.d/05-cilium.conflist",
+              "namespaceIsolation": true,
+              "globalNamespaces": "multus-no-global-namespace"
+          }
+  # Multus is in every pod's sandbox creation, so it runs node-critical, with
+  # memory headroom and no CPU limit to throttle it.
+  - target:
+      kind: DaemonSet
+      name: kube-multus-ds
+    patch: |
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: kube-multus-ds
+      spec:
+        template:
+          spec:
+            priorityClassName: system-node-critical
+            containers:
+              - name: kube-multus
+                resources:
+                  $patch: replace
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    memory: 256Mi
+            initContainers:
+              - name: install-multus-binary
+                resources:
+                  $patch: replace
+                  requests:
+                    cpu: 10m
+                    memory: 15Mi
+                  limits:
+                    memory: 64Mi
