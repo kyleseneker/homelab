@@ -13,3 +13,9 @@ ipam:
     clusterPoolIPv4PodCIDRList:
       - 10.0.0.0/8
     clusterPoolIPv4MaskSize: 24
+# ADR-028: Multus adds its own CNI configuration, with Cilium as the default network.
+cni:
+  exclusive: false
+# Only the primary NIC carries Cilium traffic, so a VLAN 20 NIC never does.
+devices:
+  - eth0
