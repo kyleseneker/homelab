@@ -1,0 +1,63 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-privileged-containers
+  annotations:
+    policies.kyverno.io/title: Disallow Privileged Containers
+    policies.kyverno.io/category: Pod Security Standards (Baseline)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Privileged containers have full access to the host. Containers must
+      not set securityContext.privileged or a non-default procMount.
+spec:
+  validationActions:
+    - Audit
+  # Fail closed, like the legacy policies' webhooks.
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  autogen:
+    podControllers:
+      controllers:
+        - daemonsets
+        - deployments
+        - jobs
+        - cronjobs
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    # kube-system holds the control plane and Cilium; every other workload that
+    # needs host access has a PolicyException in baseline-exceptions.yml.
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+  matchConditions:
+    - name: skip-cilium-connectivity-tests
+      expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  variables:
+    - name: allContainers
+      expression: >-
+        object.spec.containers + object.spec.?initContainers.orValue([]) +
+        object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: >-
+        variables.allContainers.all(c, c.?securityContext.?privileged.orValue(false) == false)
+      message: Privileged containers are not allowed.
+    - expression: >-
+        variables.allContainers.all(c, c.?securityContext.?procMount.orValue('Default') == 'Default')
+      message: Containers must use the default /proc mount.

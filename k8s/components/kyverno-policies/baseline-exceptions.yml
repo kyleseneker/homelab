@@ -1,0 +1,206 @@
+# Pod Security baseline exceptions. Exceptions are honored only in the kyverno
+# namespace, and each allows exactly the values its workload needs; the policy
+# still rejects anything else.
+# Intel QSV hardware transcoding reads the render node.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-arr-jellyfin
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/dev/dri'
+  matchConditions:
+    - name: arr-jellyfin
+      expression: >-
+        object.metadata.namespace == 'arr' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-jellyfin'
+---
+# Intel QSV hardware transcoding reads the render node.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-arr-tdarr
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/dev/dri'
+  matchConditions:
+    - name: arr-tdarr
+      expression: >-
+        object.metadata.namespace == 'arr' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-tdarr'
+---
+# Gluetun manages the pod's VPN tunnel, routes and firewall.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-arr-vpn-downloads
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: restrict-capabilities
+      kind: ValidatingPolicy
+    - name: restrict-sysctls
+      kind: ValidatingPolicy
+  allowedValues:
+    - 'NET_ADMIN'
+    - 'net.ipv4.conf.all.src_valid_mark'
+  matchConditions:
+    - name: arr-vpn-downloads
+      expression: >-
+        object.metadata.namespace == 'arr' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-vpn-downloads'
+---
+# File system backups read and restore pod volumes through the kubelet's directories.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-velero-node-agent
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/var/lib/kubelet/pods'
+    - '/var/lib/kubelet/plugins'
+  matchConditions:
+    - name: velero-node-agent
+      expression: >-
+        object.metadata.namespace == 'backups' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'name'].orValue('') == 'node-agent'
+---
+# Snapshots etcd and records the control-plane configuration needed to rebuild it.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-etcd-backup
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/etc/containerd/config.toml'
+    - '/etc/default/kubelet'
+    - '/etc/hostname'
+    - '/etc/kubernetes'
+    - '/etc/kubernetes/pki'
+    - '/etc/os-release'
+    - '/var/lib/kubelet/config.yaml'
+    - '/var/lib/kubelet/kubeadm-flags.env'
+  matchConditions:
+    - name: etcd-backup
+      expression: >-
+        object.metadata.namespace == 'backups' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'etcd-backup'
+---
+# Registers the GPU with the kubelet and exposes its device nodes.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-intel-gpu-plugin
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/dev/dri'
+    - '/sys/class/drm'
+    - '/var/lib/kubelet/device-plugins'
+    - '/var/run/cdi'
+  matchConditions:
+    - name: intel-gpu-plugin
+      expression: >-
+        object.metadata.namespace == 'intel-gpu-operator' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app'].orValue('') == 'intel-gpu-plugin'
+---
+# Ships the API server audit log from the control-plane node.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-alloy
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/var/log/kubernetes/audit'
+  matchConditions:
+    - name: alloy
+      expression: >-
+        object.metadata.namespace == 'monitoring' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'alloy'
+---
+# Reports node metrics from the host's namespaces and filesystems.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-node-exporter
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-namespaces
+      kind: ValidatingPolicy
+    - name: disallow-host-ports
+      kind: ValidatingPolicy
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - 'hostNetwork'
+    - 'hostPID'
+    - '9100'
+    - '/'
+    - '/proc'
+    - '/sys'
+  matchConditions:
+    - name: node-exporter
+      expression: >-
+        object.metadata.namespace == 'monitoring' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'prometheus-node-exporter'
+---
+# The provisioner's helper pods create and delete volume directories on the node.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-local-path-helper
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - '/opt/local-path-provisioner'
+    - '/opt/local-path-provisioner/'
+  matchConditions:
+    - name: local-path-helper
+      expression: >-
+        object.metadata.namespace == 'local-path-storage' &&
+        (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
+           object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'local-path-provisioner-helper'

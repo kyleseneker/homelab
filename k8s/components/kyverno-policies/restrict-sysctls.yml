@@ -1,0 +1,65 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-sysctls
+  annotations:
+    policies.kyverno.io/title: Restrict Sysctls
+    policies.kyverno.io/category: Pod Security Standards (Baseline)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Pods may set only the sysctls the Pod Security baseline treats as
+      safe. A PolicyException can allow further sysctls by name in
+      allowedValues.
+spec:
+  validationActions:
+    - Audit
+  # Fail closed, like the legacy policies' webhooks.
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  autogen:
+    podControllers:
+      controllers:
+        - daemonsets
+        - deployments
+        - jobs
+        - cronjobs
+        - replicasets
+        - replicationcontrollers
+        - statefulsets
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    # kube-system holds the control plane and Cilium; every other workload that
+    # needs host access has a PolicyException in baseline-exceptions.yml.
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values:
+            - kube-system
+  matchConditions:
+    - name: skip-cilium-connectivity-tests
+      expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  variables:
+    - name: safeSysctls
+      expression: >-
+        ['kernel.shm_rmid_forced', 'net.ipv4.ip_local_port_range',
+         'net.ipv4.ip_unprivileged_port_start', 'net.ipv4.tcp_syncookies',
+         'net.ipv4.ping_group_range', 'net.ipv4.ip_local_reserved_ports',
+         'net.ipv4.tcp_keepalive_time', 'net.ipv4.tcp_fin_timeout',
+         'net.ipv4.tcp_keepalive_intvl', 'net.ipv4.tcp_keepalive_probes']
+  validations:
+    - expression: >-
+        object.spec.?securityContext.?sysctls.orValue([]).all(s,
+          s.name in variables.safeSysctls || s.name in exceptions.allowedValues)
+      message: Unsafe sysctls are not allowed.

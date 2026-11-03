@@ -66,3 +66,9 @@ reportsController:
       memory: 64Mi
     limits:
       memory: 192Mi
+features:
+  # Exceptions are honored only in the kyverno namespace, which only cluster
+  # admins write, so a workload's own namespace cannot exempt it.
+  policyExceptions:
+    enabled: true
+    namespace: kyverno
