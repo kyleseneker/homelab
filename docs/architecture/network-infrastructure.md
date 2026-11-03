@@ -47,7 +47,7 @@ All physical links are Gigabit Ethernet. See [Hardware Inventory](../reference/h
 
 The NAS sits on the Default VLAN (192.168.1.158) because it serves both household devices and the Kubernetes cluster. The UNAS Pro does not support dual-homing, so its management interface remains on the Default VLAN.
 
-The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface. Default and IoT are excluded from it. On the host, `vmbr0` is VLAN-aware: the uplink and the host carry VLANs 1 and 99, and each VM NIC carries only the untagged native VLAN.
+The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data traffic, Management (99) tagged for the Proxmox management subinterface, and IoT (20) tagged for the workers' attachment NICs ([ADR-028](../decisions/028-multus-iot-attachments.md)). Default is excluded from it. On the host, `vmbr0` is VLAN-aware: the uplink carries VLANs 1, 20 and 99, the host only 1 and 99, and each VM NIC exactly one VLAN: the untagged native VLAN, or VLAN 20 for a worker's attachment NIC.
 
 ### DHCP Scopes
 
@@ -79,7 +79,7 @@ USW-16-PoE, from the switch MAC forwarding table and port configuration:
 | Port | Device | VLAN |
 |------|--------|------|
 | 1 | Uplink to Dream Router 7 | Trunk |
-| 2 | MS-01 `nic0` | Native Homelab (10), tagged Management (99); Default and IoT excluded |
+| 2 | MS-01 `nic0` | Native Homelab (10), tagged Management (99) and IoT (20); Default excluded |
 | 4 | Reserved for out-of-band management | Native Management (99) |
 | 5 | USP PDU Pro | Management (99) |
 | 7 | UNAS Pro | Default (1) |

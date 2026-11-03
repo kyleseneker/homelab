@@ -36,10 +36,15 @@ The first three are Kyverno `ValidatingPolicy` resources that Kyverno generates 
 ## Attaching a Workload
 
 1. Label the workload's namespace `home.seneker.io/iot-attachments: "true"`.
-2. Add the workload's definition to that namespace: one macvlan definition per workload, with its address and MAC recorded in the network docs and in the worker NIC's Proxmox IP filter, and the `tuning` sysctls from ADR-028.
-3. Label the pod template `home.seneker.io/iot-attachment: "true"` and annotate it with `k8s.v1.cni.cncf.io/networks: <definition-name>`.
+2. Record the attachment in `iot_nic.attachments` in `terraform/hosts/homelabk8s01/terraform.tfvars`, with its address and the ports devices connect to, and apply it to both workers. The address becomes a source `ipfilter-net1` allows, and the ports open from 192.168.20.0/24.
+3. Add the workload's definition to that namespace: one macvlan definition per workload on `ens19`, with its address and MAC recorded in the network docs, and the `tuning` sysctls from ADR-028.
+4. Label the pod template `home.seneker.io/iot-attachment: "true"`, annotate it with `k8s.v1.cni.cncf.io/networks: <definition-name>`, and select nodes labelled `home.seneker.io/iot-vlan=true`.
 
 The attachment carries only its connected 192.168.20.0/24 route; the default route stays on Cilium's `eth0`.
+
+## Worker NICs
+
+Each worker has a second NIC, `net1` in Proxmox and `ens19` in the VM, as an access port on VLAN 20. Proxmox filters it outside the node: MAC filtering is off for the worker VMs, because macvlan needs extra MACs, but `ipfilter-net1` allows only the recorded attachment addresses, and inbound it admits only mDNS, SSDP and the recorded ports from 192.168.20.0/24. The `k8s_iot_nic` role (`make k8s-iot-nic`) keeps `ens19` a bare link with no addresses, IPv6 or forwarding, and an nftables table that drops anything the node itself would accept, route or send on it.
 
 ## Operations
 

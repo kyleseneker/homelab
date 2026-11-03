@@ -51,6 +51,8 @@
     enabled: true
     state: started
     daemon_reload: true
+  # Check mode does not write the unit, so it cannot be found yet.
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Apply sysctls and the filter before the link comes up
   ansible.builtin.meta: flush_handlers

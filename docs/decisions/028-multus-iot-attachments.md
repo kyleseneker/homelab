@@ -28,16 +28,17 @@ Add [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) as a CNI meta-p
 ### Hypervisor
 
 - [ADR-016's hypervisor enforcement](016-vlan-segmentation.md#hypervisor-enforcement) comes first: VLAN filtering on `vmbr0`, access-port NICs, and Proxmox source filtering. VLAN 20 is added to switch port 2 only after that.
-- Give each worker VM a second NIC, an access port tagged VLAN 20, through the `proxmox-vm` module. The control plane gets none.
+- Give each worker VM a second NIC (`net1`), an access port tagged VLAN 20, through the `proxmox-vm` module's `iot_nic`. The control plane gets none. Its IP filter, `ipfilter-net1`, starts empty, so the NIC sends nothing until an attachment is recorded.
 - MAC filtering is a per-VM Proxmox option and macvlan needs extra MACs, so it is off for the whole worker VM. The NIC's IP filter allows only the recorded attachment addresses, plus the MAC-derived IPv6 link-local address of any attachment that keeps IPv6. An inbound rule set admits only what attached workloads need: mDNS and SSDP, plus each workload's listed ports from 192.168.20.0/24. This filter runs outside the pod and the node, so compromising either does not remove it.
 
 ### Nodes
 
-- Bring each worker's VLAN 20 NIC up as a link only, with:
+- Bring each worker's VLAN 20 NIC (`ens19`, the kernel's name for `net1`) up as a link only, through the `k8s_iot_nic` role, with:
     - no IPv4 address and `disable_ipv6=1`
     - `accept_ra=0`, `arp_ignore=8`, `rp_filter=1` and `forwarding=0`
 - Add an nftables `inet` table that drops prerouting, input and forward traffic arriving on that NIC, so a node never accepts or routes traffic from VLAN 20. Never use a `netdev` ingress hook: it runs before the macvlan handler and would cut off the attached pods ([dev.c](https://github.com/torvalds/linux/blob/v6.8/net/core/dev.c)).
-- Label the workers so attached pods can select them.
+- Load that table from its own systemd unit before networking starts, never through the stock `nftables.service`, whose default configuration flushes Cilium's and Kubernetes' rules.
+- Label the workers `home.seneker.io/iot-vlan=true` so attached pods can select them.
 
 ### Cilium
 
