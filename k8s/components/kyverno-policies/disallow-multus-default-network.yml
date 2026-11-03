@@ -20,6 +20,10 @@ spec:
   # Enforced by the API server itself, so it covers kube-system without a
   # fail-closed webhook in the path of the CNI's own pods.
   autogen:
+    # Pod-controller autogen would stop Kyverno from generating the native
+    # policy. A controller's pods are still checked as they are created.
+    podControllers:
+      controllers: []
     validatingAdmissionPolicy:
       enabled: true
   matchConstraints:
