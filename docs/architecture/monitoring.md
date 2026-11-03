@@ -114,6 +114,7 @@ Loki runs in **single-binary mode**, combining all Loki components (distributor,
 | Retention | 168 hours (7 days) |
 | Storage | 10Gi PVC (`nfs-client`), filesystem backend |
 | Access | Via Grafana data source |
+| Alerting | Ruler sends LogQL alerts to Alertmanager |
 
 !!! info "Filesystem Backend"
     Loki uses the local filesystem (backed by NFS PVC) for chunk and index storage. This avoids the need for an external object store while providing persistence across pod restarts.

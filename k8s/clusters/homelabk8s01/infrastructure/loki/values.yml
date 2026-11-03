@@ -30,6 +30,13 @@ loki:
     delete_request_store: filesystem
   limits_config:
     retention_period: 168h
+  rulerConfig:
+    alertmanager_url: http://kube-prometheus-stack-alertmanager.monitoring.svc:9093
+    # The rules sidecar's folder; the ruler reads <directory>/<tenant>/.
+    storage:
+      type: local
+      local:
+        directory: /rules
 singleBinary:
   replicas: 1
   resources:
@@ -43,7 +50,14 @@ singleBinary:
     enabled: true
     storageClass: nfs-client
     size: 10Gi
+# The rules sidecar reads only ConfigMaps labelled loki_rule in this namespace.
+rbac:
+  namespaced: true
 sidecar:
+  rules:
+    # Without auth_enabled, every rule belongs to the "fake" tenant.
+    folder: /rules/fake
+    resource: configmap
   resources:
     requests:
       cpu: 10m

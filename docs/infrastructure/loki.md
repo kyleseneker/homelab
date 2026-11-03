@@ -25,6 +25,7 @@ Loki is a log aggregation system designed for efficiency, storing log streams wi
 - **Resources**:
     - Requests: 100m CPU, 256Mi memory
     - Limits: 500m CPU, 512Mi memory (the chart derives `GOMEMLIMIT` from the memory limit)
+- **Ruler**: Evaluates LogQL alerting rules every minute and sends to Alertmanager at `kube-prometheus-stack-alertmanager.monitoring.svc:9093`. The rules sidecar copies ConfigMaps labelled `loki_rule` in `monitoring` into `/rules/fake`, the directory of the single tenant Loki uses without `auth_enabled`. Its Role covers this namespace only, and it reads ConfigMaps, never Secrets.
 - **Memberlist**: The memberlist Service publishes not-ready addresses. The single replica is its own only peer, and Loki exits if its startup join fails 10 times; without this, the join waits until the Pod is ready.
 
 ## Cluster Integration
