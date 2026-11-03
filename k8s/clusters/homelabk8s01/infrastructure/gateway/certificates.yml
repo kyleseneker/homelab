@@ -1,25 +1,5 @@
-# Gateway certificates are explicit rather than generated from Gateway
-# annotations: cert-manager's Gateway integration applies one issuer per
-# Gateway, and the listeners use different issuers during the ADR-030
-# migration. Apple platforms require the server auth usage.
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: homelab-gateway-tls
-  namespace: default
-spec:
-  secretName: homelab-gateway-tls
-  dnsNames:
-    - "*.homelab.local"
-  usages:
-    - digital signature
-    - key encipherment
-    - server auth
-  issuerRef:
-    name: homelab-ca-issuer
-    kind: ClusterIssuer
-    group: cert-manager.io
----
+# Gateway certificates are explicit Certificate resources rather than generated
+# from Gateway annotations (ADR-030). Apple platforms require the server auth usage.
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

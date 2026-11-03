@@ -16,7 +16,7 @@ controllers:
           repository: ghcr.io/gethomepage/homepage
           tag: v2.7.0
         env:
-          HOMEPAGE_ALLOWED_HOSTS: home.homelab.local,home.seneker.io
+          HOMEPAGE_ALLOWED_HOSTS: home.seneker.io
         envFrom:
           - secretRef:
               name: homepage-secrets
@@ -58,14 +58,8 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
-      - group: gateway.networking.k8s.io
-        kind: Gateway
-        name: homelab-gateway
-        namespace: default
         sectionName: https-home-root
     hostnames:
-      - home.homelab.local
       - home.seneker.io
     rules:
       - matches:

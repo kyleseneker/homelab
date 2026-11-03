@@ -58,14 +58,8 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
-      - group: gateway.networking.k8s.io
-        kind: Gateway
-        name: homelab-gateway
-        namespace: default
         sectionName: https-home
     hostnames:
-      - jellyfin.homelab.local
       - jellyfin.home.seneker.io
     rules:
       - matches:

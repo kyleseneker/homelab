@@ -3,6 +3,5 @@ kind: Kustomization
 resources:
   - certificates.yml
   - gateway.yml
-  - homelab-local-redirects.yml
   - http-redirect.yml
   - l2-pool.yml

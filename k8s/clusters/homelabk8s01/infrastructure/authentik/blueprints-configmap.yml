@@ -233,8 +233,6 @@ data:
           client_secret: !Env ARGOCD_OIDC_CLIENT_SECRET
           redirect_uris:
             - matching_mode: strict
-              url: https://argocd.homelab.local/auth/callback
-            - matching_mode: strict
               url: https://argocd.home.seneker.io/auth/callback
           authorization_flow:
             !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
@@ -268,8 +266,6 @@ data:
           client_id: grafana
           client_secret: !Env GRAFANA_OIDC_CLIENT_SECRET
           redirect_uris:
-            - matching_mode: strict
-              url: https://grafana.homelab.local/login/generic_oauth
             - matching_mode: strict
               url: https://grafana.home.seneker.io/login/generic_oauth
           authorization_flow:
