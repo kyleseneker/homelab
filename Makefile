@@ -200,7 +200,7 @@ vault-init: ## Initialize Vault and configure ESO integration (one-time)
 
 export SECRET_PATH KEY VAL VAULT_NS
 
-vault-put-secret: ## Patch one Vault key safely (set SECRET_PATH, KEY and exported VAL)
+vault-put-secret: ## Patch one Vault key safely (set SECRET_PATH and KEY; prompts for the value)
 	@./scripts/with-vault.sh ./scripts/vault-put-secret.sh
 
 arr-keys-adopt: ## Adopt live *arr keys into Vault without replacing sibling keys

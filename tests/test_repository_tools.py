@@ -3,8 +3,10 @@ import json
 import os
 from pathlib import Path
 import re
+import select
 import subprocess
 import tempfile
+import time
 import unittest
 
 import yaml
@@ -126,6 +128,67 @@ sys.exit(2 if "-cas=0" in sys.argv else 0)
             self.assertIn("-cas=0", calls[1]["args"])
             self.assertEqual(calls[0]["payload"], {"sonarr-api-key": value})
             self.assertNotIn(value.encode(), result.stdout + result.stderr)
+
+    def recording_vault(self, directory):
+        vault = directory / "vault"
+        vault.write_text('''#!/usr/bin/env python3
+import json, os, sys
+with open(os.environ["CALL_LOG"], "a") as out:
+    out.write(json.dumps({"args":sys.argv[1:], "payload":json.load(sys.stdin)})+"\\n")
+''')
+        vault.chmod(0o755)
+        env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}", VAULT_TOKEN="test",
+                   SECRET_PATH="apps/arr", KEY="sonarr-api-key", CALL_LOG=str(directory / "calls"))
+        env.pop("VAL", None)
+        return env
+
+    def test_prompts_for_the_value_without_echo(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            env = self.recording_vault(directory)
+            value = 'typed $HOME $(touch should-not-exist) "quotes"'
+            controller, terminal = os.openpty()
+            process = subprocess.Popen([str(ROOT / "scripts/vault-put-secret.sh")], env=env,
+                                       stdin=terminal, stdout=terminal, stderr=terminal)
+            os.close(terminal)
+            output = b""
+            try:
+                while b"sonarr-api-key: " not in output:
+                    ready, _, _ = select.select([controller], [], [], 5)
+                    self.assertTrue(ready, f"no prompt: {output!r}")
+                    output += os.read(controller, 1024)
+                os.write(controller, value.encode() + b"\n")
+                # Read while the script runs: a closed terminal can discard any echo.
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    if select.select([controller], [], [], 0.1)[0]:
+                        try:
+                            chunk = os.read(controller, 1024)
+                        except OSError:
+                            break
+                        if not chunk:
+                            break
+                        output += chunk
+                    elif process.poll() is not None:
+                        break
+                self.assertEqual(process.wait(timeout=5), 0)
+            finally:
+                os.close(controller)
+                if process.poll() is None:
+                    process.kill()
+            calls = [json.loads(line) for line in (directory / "calls").read_text().splitlines()]
+            self.assertEqual(calls[0]["payload"], {"sonarr-api-key": value})
+            self.assertNotIn(value.encode(), output)
+
+    def test_without_value_or_terminal_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            env = self.recording_vault(directory)
+            result = subprocess.run([str(ROOT / "scripts/vault-put-secret.sh")], env=env,
+                                    stdin=subprocess.DEVNULL, capture_output=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(b"Set VAL", result.stderr)
+            self.assertFalse((directory / "calls").exists())
 
     def test_port_forward_failure_never_runs_vault_command(self):
         with tempfile.TemporaryDirectory() as name:

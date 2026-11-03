@@ -34,12 +34,10 @@ Native backups are UI state under **Settings** > **System** > **Backups**:
 
 - **Automatic backups**: daily, keeping 7, including history.
 - **Locations**: this system only, which writes to `/config/backups`. Encryption is set per location; keep it on.
-- **Encryption key**: store it in Vault before relying on a backup, since a restore needs it. With `VAULT_TOKEN` exported:
+- **Encryption key**: store it in Vault before relying on a backup, since a restore needs it. With `VAULT_TOKEN` exported, the helper prompts for it:
 
 ```bash
-read -rs VAL; export VAL
 make vault-put-secret SECRET_PATH=apps/home-assistant KEY=backup-encryption-key
-unset VAL
 ```
 
 `HomeAssistantBackupStale` fires when `sensor.backup_last_successful_automatic_backup` is more than 36 hours old, or missing while Prometheus can scrape.
@@ -77,9 +75,7 @@ The token carries its user's rights, so it belongs to a dedicated non-admin user
 3. Store it in Vault, then sign out:
 
     ```bash
-    read -rs VAL; export VAL
     make vault-put-secret SECRET_PATH=apps/home-assistant KEY=prometheus-token
-    unset VAL
     ```
 
 A rejected token counts as a failed login, so five failed scrapes ban the Prometheus pod's address. To rotate, create the new token, store it the same way, force an External Secrets refresh, wait for the scrape to succeed with it, and only then delete the old one ([secret rotation](../runbooks/secret-rotation.md)).

@@ -4,7 +4,20 @@ set -euo pipefail
 : "${VAULT_TOKEN:?Export VAULT_TOKEN first}"
 : "${SECRET_PATH:?Set SECRET_PATH}"
 : "${KEY:?Set KEY}"
-: "${VAL:?Set VAL}"
+# Without an exported VAL, prompt without echo so the value stays out of history.
+if [[ -z "${VAL:-}" ]]; then
+  if [[ ! -t 0 ]]; then
+    echo "Set VAL, or run from a terminal to be prompted." >&2
+    exit 1
+  fi
+  read -rsp "Value for homelab/$SECRET_PATH $KEY: " VAL
+  echo >&2
+  if [[ -z "$VAL" ]]; then
+    echo "Empty value; nothing written." >&2
+    exit 1
+  fi
+  export VAL
+fi
 payload="$(python3 -c 'import json,os; print(json.dumps({os.environ["KEY"]: os.environ["VAL"]}))')"
 if printf '%s' "$payload" | vault kv patch "homelab/$SECRET_PATH" - >/dev/null; then
   exit 0

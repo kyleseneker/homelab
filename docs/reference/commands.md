@@ -88,7 +88,7 @@ Run `make k8s-render` before pushing any change under `k8s/`. It is the only che
 | Command | Description |
 |---------|-------------|
 | `make vault-init` | Initialize Vault and configure ESO integration (one-time) |
-| `make vault-put-secret` | Patch one Vault field safely (`SECRET_PATH=... KEY=...`, export `VAL`) |
+| `make vault-put-secret` | Patch one Vault field safely (`SECRET_PATH=... KEY=...`; prompts for the value) |
 | `make vault-status` | Show Vault seal status |
 | `make arr-keys-adopt` | Copy each *arr app's live API key into Vault at `homelab/apps/arr` (never prints the key) |
 
@@ -115,13 +115,10 @@ make CLUSTER=homelabk8s02 k8s-deploy
 
 Make defaults `KUBECONFIG` to the repository's kubeconfig. Set it explicitly when using another cluster; `CLUSTER` selects Terraform/inventory paths but does not verify the API server identity. The ordered deployment fetches its kubeconfig before applying bootstrap resources.
 
-Vault helper commands own and clean up their port-forward. If port 8200 is occupied they fail without stopping the other process; set `VAULT_PORT` to an available local port. Export the token and secret value without placing them in shell history, for example:
+Vault helper commands own and clean up their port-forward. If port 8200 is occupied they fail without stopping the other process; set `VAULT_PORT` to an available local port. Export the token without placing it in shell history. The helper prompts for the secret value without echoing it; scripts can export `VAL` instead:
 
 ```bash
-read -rs VAL
-export VAL
 make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_PASSWORD
-unset VAL
 ```
 
 The helper patches existing KV v2 data. Its create fallback uses CAS 0 and cannot overwrite an existing secret after a failed patch. A concurrent change or insufficient permissions fails explicitly.

@@ -6,13 +6,10 @@ Rotate a credential at its authority and update its consumers in a planned order
 
 1. Identify the Vault field, target ExternalSecrets and all consumers from the [secret inventory](../architecture/secrets.md). Record whether the application reads it at startup, reloads it, or stores its own copy in a database.
 2. Establish a tested recovery/admin session and create the replacement credential at its authority when appropriate. Database, API and OIDC secrets can require different ordering or a temporary overlap.
-3. Export an authorized `VAULT_TOKEN`, read the value privately and patch one field:
+3. Export an authorized `VAULT_TOKEN` and patch one field; the helper prompts for the value without echoing it:
 
     ```bash
-    read -rs VAL
-    export VAL
     make vault-put-secret SECRET_PATH=apps/vpn KEY=OPENVPN_PASSWORD
-    unset VAL
     ```
 
     The helper preserves sibling keys and refuses an unsafe overwrite after a failed patch. A complete `vault kv put` deliberately replaces every field at a path and should not be used for an ordinary single-field rotation.
