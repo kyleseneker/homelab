@@ -77,9 +77,13 @@ Namespaces are not excluded from these controls, because one workload that needs
 
 A new workload that needs host access needs its exception before it deploys. An exception trusts its label within its namespace: any pod there with that label receives the exception's values. `kubectl debug node/<node>` creates a pod with the host's namespaces and root filesystem, so run it in `kube-system`: `kubectl debug -n kube-system node/<node> -it --image=<image>`.
 
+### Multus
+
+Four policies guard Multus ([ADR-028](../decisions/028-multus-iot-attachments.md)); see [Multus](multus.md#admission) for their rules. Three set `autogen.validatingAdmissionPolicy.enabled`, so Kyverno generates them as native `ValidatingAdmissionPolicy` objects that the API server enforces in every namespace, including `kube-system`. Kyverno's own webhooks exclude `kube-system` through the chart's `config.webhooks` and `resourceFilters`; the native policies avoid a fail-closed webhook in the path of Cilium's and Multus's pods. Kyverno skips that generation for a policy with pod-controller autogen, so the two pod policies set `autogen.podControllers.controllers: []`; a controller's pods are still checked as they are created.
+
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/multus` covers the default-network and attachment-request policies. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
 kyverno test tests/kyverno

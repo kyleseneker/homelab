@@ -82,6 +82,7 @@ nav:
   - Infrastructure:
       - infrastructure/index.md
       - Cilium Gateway: infrastructure/cilium-gateway.md
+      - Multus: infrastructure/multus.md
       - cert-manager: infrastructure/cert-manager.md
       - trust-manager: infrastructure/trust-manager.md
       - Blackbox Exporter: infrastructure/blackbox-exporter.md

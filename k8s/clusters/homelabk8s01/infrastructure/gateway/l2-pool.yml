@@ -12,4 +12,7 @@ kind: CiliumL2AnnouncementPolicy
 metadata:
   name: homelab-l2
 spec:
+  # Announce only on the primary NIC, never on a node's VLAN 20 NIC (ADR-028).
+  interfaces:
+    - ^eth0$
   loadBalancerIPs: true

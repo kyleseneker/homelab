@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -46,8 +46,9 @@ Add [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) as a CNI meta-p
 
 ### Multus
 
-- Run the thick plugin from the v4.3.1 release manifest. That manifest references the floating `snapshot-thick` image even at release tags, so pin the `v4.3.1-thick` image by digest. Deploy it through the ApplicationSet as a `git` source in `kube-system`.
-- Restrict the Multus ServiceAccount's pod `update` permission to the `k8s.v1.cni.cncf.io/network-status` annotation, with an admission policy.
+- Run the thick plugin from the v4.3.1 release manifest, pulled as a Kustomize remote resource pinned to the release commit, with patches for this cluster's changes. The manifest references the floating `snapshot-thick` image even at release tags, so pin the `v4.3.1-thick` image by digest. Deploy it through the ApplicationSet as a `git` source in `kube-system`.
+- Grant the Multus ServiceAccount read access to attachment definitions and pods, and `update` only on `pods/status`, through which it writes the `k8s.v1.cni.cncf.io/network-status` annotation. An admission policy limits those writes to that annotation.
+- Make Cilium's configuration file Multus's readiness indicator, so Multus never serves a pod before Cilium is ready on the node.
 - Enable `namespaceIsolation`, and set `globalNamespaces` to a namespace that does not exist, which removes the `default` exemption. Verify both with a denied cross-namespace reference.
 
 ### Attachment definitions
@@ -63,13 +64,16 @@ Add [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) as a CNI meta-p
 
 ### Admission
 
-These are Kyverno policies with `failurePolicy: Fail`. Unlike the existing policies, they also cover `kube-system`.
+These are Kyverno policies with `failurePolicy: Fail`. Unlike the existing policies, they also cover `kube-system`. The pod rules and the status-write rule use only standard CEL, so Kyverno generates them as native `ValidatingAdmissionPolicy` objects, which the API server enforces without a webhook. A fail-closed webhook covering `kube-system` would sit in the path of Cilium's own pods, so a Kyverno outage during a Cilium rollout could leave no network for Kyverno to recover on. The definition rule parses the CNI configuration with Kyverno's `json.unmarshal` and stays a webhook policy; definitions never live in `kube-system`.
+
+Namespaces that may hold definitions are labelled `home.seneker.io/iot-attachments: "true"`, and workloads that may use them `home.seneker.io/iot-attachment: "true"`.
 
 - **On pods:**
     - Deny `v1.multus-cni.io/default-network` everywhere.
     - Allow `k8s.v1.cni.cncf.io/networks` only on labelled workloads in namespaces that hold attachment definitions.
     - Allow only the plain name-list form, without `namespace`, `default-route`, `ips`, `mac` or `interface` keys.
-- **On definitions:** allow them only in those namespaces, and require macvlan in bridge mode on the VLAN 20 NIC with static IPAM. Reject other plugin types, such as `host-device`, `vlan`, `ipvlan` and `bridge`, and any other parent interface.
+- **On definitions:** allow them only in those namespaces, and require macvlan in bridge mode on the VLAN 20 NIC with one static address from 192.168.20.10 -- .49, a fixed locally administered MAC and no gateway, routes or runtime capabilities, followed by the `tuning` plugin. Reject other plugin types, such as `host-device`, `vlan`, `ipvlan` and `bridge`, and any other parent interface.
+- **On status writes:** the Multus ServiceAccount may change only the `network-status` annotation; spec, status, labels, owners and other annotations must stay the same.
 - **RBAC:** only cluster administrators and ArgoCD may create definitions. The upstream CRDs add no aggregated roles.
 
 ## Alternatives Considered

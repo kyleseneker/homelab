@@ -12,6 +12,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | trust-manager | cert-manager | helm | trust-manager | v0.26.0 |
 | Gateway API CRDs | -- | git | (plain manifests) | -- |
 | Gateway + Cilium L2 | default | git | (plain manifests) | -- |
+| Multus | kube-system | git | (upstream manifest, patched) | v4.3.1 |
 | Metrics Server | kube-system | helm | metrics-server | 3.14.0 |
 | NFS Provisioner | nfs-provisioner | helm | nfs-subdir-external-provisioner | 4.0.18 |
 | Local-Path Provisioner | local-path-storage | kustomize | (plain manifests) | -- |

@@ -16,7 +16,7 @@ flowchart TD
 
 ## Cilium Gateway API
 
-Cilium serves as both the CNI and the gateway controller. The `homelab-gateway` Gateway accepts HTTPS on port 443 through two listeners, each terminating TLS with its own wildcard certificate:
+Cilium serves as both the CNI and the gateway controller. [Multus](../infrastructure/multus.md) wraps it as each pod's CNI so selected pods can also get an interface on the IoT VLAN; Cilium stays every pod's default network and manages only `eth0`. The `homelab-gateway` Gateway accepts HTTPS on port 443 through two listeners, each terminating TLS with its own wildcard certificate:
 
 | Listener | Hostnames | Certificate |
 |----------|-----------|-------------|
