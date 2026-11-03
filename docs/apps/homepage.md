@@ -38,11 +38,10 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 
 | Group | Services |
 |-------|----------|
-| Media | Jellyfin, Seerr |
-| Downloads | qBittorrent, Sonarr, Radarr |
-| Management | Prowlarr, Bazarr, Tdarr, Recyclarr |
-| Observability | Grafana, Prometheus, Alertmanager, Loki |
-| Infrastructure | ArgoCD, Proxmox, Gluetun, Homepage |
+| Apps | Jellyfin, Seerr, Home Assistant |
+| Media | qBittorrent, Sonarr, Radarr, Prowlarr, Bazarr, Tdarr |
+| Observability | Grafana, Prometheus, Alertmanager, Loki, Uptime Kuma, Goldilocks |
+| Infrastructure | ArgoCD, Proxmox, Vault, Authentik, Homepage |
 
 ### Configuration Files
 
