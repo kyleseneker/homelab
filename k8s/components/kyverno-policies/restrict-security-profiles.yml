@@ -12,7 +12,7 @@ metadata:
       PolicyException can allow further SELinux types in allowedValues.
 spec:
   validationActions:
-    - Audit
+    - Deny
   # Fail closed, like the legacy policies' webhooks.
   failurePolicy: Fail
   evaluation:
