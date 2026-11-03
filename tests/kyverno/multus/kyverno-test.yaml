@@ -1,0 +1,40 @@
+# restrict-network-attachment-definitions is checked by server-side dry runs
+# instead: the CLI derives a resource name from the kind, which misses the
+# definition CRD's hyphenated plural.
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: multus
+policies:
+  - ../../../k8s/components/kyverno-policies/disallow-multus-default-network.yml
+  - ../../../k8s/components/kyverno-policies/restrict-multus-networks.yml
+resources:
+  - resources.yaml
+variables: values.yaml
+results:
+  - policy: disallow-multus-default-network
+    resources:
+      - default-network
+      - default-network-kube-system
+    kind: Pod
+    result: fail
+  - policy: disallow-multus-default-network
+    resources:
+      - plain
+    kind: Pod
+    result: pass
+  - policy: restrict-multus-networks
+    resources:
+      - cross-namespace
+      - interface-name
+      - json-ips
+      - unlabelled
+      - wrong-namespace
+    kind: Pod
+    result: fail
+  - policy: restrict-multus-networks
+    resources:
+      - attached
+      - attached-two
+    kind: Pod
+    result: pass

@@ -1,0 +1,60 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-multus-status-updates
+  annotations:
+    policies.kyverno.io/title: Restrict Multus Pod Status Writes
+    policies.kyverno.io/category: Multus (ADR-028)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Multus's ServiceAccount may write pod status cluster-wide so it can
+      record the k8s.v1.cni.cncf.io/network-status annotation. Its updates
+      may change only that annotation; spec, status, labels and every other
+      annotation must stay as they are.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  # Enforced by the API server itself, so it covers kube-system without a
+  # fail-closed webhook in the path of the CNI's own pods.
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - UPDATE
+        resources:
+          - pods
+          - pods/status
+  matchConditions:
+    - name: multus-service-account
+      expression: request.userInfo.username == 'system:serviceaccount:kube-system:multus'
+  variables:
+    - name: statusKey
+      expression: "'k8s.v1.cni.cncf.io/network-status'"
+    - name: newAnnotations
+      expression: object.metadata.?annotations.orValue({})
+    - name: oldAnnotations
+      expression: oldObject.metadata.?annotations.orValue({})
+  validations:
+    - expression: >-
+        variables.newAnnotations.all(k, k == variables.statusKey ||
+          (k in variables.oldAnnotations && variables.oldAnnotations[k] == variables.newAnnotations[k])) &&
+        variables.oldAnnotations.all(k, k == variables.statusKey || k in variables.newAnnotations)
+      message: Multus may change only the network-status annotation.
+    - expression: >-
+        object.metadata.?labels.orValue({}) == oldObject.metadata.?labels.orValue({}) &&
+        object.metadata.?finalizers.orValue([]) == oldObject.metadata.?finalizers.orValue([]) &&
+        object.metadata.?ownerReferences.orValue([]) == oldObject.metadata.?ownerReferences.orValue([])
+      message: Multus may not change pod labels, finalizers or owners.
+    - expression: object.spec == oldObject.spec
+      message: Multus may not change a pod's spec.
+    - expression: >-
+        has(object.status) == has(oldObject.status) &&
+        (!has(object.status) || object.status == oldObject.status)
+      message: Multus may not change a pod's status.

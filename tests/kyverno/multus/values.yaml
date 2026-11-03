@@ -1,0 +1,13 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Values
+namespaceSelector:
+  - name: iot-workloads
+    labels:
+      kubernetes.io/metadata.name: iot-workloads
+      home.seneker.io/iot-attachments: "true"
+  - name: plain-workloads
+    labels:
+      kubernetes.io/metadata.name: plain-workloads
+  - name: kube-system
+    labels:
+      kubernetes.io/metadata.name: kube-system

@@ -1,0 +1,39 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-multus-default-network
+  annotations:
+    policies.kyverno.io/title: Disallow Multus Default Network Override
+    policies.kyverno.io/category: Multus (ADR-028)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      The v1.multus-cni.io/default-network annotation replaces a pod's Cilium
+      network, and Multus offers no option to disable it. It is denied in
+      every namespace, including kube-system.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  # Enforced by the API server itself, so it covers kube-system without a
+  # fail-closed webhook in the path of the CNI's own pods.
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+  validations:
+    - expression: >-
+        !object.metadata.?annotations[?'v1.multus-cni.io/default-network'].hasValue()
+      message: The v1.multus-cni.io/default-network annotation is not allowed.

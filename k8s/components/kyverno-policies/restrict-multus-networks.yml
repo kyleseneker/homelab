@@ -1,0 +1,52 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-multus-networks
+  annotations:
+    policies.kyverno.io/title: Restrict Multus Network Requests
+    policies.kyverno.io/category: Multus (ADR-028)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Only pods labelled home.seneker.io/iot-attachment, in namespaces
+      labelled home.seneker.io/iot-attachments, may request an attachment,
+      and only by plain definition names. Namespaces, interface names, IPs,
+      MACs and default routes cannot be requested.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  # Enforced by the API server itself, so it covers kube-system without a
+  # fail-closed webhook in the path of the CNI's own pods.
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+  matchConditions:
+    - name: requests-an-attachment
+      expression: object.metadata.?annotations[?'k8s.v1.cni.cncf.io/networks'].hasValue()
+  validations:
+    - expression: >-
+        namespaceObject.metadata.?labels[?'home.seneker.io/iot-attachments'].orValue('') == 'true' &&
+        object.metadata.?labels[?'home.seneker.io/iot-attachment'].orValue('') == 'true'
+      message: >-
+        Only pods labelled home.seneker.io/iot-attachment=true, in namespaces
+        labelled home.seneker.io/iot-attachments=true, may request an attachment.
+    - expression: >-
+        object.metadata.annotations['k8s.v1.cni.cncf.io/networks'].matches(
+          '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(,[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$')
+      message: >-
+        k8s.v1.cni.cncf.io/networks must be a comma-separated list of definition
+        names, without namespaces, interfaces or JSON options.

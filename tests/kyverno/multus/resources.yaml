@@ -1,0 +1,143 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: plain
+  namespace: plain-workloads
+  labels:
+    app.kubernetes.io/name: plain
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-network
+  namespace: plain-workloads
+  labels:
+    app.kubernetes.io/name: default-network
+  annotations:
+    v1.multus-cni.io/default-network: kube-system/host-net
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-network-kube-system
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: default-network-kube-system
+  annotations:
+    v1.multus-cni.io/default-network: macvlan
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: attached
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: attached
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ha-iot
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: attached-two
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: attached-two
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ha-iot,matter-iot
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unlabelled
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: unlabelled
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ha-iot
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: wrong-namespace
+  namespace: plain-workloads
+  labels:
+    app.kubernetes.io/name: wrong-namespace
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ha-iot
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cross-namespace
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: cross-namespace
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: other/ha-iot
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: interface-name
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: interface-name
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: ha-iot@eth9
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: json-ips
+  namespace: iot-workloads
+  labels:
+    app.kubernetes.io/name: json-ips
+    home.seneker.io/iot-attachment: 'true'
+  annotations:
+    k8s.v1.cni.cncf.io/networks: '[{"name": "ha-iot", "ips": ["192.168.20.99/24"]}]'
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
