@@ -1,0 +1,10 @@
+# Managed by Ansible (ADR-028). Link only: no addresses, no DHCP, no IPv6.
+network:
+  version: 2
+  ethernets:
+    {{ k8s_iot_nic_name }}:
+      dhcp4: false
+      dhcp6: false
+      accept-ra: false
+      link-local: []
+      optional: true

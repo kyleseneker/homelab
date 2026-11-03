@@ -94,3 +94,18 @@ variable "l2_pool_cidrs" {
   default     = []
   description = "Cilium L2 LoadBalancer pool; with the node's own address, the only sources its NIC may send from. Empty leaves the VM firewall off (ADR-016)"
 }
+
+variable "iot_nic" {
+  type = object({
+    vlan_id = number
+    subnet  = string
+    attachments = optional(list(object({
+      name      = string
+      address   = string
+      tcp_ports = optional(list(number), [])
+      udp_ports = optional(list(number), [])
+    })), [])
+  })
+  default     = null
+  description = "IoT VLAN NIC for the workers' Multus attachments (ADR-028). Each attachment's address is a source its NIC may send from, and its ports are opened from the subnet. Null gives no worker the NIC"
+}

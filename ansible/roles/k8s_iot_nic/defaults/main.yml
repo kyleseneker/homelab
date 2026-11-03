@@ -1,0 +1,6 @@
+---
+# ADR-028: the workers' IoT VLAN NIC is only a parent for Multus attachments.
+# Enable per cluster once Terraform has added the NIC.
+k8s_iot_nic_enabled: false
+k8s_iot_nic_name: ens19
+k8s_iot_nic_node_label: home.seneker.io/iot-vlan

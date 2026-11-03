@@ -113,3 +113,15 @@ variable "firewall_vxlan_peers" {
   default     = []
   description = "Node addresses that may send Cilium VXLAN (UDP 8472) to the VM; other sources are dropped. Empty leaves the port unfiltered. Needs the VM firewall"
 }
+
+variable "iot_nic" {
+  type = object({
+    vlan_id   = number
+    subnet    = string
+    addresses = list(string)
+    tcp_ports = optional(list(number), [])
+    udp_ports = optional(list(number), [])
+  })
+  default     = null
+  description = "Second NIC (net1), an access port on the IoT VLAN for Multus attachments (ADR-028). It may send only from the attachment addresses, and accepts only mDNS, SSDP and the listed ports from the subnet. Needs the VM firewall"
+}

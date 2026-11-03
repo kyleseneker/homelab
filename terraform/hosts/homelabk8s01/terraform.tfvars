@@ -10,6 +10,15 @@ nameserver = "192.168.10.1"
 # ADR-016: vmbr0 is VLAN-aware, so each node NIC is an access port on the native VLAN.
 nic_vlan_id = 1
 
+# ADR-028: each worker's second NIC is an access port on the IoT VLAN. Record
+# every Multus attachment here; its address is the only source the NIC may send
+# from, and its ports are the only ones open from the IoT subnet.
+iot_nic = {
+  vlan_id     = 20
+  subnet      = "192.168.20.0/24"
+  attachments = []
+}
+
 # ADR-016 anti-spoofing: each NIC may send only from its node address and the
 # Cilium L2 LoadBalancer pool (192.168.10.200 -- .250).
 l2_pool_cidrs = [

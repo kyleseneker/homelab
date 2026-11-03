@@ -1,0 +1,27 @@
+#!/usr/sbin/nft -f
+# Managed by Ansible (ADR-028). The node never accepts, routes or sends traffic
+# on the IoT VLAN. Multus attachments receive their frames before these hooks,
+# so they are unaffected. Never use a netdev ingress hook here: it runs first
+# and would cut the attachments off. This file loads only its own table; the
+# stock nftables.service would flush Cilium's and Kubernetes' rules.
+table inet iot_nic
+delete table inet iot_nic
+table inet iot_nic {
+  chain prerouting {
+    type filter hook prerouting priority raw; policy accept;
+    iifname "{{ k8s_iot_nic_name }}" drop
+  }
+  chain input {
+    type filter hook input priority filter; policy accept;
+    iifname "{{ k8s_iot_nic_name }}" drop
+  }
+  chain forward {
+    type filter hook forward priority filter; policy accept;
+    iifname "{{ k8s_iot_nic_name }}" drop
+    oifname "{{ k8s_iot_nic_name }}" drop
+  }
+  chain output {
+    type filter hook output priority filter; policy accept;
+    oifname "{{ k8s_iot_nic_name }}" drop
+  }
+}

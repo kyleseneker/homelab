@@ -1,0 +1,15 @@
+---
+- name: Apply IoT NIC sysctls
+  ansible.builtin.command: sysctl -p /etc/sysctl.d/60-iot-nic.conf
+  changed_when: true
+
+- name: Reload IoT NIC filter
+  ansible.builtin.systemd:
+    name: iot-nic-filter.service
+    state: restarted
+    daemon_reload: true
+
+# networkctl touches only this link; netplan apply could bounce eth0.
+- name: Bring up the IoT VLAN NIC
+  ansible.builtin.shell: netplan generate && networkctl reload && networkctl reconfigure {{ k8s_iot_nic_name }}
+  changed_when: true

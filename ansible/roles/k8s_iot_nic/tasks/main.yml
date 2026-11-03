@@ -1,0 +1,83 @@
+---
+- name: Check the IoT VLAN NIC exists
+  ansible.builtin.stat:
+    path: "/sys/class/net/{{ k8s_iot_nic_name }}"
+  register: k8s_iot_nic_link
+
+- name: Fail without the IoT VLAN NIC
+  ansible.builtin.fail:
+    msg: "{{ k8s_iot_nic_name }} is missing; add the worker's IoT NIC in Terraform first."
+  when: not k8s_iot_nic_link.stat.exists
+
+# Sysctls and the filter come first, so the link never comes up unfiltered.
+- name: Configure IoT VLAN NIC sysctls
+  ansible.builtin.template:
+    src: iot-nic-sysctl.conf.j2
+    dest: /etc/sysctl.d/60-iot-nic.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply IoT NIC sysctls
+
+- name: Create the nftables include directory
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the IoT VLAN NIC filter
+  ansible.builtin.template:
+    src: iot-nic.nft.j2
+    dest: /etc/nftables.d/iot-nic.nft
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload IoT NIC filter
+
+- name: Install the IoT VLAN NIC filter unit
+  ansible.builtin.template:
+    src: iot-nic-filter.service.j2
+    dest: /etc/systemd/system/iot-nic-filter.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload IoT NIC filter
+
+- name: Enable the IoT VLAN NIC filter
+  ansible.builtin.systemd:
+    name: iot-nic-filter.service
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Apply sysctls and the filter before the link comes up
+  ansible.builtin.meta: flush_handlers
+
+- name: Configure the IoT VLAN NIC as a bare link
+  ansible.builtin.template:
+    src: iot-nic-netplan.yaml.j2
+    dest: /etc/netplan/60-iot-nic.yaml
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Bring up the IoT VLAN NIC
+
+- name: Check the IoT VLAN label on the node
+  ansible.builtin.command: >
+    kubectl get node {{ inventory_hostname }}
+    --kubeconfig=/etc/kubernetes/admin.conf
+    -o go-template='{{ '{{' }}index .metadata.labels "{{ k8s_iot_nic_node_label }}"{{ '}}' }}'
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  register: k8s_iot_nic_label
+  changed_when: false
+
+- name: Label the node for IoT VLAN attachments
+  ansible.builtin.command: >
+    kubectl label node {{ inventory_hostname }}
+    --kubeconfig=/etc/kubernetes/admin.conf
+    {{ k8s_iot_nic_node_label }}=true --overwrite
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  changed_when: true
+  when: k8s_iot_nic_label.stdout != "true"

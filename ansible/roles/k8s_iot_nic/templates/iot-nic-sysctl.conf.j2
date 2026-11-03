@@ -1,0 +1,7 @@
+# Managed by Ansible (ADR-028). The IoT VLAN NIC is a bare parent for Multus
+# attachments: no IPv6, no ARP replies for node addresses, and no forwarding.
+net.ipv4.conf.{{ k8s_iot_nic_name }}.arp_ignore = 8
+net.ipv4.conf.{{ k8s_iot_nic_name }}.rp_filter = 1
+net.ipv4.conf.{{ k8s_iot_nic_name }}.forwarding = 0
+net.ipv6.conf.{{ k8s_iot_nic_name }}.disable_ipv6 = 1
+net.ipv6.conf.{{ k8s_iot_nic_name }}.accept_ra = 0

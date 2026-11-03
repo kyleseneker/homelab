@@ -1,0 +1,15 @@
+# Managed by Ansible (ADR-028).
+[Unit]
+Description=Drop IoT VLAN traffic at the node
+DefaultDependencies=no
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/nftables.d/iot-nic.nft
+ExecStop=/usr/sbin/nft delete table inet iot_nic
+
+[Install]
+WantedBy=multi-user.target

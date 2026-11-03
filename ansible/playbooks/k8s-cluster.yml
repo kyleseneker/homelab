@@ -26,3 +26,12 @@
   become: true
   roles:
     - k8s_worker
+
+- name: IoT VLAN NIC on workers (ADR-028)
+  hosts: workers
+  become: true
+  roles:
+    - role: k8s_iot_nic
+      when: k8s_iot_nic_enabled | bool
+      tags:
+        - k8s_iot_nic

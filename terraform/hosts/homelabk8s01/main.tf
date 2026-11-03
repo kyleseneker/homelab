@@ -24,4 +24,15 @@ module "vm" {
   vlan_id                 = var.nic_vlan_id
   firewall_ipfilter_cidrs = length(var.l2_pool_cidrs) > 0 ? concat([split("/", each.value.ip)[0]], var.l2_pool_cidrs) : []
   firewall_vxlan_peers    = [for n in values(var.nodes) : split("/", n.ip)[0]]
+
+  # ADR-028: workers carry a VLAN 20 NIC for Multus attachments, and macvlan's
+  # extra MACs need Proxmox MAC filtering off; the per-NIC IP filters still apply.
+  firewall_macfilter = !(var.iot_nic != null && each.value.role == "worker")
+  iot_nic = var.iot_nic != null && each.value.role == "worker" ? {
+    vlan_id   = var.iot_nic.vlan_id
+    subnet    = var.iot_nic.subnet
+    addresses = [for a in var.iot_nic.attachments : a.address]
+    tcp_ports = distinct(flatten([for a in var.iot_nic.attachments : a.tcp_ports]))
+    udp_ports = distinct(flatten([for a in var.iot_nic.attachments : a.udp_ports]))
+  } : null
 }
