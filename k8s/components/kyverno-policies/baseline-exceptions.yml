@@ -112,7 +112,8 @@ spec:
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
            object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'etcd-backup'
 ---
-# Registers the GPU with the kubelet and exposes its device nodes.
+# Registers the GPU with the kubelet and exposes its device nodes, under the
+# SELinux type the upstream plugin ships with.
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
 metadata:
@@ -122,11 +123,14 @@ spec:
   policyRefs:
     - name: disallow-host-path
       kind: ValidatingPolicy
+    - name: restrict-security-profiles
+      kind: ValidatingPolicy
   allowedValues:
     - '/dev/dri'
     - '/sys/class/drm'
     - '/var/lib/kubelet/device-plugins'
     - '/var/run/cdi'
+    - 'container_device_plugin_t'
   matchConditions:
     - name: intel-gpu-plugin
       expression: >-

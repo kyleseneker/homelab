@@ -8,7 +8,8 @@ metadata:
     policies.kyverno.io/severity: high
     policies.kyverno.io/description: >-
       Pods and containers must not disable seccomp or AppArmor, and may use
-      only the container SELinux types without a custom user or role.
+      only the container SELinux types without a custom user or role. A
+      PolicyException can allow further SELinux types in allowedValues.
 spec:
   validationActions:
     - Audit
@@ -70,7 +71,8 @@ spec:
       message: AppArmor must not be Unconfined.
     - expression: >-
         variables.contexts.all(sc,
-          sc.?seLinuxOptions.?type.orValue('') in variables.selinuxTypes &&
+          (sc.?seLinuxOptions.?type.orValue('') in variables.selinuxTypes ||
+           sc.?seLinuxOptions.?type.orValue('') in exceptions.allowedValues) &&
           sc.?seLinuxOptions.?user.orValue('') == '' &&
           sc.?seLinuxOptions.?role.orValue('') == '')
       message: SELinux options must use a container type and no custom user or role.
