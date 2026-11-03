@@ -112,6 +112,7 @@ import json, os, sys
 with open(os.environ["CALL_LOG"], "a") as out:
     out.write(json.dumps({"args":sys.argv[1:], "payload":json.load(sys.stdin)})+"\\n")
 if sys.argv[2] == "patch":
+    print("patch refused: permission denied", file=sys.stderr)
     sys.exit(2)
 # Simulate the server refusing CAS=0 because the secret already exists.
 sys.exit(2 if "-cas=0" in sys.argv else 0)
@@ -127,7 +128,30 @@ sys.exit(2 if "-cas=0" in sys.argv else 0)
             self.assertEqual(len(calls), 2)
             self.assertIn("-cas=0", calls[1]["args"])
             self.assertEqual(calls[0]["payload"], {"sonarr-api-key": value})
+            self.assertIn(b"patch refused: permission denied", result.stderr)
             self.assertNotIn(value.encode(), result.stdout + result.stderr)
+
+    def test_new_path_is_created_without_the_patch_404(self):
+        with tempfile.TemporaryDirectory() as name:
+            directory = Path(name)
+            vault = directory / "vault"
+            vault.write_text('''#!/usr/bin/env python3
+import json, os, sys
+with open(os.environ["CALL_LOG"], "a") as out:
+    out.write(json.dumps({"args":sys.argv[1:], "payload":json.load(sys.stdin)})+"\\n")
+if sys.argv[2] == "patch":
+    print("Error making API request. Code: 404.", file=sys.stderr)
+    sys.exit(2)
+''')
+            vault.chmod(0o755)
+            env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}", VAULT_TOKEN="test",
+                       SECRET_PATH="apps/arr", KEY="sonarr-api-key", VAL="value",
+                       CALL_LOG=str(directory / "calls"))
+            result = subprocess.run([str(ROOT / "scripts/vault-put-secret.sh")], env=env, capture_output=True)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stderr, b"")
+            calls = [json.loads(line) for line in (directory / "calls").read_text().splitlines()]
+            self.assertIn("-cas=0", calls[1]["args"])
 
     def recording_vault(self, directory):
         vault = directory / "vault"

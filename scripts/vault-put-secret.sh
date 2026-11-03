@@ -19,9 +19,13 @@ if [[ -z "${VAL:-}" ]]; then
   export VAL
 fi
 payload="$(python3 -c 'import json,os; print(json.dumps({os.environ["KEY"]: os.environ["VAL"]}))')"
-if printf '%s' "$payload" | vault kv patch "homelab/$SECRET_PATH" - >/dev/null; then
+if patch_error="$(printf '%s' "$payload" | vault kv patch "homelab/$SECRET_PATH" - 2>&1 >/dev/null)"; then
   exit 0
 fi
-# CAS=0 prevents an authorization, network or concurrent-write failure on patch
-# from replacing an existing secret and discarding its other keys.
-printf '%s' "$payload" | vault kv put -cas=0 "homelab/$SECRET_PATH" - >/dev/null
+# A new path answers the patch with 404, so its error is shown only if creating
+# fails too. CAS=0 prevents an authorization, network or concurrent-write
+# failure on patch from replacing an existing secret and discarding its other keys.
+if ! printf '%s' "$payload" | vault kv put -cas=0 "homelab/$SECRET_PATH" - >/dev/null; then
+  printf 'The patch before it failed with:\n%s\n' "$patch_error" >&2
+  exit 1
+fi
