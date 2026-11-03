@@ -62,6 +62,7 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 | [Config Backup](config-backup.md) | `arr` | -- | Nightly SQLite/native-archive staging | `python` |
 | [Homepage](homepage.md) | `arr` | `home.seneker.io` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
 | [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.home.seneker.io` | Synthetic monitoring and status page | `louislam/uptime-kuma` |
+| [Home Assistant](home-assistant.md) | `home-automation` | `ha.home.seneker.io` (after onboarding) | Home automation hub | `ghcr.io/home-operations/home-assistant` |
 
 ## Deployment Ordering
 

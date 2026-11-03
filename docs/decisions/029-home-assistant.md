@@ -37,10 +37,10 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 
 - Cilium's `eth0` carries cluster, gateway and internet traffic, and holds the default route.
 - Home Assistant's own attachment definition ([ADR-028](028-multus-iot-attachments.md)) gives it 192.168.20.10 on VLAN 20, IPv4 only, for discovery and local device control. The Proxmox NIC filter admits only discovery traffic and the ports listed for Home Assistant in its app doc.
-- People reach Home Assistant only through `https://ha.homelab.local` on `homelab-gateway`, with a cert-manager certificate. Household clients use the existing Internal-to-Homelab rule, and remote access uses the existing WireGuard and Teleport path.
+- People reach Home Assistant only through `https://ha.home.seneker.io` on `homelab-gateway`, with its publicly trusted certificate ([ADR-030](030-public-domain-and-certificates.md)). Household clients reach it through the gateway VIP, the only Homelab address they may open connections to ([ADR-016](016-vlan-segmentation.md#firewall-rules)), and remote access uses the existing WireGuard and Teleport path.
 - Add a UniFi rule that blocks Internal to 192.168.20.10, ahead of the Internal-to-IoT allow, so no browser or app ever sends credentials in plaintext over VLAN 20.
 - Set trusted proxies to the pod CIDR, since the gateway reaches the pod from there. Limit ingress on port 8123 to the gateway and the Prometheus pod with CiliumNetworkPolicy, so no other pod can forge a client address.
-- Set the internal and external URLs to `https://ha.homelab.local`, so discovery never hands out the VLAN 20 address.
+- Set the internal and external URLs to `https://ha.home.seneker.io`, so discovery never hands out the VLAN 20 address.
 - Do not place Home Assistant behind the Authentik outpost. Its companion apps cannot complete a proxied browser login, which is the same reason Jellyfin is excluded ([ADR-010](010-authentik-sso.md)).
 
 ### Onboarding and authentication
@@ -61,6 +61,7 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 
 ### State and configuration
 
+- Schedule the pod only on workers labelled `home.seneker.io/iot-vlan=true`, so its `local-path` volume is created on a node that can carry the attachment.
 - Keep `/config` on a `local-path` volume, because the recorder's SQLite database must not live on NFS ([ADR-006](006-nfs-local-path-storage.md)). Velero cannot read `local-path` volumes, so the plaintext `.storage` never leaves the node except inside encrypted backups.
 - Keep the runtime virtualenv (`/config/.venv`) on an `emptyDir`, out of the config volume and its backups.
 - Keep integrations that still accept YAML in a Git-managed `configuration.yaml`, such as the recorder and the Prometheus export. HTTP settings are UI state, set during onboarding, and recorded in the app doc.

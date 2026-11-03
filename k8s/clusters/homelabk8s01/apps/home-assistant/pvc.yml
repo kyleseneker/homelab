@@ -1,0 +1,27 @@
+# The recorder's SQLite database must not live on NFS (ADR-006, ADR-029).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-config
+  namespace: home-automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Home Assistant's native, encrypted backups, written to /config/backups.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home-assistant-backups
+  namespace: home-automation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 10Gi

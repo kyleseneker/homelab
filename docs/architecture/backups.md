@@ -86,7 +86,7 @@ Three schedules cover granular daily recovery, broad on-site disaster recovery, 
 ```mermaid
 flowchart TD
     subgraph daily["Daily Stateful (3:00 AM)"]
-        dailyTarget["arr, monitoring, auth"]
+        dailyTarget["arr, monitoring, auth,\nhome-automation"]
         dailyRetention["Retention: 7 days"]
     end
 
@@ -96,7 +96,7 @@ flowchart TD
     end
 
     subgraph offsite["Weekly Offsite (Sunday 5:00 AM)"]
-        offsiteTarget["arr, monitoring, auth,\nargocd, vault, external-secrets"]
+        offsiteTarget["arr, monitoring, auth, home-automation,\nargocd, vault, external-secrets"]
         offsiteRetention["Retention: 30 days"]
     end
 
@@ -109,9 +109,9 @@ flowchart TD
 
 | Schedule | Frequency | Time | Namespaces | Retention | Location |
 |----------|-----------|------|-----------|-----------|----------|
-| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth` | 7 days | `local` |
+| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth`, `home-automation` | 7 days | `local` |
 | `weekly-full-cluster` | Every Sunday | 4:00 AM | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | `local` |
-| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
+| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `home-automation`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
 
 The daily backup targets the namespaces with the most frequently changing state. The weekly full backup captures everything on-site; `backups` is excluded from it because backing the local object store up into itself is circular. The offsite backup narrows to what is needed to rebuild from nothing.
 
@@ -248,6 +248,8 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `backups/etcd-snapshots` | Daily complete etcd/PKI/host-configuration set, uploaded directly to `etcd-snapshots/` in S3 | Seven completed sets retained; offsite static control-plane boot, normal node registration and Cilium networking verified on replacement VMs; combined offsite qBittorrent recovery verified on those fresh machines; other application coverage remains open |
 | `backups/garage-data` | Local Velero object store data | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `backups/garage-meta` | Garage SQLite metadata on `local-path`, snapshotted every 6 hours to `backups/garage-snapshots` | Skipped by Velero like other local-path volumes; rebuilding on another node requires restoring the latest snapshot with the data volume |
+| `home-automation/home-assistant-config` | `local-path` `/config` with the recorder database; skipped by Velero like other local-path volumes | Recovered only from Home Assistant's native encrypted backups; restore unverified |
+| `home-automation/home-assistant-backups` | Home Assistant's native encrypted backups on NFS, captured daily and weekly offsite by Velero | Restoring needs the backup encryption key from Vault; restore unverified |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |
 | `monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` | Local-path TSDB, skipped by Velero | Historical metrics have no independent backup |
 | `monitoring/storage-loki-0` | Live NFS volume backup | Log/index consistency and application restore unverified |

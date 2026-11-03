@@ -53,6 +53,7 @@ schedules:
         - arr
         - monitoring
         - auth
+        - home-automation
       defaultVolumesToFsBackup: true
       ttl: 168h0m0s
       storageLocation: local
@@ -82,6 +83,7 @@ schedules:
         - argocd
         - vault
         - external-secrets
+        - home-automation
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
       storageLocation: offsite

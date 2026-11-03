@@ -5,6 +5,7 @@ resources:
   - auth.yml
   - backups.yml
   - external-secrets.yml
+  - home-automation.yml
   - kyverno.yml
   - monitoring.yml
   - vault.yml

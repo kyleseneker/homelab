@@ -1,0 +1,58 @@
+# Home Assistant (ADR-029). These policies cover Cilium's eth0 only; the IoT VLAN
+# attachment is filtered by Proxmox (ADR-028).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: home-automation-ingress
+  namespace: home-automation
+spec:
+  endpointSelector: {}
+  ingress:
+    # Only the gateway and Prometheus reach 8123, so no other pod can forge a
+    # client address through the trusted-proxy setting.
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "8123"
+              protocol: TCP
+---
+# Egress: cluster DNS and public HTTPS only. LAN or in-cluster integrations are
+# opened by explicit address; there is no path to the Kubernetes API, Vault,
+# Authentik or the NAS.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: home-automation-egress
+  namespace: home-automation
+spec:
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+            - 100.64.0.0/10
+            - 169.254.0.0/16
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
