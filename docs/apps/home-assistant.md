@@ -30,6 +30,20 @@ Home Assistant is the home automation hub: device integrations, automations and 
 
 Velero's daily and weekly offsite schedules include the namespace and copy only the backups volume; the config volume is excluded, so the plaintext `.storage` leaves the node only inside Home Assistant's encrypted backups.
 
+Native backups are UI state under **Settings** > **System** > **Backups**:
+
+- **Automatic backups**: daily, keeping 7, including history.
+- **Locations**: this system only, which writes to `/config/backups`. Encryption is set per location; keep it on.
+- **Encryption key**: store it in Vault before relying on a backup, since a restore needs it. With `VAULT_TOKEN` exported:
+
+```bash
+read -rs VAL; export VAL
+make vault-put-secret SECRET_PATH=apps/home-assistant KEY=backup-encryption-key
+unset VAL
+```
+
+`HomeAssistantBackupStale` fires when `sensor.backup_last_successful_automatic_backup` is more than 36 hours old, or missing while Prometheus can scrape.
+
 ## Network
 
 - Ingress on 8123 comes only from the gateway and Prometheus. Egress is cluster DNS and public HTTPS; LAN or in-cluster integrations need an explicit rule.
@@ -40,6 +54,48 @@ Velero's daily and weekly offsite schedules include the namespace and copy only 
 |------------------------------|---------|
 | UDP 5353 | mDNS |
 | UDP 1900, and replies from UDP 1900 | SSDP |
+
+## Monitoring
+
+The `prometheus` integration exports every entity at `/api/prometheus`. Prometheus scrapes it each minute with the scrape user's long-lived token, from the `home-assistant-prometheus` Secret (Vault `homelab/apps/home-assistant`, `prometheus-token`). Blackbox probes `https://ha.home.seneker.io` through the gateway.
+
+| Alert | Source | Severity | Condition |
+|-------|--------|----------|-----------|
+| `HomeAssistantMetricsUnavailable` | Prometheus | warning | No successful scrape for 15 minutes |
+| `HomeAssistantBackupStale` | Prometheus | warning | No successful automatic backup in 36 hours |
+| `HomeAssistantLoginFailures` | Loki | warning | 3 or more failed logins or invalid tokens from one address in 15 minutes |
+| `HomeAssistantIPBanned` | Loki | critical | Home Assistant banned an address |
+
+The Loki rules are in `infrastructure/loki/home-assistant-rules.yml`, because the ruler loads rules only from the `monitoring` namespace.
+
+### Scrape User
+
+The token carries its user's rights, so it belongs to a dedicated non-admin user:
+
+1. Under **Settings** > **People**, add a user named `prometheus` with **Administrator** off.
+2. Sign in as `prometheus` in a private window, enable an authenticator app, and create a long-lived access token under the profile's **Security** tab.
+3. Store it in Vault, then sign out:
+
+    ```bash
+    read -rs VAL; export VAL
+    make vault-put-secret SECRET_PATH=apps/home-assistant KEY=prometheus-token
+    unset VAL
+    ```
+
+A rejected token counts as a failed login, so five failed scrapes ban the Prometheus pod's address. To rotate, create the new token, store it the same way, force an External Secrets refresh, wait for the scrape to succeed with it, and only then delete the old one ([secret rotation](../runbooks/secret-rotation.md)).
+
+### Unbanning an Address
+
+Bans persist in `/config/ip_bans.yaml`, and failed-login counts reset only on restart. Remove the address's entry, then restart:
+
+```bash
+kubectl -n home-automation exec -it deploy/home-assistant -- vi /config/ip_bans.yaml
+kubectl -n home-automation rollout restart deploy/home-assistant
+```
+
+## Accounts
+
+Every user has an authenticator app enabled. Household members get non-admin accounts under **Settings** > **People**, created by the owner; they sign in at `ha.home.seneker.io`.
 
 ## Onboarding
 

@@ -64,6 +64,19 @@ service:
     ports:
       http:
         port: 8123
+serviceMonitor:
+  main:
+    service:
+      identifier: main
+    endpoints:
+      - port: http
+        scheme: http
+        path: /api/prometheus
+        interval: 1m
+        authorization:
+          credentials:
+            name: home-assistant-prometheus
+            key: token
 route:
   main:
     enabled: true

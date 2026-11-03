@@ -46,3 +46,4 @@ spec:
         - https://home.seneker.io
         - https://grafana.home.seneker.io/api/health
         - https://jellyfin.home.seneker.io/health
+        - https://ha.home.seneker.io

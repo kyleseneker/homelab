@@ -1,0 +1,40 @@
+# Loki ruler alerts on Home Assistant's authentication log (ADR-029). The ruler
+# loads ConfigMaps labelled loki_rule from this namespace and sends to Alertmanager.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-rules-home-assistant
+  namespace: monitoring
+  labels:
+    loki_rule: "true"
+data:
+  home-assistant.yaml: |
+    groups:
+      - name: home-assistant-auth
+        rules:
+          - alert: HomeAssistantLoginFailures
+            expr: |
+              sum by (ip) (count_over_time({namespace="home-automation", service_name="home-assistant"}
+                |= "Login attempt or request with invalid authentication"
+                | regexp `\((?P<ip>[0-9a-fA-F.:]+)\)\. Requested URL` [15m])) >= 3
+            labels:
+              severity: warning
+              namespace: home-automation
+            annotations:
+              summary: Failed Home Assistant logins from {{ $labels.ip }}
+              description: >-
+                {{ $value }} failed logins or invalid tokens from {{ $labels.ip }} in 15 minutes.
+                Five from one address since the last restart ban it.
+          - alert: HomeAssistantIPBanned
+            expr: |
+              sum by (ip) (count_over_time({namespace="home-automation", service_name="home-assistant"}
+                |= "Banned IP"
+                | regexp `Banned IP (?P<ip>[0-9a-fA-F.:]+) for` [15m])) > 0
+            labels:
+              severity: critical
+              namespace: home-automation
+            annotations:
+              summary: Home Assistant banned {{ $labels.ip }}
+              description: >-
+                {{ $labels.ip }} reached the failed login threshold and is banned until it is
+                removed from /config/ip_bans.yaml and Home Assistant restarts.

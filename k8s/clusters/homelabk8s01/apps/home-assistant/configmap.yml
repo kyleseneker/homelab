@@ -25,3 +25,5 @@ data:
     homeassistant:
       external_url: https://ha.home.seneker.io
       internal_url: https://ha.home.seneker.io
+    # Entity metrics at /api/prometheus, scraped with the scrape user's token.
+    prometheus:

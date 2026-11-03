@@ -11,6 +11,10 @@ Prometheus ──► Alertmanager ──► Slack #alerts
    ├── Default kube-prometheus rules (~100)
    ├── Custom homelab rules (homelab-rules.yml)
    └── Velero metrics (ServiceMonitor)
+
+Loki ruler ──► Alertmanager
+   ▲
+   └── LogQL rules (ConfigMaps labelled loki_rule in monitoring)
 ```
 
 ## Slack Integration
@@ -108,6 +112,14 @@ spec:
             summary: "Short description"
             description: "Detailed description with {{ $labels.instance }}."
 ```
+
+## Log Alerts
+
+The Loki ruler evaluates LogQL rules and sends their alerts to the same Alertmanager, so routing and silences apply unchanged. Add a ConfigMap in `monitoring` labelled `loki_rule: "true"` whose data keys are rule files in the Prometheus format with LogQL expressions. Set a `namespace` label on each rule, since log alerts carry only the labels the expression keeps.
+
+| File | Alerts |
+|------|--------|
+| `infrastructure/loki/home-assistant-rules.yml` | `HomeAssistantLoginFailures`, `HomeAssistantIPBanned` ([Home Assistant](../apps/home-assistant.md#monitoring)) |
 
 ## Silencing Alerts
 

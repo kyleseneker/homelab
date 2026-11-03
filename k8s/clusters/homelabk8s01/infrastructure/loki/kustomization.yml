@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - pdb.yml
   - prometheusrule.yml
+  - home-assistant-rules.yml

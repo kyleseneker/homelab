@@ -54,6 +54,7 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `apps/arr`, `apps/unpackerr` | `unpackerr-secrets` | `arr` |
 | `apps/vpn` | `vpn-credentials` | `arr` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
+| `apps/home-assistant` | `home-assistant-prometheus` | `home-automation` |
 | `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
 | `infrastructure/garage` | `garage-secrets`, `velero-local-credentials` | `backups` |
 | `infrastructure/velero-offsite` | `velero-offsite-credentials` | `backups` |
@@ -61,6 +62,8 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
+
+`apps/home-assistant` also holds `backup-encryption-key`, which nothing syncs; it exists for restores.
 
 Two ArgoCD Secrets are shared with other writers. `argocd-secret` comes from the bootstrap and also holds ArgoCD's own keys, so its ExternalSecret uses `creationPolicy: Merge`. `argocd-notifications-secret` is left out of the bootstrap render and its ExternalSecret uses `CreateOrMerge`: a server-side bootstrap apply of the empty upstream Secret removed the merged Slack token.
 

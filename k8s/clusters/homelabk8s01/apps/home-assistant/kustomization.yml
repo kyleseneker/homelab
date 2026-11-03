@@ -5,3 +5,5 @@ resources:
   - configmap.yml
   - pvc.yml
   - network-attachment.yml
+  - prometheus-external-secret.yml
+  - prometheusrule.yml

@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: home-assistant
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: home-assistant
+spec:
+  groups:
+    - name: home-assistant
+      rules:
+        - alert: HomeAssistantMetricsUnavailable
+          expr: |
+            up{namespace="home-automation", job="home-assistant"} == 0
+            or
+            absent(up{namespace="home-automation", job="home-assistant"})
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Home Assistant metrics are unavailable
+            description: >-
+              Prometheus has not scraped /api/prometheus for 15 minutes. A rejected token
+              counts as a failed login, so five failed scrapes ban the Prometheus pod's
+              address. Check the home-assistant-prometheus Secret and /config/ip_bans.yaml.
+        - alert: HomeAssistantBackupStale
+          expr: |
+            (time() - homeassistant_sensor_timestamp_seconds{entity="sensor.backup_last_successful_automatic_backup"} > 129600)
+            or
+            (
+              absent(homeassistant_sensor_timestamp_seconds{entity="sensor.backup_last_successful_automatic_backup"})
+              and on() up{namespace="home-automation", job="home-assistant"} == 1
+            )
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Home Assistant backup is stale
+            description: >-
+              Home Assistant has not completed an automatic backup in over 36 hours, or has
+              never reported one. Its native backups are the only copy of the config volume,
+              which is on local-path and excluded from Velero.
