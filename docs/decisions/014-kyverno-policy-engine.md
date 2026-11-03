@@ -12,6 +12,8 @@ The cluster needs guardrails to enforce security and operational standards acros
 
 Use Kyverno as the Kubernetes policy engine. All five ClusterPolicies run in Enforce mode, blocking non-compliant pods at admission. Namespaces with workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU operators) are excluded per-policy rather than left in audit mode.
 
+Kyverno also enforces the Pod Security baseline: privileged containers, host namespaces and ports, `hostPath`, added capabilities, unsafe sysctls, and disabled seccomp, AppArmor or SELinux confinement. These controls exclude only `kube-system`. A workload that needs one of them gets a per-workload `PolicyException` listing exactly the values it may use; exceptions are honored only in the `kyverno` namespace.
+
 ## Alternatives Considered
 
 - **OPA / Gatekeeper**: The original Kubernetes policy engine. Policies are written in Rego, a purpose-built query language. Powerful but steep learning curve — Rego is unfamiliar to most Kubernetes operators and harder to review in pull requests.
@@ -24,10 +26,12 @@ Use Kyverno as the Kubernetes policy engine. All five ClusterPolicies run in Enf
 - **Kubernetes-native policies**: Kyverno policies are written as Kubernetes YAML resources, not a separate language. ClusterPolicy manifests are readable by anyone familiar with Kubernetes and reviewable in the same PR workflow as application manifests.
 - **Full enforcement with targeted exclusions**: All policies enforce at admission. Workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU device plugins) are excluded by namespace rather than leaving policies in audit mode cluster-wide.
 - **Namespace exclusions**: System namespaces (kube-system, kyverno, argocd, cilium-test) are excluded from all policies. Application namespaces with legitimate non-compliance (arr, auth, backups, monitoring, nfs-provisioner, intel-gpu-operator) are excluded only from the specific policies they cannot satisfy.
+- **Per-workload exceptions for host access**: A namespace exclusion would let every workload in `arr`, `backups` or `monitoring` run privileged because one of them needs a host path or capability. Exceptions with allowed values keep the policy evaluating the exempted workload, so Jellyfin may mount `/dev/dri` and nothing else. Keeping exceptions in the `kyverno` namespace means a namespace's own users cannot exempt themselves.
 - **Background scanning**: All policies run with `background: true`, scanning existing resources on schedule — not just at admission time. This catches drift and pre-existing violations.
 
 ## Consequences
 
 - Kyverno's admission webhook adds latency to all pod creation requests. With a single replica, webhook unavailability could block deployments. A PDB or replica increase may be warranted as the cluster grows.
 - Namespace exclusion lists must be maintained as new infrastructure namespaces are added. A missed exclusion could block critical system pods.
+- A workload that needs host access cannot deploy until its exception exists. Exceptions match a namespace and a label, so any pod with that label in that namespace receives the exception's values.
 - Excluded namespaces should be revisited periodically -- if upstream images add non-root support or workloads gain resource limits, exclusions can be removed to tighten coverage.
