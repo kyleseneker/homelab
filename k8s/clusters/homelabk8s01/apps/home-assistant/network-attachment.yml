@@ -1,0 +1,39 @@
+# Home Assistant's IoT VLAN attachment (ADR-028, ADR-029): one address and one
+# fixed MAC, IPv4 only, with only the connected route; the default route stays on
+# Cilium's eth0. Recorded in terraform/hosts/homelabk8s01/terraform.tfvars so the
+# workers' Proxmox filter lets this address send.
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: ha-iot
+  namespace: home-automation
+spec:
+  config: |-
+    {
+      "cniVersion": "0.3.1",
+      "name": "ha-iot",
+      "plugins": [
+        {
+          "type": "macvlan",
+          "master": "ens19",
+          "mode": "bridge",
+          "mac": "02:00:00:14:00:0a",
+          "ipam": {
+            "type": "static",
+            "addresses": [
+              { "address": "192.168.20.10/24" }
+            ]
+          }
+        },
+        {
+          "type": "tuning",
+          "sysctl": {
+            "net.ipv4.conf.net1.forwarding": "0",
+            "net.ipv4.conf.net1.rp_filter": "1",
+            "net.ipv4.conf.net1.arp_ignore": "1",
+            "net.ipv4.conf.net1.arp_announce": "2",
+            "net.ipv6.conf.net1.disable_ipv6": "1"
+          }
+        }
+      ]
+    }

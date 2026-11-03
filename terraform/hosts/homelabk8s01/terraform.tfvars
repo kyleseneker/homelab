@@ -14,9 +14,13 @@ nic_vlan_id = 1
 # every Multus attachment here; its address is the only source the NIC may send
 # from, and its ports are the only ones open from the IoT subnet.
 iot_nic = {
-  vlan_id     = 20
-  subnet      = "192.168.20.0/24"
-  attachments = []
+  vlan_id = 20
+  subnet  = "192.168.20.0/24"
+  attachments = [
+    # Home Assistant (ADR-029). No device-initiated ports yet; add each
+    # integration's ports here and to docs/apps/home-assistant.md.
+    { name = "home-assistant", address = "192.168.20.10" },
+  ]
 }
 
 # ADR-016 anti-spoofing: each NIC may send only from its node address and the

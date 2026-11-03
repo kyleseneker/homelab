@@ -4,6 +4,8 @@ metadata:
   name: home-automation
   labels:
     kubernetes.io/metadata.name: home-automation
+    # May hold Multus attachment definitions (ADR-028).
+    home.seneker.io/iot-attachments: "true"
     pod-security.kubernetes.io/enforce: restricted
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted

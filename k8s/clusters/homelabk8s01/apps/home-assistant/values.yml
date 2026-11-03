@@ -1,7 +1,11 @@
 defaultPodOptions:
   # Home Assistant needs no Kubernetes API access.
   automountServiceAccountToken: false
+  labels:
+    home.seneker.io/iot-attachment: "true"
   annotations:
+    # A second interface on the IoT VLAN for discovery and local control (ADR-028).
+    k8s.v1.cni.cncf.io/networks: ha-iot
     # Restart when configuration.yaml changes; Home Assistant reads it at start.
     reloader.stakater.com/auto: 'true'
     # The local-path config volume never leaves the node outside Home
@@ -60,6 +64,26 @@ service:
     ports:
       http:
         port: 8123
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https-home
+    hostnames:
+      - ha.home.seneker.io
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: home-assistant
+            port: 8123
 persistence:
   config:
     type: persistentVolumeClaim

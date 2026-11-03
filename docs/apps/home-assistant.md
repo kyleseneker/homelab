@@ -9,7 +9,7 @@ Home Assistant is the home automation hub: device integrations, automations and 
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/home-operations/home-assistant`, pinned by version and digest |
 | Port | 8123 |
-| HTTPRoute | None until onboarding is complete; then `ha.home.seneker.io` |
+| HTTPRoute | `ha.home.seneker.io` |
 | Namespace | `home-automation`, Pod Security `restricted` |
 | ArgoCD app | `home-assistant` |
 
@@ -32,7 +32,8 @@ Velero's daily and weekly offsite schedules include the namespace and copy only 
 ## Network
 
 - Ingress on 8123 comes only from the gateway and Prometheus. Egress is cluster DNS and public HTTPS; LAN or in-cluster integrations need an explicit rule.
-- **IoT VLAN attachment**: not yet added. It will be 192.168.20.10, IPv4 only.
+- **IoT VLAN attachment**: `ha-iot` gives the pod `net1` at 192.168.20.10, MAC `02:00:00:14:00:0a`, IPv4 only, with only the connected route. It is recorded in `iot_nic.attachments` in `terraform/hosts/homelabk8s01/terraform.tfvars`, so the workers' Proxmox filter lets that address send. Changing the attachments recreates each worker's `ipfilter-net1` set, briefly dropping the attachment's IoT traffic.
+- Household clients cannot reach 192.168.20.10; UniFi blocks it and they use `ha.home.seneker.io`.
 
 | Ports open from the IoT VLAN | Purpose |
 |------------------------------|---------|
@@ -41,7 +42,7 @@ Velero's daily and weekly offsite schedules include the namespace and copy only 
 
 ## Onboarding
 
-The first deployment has no route and no attachment. Onboard through a port-forward, so no one else can claim the owner account:
+A new or recovered installation starts without the route and the attachment. Onboard through a port-forward, so no one else can claim the owner account:
 
 ```bash
 kubectl -n home-automation port-forward deploy/home-assistant 8123:8123

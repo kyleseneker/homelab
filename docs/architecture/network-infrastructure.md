@@ -55,7 +55,7 @@ The MS-01's switch port is a trunk: Homelab (10) as the native VLAN for data tra
 |------|-------|-------|
 | Default | 192.168.1.6 -- 192.168.1.254 | Household devices |
 | Homelab | 192.168.10.161 -- 192.168.10.190 | Aligned to `192.168.10.160/27` |
-| IoT | 192.168.20.100 -- 192.168.20.200 | `.2`--`.99` and `.201`--`.254` left for fixed addresses |
+| IoT | 192.168.20.100 -- 192.168.20.200 | `.2`--`.99` and `.201`--`.254` left for fixed addresses; `.10`--`.49` are Multus attachments ([ADR-028](../decisions/028-multus-iot-attachments.md)), and `.10` is Home Assistant |
 | Management | 192.168.99.6 -- 192.168.99.254 | Switch and PDU take addresses here |
 
 The Homelab scope is deliberately narrow. It sits above the statically addressed infrastructure (`.2` Proxmox, `.50`--`.52` nodes) and below the Cilium LoadBalancer pool (`.200`--`.250`), so DHCP cannot issue an address that collides with a node or a live service VIP. The `/27` boundary is what the Management access firewall rule matches on.
@@ -112,10 +112,11 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | 12 | Internal -- 192.168.1.158 (NAS) | Homelab -- 192.168.10.50 -- .52 (nodes) | Allow | NFSv3 lock callbacks from the NAS |
 | 13 | Internal, except 192.168.1.158 (NAS) | Homelab, except 192.168.10.201 | Block | Household clients reach only the gateway VIP |
 | 14 | Internal | Homelab -- 192.168.10.201, all TCP/UDP except 80, 443 | Block | The gateway VIP serves HTTP and HTTPS only |
+| 15 | Internal | IoT -- 192.168.20.10 (Home Assistant) | Block | Household clients reach Home Assistant at `ha.home.seneker.io` through the gateway, never its IoT address |
 
 Rules 8 -- 11, 13 and 14 match only new connections, so replies to traffic in the other direction are unaffected. Rules 8 -- 11 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
 
-Rule 6 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the NAS, the cluster or Management. Nothing permits Homelab, Management or Vpn into IoT.
+Rule 15 is evaluated ahead of rule 6, so no household browser or app sends Home Assistant credentials in plaintext over VLAN 20. Rule 6 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the NAS, the cluster or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
 Within Internal -> Homelab, the order is rules 12, 13, 14, then 1. Rules 13 and 14 refuse new household connections anywhere except the gateway VIP on 80 and 443, so rule 1 carries only those and the replies to connections Homelab starts. Administration happens from the Homelab Wi-Fi or the VPN. The limit uses block rules because an allow rule restricted by address and port did not match traffic in this zone pair. UniFi appends new policies to the end of a zone pair, so the order is set explicitly, through the Integration API (`firewall/policies/ordering`) or the UI. Rule 13 also excludes the NAS, so the NFS lock callbacks in rule 12 do not depend on that order.
 
