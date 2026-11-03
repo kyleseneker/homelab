@@ -1,0 +1,66 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-network-attachment-definitions
+  annotations:
+    policies.kyverno.io/title: Restrict Network Attachment Definitions
+    policies.kyverno.io/category: Multus (ADR-028)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Attachment definitions may exist only in namespaces labelled
+      home.seneker.io/iot-attachments, and must be a macvlan interface in
+      bridge mode on the worker's VLAN 20 NIC with one static IoT address and
+      a fixed locally administered MAC, followed by the tuning plugin. Other
+      plugin types, parent interfaces, routes and runtime capabilities are
+      denied.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - k8s.cni.cncf.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - network-attachment-definitions
+  variables:
+    - name: iotParent
+      expression: "'eth1'"
+    - name: config
+      expression: json.unmarshal(object.spec.?config.orValue('{}'))
+    - name: plugins
+      expression: variables.config.?plugins.orValue([])
+  validations:
+    - expression: >-
+        namespaceObject.metadata.?labels[?'home.seneker.io/iot-attachments'].orValue('') == 'true'
+      message: Attachment definitions may exist only in namespaces labelled home.seneker.io/iot-attachments=true.
+    - expression: >-
+        variables.plugins.size() == 2 &&
+        variables.plugins[0].?type.orValue('') == 'macvlan' &&
+        variables.plugins[1].?type.orValue('') == 'tuning'
+      message: The definition must be a plugin list of macvlan followed by tuning.
+    - expression: >-
+        variables.plugins.size() == 2 &&
+        variables.plugins[0].?master.orValue('') == variables.iotParent &&
+        variables.plugins[0].?mode.orValue('') == 'bridge' &&
+        variables.plugins[0].?mac.orValue('').matches('^[0-9a-f][26ae](:[0-9a-f]{2}){5}$')
+      message: The macvlan interface must use the VLAN 20 NIC in bridge mode with a fixed, lowercase, locally administered MAC.
+    - expression: >-
+        variables.plugins.size() == 2 &&
+        variables.plugins[0].?ipam.?type.orValue('') == 'static' &&
+        variables.plugins[0].?ipam.?addresses.orValue([]).size() == 1 &&
+        variables.plugins[0].ipam.addresses.all(a,
+          a.?address.orValue('').matches('^192\\.168\\.20\\.[1-4][0-9]/24$') && !has(a.gateway)) &&
+        !has(variables.plugins[0].ipam.routes)
+      message: The attachment must have one static address from 192.168.20.10 -- .49 with no gateway or routes.
+    - expression: >-
+        variables.plugins.all(p, !has(p.capabilities))
+      message: Runtime capabilities are not allowed, so pods cannot choose their address or MAC.

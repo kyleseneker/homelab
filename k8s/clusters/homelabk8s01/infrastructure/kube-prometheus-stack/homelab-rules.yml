@@ -42,6 +42,18 @@ spec:
             summary: "Authentik SSO server is down"
             description: "Authentik server has had no available replicas for more than 5 minutes. SSO authentication is unavailable."
 
+        - alert: MultusUnavailable
+          expr: |
+            kube_daemonset_status_number_unavailable{namespace="kube-system", daemonset="kube-multus-ds"} > 0
+            or
+            absent(kube_daemonset_status_desired_number_scheduled{namespace="kube-system", daemonset="kube-multus-ds"})
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Multus is unavailable"
+            description: "kube-multus-ds has had unavailable or missing pods for more than 5 minutes. Multus is in every pod's sandbox creation, so new pods cannot start on the affected nodes."
+
         - alert: NFSStorageLow
           expr: |
             (kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes) * 100 > 85
