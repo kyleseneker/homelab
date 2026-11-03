@@ -40,7 +40,7 @@ Native backups are UI state under **Settings** > **System** > **Backups**:
 make vault-put-secret SECRET_PATH=apps/home-assistant KEY=backup-encryption-key
 ```
 
-`HomeAssistantBackupStale` fires when `sensor.backup_last_successful_automatic_backup` is more than 36 hours old, or missing while Prometheus can scrape.
+`HomeAssistantBackupFailing` fires when the last automatic backup failed, the newest successful one is more than 36 hours old, a scheduled one is an hour overdue, or automatic backups are off. Until the first backup runs, only the schedule is checked.
 
 ## Network
 
@@ -60,7 +60,7 @@ The `prometheus` integration exports every entity at `/api/prometheus`. Promethe
 | Alert | Source | Severity | Condition |
 |-------|--------|----------|-----------|
 | `HomeAssistantMetricsUnavailable` | Prometheus | warning | No successful scrape for 15 minutes |
-| `HomeAssistantBackupStale` | Prometheus | warning | No successful automatic backup in 36 hours |
+| `HomeAssistantBackupFailing` | Prometheus | warning | Last automatic backup failed, none succeeded in 36 hours, or none scheduled |
 | `HomeAssistantLoginFailures` | Loki | warning | 3 or more failed logins or invalid tokens from one address in 15 minutes |
 | `HomeAssistantIPBanned` | Loki | critical | Home Assistant banned an address |
 
