@@ -72,7 +72,7 @@ The Loki rules are in `infrastructure/loki/home-assistant-rules.yml`, because th
 
 The token carries its user's rights, so it belongs to a dedicated non-admin user:
 
-1. Under **Settings** > **People**, add a user named `prometheus` with **Administrator** off.
+1. Under **Settings** > **People**, add a user named `prometheus` with **Can only log in from the local network** on and **Administrator** off. Give it a long random password and do not keep it; to rotate the token, the owner resets the password there. Local only also applies to its token: Home Assistant refuses it from any address that is not private, loopback or link-local, and through Home Assistant Cloud. Prometheus scrapes from the pod network, which is private.
 2. Sign in as `prometheus` in a private window, enable an authenticator app, and create a long-lived access token under the profile's **Security** tab.
 3. Store it in Vault, then sign out:
 
