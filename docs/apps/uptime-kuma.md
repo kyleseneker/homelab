@@ -60,7 +60,7 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
     | Homepage | `https://home.seneker.io` |
 
 !!! note
-    Uptime Kuma monitors from within the cluster. Install the homelab CA before relying on HTTPS validation; do not treat checks that ignore certificate errors as TLS coverage. The CA-backed Blackbox probes provide separate route/TLS checks. Internal HTTP checks can diagnose service reachability but do not test the gateway.
+    Uptime Kuma monitors from within the cluster. The gateway's certificate is publicly trusted, so HTTPS checks can validate it; do not treat checks that ignore certificate errors as TLS coverage. The Blackbox probes provide separate route/TLS checks. Internal HTTP checks can diagnose service reachability but do not test the gateway.
 
 ## Dependencies
 

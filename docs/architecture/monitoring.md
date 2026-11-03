@@ -72,7 +72,7 @@ Prometheus scrapes metrics from:
 
 ### Endpoint Probes
 
-Blackbox `Probe` resources verify trusted HTTPS against direct health endpoints and the expected Authentik login redirect for protected routes. trust-manager supplies the CA in `monitoring`. A redirect proves DNS/TLS/gateway/outpost reachability, not backend health; keep application and workload metrics alongside it. Probe failure, exporter scrape failure and absent group metrics have separate alerts.
+Blackbox `Probe` resources verify trusted HTTPS against direct health endpoints and the expected Authentik login redirect for protected routes. The exporter verifies the Let's Encrypt certificate against its image's system root store. A redirect proves DNS/TLS/gateway/outpost reachability, not backend health; keep application and workload metrics alongside it. Probe failure, exporter scrape failure and absent group metrics have separate alerts.
 
 ### Alertmanager
 

@@ -45,9 +45,9 @@ Browser -> Cilium Gateway -> Authentik outpost -> backend Service
 
 **Protected web routes:** Sonarr, Radarr, Prowlarr, Bazarr, Tdarr, qBittorrent, Goldilocks, Prometheus and Alertmanager.
 
-`blueprints-configmap.yml` declares one provider in `proxy` mode and one application for each route. It also owns the outpost's complete provider assignment and its Authentik URLs, `https://auth.home.seneker.io` for both the API and browser redirects. Forward-auth mode expects an auth subrequest from the gateway and is not used here. The blueprint must not depend on a manually created `homelab-forward-auth` provider.
+`blueprints-configmap.yml` declares one provider in `proxy` mode and one application for each route. It also owns the outpost's complete provider assignment and its Authentik URLs, `https://auth.home.seneker.io` for both the API and browser redirects. Forward-auth mode expects an auth subrequest from the gateway and is not used here.
 
-A proxy provider answers on exactly one hostname, its `external_host`. The protected routes use their `home.seneker.io` names, and `gateway/homelab-local-redirects.yml` redirects the old `homelab.local` names to them.
+A proxy provider answers on exactly one hostname, its `external_host`, which is the route's `home.seneker.io` name. No cookie domain is configured, so each protected app gets its own per-host cookie; single sign-on across apps comes from the Authentik session at `auth.home.seneker.io`.
 
 The *arr and qBittorrent proxy providers exempt API/feed/ping paths from browser login. Their native authentication must remain enabled. The outpost is still in their network path. A successful login redirect proves the auth entry point is reachable; it does not prove the backend is healthy.
 
@@ -57,7 +57,7 @@ Cross-namespace HTTPRoutes require `referencegrant.yml`. Cilium must permit both
 
 Grafana and ArgoCD authenticate with dedicated OIDC providers, declared in the `oidc-clients.yaml` blueprint. The blueprint reads each client secret from `authentik-credentials` through `!Env`, so Authentik and the client share one Vault value. Grafana accesses token/userinfo endpoints over the internal Service. ArgoCD uses the external issuer `https://auth.home.seneker.io/application/o/argocd/` and trusts it through the system roots. Both retain local administrator login for recovery.
 
-Each provider allows both the `homelab.local` and `home.seneker.io` callbacks. The issuer follows the hostname the client calls, so a client's configured issuer must match the Authentik name it uses. ArgoCD caches the issuer for session checks: after changing `oidc.config`, restart `argocd-server`, or every sign-in loops back to the login page.
+Each provider allows only its `home.seneker.io` callback. The issuer follows the hostname the client calls, so a client's configured issuer must match the Authentik name it uses. ArgoCD caches the issuer for session checks: after changing `oidc.config`, restart `argocd-server`, or every sign-in loops back to the login page.
 
 Jellyfin and Seerr use their media login flow. Homepage, Vault and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
 

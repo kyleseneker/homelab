@@ -9,7 +9,6 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Vault | vault | helm | vault | 0.34.1 |
 | External Secrets | external-secrets | helm | external-secrets | 2.14.0 |
 | cert-manager | cert-manager | helm | cert-manager | v1.21.3 |
-| trust-manager | cert-manager | helm | trust-manager | v0.26.0 |
 | Gateway API CRDs | -- | git | (plain manifests) | -- |
 | Gateway + Cilium L2 | default | git | (plain manifests) | -- |
 | Multus | kube-system | git | (upstream manifest, patched) | v4.3.1 |
@@ -51,4 +50,4 @@ The dependency graph the retry loop is resolving:
 
 This converges reliably but not deterministically. A cold bootstrap shows a period of failed Applications before everything goes green, which is expected rather than a fault.
 
-The [trust-manager](trust-manager.md) distributes internal CA trust, and [Blackbox Exporter](blackbox-exporter.md) owns Git-managed endpoint probes. ArgoCD notification credentials are reconciled by the `argocd-notifications` Application after ESO is available, separate from initial bootstrap.
+[Blackbox Exporter](blackbox-exporter.md) owns Git-managed endpoint probes. ArgoCD notification credentials are reconciled by the `argocd-notifications` Application after ESO is available, separate from initial bootstrap.

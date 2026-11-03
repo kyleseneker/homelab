@@ -30,5 +30,5 @@ Prometheus Probe resources are the endpoint inventory for this monitoring path. 
 
 - A successful login redirect establishes authentication-edge reachability, not authenticated backend behavior or media playback. Those require separate checks.
 - An external heartbeat detects loss of the monitoring path without identifying which component failed.
-- Internal HTTPS probes depend on the CA bundle distributed through [trust-manager](020-ca-trust-distribution.md).
+- Internal HTTPS probes trust the Let's Encrypt certificate through the exporter image's system root store ([ADR-030](030-public-domain-and-certificates.md)).
 - Uptime Kuma retains its own configuration and backup requirements while it remains deployed.

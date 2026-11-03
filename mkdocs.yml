@@ -50,7 +50,6 @@ nav:
       - Prerequisites: getting-started/prerequisites.md
       - Quick Start: getting-started/quick-start.md
       - Configuration: getting-started/configuration.md
-      - Trust the CA: getting-started/trust-ca.md
   - Architecture:
       - Overview: architecture/overview.md
       - GitOps: architecture/gitops.md
@@ -85,7 +84,6 @@ nav:
       - Cilium Gateway: infrastructure/cilium-gateway.md
       - Multus: infrastructure/multus.md
       - cert-manager: infrastructure/cert-manager.md
-      - trust-manager: infrastructure/trust-manager.md
       - Blackbox Exporter: infrastructure/blackbox-exporter.md
       - Vault: infrastructure/vault.md
       - External Secrets: infrastructure/external-secrets.md

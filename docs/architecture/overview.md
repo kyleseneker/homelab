@@ -51,7 +51,7 @@ flowchart LR
 | Cilium | Container Network Interface (CNI) | `kube-system` |
 | ArgoCD | GitOps continuous delivery | `argocd` |
 | Cilium Gateway API | Gateway controller + L2 LoadBalancer IP allocation | `default` |
-| cert-manager | TLS certificate management (self-signed CA) | `cert-manager` |
+| cert-manager | TLS certificate management (Let's Encrypt via Route 53 DNS-01) | `cert-manager` |
 | Vault | Centralized secrets backend (KV v2) | `vault` |
 | External Secrets Operator | Syncs Vault secrets into K8s Secrets | `external-secrets` |
 | NFS Provisioner | Dynamic NFS-backed PVC provisioning | `nfs-provisioner` |

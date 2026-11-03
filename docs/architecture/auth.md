@@ -47,7 +47,7 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik. Eac
 - **ArgoCD** -- native OIDC via `oidc.config` in `argocd-cm` with RBAC group mapping
 - **Seerr** -- the deployed configuration authenticates via Jellyfin
 
-Grafana's token and userinfo URLs use the internal Service over HTTP, with Cilium policies controlling reachability. Its browser authorization URL uses the external hostname. ArgoCD uses the external HTTPS issuer and the CA distributed by trust-manager; it does not use Grafana's split URL configuration.
+Grafana's token and userinfo URLs use the internal Service over HTTP, with Cilium policies controlling reachability. Its browser authorization URL uses the external hostname. ArgoCD uses the external HTTPS issuer, trusted through its image's system root store; it does not use Grafana's split URL configuration.
 
 ### Unprotected Services
 

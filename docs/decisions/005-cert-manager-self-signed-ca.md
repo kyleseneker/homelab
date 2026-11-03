@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. Household-facing names move to publicly trusted certificates under [ADR-030](030-public-domain-and-certificates.md), which replaces this CA once the migration completes.
+Superseded by [ADR-030](030-public-domain-and-certificates.md).
 
 ## Context
 

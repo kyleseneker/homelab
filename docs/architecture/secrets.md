@@ -139,13 +139,3 @@ Vault uses local Raft storage with daily native S3 snapshots, verified by downlo
 Keep KMS credentials, recovery keys, backup-store credentials and required administrator access outside Vault. A restore cannot depend on ESO reading secrets from the Vault instance that is not yet restored. Reconnect or restore the correct data directory before starting recovery; initialize only an intentionally new backend or the empty native-snapshot target described in the recovery runbook.
 
 See the [disaster recovery runbook](../runbooks/disaster-recovery.md) for the ordered procedure and the [backup runbook](../runbooks/backup-and-restore.md) for data-coverage limitations. Terraform state may also contain sensitive AWS access keys even though its outputs are marked sensitive; protect the state backend.
-
-## CA Distribution
-
-ArgoCD trusts the homelab CA through a trust-manager `Bundle` named `custom-ca-certs`, which
-reads `homelab-ca-secret` and republishes it into the `argocd` namespace. A CA rotation therefore
-propagates without a commit.
-
-argocd-server mounts that bundle with `optional: true`. On a cold rebuild trust-manager does not
-exist yet, and a required mount would deadlock the bootstrap. The pod needs one restart after the
-CA first appears.

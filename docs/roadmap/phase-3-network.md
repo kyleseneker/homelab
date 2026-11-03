@@ -43,7 +43,7 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 
 - [ ] Choose a DNS approach (see below)
 - [ ] Deploy and configure the chosen service with a recovery path available when Kubernetes is down
-- [ ] Migrate existing `*.homelab.local` entries and verify client lookups
+- [ ] Migrate the existing UniFi `home.seneker.io` records to the chosen service and verify client lookups
 - [ ] Test record creation, updates, and deletion if using external-dns
 - [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md)
 
@@ -59,7 +59,7 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 | B | Pi-hole or AdGuard Home | Centralized manual entries unless separately integrated with a supported updater | Ad-blocking and a DNS query dashboard |
 | C | Stay with UniFi static entries | Manual | No new components |
 
-Pi-hole or AdGuard Home remains an option for centralized DNS and ad-blocking. Full record automation requires a supported provider/API; it does not follow automatically from deploying either service. Any migration away from `.local` also needs a plan for service URLs, certificates, and clients.
+Pi-hole or AdGuard Home remains an option for centralized DNS and ad-blocking. Full record automation requires a supported provider/API; it does not follow automatically from deploying either service.
 
 ## 3.4 Plan External Access for Jellyfin
 
@@ -115,7 +115,7 @@ AMT is configured in firmware. This completes the physical management connection
 ## 3.8 Move Services to home.seneker.io
 
 - [ ] Verify a household iPhone reaches each service without installing anything (Jellyfin, Seerr, the status page, Homepage, Grafana and the Authentik login verified)
-- [ ] Retire the `homelab.local` names, the internal CA chain, the trust-manager Bundle and the CA trust guide
+- [x] Retire the `homelab.local` names, the internal CA chain, trust-manager and the CA trust guide
 
 | | |
 |---|---|

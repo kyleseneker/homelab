@@ -16,15 +16,14 @@ flowchart TD
 
 ## Cilium Gateway API
 
-Cilium serves as both the CNI and the gateway controller. [Multus](../infrastructure/multus.md) wraps it as each pod's CNI so selected pods can also get an interface on the IoT VLAN; Cilium stays every pod's default network and manages only `eth0`. The `homelab-gateway` Gateway accepts HTTPS on port 443 through two listeners, each terminating TLS with its own wildcard certificate:
+Cilium serves as both the CNI and the gateway controller. [Multus](../infrastructure/multus.md) wraps it as each pod's CNI so selected pods can also get an interface on the IoT VLAN; Cilium stays every pod's default network and manages only `eth0`. The `homelab-gateway` Gateway accepts HTTPS on port 443 through two listeners:
 
 | Listener | Hostnames | Certificate |
 |----------|-----------|-------------|
 | `https-home` | `*.home.seneker.io` | `home-gateway-tls`, from Let's Encrypt |
 | `https-home-root` | `home.seneker.io`, which serves Homepage | `home-gateway-tls` |
-| `https` | `*.homelab.local` | `homelab-gateway-tls`, from the homelab CA |
 
-Services use their `home.seneker.io` names, which every device trusts without extra setup. The `homelab.local` names are being retired. Routes that still list one serve both names, and the old names of SSO-protected apps redirect to the new ones (`gateway/homelab-local-redirects.yml`).
+A wildcard listener does not match the bare `home.seneker.io`, so it has its own listener. Services use their `home.seneker.io` names, which every device trusts without extra setup.
 
 Each application defines an HTTPRoute that binds to the gateway and routes by hostname:
 
@@ -43,7 +42,7 @@ route:
       - <app>.home.seneker.io
 ```
 
-An HTTP-to-HTTPS redirect is configured via a separate HTTPRoute on the gateway's HTTP listeners.
+The HTTP listeners on port 80, `http-home` and `http-home-root`, only redirect to HTTPS, through a separate HTTPRoute (`gateway/http-redirect.yml`).
 
 ### Key Resources
 
@@ -65,32 +64,11 @@ Cilium replaces MetalLB for LoadBalancer IP allocation. It operates in Layer 2 m
 !!! note "L2 Limitations"
     In L2 mode, all traffic for a given VIP is handled by a single node (the current ARP responder). Failover occurs when the node becomes unavailable, at which point another node takes over the VIP.
 
-## Gateway Certificates
+## Gateway Certificate
 
-`gateway/certificates.yml` declares both gateway certificates explicitly. See [cert-manager](../infrastructure/cert-manager.md) for the issuers.
+`gateway/certificates.yml` declares the gateway certificate explicitly. See [cert-manager](../infrastructure/cert-manager.md) for the issuers.
 
-- **`home-gateway-tls`** covers `*.home.seneker.io` and `home.seneker.io`, because a wildcard does not match the bare name. The `letsencrypt-production` ClusterIssuer obtains it with an ACME DNS-01 challenge in Route 53. cert-manager's AWS credentials can change only the `_acme-challenge.home.seneker.io` TXT record, so the public zone never holds a service address.
-- **`homelab-gateway-tls`** covers `*.homelab.local` and is signed by the in-cluster CA chain below.
-
-```mermaid
-flowchart TD
-    selfSignedIssuer["ClusterIssuer:\nselfsigned-issuer"] -->|"issues"| caCert["Certificate:\nhomelab-ca"]
-    caCert -->|"stored in"| caSecret["Secret:\nhomelab-ca-secret"]
-    caSecret -->|"referenced by"| caIssuer["ClusterIssuer:\nhomelab-ca-issuer"]
-    caIssuer -->|"issues certs for"| gatewayTLS["Gateway TLS Secret"]
-```
-
-### CA Chain Components
-
-| Resource | Kind | Purpose |
-|----------|------|---------|
-| `selfsigned-issuer` | ClusterIssuer | Bootstrap issuer that signs the CA certificate |
-| `homelab-ca` | Certificate | The root CA certificate, signed by the self-signed issuer |
-| `homelab-ca-secret` | Secret | Stores the CA key pair, referenced by the CA issuer |
-| `homelab-ca-issuer` | ClusterIssuer | Issues `homelab-gateway-tls` |
-
-!!! tip "Trusting the CA"
-    Only the `homelab.local` names need the homelab CA. To avoid browser warnings on them, import the `homelab-ca` certificate into your operating system or browser trust store, as described in [Trusting the CA](../getting-started/trust-ca.md).
+**`home-gateway-tls`** covers `*.home.seneker.io` and `home.seneker.io`, because a wildcard does not match the bare name. The `letsencrypt-production` ClusterIssuer obtains it with an ACME DNS-01 challenge in Route 53. cert-manager's AWS credentials can change only the `_acme-challenge.home.seneker.io` TXT record, so the public zone never holds a service address.
 
 ## DNS
 

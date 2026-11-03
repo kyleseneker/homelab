@@ -186,31 +186,35 @@ kubectl logs -n arr -l app.kubernetes.io/instance=arr-vpn-downloads -c gluetun
 
 ### TLS Errors in Browser
 
-The browser reports certificate errors beyond the expected self-signed CA warning.
+The browser reports a certificate error for a `home.seneker.io` name. The Gateway serves `home-gateway-tls`, a publicly trusted Let's Encrypt certificate, so any warning means the certificate is missing, expired or does not cover the name.
 
 **Diagnosis:**
 
 ```bash
-# Check Certificate resources
-kubectl get certificates --all-namespaces
+# Check the gateway certificate
+kubectl describe certificate home-gateway-tls -n default
+
+# Check the ClusterIssuer
+kubectl describe clusterissuer letsencrypt-production
+
+# Check pending DNS-01 challenges, then describe a stuck one
+kubectl get challenges -A
+kubectl describe challenge <name> -n default
 
 # Check cert-manager logs
 kubectl logs -n cert-manager -l app.kubernetes.io/name=cert-manager
-
-# Check ClusterIssuer
-kubectl get clusterissuer
-kubectl describe clusterissuer homelab-ca-issuer
 ```
 
 **Common causes:**
 
-- The `homelab-ca-issuer` ClusterIssuer does not exist or is not ready
+- The `letsencrypt-production` ClusterIssuer is not ready, for example because its ACME account is not registered
+- A DNS-01 challenge is stuck: `route53-dns01-credentials` is missing or not synced from Vault, or Route 53 rejects the change to the `_acme-challenge.home.seneker.io` TXT record
+- The challenge record has not propagated to the public resolvers cert-manager checks (`1.1.1.1`, `9.9.9.9`)
 - cert-manager pods are not running
-- The Certificate resource failed to issue (check events with `kubectl describe certificate`)
+- The hostname is not `home.seneker.io` or a direct subdomain of it, which the certificate does not cover
 
 !!! note
-    Self-signed CA warnings are expected unless you have [trusted the homelab CA](../getting-started/trust-ca.md) on your machine.
-
+    Test issuer or certificate changes against `letsencrypt-staging` first; its certificates are not browser-trusted, but it avoids Let's Encrypt production rate limits.
 
 ## Vault Issues
 

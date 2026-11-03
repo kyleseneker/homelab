@@ -154,7 +154,7 @@ The tap and its `fwpr` peer each show three frames, and `nic0` shows none from t
 
     After each node, check:
     - the node is Ready
-    - `https://home.homelab.local` and `https://jellyfin.home.seneker.io` load, which exercises the L2 VIPs the node may answer for
+    - `https://home.seneker.io` and `https://jellyfin.home.seneker.io` load, which exercises the L2 VIPs the node may answer for
     - NFS mounts respond
     - no Blackbox probe fails
     - NUT metrics are still current, since the exporter reaches `upsd` on the host itself

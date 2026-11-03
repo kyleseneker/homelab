@@ -64,7 +64,7 @@ flowchart LR
 | VM Templates | Packer (proxmox-iso, Ubuntu autoinstall) |
 | Cluster | kubeadm, Cilium CNI |
 | GitOps | ArgoCD ApplicationSet, External Secrets Operator, Renovate |
-| Networking | Cilium Gateway API, Cilium L2, cert-manager, trust-manager |
+| Networking | Cilium Gateway API, Cilium L2, cert-manager |
 | Storage | NFS dynamic provisioning, local-path (SQLite workloads) |
 | Secrets | HashiCorp Vault (AWS KMS auto-unseal) + External Secrets Operator |
 | Auth | Authentik SSO (OIDC for Grafana and ArgoCD) |

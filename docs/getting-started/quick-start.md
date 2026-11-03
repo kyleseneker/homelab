@@ -162,6 +162,6 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
 Log in with username `admin` and the password from the command above. From the ArgoCD dashboard you can monitor the sync status of all applications as they deploy.
 
 !!! note
-    If your browser shows a certificate warning, see [Trust the Homelab CA](trust-ca.md) to install the root certificate on your machine.
+    If your browser shows a certificate error, `home-gateway-tls` may not be issued yet. See [Certificate Issues](../runbooks/troubleshooting.md#certificate-issues).
 
 ArgoCD notification credentials are reconciled separately by the `argocd-notifications` Application. The initial `k8s/bootstrap/argocd` resources must not require ESO APIs: ESO is installed only after the ApplicationSet is created. This avoids a missing-CRD bootstrap cycle on a fresh cluster.

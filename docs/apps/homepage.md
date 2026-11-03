@@ -30,7 +30,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
 
 ## Key Configuration
 
-- `HOMEPAGE_ALLOWED_HOSTS`: `home.homelab.local,home.seneker.io` -- restricts which hostnames the server responds to.
+- `HOMEPAGE_ALLOWED_HOSTS`: `home.seneker.io` -- restricts which hostnames the server responds to.
 - API keys for service widgets are injected as environment variables from the `homepage-secrets` Secret. These are referenced in the configuration files as `{{HOMEPAGE_VAR_*}}` placeholders.
 - A `homepage` ServiceAccount is created for Kubernetes widget integration, allowing the dashboard to display cluster resource information.
 

@@ -9,18 +9,19 @@ Cilium serves as both the CNI and the Gateway API controller, providing hostname
 | Gateway Class | `cilium` |
 | Gateway Name | `homelab-gateway` |
 | Namespace | `default` |
-| Listeners | HTTPS (443), HTTP (80, redirect only) |
-| TLS | Wildcard cert for `*.homelab.local` via cert-manager |
+| Listeners | HTTPS (443), HTTP (80, redirect only), each for `*.home.seneker.io` and `home.seneker.io` |
+| TLS | `home-gateway-tls` for `*.home.seneker.io` and `home.seneker.io`, from Let's Encrypt via cert-manager |
 | IP Pool | `192.168.10.200-250` (CiliumLoadBalancerIPPool) |
 
 ## Key Configuration
 
 ### Gateway
 
-The `homelab-gateway` resource defines two listeners:
+The `homelab-gateway` resource defines four listeners. A wildcard listener does not match the bare `home.seneker.io`, which serves Homepage, so it has its own pair:
 
-- **HTTPS (443):** Terminates TLS for `*.homelab.local` using a cert-manager-issued certificate. Allows routes from all namespaces.
-- **HTTP (80):** Accepts traffic for `*.homelab.local` and redirects to HTTPS.
+- **`https-home` (443):** Terminates TLS for `*.home.seneker.io` with `home-gateway-tls`. Allows routes from all namespaces.
+- **`https-home-root` (443):** Terminates TLS for `home.seneker.io` with the same certificate. Allows routes from all namespaces.
+- **`http-home` and `http-home-root` (80):** Accept traffic for the same names and redirect it to HTTPS (`gateway/http-redirect.yml`).
 
 The Gateway does not currently request a fixed address. Record its live `status.addresses` and the DNS records before adding `spec.addresses`; recreating it can otherwise assign a different IP from the pool. The repository cannot determine which address is safe to pin without that inventory.
 
@@ -51,9 +52,9 @@ route:
         kind: Gateway
         name: homelab-gateway
         namespace: default
-        sectionName: https
+        sectionName: https-home
     hostnames:
-      - <app>.homelab.local
+      - <app>.home.seneker.io
     rules:
       - matches:
           - path:

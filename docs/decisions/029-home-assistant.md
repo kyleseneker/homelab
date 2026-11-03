@@ -116,6 +116,6 @@ The gateway restrictions in [ADR-016](016-vlan-segmentation.md#firewall-rules) a
 - With no apps, each companion service is its own app to deploy, upgrade, secure and back up. Thread border routing has no supported container path, so Thread needs a network border router on VLAN 20. Apple border routers block Matter firmware updates from Home Assistant ([Matter integration](https://www.home-assistant.io/integrations/matter/)).
 - Integrations that depend on vendor webhooks need an externally reachable URL, and the homelab has no inbound path ([Phase 3.4](../roadmap/phase-3-network.md#34-plan-external-access-for-jellyfin)). Those integrations fall back to polling or need Home Assistant Cloud, which would add an internet-facing path needing its own decision.
 - The Prometheus scrape token can control devices. Anyone who can read its Secret, or Prometheus's generated configuration, holds that control.
-- Companion apps need the homelab CA installed on each phone ([ADR-020](020-ca-trust-distribution.md)).
+- `ha.home.seneker.io` has a publicly trusted certificate but resolves only through UniFi DNS, so companion apps reach Home Assistant only on the home network or over the VPN ([ADR-030](030-public-domain-and-certificates.md)).
 - HTTP settings live in UI state, not Git. A restore brings them back from backup, and the app doc records their intended values.
 - A native backup restores Home Assistant's configuration and history only. Companion services follow their own backup paths, and a restore drill belongs in the restore lab's checks.

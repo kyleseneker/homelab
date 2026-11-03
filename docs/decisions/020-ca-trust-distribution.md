@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. [ADR-030](030-public-domain-and-certificates.md) retires the internal CA, and with it this trust distribution, once the migration completes.
+Superseded by [ADR-030](030-public-domain-and-certificates.md).
 
 ## Context
 

@@ -130,7 +130,7 @@ Management VLAN outbound to External and Gateway is allowed by zone defaults (fo
 
 ## DNS
 
-Static entries for each service are configured in the UniFi Network controller's local DNS records, pointing to the Cilium L2 gateway VIP. Services use `*.home.seneker.io` names ([ADR-030](../decisions/030-public-domain-and-certificates.md)). The `homelab.local` records stay until those names are retired.
+Static entries for each service are configured in the UniFi Network controller's local DNS records, pointing to the Cilium L2 gateway VIP. The local records hold only `home.seneker.io` names ([ADR-030](../decisions/030-public-domain-and-certificates.md)); `proxmox.home.seneker.io` points at the Proxmox host, 192.168.10.2.
 
 `seneker.io` is a public domain in Route 53, but `home.seneker.io` names exist only in these local records; public DNS returns nothing for them. The public zone carries only the ACME challenge record and deliberately public sites.
 
@@ -149,7 +149,7 @@ The gateway's mDNS proxy runs in automatic mode with all predefined services ena
 
 Both land in the `Vpn` firewall zone, which rules 4, 5 and 7 above permit into Homelab, Management and Internal. A VPN client therefore reaches cluster services, the Proxmox web UI on either interface, the switch and PDU management pages, and household devices including the NAS. The IoT VLAN is not reachable over the VPN.
 
-There is no inbound path from the internet: no port forwards, no static routes, no reverse proxy. All `*.homelab.local` records resolve to a private address, so remote access requires the VPN.
+There is no inbound path from the internet: no port forwards, no static routes, no reverse proxy. The `home.seneker.io` records exist only in UniFi's local DNS and resolve to private addresses, so remote access requires the VPN.
 
 ## Kubernetes Network Integration
 

@@ -22,7 +22,7 @@ Use Authentik as the centralized identity provider with two authentication mecha
 
 - **Dual auth modes**: The outpost handles apps without native SSO (the \*arr stack, qBittorrent, Tdarr, Goldilocks, Prometheus, Alertmanager). OIDC handles apps that support it natively (Grafana, ArgoCD). One tool covers both patterns.
 - **Routing, not annotations**: An HTTPRoute has no equivalent to a subrequest auth hook, so a protected app's route points at the outpost Service and the outpost proxies to the app after authenticating. It dispatches on the `Host` header, so one outpost serves every protected app and no ext_authz filter is required.
-- **Single domain cookie**: The embedded outpost sets a cookie scoped to `homelab.local`, enabling single sign-on across all subdomains without re-authentication.
+- **Single sign-on through the Authentik session**: No cookie domain is configured, so the embedded outpost sets a per-host cookie for each protected app. Signing in to one app establishes the Authentik session at `auth.home.seneker.io`, which the other apps reuse without re-authentication.
 - **Group-based RBAC**: Authentik groups map to application roles (e.g., ArgoCD `role:admin`), centralizing access control.
 - **Lightweight deployment**: Single replica with PostgreSQL. Lower resource footprint than Keycloak.
 
