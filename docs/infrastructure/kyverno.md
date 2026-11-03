@@ -79,7 +79,7 @@ A new workload that needs host access needs its exception before it deploys. An 
 
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. Run it with the Kyverno CLI matching the chart application version (currently 1.19.2):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
 kyverno test tests/kyverno
