@@ -32,8 +32,9 @@ spec:
         resources:
           - network-attachment-definitions
   variables:
+    # The kernel's predictable name for the workers' second NIC (net1).
     - name: iotParent
-      expression: "'eth1'"
+      expression: "'ens19'"
     - name: config
       expression: json.unmarshal(object.spec.?config.orValue('{}'))
     - name: plugins
