@@ -18,6 +18,7 @@ Home Assistant is the home automation hub: device integrations, automations and 
 - Runs as UID 1000 with a read-only root filesystem, no capabilities, `RuntimeDefault` seccomp and no ServiceAccount token. The image runs without s6-overlay.
 - Scheduled only on workers labelled `home.seneker.io/iot-vlan=true`, which can carry its IoT VLAN attachment ([ADR-028](../decisions/028-multus-iot-attachments.md)).
 - The image rebuilds its Python virtualenv at `/config/.venv` whenever the image changes; it is an `emptyDir`, outside the config volume and its backups.
+- `configuration.yaml` comes from the `home-assistant-configuration` ConfigMap, mounted read-only; Reloader restarts the pod when it changes. It sets the external and internal URL to `https://ha.home.seneker.io`, trusts `X-Forwarded-For` only from the pod CIDR the gateway connects from, and bans an address after five failed logins. Automations, scripts and scenes made in the UI stay in their own files on the config volume.
 
 ## Storage and Backups
 
@@ -46,7 +47,7 @@ The first deployment has no route and no attachment. Onboard through a port-forw
 kubectl -n home-automation port-forward deploy/home-assistant 8123:8123
 ```
 
-Then open `http://localhost:8123`, create the owner account with multi-factor authentication, and set the internal and external URLs to `https://ha.home.seneker.io` and the trusted proxies to the pod CIDR before the route is added.
+Then open `http://localhost:8123` and create the owner account, and enable an authenticator app under the profile's Security settings. The URLs and trusted proxies come from `configuration.yaml`, so they are in place before the route is added.
 
 ## Credentials Home Assistant Holds
 

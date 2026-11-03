@@ -2,9 +2,11 @@ defaultPodOptions:
   # Home Assistant needs no Kubernetes API access.
   automountServiceAccountToken: false
   annotations:
+    # Restart when configuration.yaml changes; Home Assistant reads it at start.
+    reloader.stakater.com/auto: 'true'
     # The local-path config volume never leaves the node outside Home
     # Assistant's own encrypted backups, which Velero copies from the NFS volume.
-    backup.velero.io/backup-volumes-excludes: config,venv,tmp
+    backup.velero.io/backup-volumes-excludes: config,configuration,venv,tmp
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
@@ -64,6 +66,13 @@ persistence:
     existingClaim: home-assistant-config
     globalMounts:
       - path: /config
+  configuration:
+    type: configMap
+    name: home-assistant-configuration
+    globalMounts:
+      - path: /config/configuration.yaml
+        subPath: configuration.yaml
+        readOnly: true
   backups:
     type: persistentVolumeClaim
     existingClaim: home-assistant-backups

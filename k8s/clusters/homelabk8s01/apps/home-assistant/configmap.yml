@@ -1,0 +1,34 @@
+# Managed in Git (ADR-029) and mounted read-only over /config/configuration.yaml.
+# Automations, scripts and scenes made in the UI stay in their own files on the
+# config volume.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-configuration
+  namespace: home-automation
+data:
+  configuration.yaml: |
+    # Loads default set of integrations. Do not remove.
+    default_config:
+
+    # Load frontend themes from the themes folder
+    frontend:
+      themes: !include_dir_merge_named themes
+
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
+
+    # Discovery and notifications hand out this URL, never the IoT VLAN address.
+    homeassistant:
+      external_url: https://ha.home.seneker.io
+      internal_url: https://ha.home.seneker.io
+
+    http:
+      # The gateway connects from the pod CIDR. Only the gateway and Prometheus
+      # may reach port 8123, so no other pod can forge a client address.
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.0.0.0/8
+      ip_ban_enabled: true
+      login_attempts_threshold: 5
