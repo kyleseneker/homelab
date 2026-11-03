@@ -64,7 +64,7 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 - Schedule the pod only on workers labelled `home.seneker.io/iot-vlan=true`, so its `local-path` volume is created on a node that can carry the attachment.
 - Keep `/config` on a `local-path` volume, because the recorder's SQLite database must not live on NFS ([ADR-006](006-nfs-local-path-storage.md)). Velero cannot read `local-path` volumes, so the plaintext `.storage` never leaves the node except inside encrypted backups.
 - Keep the runtime virtualenv (`/config/.venv`) on an `emptyDir`, out of the config volume and its backups.
-- Keep `configuration.yaml` in Git, mounted read-only over the generated file. It holds the settings that are YAML-only, such as trusted proxies, forwarded headers and IP banning under `http`, the URLs, and integrations that still accept YAML, such as the recorder and the Prometheus export. Automations, scripts and scenes made in the UI stay in their own files on the config volume.
+- Keep `configuration.yaml` in Git, mounted read-only over the generated file, for the URLs and integrations that still accept YAML, such as the recorder and the Prometheus export. Automations, scripts and scenes made in the UI stay in their own files on the config volume. HTTP settings (forwarded headers, trusted proxies, IP banning) are UI state: Home Assistant imports an `http:` YAML block only once and ignores it afterwards. They are set during onboarding and recorded in the app doc.
 
 ### Backups
 
