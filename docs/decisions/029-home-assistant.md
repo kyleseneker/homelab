@@ -64,7 +64,7 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 - Schedule the pod only on workers labelled `home.seneker.io/iot-vlan=true`, so its `local-path` volume is created on a node that can carry the attachment.
 - Keep `/config` on a `local-path` volume, because the recorder's SQLite database must not live on NFS ([ADR-006](006-nfs-local-path-storage.md)). Velero cannot read `local-path` volumes, so the plaintext `.storage` never leaves the node except inside encrypted backups.
 - Keep the runtime virtualenv (`/config/.venv`) on an `emptyDir`, out of the config volume and its backups.
-- Keep `configuration.yaml` in Git, mounted read-only over the generated file, for the URLs and integrations that still accept YAML, such as the recorder and the Prometheus export. Automations, scripts and scenes made in the UI stay in their own files on the config volume. HTTP settings (forwarded headers, trusted proxies, IP banning) are UI state: Home Assistant imports an `http:` YAML block only once and ignores it afterwards. They are set during onboarding and recorded in the app doc.
+- Keep `configuration.yaml` in Git, mounted read-only over the generated file, for the URLs and integrations that still accept YAML, such as the recorder and the Prometheus export. Automations, scripts and scenes made in the UI stay in their own files on the config volume. HTTP settings (forwarded headers, trusted proxies, IP banning) are UI state: Home Assistant imports an `http:` YAML block only once and ignores it afterwards. They are set during onboarding and recorded in the app doc. So is the network adapter used for discovery: auto-detection picks the multicast route on `eth0`, so only the VLAN 20 attachment is enabled once it exists.
 
 ### Backups
 
@@ -117,5 +117,5 @@ The gateway restrictions in [ADR-016](016-vlan-segmentation.md#firewall-rules) a
 - Integrations that depend on vendor webhooks need an externally reachable URL, and the homelab has no inbound path ([Phase 3.4](../roadmap/phase-3-network.md#34-plan-external-access-for-jellyfin)). Those integrations fall back to polling or need Home Assistant Cloud, which would add an internet-facing path needing its own decision.
 - The Prometheus scrape token can control devices. Anyone who can read its Secret, or Prometheus's generated configuration, holds that control.
 - `ha.home.seneker.io` has a publicly trusted certificate but resolves only through UniFi DNS, so companion apps reach Home Assistant only on the home network or over the VPN ([ADR-030](030-public-domain-and-certificates.md)).
-- HTTP settings live in UI state, not Git. A restore brings them back from backup, and the app doc records their intended values.
+- HTTP and network adapter settings live in UI state, not Git. A restore brings them back from backup, and the app doc records their intended values.
 - A native backup restores Home Assistant's configuration and history only. Companion services follow their own backup paths, and a restore drill belongs in the restore lab's checks.

@@ -20,6 +20,7 @@ Home Assistant is the home automation hub: device integrations, automations and 
 - The image rebuilds its Python virtualenv at `/config/.venv` whenever the image changes; it is an `emptyDir`, outside the config volume and its backups.
 - `configuration.yaml` comes from the `home-assistant-configuration` ConfigMap, mounted read-only; Reloader restarts the pod when it changes. It sets the external and internal URL to `https://ha.home.seneker.io`. Automations, scripts and scenes made in the UI stay in their own files on the config volume.
 - HTTP settings are UI state under **Settings** > **System** > **Network**, stored in `/config/.storage/http`; Home Assistant imports an `http:` YAML block only once and ignores it afterwards. They must be: **Use X-Forwarded-For** on, **Trusted proxies** `10.0.0.0/8` (the pod CIDR the gateway connects from; only the gateway and Prometheus may reach port 8123, so no other pod can forge a client address), **IP ban** on, and **Login attempts threshold** 5. Until the trusted proxies are set, requests through the gateway get HTTP 400.
+- The network adapter is UI state under **Settings** > **System** > **Network** > **Network adapter**, stored in `/config/.storage/core.network`; the `network` integration takes no YAML. **Autoconfigure** is off and only `net1` (192.168.20.10) is enabled. Auto-detection picks the interface that routes multicast, which is Cilium's `eth0`, so mDNS and SSDP discovery would never see VLAN 20. A change takes effect after a restart.
 
 ## Storage and Backups
 
@@ -101,7 +102,7 @@ A new or recovered installation starts without the route and the attachment. Onb
 kubectl -n home-automation port-forward deploy/home-assistant 8123:8123
 ```
 
-Then open `http://localhost:8123`, create the owner account, enable an authenticator app under the profile's Security settings, and set the HTTP settings above. The URLs come from `configuration.yaml`.
+Then open `http://localhost:8123`, create the owner account, enable an authenticator app under the profile's Security settings, and set the HTTP settings above. The URLs come from `configuration.yaml`. Once the attachment is added, set the network adapter above and restart.
 
 ## Credentials Home Assistant Holds
 
