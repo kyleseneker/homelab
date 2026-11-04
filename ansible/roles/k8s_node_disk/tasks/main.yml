@@ -1,0 +1,64 @@
+---
+- name: Create the journald drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Cap the journal size
+  ansible.builtin.template:
+    src: journald-size.conf.j2
+    dest: /etc/systemd/journald.conf.d/60-size.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - Restart journald
+    - Trim the journal
+
+# kubeadm keeps the kubelet configuration in this ConfigMap: joins and upgrades
+# write each node's /var/lib/kubelet/config.yaml from it.
+- name: Read the cluster's kubelet configuration
+  ansible.builtin.command: >
+    kubectl get configmap kubelet-config -n kube-system
+    --kubeconfig=/etc/kubernetes/admin.conf -o json
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  run_once: true
+  register: k8s_node_disk_kubelet_configmap
+  changed_when: false
+  check_mode: false
+
+- name: Merge the kubelet settings into the cluster's kubelet configuration
+  ansible.builtin.command:
+    argv:
+      - kubectl
+      - patch
+      - configmap
+      - kubelet-config
+      - -n
+      - kube-system
+      - --kubeconfig=/etc/kubernetes/admin.conf
+      - --type=merge
+      - -p
+      - "{{ {'data': {'kubelet': k8s_node_disk_cluster_config | combine(k8s_kubelet_config) | to_nice_yaml(width=1000)}} | to_json }}"
+  vars:
+    k8s_node_disk_cluster_config: "{{ (k8s_node_disk_kubelet_configmap.stdout | from_json).data.kubelet | from_yaml }}"
+  delegate_to: "{{ groups['control_plane'][0] }}"
+  run_once: true
+  changed_when: true
+  when: k8s_node_disk_cluster_config | combine(k8s_kubelet_config) != k8s_node_disk_cluster_config
+
+- name: Read the node's kubelet configuration
+  ansible.builtin.slurp:
+    src: /var/lib/kubelet/config.yaml
+  register: k8s_node_disk_node_config
+
+- name: Refresh the node's kubelet configuration from the cluster
+  ansible.builtin.command: kubeadm upgrade node phase kubelet-config
+  vars:
+    k8s_node_disk_current: "{{ k8s_node_disk_node_config.content | b64decode | from_yaml }}"
+  changed_when: true
+  when: k8s_node_disk_current | combine(k8s_kubelet_config) != k8s_node_disk_current
+  notify: Restart kubelet

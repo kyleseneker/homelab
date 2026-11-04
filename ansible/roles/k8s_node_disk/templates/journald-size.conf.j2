@@ -1,0 +1,3 @@
+# Managed by Ansible. journald's default cap is 10% of the filesystem, up to 4G.
+[Journal]
+SystemMaxUse={{ k8s_node_disk_journal_max_use }}

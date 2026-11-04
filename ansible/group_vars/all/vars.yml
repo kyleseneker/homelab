@@ -6,6 +6,13 @@ k8s_control_plane_version: "1.35.10"
 k8s_control_plane_pod_network_cidr: "10.244.0.0/16"
 k8s_control_plane_service_cidr: "10.96.0.0/12"
 k8s_control_plane_cilium_version: "1.20.4"
+# Kubelet settings on top of kubeadm's defaults: in kubeadm init, and merged into
+# the kubelet-config ConfigMap by k8s_node_disk. Unused images go after a week,
+# and threshold cleanup starts below the 80% root disk alert.
+k8s_kubelet_config:
+  imageMaximumGCAge: 168h
+  imageGCHighThresholdPercent: 75
+  imageGCLowThresholdPercent: 65
 
 k8s_prereqs_version: "1.35.10"
 k8s_prereqs_version_minor: "1.35"

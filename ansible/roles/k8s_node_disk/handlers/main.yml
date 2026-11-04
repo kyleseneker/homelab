@@ -1,0 +1,14 @@
+---
+- name: Restart journald
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted
+
+- name: Trim the journal
+  ansible.builtin.command: journalctl --vacuum-size={{ k8s_node_disk_journal_max_use }}
+  changed_when: true
+
+- name: Restart kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    state: restarted

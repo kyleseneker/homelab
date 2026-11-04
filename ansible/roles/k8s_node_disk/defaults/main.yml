@@ -1,0 +1,4 @@
+---
+# Keeps node root disks below the 80% alert. The kubelet settings are the shared
+# k8s_kubelet_config, also used by kubeadm init.
+k8s_node_disk_journal_max_use: 1G

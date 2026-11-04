@@ -83,9 +83,12 @@ Requires Velero metrics to be enabled (`metrics.serviceMonitor.enabled: true` in
 |-------|----------|-----|-----------|
 | `HighNodeCPU` | warning | 15m | Sustained CPU above 85% |
 | `HighNodeMemory` | warning | 15m | Memory usage above 90% |
+| `NodeRootDiskFillingUp` | warning | 30m | Root filesystem above 80% full |
 | `NodeDiskPressure` | critical | 5m | Root filesystem above 90% full |
 
 These supplement the default kube-prometheus-stack node alerts, which use predictive thresholds rather than static ones.
+
+The root filesystem holds container images, the journal and `local-path` volumes. `make k8s-node-disk` caps the journal at 1G and sets the kubelet to remove images unused for 7 days, and any unused image once the disk passes 75%, so images alone do not reach the 80% alert. kubeadm's default starts that cleanup only at 85%. The kubelet settings are `k8s_kubelet_config` in `ansible/group_vars/all/vars.yml`, used by `kubeadm init` and merged into the cluster's `kubelet-config` ConfigMap, which joins and upgrades copy to each node.
 
 ## Adding New Rules
 

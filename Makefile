@@ -109,7 +109,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-iot-nic cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-crd-schemas k8s-bootstrap-drift k8s-check-alerts vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-iot-nic k8s-node-disk cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-crd-schemas k8s-bootstrap-drift k8s-check-alerts vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	terraform -chdir=$(TF_DIR) init
@@ -166,6 +166,10 @@ k8s-kubeconfig: ## Copy kubeconfig from control plane to local machine
 k8s-iot-nic: ## Configure the workers' IoT VLAN NIC for Multus attachments (ADR-028)
 	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(CLUSTER)/hosts.yml playbooks/k8s-cluster.yml --tags k8s_iot_nic --limit workers
+
+k8s-node-disk: ## Cap node journals and set kubelet image cleanup, one node at a time
+	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(CLUSTER)/hosts.yml playbooks/k8s-cluster.yml --tags k8s_node_disk
 
 cilium-upgrade: ## Upgrade Cilium and enable Gateway API + L2 announcements on existing cluster
 	@test "$(CLUSTER)" != "homelabrestore01" || { echo "Use the dedicated lab targets." >&2; exit 1; }

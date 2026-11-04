@@ -31,3 +31,7 @@ apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
 skipPhases:
   - addon/kube-proxy
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+{{ k8s_kubelet_config | to_nice_yaml }}

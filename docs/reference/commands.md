@@ -50,6 +50,7 @@ All operational commands are defined as Makefile targets. Proxmox targets (`pve-
 | `make k8s-restore` | List available Velero backups for restore |
 | `make k8s-kubeconfig` | Copy kubeconfig from control plane to local machine |
 | `make k8s-ssh-cp` | SSH into control plane |
+| `make k8s-node-disk` | Cap node journals and set kubelet image cleanup, one node at a time ([node disk limits](../infrastructure/alerting.md#node-health)) |
 | `make cilium-upgrade` | Upgrade Cilium with Gateway API and L2 announcements on an existing cluster |
 
 ## Restore Lab

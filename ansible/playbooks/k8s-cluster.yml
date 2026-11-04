@@ -27,6 +27,16 @@
   roles:
     - k8s_worker
 
+# One node at a time, since a kubelet configuration change restarts the kubelet.
+- name: Node disk limits
+  hosts: k8s_cluster
+  become: true
+  serial: 1
+  roles:
+    - role: k8s_node_disk
+      tags:
+        - k8s_node_disk
+
 - name: IoT VLAN NIC on workers (ADR-028)
   hosts: workers
   become: true
