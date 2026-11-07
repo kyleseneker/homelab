@@ -69,7 +69,7 @@ Namespaces are not excluded from these controls, because one workload that needs
 | Jellyfin, Tdarr | `arr` | `hostPath` `/dev/dri` |
 | Gluetun (`arr-vpn-downloads`) | `arr` | `NET_ADMIN`, sysctl `net.ipv4.conf.all.src_valid_mark` |
 | Velero node-agent | `backups` | `hostPath` `/var/lib/kubelet/pods`, `/var/lib/kubelet/plugins` |
-| Velero pod volume backup/restore hosting pods | `backups` | `hostPath` below `/var/lib/kubelet/pods/`: the one volume directory each pod copies |
+| Velero pod volume backup/restore hosting pods | `backups` | `hostPath` below `/var/lib/kubelet/pods/` for the volume each pod copies, plus node-agent's `/var/lib/kubelet/pods` and `/var/lib/kubelet/plugins`, which every hosting pod inherits |
 | etcd-backup | `backups` | `hostPath` for etcd's PKI and the control-plane configuration |
 | Intel GPU plugin | `intel-gpu-operator` | `hostPath` for the device nodes and kubelet plugin sockets; SELinux type `container_device_plugin_t` |
 | Alloy | `monitoring` | `hostPath` `/var/log/kubernetes/audit` |
@@ -84,7 +84,7 @@ Four policies guard Multus ([ADR-028](../decisions/028-multus-iot-attachments.md
 
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/multus` covers the default-network and attachment-request policies. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Model an exception's test pods on what the workload actually creates, not only its controller: the Velero cases use the hosting pod shape node-agent logs, because an exception that covered node-agent alone let every pod volume backup fail at admission. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/multus` covers the default-network and attachment-request policies. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Model an exception's test pods on what the workload actually creates, not only its controller: the Velero cases use the hosting pod's full volume list, the per-volume path node-agent logs plus every volume it inherits from the node-agent DaemonSet, because an exception that covered node-agent alone let every pod volume backup fail at admission. Before relying on a new exception, server-side dry-run a pod of that exact shape (`kubectl create --dry-run=server`); it runs Kyverno's admission check without creating anything. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
 kyverno test tests/kyverno

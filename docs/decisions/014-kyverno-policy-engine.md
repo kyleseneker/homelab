@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. On 2026-10-31 the policies moved from the deprecated `ClusterPolicy` type to CEL-based `ValidatingPolicy`; the decision to use Kyverno is unchanged. Amended 2026-11-06: once the baseline was enforced, it denied the per-volume hosting pods Velero 1.18 uses for file system backups, so the 2026-11-04 to 2026-11-06 daily backups contained no volume data. `hostPath` exceptions may now allow a directory prefix for paths that differ per pod.
+Accepted. On 2026-10-31 the policies moved from the deprecated `ClusterPolicy` type to CEL-based `ValidatingPolicy`; the decision to use Kyverno is unchanged. Amended 2026-11-06: once the baseline was enforced, it denied the per-volume hosting pods Velero 1.18 uses for file system backups, so the 2026-11-04 to 2026-11-07 daily backups contained no volume data. `hostPath` exceptions may now allow a directory prefix for paths that differ per pod.
 
 ## Context
 

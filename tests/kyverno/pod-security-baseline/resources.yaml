@@ -517,7 +517,8 @@ spec:
       hostPath:
         path: /var/lib/kubelet/plugins
 ---
-# The shape node-agent logged for a rejected backup hosting pod.
+# A backup hosting pod: the volume path node-agent logged, followed by every
+# volume it inherits from the node-agent DaemonSet.
 apiVersion: v1
 kind: Pod
 metadata:
@@ -533,6 +534,17 @@ spec:
     - name: client
       hostPath:
         path: /var/lib/kubelet/pods/8e57767c-adcb-4692-a0fc-96d8247ac88c/volumes/kubernetes.io~nfs/pvc-b47ee604-f7cc-4adf-9ff0-c5a9cad1cef2
+    - name: cloud-credentials
+      secret:
+        secretName: velero
+    - name: host-pods
+      hostPath:
+        path: /var/lib/kubelet/pods
+    - name: host-plugins
+      hostPath:
+        path: /var/lib/kubelet/plugins
+    - name: scratch
+      emptyDir: {}
 ---
 apiVersion: v1
 kind: Pod
@@ -552,6 +564,17 @@ spec:
     - name: cache
       persistentVolumeClaim:
         claimName: velero-pvr-hosting-cache
+    - name: cloud-credentials
+      secret:
+        secretName: velero
+    - name: host-pods
+      hostPath:
+        path: /var/lib/kubelet/pods
+    - name: host-plugins
+      hostPath:
+        path: /var/lib/kubelet/plugins
+    - name: scratch
+      emptyDir: {}
 ---
 apiVersion: v1
 kind: Pod

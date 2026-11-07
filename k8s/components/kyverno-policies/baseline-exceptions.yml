@@ -86,10 +86,11 @@ spec:
            object.spec.template.metadata.?labels.orValue({}))[?'name'].orValue('') == 'node-agent'
 ---
 # Since Velero 1.17, node-agent backs up and restores each pod volume through a
-# hosting pod. The pod is named after its PodVolumeBackup or PodVolumeRestore,
-# carries that name in a label, and mounts only that volume's directory under
-# the kubelet's pods directory. That path differs for every volume, so it is
-# allowed by prefix.
+# hosting pod. The pod is named after its PodVolumeBackup or PodVolumeRestore
+# and carries that name in a label. It mounts that volume's directory under the
+# kubelet's pods directory, a path that differs for every volume and is allowed
+# by prefix, and it inherits all of node-agent's volumes, including both
+# kubelet directories above.
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
 metadata:
@@ -100,6 +101,8 @@ spec:
     - name: disallow-host-path
       kind: ValidatingPolicy
   allowedValues:
+    - '/var/lib/kubelet/pods'
+    - '/var/lib/kubelet/plugins'
     - 'prefix:/var/lib/kubelet/pods/'
   matchConditions:
     - name: velero-pod-volume-exposer
