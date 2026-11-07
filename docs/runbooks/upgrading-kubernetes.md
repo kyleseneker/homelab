@@ -93,6 +93,8 @@ ansible-playbook --vault-password-file ../.vault-password \
 
 It rejects skipped minors and downgrades, drains each node through the eviction API, installs and holds the target package while keeping the existing `config.toml`, restarts containerd and kubelet, and uncordons only after the node reports the target runtime and Ready. A failed node stays cordoned. Update the pin, rebuild the Packer template and record the version together.
 
+Rehearse each runtime upgrade in the [restore lab](restore-lab.md) first: run the same playbook with `-i inventory/homelabrestore01/hosts.yml`, then update the lab's own pin in `inventory/homelabrestore01/group_vars/k8s_cluster.yml` and confirm `make lab-configure` reports no changes. Production reached 2.3.6 on 2026-10-31 before the lab, which followed on 2026-11-07.
+
 ## Before each minor upgrade
 
 - Confirm the live versions with `kubectl get nodes -o wide` and `kubectl version`; do not infer them from Git.

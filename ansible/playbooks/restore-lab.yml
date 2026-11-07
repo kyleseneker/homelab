@@ -13,3 +13,15 @@
   become: true
   roles:
     - k8s_worker
+
+# As in k8s-cluster.yml: one node at a time, since a kubelet configuration
+# change restarts the kubelet. The lab's 32 GiB disks need the image cleanup
+# more than production's.
+- name: Node disk limits
+  hosts: k8s_cluster
+  become: true
+  serial: 1
+  roles:
+    - role: k8s_node_disk
+      tags:
+        - k8s_node_disk
