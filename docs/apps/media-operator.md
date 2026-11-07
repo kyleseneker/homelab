@@ -30,7 +30,10 @@ The v0.34.1 controller passed a lab check against the restored Sonarr: stale ID 
 
 The Bazarr English profile ID also requires validation during a clean rebuild. Prowlarr indexers select the built-in `Standard` sync profile by name, so a rebuilt Prowlarr resolves its current ID; a missing or renamed profile blocks indexer writes and reports a reconciliation failure. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-The operators are pinned to 0.38.0 in production and restore-lab configurations.
+The operators are pinned to 0.39.0 in production and restore-lab configurations.
+0.39.0 keeps Seerr's Jellyfin server at the declared port on every pass and stops
+Bazarr saves from deleting language profiles the config doesn't list. CRDs are
+unchanged.
 0.38.0 adds the `media-operator export` CLI and prune and `deletionPolicy: delete`
 for more operators. CRDs are unchanged, and nothing here sets `prune` or
 `deletionPolicy`.
