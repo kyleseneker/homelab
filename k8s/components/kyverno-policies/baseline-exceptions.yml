@@ -85,6 +85,30 @@ spec:
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
            object.spec.template.metadata.?labels.orValue({}))[?'name'].orValue('') == 'node-agent'
 ---
+# Since Velero 1.17, node-agent backs up and restores each pod volume through a
+# hosting pod. The pod is named after its PodVolumeBackup or PodVolumeRestore,
+# carries that name in a label, and mounts only that volume's directory under
+# the kubelet's pods directory. That path differs for every volume, so it is
+# allowed by prefix.
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: baseline-velero-pod-volume-exposer
+  namespace: kyverno
+spec:
+  policyRefs:
+    - name: disallow-host-path
+      kind: ValidatingPolicy
+  allowedValues:
+    - 'prefix:/var/lib/kubelet/pods/'
+  matchConditions:
+    - name: velero-pod-volume-exposer
+      expression: >-
+        object.metadata.namespace == 'backups' && object.kind == 'Pod' &&
+        object.metadata.?name.orValue('') != '' &&
+        (object.metadata.?labels.orValue({})[?'velero.io/pod-volume-backup'].orValue('') == object.metadata.name ||
+         object.metadata.?labels.orValue({})[?'velero.io/pod-volume-restore'].orValue('') == object.metadata.name)
+---
 # Snapshots etcd and records the control-plane configuration needed to rebuild it.
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException

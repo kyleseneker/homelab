@@ -40,6 +40,12 @@ results:
       - host-path-etc
       - jellyfin-etc
       - sonarr-dri
+      - velero-pvb-backstep
+      - velero-pvb-elsewhere
+      - velero-pvb-host-etc
+      - velero-pvb-label-mismatch
+      - velero-pvb-pods-dir
+      - velero-pvb-sibling
     kind: Pod
     result: fail
   - policy: disallow-host-path
@@ -52,6 +58,9 @@ results:
       - compliant
       - jellyfin-dri
       - node-exporter
+      - velero-node-agent
+      - velero-pvb-hosting
+      - velero-pvr-hosting
     kind: Pod
     result: pass
   - policy: disallow-host-ports

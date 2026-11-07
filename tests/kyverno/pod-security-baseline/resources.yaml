@@ -497,3 +497,154 @@ spec:
               hostPath:
                 path: /etc/kubernetes/pki
           restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-node-agent
+  namespace: backups
+  labels:
+    name: node-agent
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: host-pods
+      hostPath:
+        path: /var/lib/kubelet/pods
+    - name: host-plugins
+      hostPath:
+        path: /var/lib/kubelet/plugins
+---
+# The shape node-agent logged for a rejected backup hosting pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-hosting
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-hosting
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/8e57767c-adcb-4692-a0fc-96d8247ac88c/volumes/kubernetes.io~nfs/pvc-b47ee604-f7cc-4adf-9ff0-c5a9cad1cef2
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvr-hosting
+  namespace: backups
+  labels:
+    velero.io/pod-volume-restore: velero-pvr-hosting
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/986c625f-cd46-4280-80fc-5282f616ac85/volumes/kubernetes.io~empty-dir/tmp
+    - name: cache
+      persistentVolumeClaim:
+        claimName: velero-pvr-hosting-cache
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-host-etc
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-host-etc
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /etc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-pods-dir
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-pods-dir
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-sibling
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-sibling
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods-other/data
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-backstep
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-backstep
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/../../../../etc
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-label-mismatch
+  namespace: backups
+  labels:
+    velero.io/pod-volume-backup: another-backup
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/8e57767c-adcb-4692-a0fc-96d8247ac88c/volumes/kubernetes.io~nfs/pvc-b47ee604-f7cc-4adf-9ff0-c5a9cad1cef2
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: velero-pvb-elsewhere
+  namespace: policy-test
+  labels:
+    velero.io/pod-volume-backup: velero-pvb-elsewhere
+spec:
+  containers:
+    - name: main
+      image: busybox:1.38
+  volumes:
+    - name: client
+      hostPath:
+        path: /var/lib/kubelet/pods/8e57767c-adcb-4692-a0fc-96d8247ac88c/volumes/kubernetes.io~nfs/pvc-b47ee604-f7cc-4adf-9ff0-c5a9cad1cef2

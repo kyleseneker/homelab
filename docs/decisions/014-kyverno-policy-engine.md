@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. On 2026-10-31 the policies moved from the deprecated `ClusterPolicy` type to CEL-based `ValidatingPolicy`; the decision to use Kyverno is unchanged.
+Accepted. On 2026-10-31 the policies moved from the deprecated `ClusterPolicy` type to CEL-based `ValidatingPolicy`; the decision to use Kyverno is unchanged. Amended 2026-11-06: once the baseline was enforced, it denied the per-volume hosting pods Velero 1.18 uses for file system backups, so the 2026-11-04 to 2026-11-06 daily backups contained no volume data. `hostPath` exceptions may now allow a directory prefix for paths that differ per pod.
 
 ## Context
 
@@ -12,7 +12,7 @@ The cluster needs guardrails to enforce security and operational standards acros
 
 Use Kyverno as the Kubernetes policy engine. All five ClusterPolicies run in Enforce mode, blocking non-compliant pods at admission. Namespaces with workloads that cannot conform (linuxserver root images, Velero dynamic jobs, GPU operators) are excluded per-policy rather than left in audit mode.
 
-Kyverno also enforces the Pod Security baseline: privileged containers, host namespaces and ports, `hostPath`, added capabilities, unsafe sysctls, and disabled seccomp, AppArmor or SELinux confinement. These controls exclude only `kube-system`. A workload that needs one of them gets a per-workload `PolicyException` listing exactly the values it may use; exceptions are honored only in the `kyverno` namespace.
+Kyverno also enforces the Pod Security baseline: privileged containers, host namespaces and ports, `hostPath`, added capabilities, unsafe sysctls, and disabled seccomp, AppArmor or SELinux confinement. These controls exclude only `kube-system`. A workload that needs one of them gets a per-workload `PolicyException` listing exactly the values it may use; exceptions are honored only in the `kyverno` namespace. A workload whose host paths differ per pod, such as Velero's hosting pods under `/var/lib/kubelet/pods/`, may instead be allowed the paths below one directory with a `prefix:` value.
 
 ## Alternatives Considered
 
@@ -34,4 +34,5 @@ Kyverno also enforces the Pod Security baseline: privileged containers, host nam
 - Kyverno's admission webhook adds latency to all pod creation requests. With a single replica, webhook unavailability could block deployments. A PDB or replica increase may be warranted as the cluster grows.
 - Namespace exclusion lists must be maintained as new infrastructure namespaces are added. A missed exclusion could block critical system pods.
 - A workload that needs host access cannot deploy until its exception exists. Exceptions match a namespace and a label, so any pod with that label in that namespace receives the exception's values.
+- An operator can create pods its own manifests never show. An exception and its test must cover those pods too: Velero's node-agent was exempted, but the hosting pods it creates for each volume were not, and backups failed at admission until they were.
 - Excluded namespaces should be revisited periodically -- if upstream images add non-root support or workloads gain resource limits, exclusions can be removed to tighten coverage.

@@ -62,13 +62,14 @@ Seven policies enforce the Pod Security baseline. They exclude only `kube-system
 | `restrict-sysctls` | Sysctls outside the baseline's safe set |
 | `restrict-security-profiles` | Unconfined seccomp or AppArmor, and SELinux options other than the container types |
 
-Namespaces are not excluded from these controls, because one workload that needs host access would exempt every other workload sharing its namespace. A workload that needs one gets a `PolicyException` in `baseline-exceptions.yml` instead. The exception lists exactly the values the workload uses in `allowedValues`, and the policy reads them through `exceptions.allowedValues`; anything else is still denied. Exceptions match the namespace and the pod template's name label, whether the admitted object is the Pod, its controller or a CronJob. Pods a controller creates have no name at admission, so exceptions cannot match names.
+Namespaces are not excluded from these controls, because one workload that needs host access would exempt every other workload sharing its namespace. A workload that needs one gets a `PolicyException` in `baseline-exceptions.yml` instead. The exception lists exactly the values the workload uses in `allowedValues`, and the policy reads them through `exceptions.allowedValues`; anything else is still denied. `disallow-host-path` also accepts a `prefix:<directory>/` value for a workload whose paths differ per pod: it admits paths below that directory, but not the directory itself or a path containing `..`. Other values, including a path with a trailing slash, match exactly. Exceptions match the namespace and the pod template's name label, whether the admitted object is the Pod, its controller or a CronJob. Pods a controller creates have no name at admission, so exceptions cannot match names. Velero's hosting pods are the exception: node-agent creates each one directly, names it after its PodVolumeBackup or PodVolumeRestore and sets the same name in a label, so their exception requires a bare Pod whose label equals its name.
 
 | Workload | Namespace | Allowed |
 |----------|-----------|---------|
 | Jellyfin, Tdarr | `arr` | `hostPath` `/dev/dri` |
 | Gluetun (`arr-vpn-downloads`) | `arr` | `NET_ADMIN`, sysctl `net.ipv4.conf.all.src_valid_mark` |
 | Velero node-agent | `backups` | `hostPath` `/var/lib/kubelet/pods`, `/var/lib/kubelet/plugins` |
+| Velero pod volume backup/restore hosting pods | `backups` | `hostPath` below `/var/lib/kubelet/pods/`: the one volume directory each pod copies |
 | etcd-backup | `backups` | `hostPath` for etcd's PKI and the control-plane configuration |
 | Intel GPU plugin | `intel-gpu-operator` | `hostPath` for the device nodes and kubelet plugin sockets; SELinux type `container_device_plugin_t` |
 | Alloy | `monitoring` | `hostPath` `/var/log/kubernetes/audit` |
@@ -83,7 +84,7 @@ Four policies guard Multus ([ADR-028](../decisions/028-multus-iot-attachments.md
 
 ### Local Regression Checks
 
-`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/multus` covers the default-network and attachment-request policies. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
+`tests/kyverno/container-security` covers valid pods and denied init/ephemeral container bypasses, including an image registry port that must not be mistaken for an image tag, and the `app.kubernetes.io/name` label. `tests/kyverno/multus` covers the default-network and attachment-request policies. `tests/kyverno/pod-security-baseline` covers each baseline control and the exceptions: an exempted workload passes only with its listed values, in its namespace and under its label, and the same request fails anywhere else. Model an exception's test pods on what the workload actually creates, not only its controller: the Velero cases use the hosting pod shape node-agent logs, because an exception that covered node-agent alone let every pod volume backup fail at admission. Run them with the Kyverno CLI matching the chart application version (currently 1.19.2):
 
 ```bash
 kyverno test tests/kyverno

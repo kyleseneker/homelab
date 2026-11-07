@@ -8,7 +8,8 @@ metadata:
     policies.kyverno.io/severity: high
     policies.kyverno.io/description: >-
       hostPath volumes expose the node's filesystem. A PolicyException can
-      allow exact paths in allowedValues.
+      allow exact paths in allowedValues, or every path below a directory
+      with a `prefix:<directory>/` value.
 spec:
   validationActions:
     - Deny
@@ -49,8 +50,17 @@ spec:
   matchConditions:
     - name: skip-cilium-connectivity-tests
       expression: namespaceObject == null || !namespaceObject.metadata.name.startsWith('cilium-test-')
+  # An allowed value matches its exact path, so a trailing slash is still exact.
+  # Only a `prefix:` value ending in a slash admits paths below that directory,
+  # never the directory itself or a path that steps back out of it.
   validations:
     - expression: >-
         object.spec.?volumes.orValue([]).all(v,
-          !has(v.hostPath) || v.hostPath.path in exceptions.allowedValues)
+          !has(v.hostPath) ||
+          v.hostPath.path in exceptions.allowedValues ||
+          (!v.hostPath.path.contains('/../') && !v.hostPath.path.endsWith('/..') &&
+           exceptions.allowedValues.exists(a,
+             a.startsWith('prefix:') && a.endsWith('/') &&
+             ('prefix:' + v.hostPath.path).startsWith(a) &&
+             ('prefix:' + v.hostPath.path) != a)))
       message: hostPath volumes are not allowed.
