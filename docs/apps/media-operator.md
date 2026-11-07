@@ -30,7 +30,9 @@ The v0.34.1 controller passed a lab check against the restored Sonarr: stale ID 
 
 The Bazarr English profile ID also requires validation during a clean rebuild. Prowlarr indexers select the built-in `Standard` sync profile by name, so a rebuilt Prowlarr resolves its current ID; a missing or renamed profile blocks indexer writes and reports a reconciliation failure. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-The operators are pinned to 0.35.1 in production and restore-lab configurations.
+The operators are pinned to 0.36.0 in production and restore-lab configurations.
+0.36.0 is a dependency update: Go 1.27, Kubernetes client libraries 0.37 and
+controller-runtime 0.25. CRD schemas and reconciliation behavior are unchanged.
 0.35.1 restores Seerr's first-time setup on Seerr 3.5 and later, which replaced
 the library sync and enable calls; without it, a rebuilt Seerr stays
 uninitialized. 0.35.0 added name-based references: Prowlarr indexers use `appProfileName` instead
