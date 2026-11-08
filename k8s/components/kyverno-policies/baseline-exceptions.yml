@@ -16,10 +16,10 @@ spec:
   matchConditions:
     - name: jellyfin
       expression: >-
-        object.metadata.namespace in ['arr', 'media'] &&
+        object.metadata.namespace == 'media' &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-jellyfin', 'jellyfin']
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'jellyfin'
 ---
 # Intel QSV hardware transcoding reads the render node.
 apiVersion: policies.kyverno.io/v1
@@ -36,10 +36,10 @@ spec:
   matchConditions:
     - name: tdarr
       expression: >-
-        object.metadata.namespace in ['arr', 'media'] &&
+        object.metadata.namespace == 'media' &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-tdarr', 'tdarr']
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'tdarr'
 ---
 # Gluetun manages the pod's VPN tunnel, routes and firewall.
 apiVersion: policies.kyverno.io/v1
@@ -59,10 +59,10 @@ spec:
   matchConditions:
     - name: downloads
       expression: >-
-        object.metadata.namespace in ['arr', 'media'] &&
+        object.metadata.namespace == 'media' &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-vpn-downloads', 'downloads']
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'downloads'
 ---
 # File system backups read and restore pod volumes through the kubelet's directories.
 apiVersion: policies.kyverno.io/v1
