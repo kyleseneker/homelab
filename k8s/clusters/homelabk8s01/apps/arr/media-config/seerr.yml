@@ -28,28 +28,28 @@ spec:
     localLogin: true
     mediaServerLogin: true
   sonarr:
-    name: Sonarr
-    hostname: arr-sonarr.arr.svc.cluster.local
-    port: 8989
-    useSsl: false
-    apiKeySecretRef:
-      name: arr-api-keys
-      key: sonarr-api-key
-    activeProfileName: WEB-1080p
-    activeDirectory: /data/media/tv
-    enableSeasonFolders: true
-    is4k: false
-    isDefault: true
+    - name: Sonarr
+      hostname: arr-sonarr.arr.svc.cluster.local
+      port: 8989
+      useSsl: false
+      apiKeySecretRef:
+        name: arr-api-keys
+        key: sonarr-api-key
+      activeProfileName: WEB-1080p
+      activeDirectory: /data/media/tv
+      enableSeasonFolders: true
+      is4k: false
+      isDefault: true
   radarr:
-    name: Radarr
-    hostname: arr-radarr.arr.svc.cluster.local
-    port: 7878
-    useSsl: false
-    apiKeySecretRef:
-      name: arr-api-keys
-      key: radarr-api-key
-    activeProfileName: HD Bluray + WEB
-    activeDirectory: /data/media/movies
-    minimumAvailability: released
-    is4k: false
-    isDefault: true
+    - name: Radarr
+      hostname: arr-radarr.arr.svc.cluster.local
+      port: 7878
+      useSsl: false
+      apiKeySecretRef:
+        name: arr-api-keys
+        key: radarr-api-key
+      activeProfileName: HD Bluray + WEB
+      activeDirectory: /data/media/movies
+      minimumAvailability: released
+      is4k: false
+      isDefault: true

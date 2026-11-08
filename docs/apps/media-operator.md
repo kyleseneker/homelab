@@ -30,7 +30,11 @@ The v0.34.1 controller passed a lab check against the restored Sonarr: stale ID 
 
 The Bazarr English profile ID also requires validation during a clean rebuild. Prowlarr indexers select the built-in `Standard` sync profile by name, so a rebuilt Prowlarr resolves its current ID; a missing or renamed profile blocks indexer writes and reports a reconciliation failure. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-The operators are pinned to 0.40.0 in production and restore-lab configurations.
+The operators are pinned to 0.41.0 in production and restore-lab configurations.
+0.41.0 adds settings across every operator and makes Seerr's `sonarr` and
+`radarr` lists, which `seerr.yml` now uses. It also keeps existing Jellyfin
+libraries as declared, folders included; the live Movies and TV Shows libraries
+already matched. Argo applies its CRD changes with the charts.
 0.40.0 makes Bazarr's `languages.enabled` take effect, so only the declared
 languages stay enabled, and stops resetting Tdarr library schedules set in Tdarr.
 Its Autobrr CRD change doesn't apply here: this cluster runs no Autobrr.
