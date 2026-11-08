@@ -32,6 +32,7 @@ Not routed by the gateway; these are separate devices with their own certificate
 | Service | URL | Network |
 |---------|-----|---------|
 | Proxmox VE | `https://proxmox.home.seneker.io:8006` | Homelab VLAN (192.168.10.2) |
+| Proxmox node-exporter | `http://192.168.10.2:9100/metrics` | Homelab VLAN |
 | Intel AMT (MS-01) | `https://192.168.99.5:16993` | Management VLAN -- see [ADR-017](../decisions/017-intel-amt-oob-management.md) |
 | UNAS Pro | `https://192.168.1.158` | Default VLAN |
 

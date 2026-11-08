@@ -85,11 +85,11 @@ packer-build: ## Build K8s node VM template on Proxmox with a temporary build to
 # Proxmox host  (override with PVE_HOST=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: pve-configure pve-firewall pve-network pve-ssh
+.PHONY: pve-configure pve-firewall pve-network pve-node-exporter pve-ssh
 
 PLAYBOOK_VAULT_ARGS := $(if $(wildcard $(VAULT_PW_FILE)),$(VAULT_ARGS),)
 
-pve-configure: ## Configure Proxmox host (repos, IOMMU, network, UPS, API token, TFC agent)
+pve-configure: ## Configure Proxmox host (repos, IOMMU, network, UPS, host metrics, API token, TFC agent)
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml
 
 pve-firewall: ## Apply the Proxmox datacenter firewall switch (ADR-016)
@@ -97,6 +97,9 @@ pve-firewall: ## Apply the Proxmox datacenter firewall switch (ADR-016)
 
 pve-network: ## Apply Proxmox host networking; console-attended (ADR-016)
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_network
+
+pve-node-exporter: ## Install node-exporter and the NVMe collector on the Proxmox host
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_node_exporter
 
 pve-ssh: ## SSH into Proxmox host
 	ssh root@$$(cd $(ANSIBLE_DIR) && grep ansible_host inventory/$(PVE_HOST)/hosts.yml | head -1 | awk '{print $$2}')

@@ -18,7 +18,7 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 - **Retention**: 15 days or 15GB of persisted blocks, whichever limit is reached first (WAL/head need extra space)
 - **Storage**: 20Gi PVC using the `local-path` StorageClass; node-pinned and without a filesystem quota
 - **Ingress**: `prometheus.home.seneker.io`
-- **Service discovery**: `serviceMonitorSelector` and `podMonitorSelector` are configured to match all monitors across all namespaces, not just those created by the Helm chart.
+- **Service discovery**: `serviceMonitorSelector` and `podMonitorSelector` are configured to match all monitors across all namespaces, not just those created by the Helm chart. `Probe` and `ScrapeConfig` resources use the chart's default selector and need the `release: kube-prometheus-stack` label.
 
 ### Grafana
 
@@ -38,6 +38,7 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 ### Node Exporter
 
 - Enabled as a DaemonSet, exposing host-level metrics (CPU, memory, disk, network) from every node.
+- The DaemonSet sees only the VMs. The Proxmox host runs its own node-exporter, scraped as the `proxmox-host` job; see [Proxmox Host Metrics](proxmox-host-metrics.md).
 
 ### kube-state-metrics
 

@@ -1,0 +1,32 @@
+---
+- name: Install node-exporter and the NVMe textfile collector
+  ansible.builtin.apt:
+    name:
+      - prometheus-node-exporter
+      - prometheus-node-exporter-collectors
+      - nvme-cli
+    state: present
+    install_recommends: false
+
+- name: Configure the node-exporter listener
+  ansible.builtin.template:
+    src: prometheus-node-exporter.j2
+    dest: /etc/default/prometheus-node-exporter
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart prometheus-node-exporter
+
+- name: Enable node-exporter
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    enabled: true
+    state: started
+
+# The package starts this timer during install, possibly before nvme-cli is
+# unpacked; its ConditionFileIsExecutable then leaves it inactive.
+- name: Enable the NVMe collector timer
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter-nvme.timer
+    enabled: true
+    state: started

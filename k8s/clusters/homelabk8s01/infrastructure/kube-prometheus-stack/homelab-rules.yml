@@ -246,6 +246,65 @@ spec:
             summary: "NUT exporter is unreachable"
             description: "The NUT exporter has been down for more than 5 minutes. UPS monitoring is degraded."
 
+    - name: homelab-host-health
+      rules:
+        - alert: ProxmoxHostMetricsAbsent
+          expr: absent(up{job="proxmox-host"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox host metrics have disappeared"
+            description: "Prometheus cannot scrape node-exporter on homelabpve01. Hypervisor memory, disk, temperature and NVMe alerts are blind."
+
+        - alert: ProxmoxNVMeHealthStale
+          expr: |
+            (time() - node_textfile_mtime_seconds{job="proxmox-host", file=~".*nvme\\.prom"}) > 3600
+            or
+            (absent(nvme_critical_warning{job="proxmox-host"}) and on() up{job="proxmox-host"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox NVMe health data is stale"
+            description: "The prometheus-node-exporter-nvme timer on homelabpve01 has not written fresh SMART data for over an hour, so the NVMe alerts cannot fire."
+
+        - alert: ProxmoxNVMeCriticalWarning
+          expr: nvme_critical_warning{job="proxmox-host"} > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Proxmox NVMe {{ $labels.device }} reports a critical warning"
+            description: "Critical warning bits {{ $value }}: 1 spare below threshold, 2 temperature, 4 reliability degraded, 8 read-only, 16 volatile backup failed. Every VM disk and local-path volume lives on this drive."
+
+        - alert: ProxmoxNVMeMediaErrors
+          expr: nvme_media_errors_total{job="proxmox-host"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox NVMe {{ $labels.device }} has media errors"
+            description: "The drive has logged {{ $value | printf \"%.0f\" }} media and data integrity errors. Plan a replacement before it fails; it holds every VM disk."
+
+        - alert: ProxmoxNVMeWearing
+          expr: nvme_percentage_used_ratio{job="proxmox-host"} > 0.8
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox NVMe {{ $labels.device }} is past 80% of its rated endurance"
+            description: "The drive reports {{ $value | humanizePercentage }} of its rated write endurance used."
+
+        - alert: ProxmoxCPUHot
+          expr: node_hwmon_temp_celsius{job="proxmox-host", chip=~"platform_coretemp_.*", sensor="temp1"} >= 95
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox CPU package above 95C"
+            description: "The homelabpve01 CPU package has been at {{ $value | printf \"%.0f\" }}C for 30 minutes and throttles at 100C. Check the fans, airflow and dust."
+
     - name: homelab-node-health
       rules:
         - alert: UPSDataAbsent

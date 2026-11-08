@@ -24,7 +24,7 @@ ansible/inventory/homelabpve01/hosts.yml
 make pve-configure
 ```
 
-This playbook configures repositories, IOMMU, networking, UPS shutdown, the HCP Terraform agent, and the Proxmox API token. It can reboot the host when IOMMU settings change. Distribution upgrades are a separate opt-in maintenance action (`pve_repos_upgrade_packages=true`), not a side effect of configuring the host. Store `vault_tfc_agent_token` and `vault_pve_ups_upsmon_password` in the inventory Ansible Vault before running it; the UPS password must be at least 16 letters, digits, underscores or hyphens.
+This playbook configures repositories, IOMMU, networking, UPS shutdown, host metrics, the HCP Terraform agent, and the Proxmox API token. It can reboot the host when IOMMU settings change. Distribution upgrades are a separate opt-in maintenance action (`pve_repos_upgrade_packages=true`), not a side effect of configuring the host. Store `vault_tfc_agent_token` and `vault_pve_ups_upsmon_password` in the inventory Ansible Vault before running it; the UPS password must be at least 16 letters, digits, underscores or hyphens.
 
 Packer owns the default template ID `9000`. The legacy raw cloud-image role is disabled by default; explicit opt-in uses `9001` and requires `packer_template=false` when configuring its clones.
 

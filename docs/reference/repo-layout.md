@@ -64,6 +64,7 @@ homelab/
 │   │   ├── pve_network/             # Bridges and VLAN subinterfaces
 │   │   ├── pve_restore_lab/         # Internal bridge, firewall and lab template
 │   │   ├── pve_ups/                 # NUT server for the CyberPower UPS
+│   │   ├── pve_node_exporter/       # Host node-exporter and NVMe collector
 │   │   ├── pve_disable_ksm/         # Disable KSM (ksmd oops wedges guests)
 │   │   ├── pve_disable_wireless/    # Disable the unused AX211 radio
 │   │   └── tfc_agent/               # Terraform Cloud agent

@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: proxmox-host
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  jobName: proxmox-host
+  staticConfigs:
+    - targets:
+        - 192.168.10.2:9100
+      labels:
+        instance: homelabpve01

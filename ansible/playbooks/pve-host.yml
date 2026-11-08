@@ -17,5 +17,7 @@
     - pve_pci_mapping
     - pve_api_token
     - pve_ups
+    - role: pve_node_exporter
+      tags: [pve_node_exporter]
     - role: tfc_agent
       tags: [tfc_agent]

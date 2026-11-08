@@ -1,0 +1,2 @@
+---
+pve_node_exporter_listen_address: "{{ ansible_host }}:9100"

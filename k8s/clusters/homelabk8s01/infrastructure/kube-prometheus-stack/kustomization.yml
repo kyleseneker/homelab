@@ -11,3 +11,4 @@ resources:
   - homelab-rules.yml
   - httproutes.yml
   - prometheus-pdb.yml
+  - proxmox-host-scrape.yml
