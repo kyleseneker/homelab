@@ -49,6 +49,7 @@ spec:
             - arr
             - auth
             - backups
+            - media
             - monitoring
             - nfs-provisioner
             - local-path-storage

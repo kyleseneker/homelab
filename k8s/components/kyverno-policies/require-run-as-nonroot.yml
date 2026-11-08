@@ -49,6 +49,7 @@ spec:
             - arr
             - auth
             - backups
+            - media
             - intel-gpu-operator
             - monitoring
             - nfs-provisioner

@@ -119,8 +119,10 @@ spec:
   endpointSelector: {}
   egress:
     - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: arr
+        - matchExpressions:
+            - key: k8s:io.kubernetes.pod.namespace
+              operator: In
+              values: [arr, media]
       toPorts:
         - ports:
             - port: "8265"

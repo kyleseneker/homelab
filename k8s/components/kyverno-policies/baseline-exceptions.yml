@@ -5,7 +5,7 @@
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
 metadata:
-  name: baseline-arr-jellyfin
+  name: baseline-jellyfin
   namespace: kyverno
 spec:
   policyRefs:
@@ -14,18 +14,18 @@ spec:
   allowedValues:
     - '/dev/dri'
   matchConditions:
-    - name: arr-jellyfin
+    - name: jellyfin
       expression: >-
-        object.metadata.namespace == 'arr' &&
+        object.metadata.namespace in ['arr', 'media'] &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-jellyfin'
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-jellyfin', 'jellyfin']
 ---
 # Intel QSV hardware transcoding reads the render node.
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
 metadata:
-  name: baseline-arr-tdarr
+  name: baseline-tdarr
   namespace: kyverno
 spec:
   policyRefs:
@@ -34,18 +34,18 @@ spec:
   allowedValues:
     - '/dev/dri'
   matchConditions:
-    - name: arr-tdarr
+    - name: tdarr
       expression: >-
-        object.metadata.namespace == 'arr' &&
+        object.metadata.namespace in ['arr', 'media'] &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-tdarr'
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-tdarr', 'tdarr']
 ---
 # Gluetun manages the pod's VPN tunnel, routes and firewall.
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
 metadata:
-  name: baseline-arr-vpn-downloads
+  name: baseline-downloads
   namespace: kyverno
 spec:
   policyRefs:
@@ -57,12 +57,12 @@ spec:
     - 'NET_ADMIN'
     - 'net.ipv4.conf.all.src_valid_mark'
   matchConditions:
-    - name: arr-vpn-downloads
+    - name: downloads
       expression: >-
-        object.metadata.namespace == 'arr' &&
+        object.metadata.namespace in ['arr', 'media'] &&
         (object.kind == 'Pod' ? object.metadata.?labels.orValue({}) :
            object.kind == 'CronJob' ? object.spec.jobTemplate.spec.template.metadata.?labels.orValue({}) :
-           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') == 'arr-vpn-downloads'
+           object.spec.template.metadata.?labels.orValue({}))[?'app.kubernetes.io/name'].orValue('') in ['arr-vpn-downloads', 'downloads']
 ---
 # File system backups read and restore pod volumes through the kubelet's directories.
 apiVersion: policies.kyverno.io/v1
