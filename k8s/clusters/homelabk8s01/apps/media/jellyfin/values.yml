@@ -1,0 +1,89 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/jellyfin
+          tag: 10.11.11
+        envFrom:
+          - configMapRef:
+              name: media-env
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+              - CHOWN
+              - DAC_OVERRIDE
+              - FOWNER
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+            spec:
+              failureThreshold: 30
+              periodSeconds: 10
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+            gpu.intel.com/i915: 1
+defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes-excludes: media,dri
+  nodeSelector:
+    gpu: intel
+service:
+  main:
+    controller: main
+    type: ClusterIP
+    ports:
+      http:
+        port: 8096
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https-home
+    hostnames:
+      - jellyfin.home.seneker.io
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: jellyfin
+            port: 8096
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: jellyfin-config
+    globalMounts:
+      - path: /config
+  media:
+    type: persistentVolumeClaim
+    existingClaim: media-data
+    globalMounts:
+      - path: /data/media
+        subPath: media
+        readOnly: false
+  dri:
+    type: hostPath
+    hostPath: /dev/dri
+    globalMounts:
+      - path: /dev/dri

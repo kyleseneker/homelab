@@ -6,11 +6,11 @@ This runbook walks through adding a new application to the cluster. All apps are
 
 Create a directory for the new app under the appropriate location:
 
-- **Media/arr apps**: `k8s/clusters/homelabk8s01/apps/arr/<app-name>/`
+- **Media apps**: `k8s/clusters/homelabk8s01/apps/media/<app-name>/`
 - **Other apps**: `k8s/clusters/homelabk8s01/apps/<app-name>/`
 
 ```bash
-mkdir -p k8s/clusters/homelabk8s01/apps/arr/<app-name>
+mkdir -p k8s/clusters/homelabk8s01/apps/media/<app-name>
 ```
 
 ## Step 2: Create config.yml
@@ -18,8 +18,8 @@ mkdir -p k8s/clusters/homelabk8s01/apps/arr/<app-name>
 Create `config.yml` with the app metadata. This is what the ApplicationSet discovers.
 
 ```yaml
-appName: arr-<app-name>
-namespace: arr
+appName: <app-name>
+namespace: media
 sourceType: helm
 chartRepo: https://bjw-s-labs.github.io/helm-charts
 chartName: app-template
@@ -35,11 +35,11 @@ syncOptions:
 
 | Field | Description |
 |-------|-------------|
-| `appName` | Unique name for the ArgoCD Application (prefix with `arr-` for media apps) |
-| `namespace` | Target namespace (`arr` for media apps, or set `createNamespace: true` for a new one) |
+| `appName` | Unique name for the ArgoCD Application |
+| `namespace` | Target namespace (`media` for media apps, or set `createNamespace: true` for a new one) |
 | `chartVersion` | Helm chart version -- always quote it (`"5.3.0"`) |
 | `hasResources` | Set to `true` if the app has supporting resources (PDBs, ExternalSecrets, HTTPRoutes) |
-| `createNamespace` | `true` for single-app namespaces, `false` for `arr` (managed by arr-prereqs) |
+| `createNamespace` | `true` for single-app namespaces, `false` for `media` (managed by media-prereqs) |
 
 ## Step 3: Create values.yml
 
@@ -64,7 +64,7 @@ controllers:
           tag: <image-tag>
         envFrom:
           - configMapRef:
-              name: arr-env
+              name: media-env
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
@@ -110,7 +110,7 @@ route:
               type: PathPrefix
               value: /
         backendRefs:
-          - name: arr-<app-name>
+          - name: <app-name>
             port: <port>
 
 persistence:
@@ -127,7 +127,7 @@ persistence:
       - path: /config
   data:
     type: persistentVolumeClaim
-    existingClaim: arr-data
+    existingClaim: media-data
     globalMounts:
       - path: /data
 ```
@@ -135,7 +135,7 @@ persistence:
 Replace the `<placeholder>` values with your application's specifics.
 
 !!! tip
-    Use an existing app's `values.yml` as a starting point. The Sonarr values at `k8s/clusters/homelabk8s01/apps/arr/sonarr/values.yml` is a good reference for a typical arr-stack application.
+    Use an existing app's `values.yml` as a starting point. The Sonarr values at `k8s/clusters/homelabk8s01/apps/media/sonarr/values.yml` is a good reference for a typical media application.
 
 !!! note "linuxserver.io images"
     If the image is from linuxserver.io, you will need to remove `readOnlyRootFilesystem: true` and add `SETUID`/`SETGID` capabilities for the s6-overlay init system. See the Sonarr or Radarr values for examples.
@@ -151,7 +151,7 @@ If the application requires secrets (API keys, credentials, etc.):
     kind: ExternalSecret
     metadata:
       name: <app-name>-secrets
-      namespace: arr
+      namespace: media
     spec:
       refreshInterval: 1h
       secretStoreRef:
@@ -199,7 +199,7 @@ kubectl get gateway homelab-gateway -n default -o jsonpath='{.status.addresses[0
 ## Step 6: Commit and Push
 
 ```bash
-git add k8s/clusters/homelabk8s01/apps/arr/<app-name>/
+git add k8s/clusters/homelabk8s01/apps/media/<app-name>/
 git commit -m "add <app-name>"
 git push
 ```
@@ -211,13 +211,13 @@ The ApplicationSet's Git File Generator automatically discovers the new `config.
 1. Check that ArgoCD picked up the new application:
 
     ```bash
-    kubectl get application -n argocd arr-<app-name>
+    kubectl get application -n argocd <app-name>
     ```
 
 2. Verify the pod is running:
 
     ```bash
-    kubectl get pods -n arr -l app.kubernetes.io/instance=arr-<app-name>
+    kubectl get pods -n media -l app.kubernetes.io/instance=<app-name>
     ```
 
 3. Open the web UI at `https://<app-name>.home.seneker.io` and confirm it loads.

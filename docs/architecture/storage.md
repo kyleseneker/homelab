@@ -18,18 +18,18 @@ flowchart TD
         scLocalPath["StorageClass: local-path"]
 
         subgraph sharedVol["Shared Media Volume"]
-            arrPV["PV: arr-data (10Ti)"]
-            arrPVC["PVC: arr-data"]
+            mediaPV["PV: media-data (10Ti)"]
+            mediaPVC["PVC: media-data"]
         end
 
         subgraph nfsVols["NFS Volumes"]
-            backupPVC["PVC: arr-config-backups"]
+            backupPVC["PVC: config-backups"]
             otherPVC["PVC: Loki, Garage, ..."]
         end
 
         subgraph localVols["Local-Path Config Volumes"]
-            sonarrPVC["PVC: arr-sonarr-config"]
-            radarrPVC["PVC: arr-radarr-config"]
+            sonmediaPVC["PVC: sonarr-config"]
+            radmediaPVC["PVC: radarr-config"]
             moreLocalPVC["PVC: ..."]
         end
 
@@ -42,13 +42,13 @@ flowchart TD
         end
     end
 
-    nfsExport --> arrPV
+    nfsExport --> mediaPV
     configExport --> nfsProv
     nfsProv --> scNfsClient
     scNfsClient --> nfsVols
     localProv --> scLocalPath
     scLocalPath --> localVols
-    arrPVC --> appPods
+    mediaPVC --> appPods
     nfsVols --> appPods
     localVols --> appPods
 ```
@@ -66,7 +66,7 @@ The NFS Subdir External Provisioner dynamically creates PersistentVolumes backed
 | Path Pattern | `${.PVC.namespace}-${.PVC.name}` |
 | Reclaim Policy | Retain |
 
-The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `arr-config-backups` in the `arr` namespace creates the NFS subdirectory `arr-arr-config-backups`.
+The `pathPattern` creates predictable directory names on the NAS. For example, a PVC named `config-backups` in the `media` namespace creates the NFS subdirectory `media-config-backups`. Volumes provisioned before the namespace was renamed from `arr` keep their `arr-arr-` directory names.
 
 !!! warning "Released PVs share directories with live ones"
     Because `pathPattern` derives the directory from the *claim* name, a deleted-and-recreated PVC of the same name reuses the same directory. `Retain` means the old PV stays `Released` while pointing at data the new PV is actively writing. Never delete the backing directory when cleaning up a `Released` PV without first confirming no `Bound` PV shares it.
@@ -93,9 +93,9 @@ Local-path volumes are tied to the worker node where they are first provisioned.
 !!! danger "local-path volumes are not in any Velero backup"
     Velero's Kopia file-system backup cannot read `hostPath` volumes, which is what local-path provisions. Every PVC below is captured as a PVC and PV *object containing no data* -- a restore recreates them empty, and Velero logs this as a warning rather than an error, so the backup still reports success.
 
-    Coverage comes from application-level dumps instead: `arr-config-backup` writes nightly SQLite `.backup` dumps (plus Tdarr's native archive) to an `nfs-client` volume, and `uptime-kuma-backup` does the same for `kuma.db`. Those NFS volumes *are* backed up. The Prometheus TSDB is deliberately excluded.
+    Coverage comes from application-level dumps instead: `config-backup` writes nightly SQLite `.backup` dumps (plus Tdarr's native archive) to an `nfs-client` volume, and `uptime-kuma-backup` does the same for `kuma.db`. Those NFS volumes *are* backed up. The Prometheus TSDB is deliberately excluded.
 
-## Shared Media Volume (arr-data)
+## Shared Media Volume (media-data)
 
 All media applications share a single 10Ti PersistentVolume backed by a dedicated NFS export on the Unifi NAS. This shared volume enables applications to access media files without copying data between volumes.
 
@@ -103,18 +103,18 @@ All media applications share a single 10Ti PersistentVolume backed by a dedicate
 
 | Property | Value |
 |----------|-------|
-| PV Name | `arr-data` |
+| PV Name | `media-data` |
 | Capacity | 10Ti |
 | Access Mode | ReadWriteMany |
-| NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/arr/prereqs/shared-data-pv.yml`) |
+| NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/media/prereqs/shared-data-pv.yml`) |
 | NFS Server | Unifi NAS (`192.168.1.158`) |
-| PVC Name | `arr-data` |
-| PVC Namespace | `arr` |
+| PVC Name | `media-data` |
+| PVC Namespace | `media` |
 
 Each application mounts the shared PVC at `/data` within its pod, maintaining a consistent path structure that matches the NAS layout. This allows Sonarr, Radarr, and other apps to perform hardlinks and atomic moves instead of cross-device copies.
 
 !!! tip "Hardlinks and Atomic Moves"
-    Because all applications share the same underlying NFS mount, file operations like hardlinks and atomic moves work correctly. This is critical for the arr stack workflow where Sonarr/Radarr move completed downloads into the media library without duplicating data.
+    Because all applications share the same underlying NFS mount, file operations like hardlinks and atomic moves work correctly. This is critical for the media stack workflow where Sonarr/Radarr move completed downloads into the media library without duplicating data.
 
 ## NAS Folder Structure
 
@@ -151,15 +151,15 @@ Each application has its own PVC for configuration and database storage. Every *
 
 | Application | PVC Name | StorageClass | Size |
 |------------|----------|-------------|------|
-| Jellyfin | `arr-jellyfin-config` | `local-path` | 5Gi |
-| Sonarr | `arr-sonarr-config` | `local-path` | 5Gi |
-| Radarr | `arr-radarr-config` | `local-path` | 5Gi |
-| Seerr | `arr-seerr-config` | `local-path` | 5Gi |
-| Tdarr | `arr-tdarr-config` | `local-path` | 5Gi |
-| Prowlarr | `arr-prowlarr-config` | `local-path` | 1Gi |
-| Bazarr | `arr-bazarr-config` | `local-path` | 1Gi |
+| Jellyfin | `jellyfin-config` | `local-path` | 5Gi |
+| Sonarr | `sonarr-config` | `local-path` | 5Gi |
+| Radarr | `radarr-config` | `local-path` | 5Gi |
+| Seerr | `seerr-config` | `local-path` | 5Gi |
+| Tdarr | `tdarr-config` | `local-path` | 5Gi |
+| Prowlarr | `prowlarr-config` | `local-path` | 1Gi |
+| Bazarr | `bazarr-config` | `local-path` | 1Gi |
 | Uptime Kuma | `uptime-kuma-data` | `local-path` | 1Gi |
-| Config backups | `arr-config-backups` | `nfs-client` | 2Gi |
+| Config backups | `config-backups` | `nfs-client` | 2Gi |
 
 ## Infrastructure Storage
 

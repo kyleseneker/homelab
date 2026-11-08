@@ -8,18 +8,18 @@ Exportarr is a Prometheus exporter for *arr applications. It exposes metrics suc
 |----------|-------|
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
 | Image | `ghcr.io/onedr0p/exportarr` |
-| Namespace | `arr` |
+| Namespace | `media` |
 | HTTPRoute | -- (internal only, metrics scraped by Prometheus) |
-| ArgoCD app | `arr-exportarr` |
+| ArgoCD app | `exportarr` |
 
 ### Exporters
 
 | Controller | Target App | Port | Internal URL |
 |------------|-----------|------|--------------|
-| sonarr | Sonarr | 9707 | `http://arr-exportarr-sonarr.arr.svc.cluster.local:9707` |
-| radarr | Radarr | 9708 | `http://arr-exportarr-radarr.arr.svc.cluster.local:9708` |
-| prowlarr | Prowlarr | 9709 | `http://arr-exportarr-prowlarr.arr.svc.cluster.local:9709` |
-| bazarr | Bazarr | 9710 | `http://arr-exportarr-bazarr.arr.svc.cluster.local:9710` |
+| sonarr | Sonarr | 9707 | `http://exportarr-sonarr.media.svc.cluster.local:9707` |
+| radarr | Radarr | 9708 | `http://exportarr-radarr.media.svc.cluster.local:9708` |
+| prowlarr | Prowlarr | 9709 | `http://exportarr-prowlarr.media.svc.cluster.local:9709` |
+| bazarr | Bazarr | 9710 | `http://exportarr-bazarr.media.svc.cluster.local:9710` |
 
 Each exporter runs as a separate Deployment (one app-template controller per target app) with its own Service and ServiceMonitor.
 
@@ -44,7 +44,7 @@ Each exporter runs as a separate Deployment (one app-template controller per tar
 
     ```bash
     # Adopt the running application keys into the shared Vault path.
-    make arr-keys-adopt
+    make media-keys-adopt
     ```
 
 3. Verify targets appear in Prometheus: `https://prometheus.home.seneker.io/targets`

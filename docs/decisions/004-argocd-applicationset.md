@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-11-07: the shared namespace was renamed from `arr` to `media`, because it also holds Jellyfin, Seerr, Tdarr and other apps that are not *arr apps. Apps in it are named after the app alone, without an `arr-` prefix; resources the whole namespace shares take a `media-` prefix.
 
 ## Context
 
@@ -38,7 +38,7 @@ A single ApplicationSet definition (`k8s/bootstrap/applicationsets/cluster-apps.
 ## Namespace Strategy
 
 - **Single-app namespaces**: `CreateNamespace=true` on the Application. No separate namespace manifest.
-- **Shared namespace (arr)**: A dedicated `arr/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
+- **Shared namespace (media)**: A dedicated `media/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
 
 ## Consequences
 

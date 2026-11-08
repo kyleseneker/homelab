@@ -10,16 +10,16 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 | Image | `lscr.io/linuxserver/bazarr` |
 | Port | 6767 |
 | HTTPRoute | `bazarr.home.seneker.io` |
-| Namespace | `arr` |
-| ArgoCD app | `arr-bazarr` |
-| Internal URL | `http://arr-bazarr.arr.svc.cluster.local:6767` |
+| Namespace | `media` |
+| ArgoCD app | `bazarr` |
+| Internal URL | `http://bazarr.media.svc.cluster.local:6767` |
 
 ### Storage
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
 | `config` | PVC (`local-path`) | 1Gi | `/config` |
-| `data` | PVC (existing `arr-data`) | -- | `/data` |
+| `data` | PVC (existing `media-data`) | -- | `/data` |
 
 ### Resources
 
@@ -30,9 +30,9 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 
 ## Key Configuration
 
-- Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables injected from ConfigMap `media-env` (TZ, PUID, PGID).
 - Liveness, readiness, and startup probes are enabled.
-- The shared `arr-data` volume is mounted at `/data` so Bazarr can read media files and write subtitle files alongside them.
+- The shared `media-data` volume is mounted at `/data` so Bazarr can read media files and write subtitle files alongside them.
 
 ## Post-Deploy Verification
 

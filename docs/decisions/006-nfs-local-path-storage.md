@@ -25,7 +25,7 @@ Use two storage provisioners, each suited to its workload:
 ## Rationale
 
 - **Pre-existing NAS**: The Unifi NAS already hosts the media library. Using it as the storage backend avoids duplicating data and leverages existing hardware.
-- **Shared media volume**: The *arr stack requires all applications (Sonarr, Radarr, qBittorrent, Jellyfin, Tdarr) to access the same filesystem for hardlinks and atomic moves. NFS naturally supports this via a shared PVC (`arr-data`).
+- **Shared media volume**: The *arr stack requires all applications (Sonarr, Radarr, qBittorrent, Jellyfin, Tdarr) to access the same filesystem for hardlinks and atomic moves. NFS naturally supports this via a shared PVC (`media-data`).
 - **Dynamic provisioning**: The provisioner creates per-app subdirectories automatically using a `${namespace}-${pvcname}` path pattern.
 - **Retain policy**: Data remains available after a claim is deleted. A replacement claim must be rebound to the retained volume or its existing storage path.
 - **Simplicity**: No distributed storage overhead. On a single physical host, NFS to an external NAS is the simplest reliable option.

@@ -109,7 +109,7 @@ SECRET_PATH ?=
 KEY ?=
 VAL ?=
 
-.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-iot-nic k8s-node-disk cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-crd-schemas k8s-bootstrap-drift k8s-check-alerts vault-init vault-put-secret vault-status arr-keys-adopt aws-init aws-plan aws-apply
+.PHONY: k8s-init k8s-plan k8s-infra k8s-configure k8s-deploy k8s-destroy k8s-bootstrap k8s-iot-nic k8s-node-disk cilium-upgrade k8s-backup k8s-backup-status k8s-restore k8s-kubeconfig k8s-ssh-cp k8s-render k8s-crd-schemas k8s-bootstrap-drift k8s-check-alerts vault-init vault-put-secret vault-status media-keys-adopt aws-init aws-plan aws-apply
 
 k8s-init: ## Initialize Terraform for K8s VMs
 	terraform -chdir=$(TF_DIR) init
@@ -207,8 +207,8 @@ export SECRET_PATH KEY VAL VAULT_NS
 vault-put-secret: ## Patch one Vault key safely (set SECRET_PATH and KEY; prompts for the value)
 	@./scripts/with-vault.sh ./scripts/vault-put-secret.sh
 
-arr-keys-adopt: ## Adopt live *arr keys into Vault without replacing sibling keys
-	@./scripts/with-vault.sh ./scripts/arr-keys-adopt.sh
+media-keys-adopt: ## Adopt live *arr keys into Vault without replacing sibling keys
+	@./scripts/with-vault.sh ./scripts/media-keys-adopt.sh
 
 vault-status: ## Show Vault seal status
 	@./scripts/with-vault.sh vault status

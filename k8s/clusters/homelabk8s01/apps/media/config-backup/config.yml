@@ -1,0 +1,7 @@
+appName: config-backup
+namespace: ''
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/apps/media/config-backup
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true

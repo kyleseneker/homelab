@@ -11,15 +11,15 @@ Jellyfin is a self-hosted media server for streaming movies, TV shows, and music
 | Port | 8096 |
 | Service type | ClusterIP |
 | HTTPRoute | `jellyfin.home.seneker.io` |
-| Namespace | `arr` |
-| ArgoCD app | `arr-jellyfin` |
+| Namespace | `media` |
+| ArgoCD app | `jellyfin` |
 
 ### Storage
 
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
 | `config` | PVC (`local-path`) | 5Gi | `/config` | Jellyfin configuration and metadata |
-| `media` | PVC (existing `arr-data`) | -- | `/data/media` | Shared media library (`subPath: media`) |
+| `media` | PVC (existing `media-data`) | -- | `/data/media` | Shared media library (`subPath: media`) |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device for hardware transcoding |
 
 ### Resources
@@ -37,7 +37,7 @@ GPU limit: `gpu.intel.com/i915: 1`
 
 ## Key Configuration
 
-- Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables injected from ConfigMap `media-env` (TZ, PUID, PGID).
 - The service is `ClusterIP`. Clients reach Jellyfin only through the Gateway at `jellyfin.home.seneker.io`, which has a publicly trusted certificate.
 - Startup probe allows up to 30 failures at 10-second intervals (5 minutes) to account for library scanning on first boot.
 

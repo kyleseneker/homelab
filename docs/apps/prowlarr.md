@@ -10,9 +10,9 @@ Prowlarr is a centralized indexer manager for the *arr stack. Add torrent tracke
 | Image | `lscr.io/linuxserver/prowlarr` |
 | Port | 9696 |
 | HTTPRoute | `prowlarr.home.seneker.io` |
-| Namespace | `arr` |
-| ArgoCD app | `arr-prowlarr` |
-| Internal URL | `http://arr-prowlarr.arr.svc.cluster.local:9696` |
+| Namespace | `media` |
+| ArgoCD app | `prowlarr` |
+| Internal URL | `http://prowlarr.media.svc.cluster.local:9696` |
 
 ### Storage
 
@@ -20,7 +20,7 @@ Prowlarr is a centralized indexer manager for the *arr stack. Add torrent tracke
 |--------|------|------|------------|
 | `config` | PVC (`local-path`) | 1Gi | `/config` |
 
-Prowlarr does not require the shared `arr-data` volume because it does not interact with media files directly.
+Prowlarr does not require the shared `media-data` volume because it does not interact with media files directly.
 
 ### Resources
 
@@ -31,13 +31,13 @@ Prowlarr does not require the shared `arr-data` volume because it does not inter
 
 ## Key Configuration
 
-- Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables injected from ConfigMap `media-env` (TZ, PUID, PGID).
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 
 ## Post-Deploy Verification
 
-`ProwlarrConfig` owns indexers, Sonarr/Radarr app sync, and the FlareSolverr proxy. Initialize authentication as needed, run `make arr-keys-adopt`, then verify indexer tests and application sync. Make persistent setting changes in the CR. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`ProwlarrConfig` owns indexers, Sonarr/Radarr app sync, and the FlareSolverr proxy. Initialize authentication as needed, run `make media-keys-adopt`, then verify indexer tests and application sync. Make persistent setting changes in the CR. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

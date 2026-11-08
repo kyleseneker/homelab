@@ -10,7 +10,7 @@ Infrastructure-as-code for a self-hosted Kubernetes homelab. Ansible configures 
 
 | Cluster | Nodes | Purpose |
 |---------|-------|---------|
-| homelabk8s01 | [1 control plane + 2 workers](reference/hardware.md#vm-allocation) | *arr media stack, Jellyfin |
+| homelabk8s01 | [1 control plane + 2 workers](reference/hardware.md#vm-allocation) | Media stack |
 
 | Network | Details |
 |---------|---------|
@@ -66,7 +66,7 @@ flowchart LR
 |---------|-----------------|
 | [Getting Started](getting-started/quick-start.md) | Prerequisites, deployment walkthrough, configuration reference |
 | [Architecture](architecture/overview.md) | System design, GitOps flow, networking, storage, monitoring |
-| [Apps](apps/index.md) | Per-app details for the *arr stack, Jellyfin, Homepage, Exportarr, and Uptime Kuma |
+| [Apps](apps/index.md) | Per-app details for the media stack, Homepage, Exportarr, and Uptime Kuma |
 | [Infrastructure](infrastructure/index.md) | Every infrastructure component: charts, config, and integration |
 | [Runbooks](runbooks/disaster-recovery.md) | Operational procedures: DR, upgrades, troubleshooting |
 | [Reference](reference/commands.md) | Makefile commands, service URLs, repo layout, hardware inventory |

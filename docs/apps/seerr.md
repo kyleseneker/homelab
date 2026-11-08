@@ -10,9 +10,9 @@ Seerr is a media request management application (the unified successor to Jellys
 | Image | `ghcr.io/seerr-team/seerr` |
 | Port | 80 |
 | HTTPRoute | `seerr.home.seneker.io` |
-| Namespace | `arr` |
-| ArgoCD app | `arr-seerr` |
-| Internal URL | `http://arr-seerr.arr.svc.cluster.local:80` |
+| Namespace | `media` |
+| ArgoCD app | `seerr` |
+| Internal URL | `http://seerr.media.svc.cluster.local:80` |
 
 ### Storage
 
@@ -20,7 +20,7 @@ Seerr is a media request management application (the unified successor to Jellys
 |--------|------|------|------------|
 | `config` | PVC (`local-path`) | 5Gi | `/app/config` |
 
-Seerr does not require the shared `arr-data` volume because it interacts with media through the Sonarr/Radarr and Jellyfin APIs rather than the filesystem.
+Seerr does not require the shared `media-data` volume because it interacts with media through the Sonarr/Radarr and Jellyfin APIs rather than the filesystem.
 
 ### Resources
 
@@ -31,7 +31,7 @@ Seerr does not require the shared `arr-data` volume because it interacts with me
 
 ## Key Configuration
 
-- Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables injected from ConfigMap `media-env` (TZ, PUID, PGID).
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 - Uses the official Seerr Helm chart (OCI: `ghcr.io/seerr-team/seerr/seerr-chart`).
 

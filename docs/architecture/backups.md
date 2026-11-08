@@ -73,7 +73,7 @@ Velero uses the AWS plugin to communicate with Garage and AWS over the S3 API. F
 !!! danger "Kopia cannot read local-path volumes"
     File-system backup skips `hostPath` volumes, which is what the `local-path` provisioner creates. Every *arr config PVC, the Prometheus TSDB, and Uptime Kuma's database are captured as objects holding **no data**, and Velero records this as a warning rather than an error -- so the backup reports `Completed`.
 
-    The application databases are covered instead by the `arr-config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault uses daily native Raft snapshots uploaded directly to S3 and verified by read-back. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
+    The application databases are covered instead by the `config-backup` and `uptime-kuma-backup` CronJobs, which dump SQLite through its online backup API onto `nfs-client` volumes that Velero does read. Prometheus TSDB history has no corresponding dump and is not protected. SQLite dumps omit non-database application files; Vault uses daily native Raft snapshots uploaded directly to S3 and verified by read-back. Authentik now has a native PostgreSQL dump and a verified isolated database restore. See [Storage](storage.md#local-path-provisioner).
 
     Kopia also only reads volumes attached to a **running** pod. Each backup volume is kept mounted by a holder Deployment; without it the mechanism silently captures nothing.
 
@@ -86,7 +86,7 @@ Three schedules cover granular daily recovery, broad on-site disaster recovery, 
 ```mermaid
 flowchart TD
     subgraph daily["Daily Stateful (3:00 AM)"]
-        dailyTarget["arr, monitoring, auth,\nhome-automation"]
+        dailyTarget["media, monitoring, auth,\nhome-automation"]
         dailyRetention["Retention: 7 days"]
     end
 
@@ -96,7 +96,7 @@ flowchart TD
     end
 
     subgraph offsite["Weekly Offsite (Sunday 5:00 AM)"]
-        offsiteTarget["arr, monitoring, auth, home-automation,\nargocd, vault, external-secrets"]
+        offsiteTarget["media, monitoring, auth, home-automation,\nargocd, vault, external-secrets"]
         offsiteRetention["Retention: 30 days"]
     end
 
@@ -109,9 +109,9 @@ flowchart TD
 
 | Schedule | Frequency | Time | Namespaces | Retention | Location |
 |----------|-----------|------|-----------|-----------|----------|
-| `daily-stateful` | Every day | 3:00 AM | `arr`, `monitoring`, `auth`, `home-automation` | 7 days | `local` |
+| `daily-stateful` | Every day | 3:00 AM | `media`, `monitoring`, `auth`, `home-automation` | 7 days | `local` |
 | `weekly-full-cluster` | Every Sunday | 4:00 AM | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | `local` |
-| `weekly-offsite` | Every Sunday | 5:00 AM | `arr`, `monitoring`, `auth`, `home-automation`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
+| `weekly-offsite` | Every Sunday | 5:00 AM | `media`, `monitoring`, `auth`, `home-automation`, `argocd`, `vault`, `external-secrets` | 30 days | `offsite` |
 
 The daily backup targets the namespaces with the most frequently changing state. The weekly full backup captures everything on-site; `backups` is excluded from it because backing the local object store up into itself is circular. The offsite backup narrows to what is needed to rebuild from nothing.
 
@@ -162,8 +162,8 @@ sequenceDiagram
 
 ```bash
 # Backup specific namespaces
-velero --namespace backups backup create manual-arr-backup \
-  --include-namespaces arr \
+velero --namespace backups backup create manual-media-backup \
+  --include-namespaces media \
   --default-volumes-to-fs-backup \
   --ttl 168h
 
@@ -181,21 +181,21 @@ velero --namespace backups backup create manual-full-backup \
 velero --namespace backups backup get
 
 # Describe a specific backup
-velero --namespace backups backup describe manual-arr-backup --details
+velero --namespace backups backup describe manual-media-backup --details
 
 # View backup logs
-velero --namespace backups backup logs manual-arr-backup
+velero --namespace backups backup logs manual-media-backup
 ```
 
 ### Restore from Backup
 
 ```bash
 # Restore an entire backup
-velero --namespace backups restore create --from-backup manual-arr-backup
+velero --namespace backups restore create --from-backup manual-media-backup
 
 # Restore specific namespaces from a backup
 velero --namespace backups restore create --from-backup manual-full-backup \
-  --include-namespaces arr
+  --include-namespaces media
 
 # Restore specific resources
 velero --namespace backups restore create --from-backup manual-full-backup \
@@ -227,22 +227,22 @@ A green backup status is not a restore test. Record an isolated application rest
 
 ## Recovery Coverage
 
-The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `arr`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object store (Garage) and the NFS provisioner's root export are deliberately outside that schedule.
+The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `media`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object store (Garage) and the NFS provisioner's root export are deliberately outside that schedule.
 
 | Namespace / PVC | Data and recovery mechanism | Remaining limitation |
 |-----------------|-----------------------------|----------------------|
-| `arr/arr-bazarr-config` | Daily SQLite dump at `bazarr/db/bazarr.db` in the holder volume | Non-database files and application restore unverified |
-| `arr/arr-jellyfin-config` | Daily SQLite dump at `jellyfin/data/data/jellyfin.db` | Artwork/plugins and full application restore unverified |
-| `arr/arr-prowlarr-config` | Daily `prowlarr/prowlarr.db` dump; declared settings in Git | Real tracker credentials and restored database behavior unverified |
-| `arr/arr-radarr-config` | Daily `radarr/radarr.db` dump | Application restore and profile recreation unverified |
-| `arr/arr-seerr-config` | Daily `seerr/db/db.sqlite3` dump | Requires media-server login and profiles recreated by Recyclarr; Seerr connections now resolve profile IDs by name; `.backup-preop` is an extra rollback copy, not the active database |
-| `arr/arr-sonarr-config` | Daily `sonarr/sonarr.db` dump | Offsite database, login, records and bounded controller recovery verified; media/integration recovery remains separate |
-| `arr/arr-tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Native restore verified: exact flow/library/variable/file records and plugin hashes; worker execution and media recovery remain unverified |
-| `arr/arr-config-backups` | NFS staging volume mounted by `arr-config-backup-holder`; daily Garage and weekly S3 | A successful copy job alone does not demonstrate upload or application recovery |
-| `arr/arr-data` | Shared media/downloads on NFS; deliberately excluded from Velero volume backups | No independent media copy demonstrated; NAS redundancy does not replace a backup |
-| `arr/arr-recyclarr` | NFS state/cache mounted by its holder, captured by Velero; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |
-| `arr/arr-vpn-downloads-gluetun-config` | Live NFS file backup; VPN settings/credentials also come from Git/Vault | Fresh VPN bootstrap not demonstrated |
-| `arr/arr-vpn-downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | Offsite configuration/resume state restored to fresh storage using HCP/offsite-etcd credentials; login/history/restart verified; payload recovery and VPN bootstrap remain unverified |
+| `media/bazarr-config` | Daily SQLite dump at `bazarr/db/bazarr.db` in the holder volume | Non-database files and application restore unverified |
+| `media/jellyfin-config` | Daily SQLite dump at `jellyfin/data/data/jellyfin.db` | Artwork/plugins and full application restore unverified |
+| `media/prowlarr-config` | Daily `prowlarr/prowlarr.db` dump; declared settings in Git | Real tracker credentials and restored database behavior unverified |
+| `media/radarr-config` | Daily `radarr/radarr.db` dump | Application restore and profile recreation unverified |
+| `media/seerr-config` | Daily `seerr/db/db.sqlite3` dump | Requires media-server login and profiles recreated by Recyclarr; Seerr connections now resolve profile IDs by name; `.backup-preop` is an extra rollback copy, not the active database |
+| `media/sonarr-config` | Daily `sonarr/sonarr.db` dump | Offsite database, login, records and bounded controller recovery verified; media/integration recovery remains separate |
+| `media/tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Native restore verified: exact flow/library/variable/file records and plugin hashes; worker execution and media recovery remain unverified |
+| `media/config-backups` | NFS staging volume mounted by `config-backup-holder`; daily Garage and weekly S3 | A successful copy job alone does not demonstrate upload or application recovery |
+| `media/media-data` | Shared media/downloads on NFS; deliberately excluded from Velero volume backups | No independent media copy demonstrated; NAS redundancy does not replace a backup |
+| `media/recyclarr` | NFS state/cache mounted by its holder, captured by Velero; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |
+| `media/downloads-gluetun-config` | Live NFS file backup; VPN settings/credentials also come from Git/Vault | Fresh VPN bootstrap not demonstrated |
+| `media/downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | Offsite configuration/resume state restored to fresh storage using HCP/offsite-etcd credentials; login/history/restart verified; payload recovery and VPN bootstrap remain unverified |
 | `auth/data-authentik-postgresql-0` | Native `pg_dump` to `authentik-backups`; raw volume is also captured | Raw live PostgreSQL files are not the database recovery method; preserve Authentik's secret key separately |
 | `auth/authentik-backups` | Daily custom-format PostgreSQL archive, mounted by a holder and captured by Velero | S3 database, emergency login and OIDC code exchange verified; ordinary login/MFA, clients and proxy/worker recovery remain open |
 | `backups/etcd-snapshots` | Daily complete etcd/PKI/host-configuration set, uploaded directly to `etcd-snapshots/` in S3 | Seven completed sets retained; offsite static control-plane boot, normal node registration and Cilium networking verified on replacement VMs; combined offsite qBittorrent recovery verified on those fresh machines; other application coverage remains open |

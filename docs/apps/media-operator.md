@@ -12,13 +12,13 @@ Seven operators reconcile eight media application configurations from Git. They 
 | `media-operator-subtitles` | `media-operator-subtitles` | BazarrConfig |
 | `media-operator-transcode` | `media-operator-transcode` | TdarrConfig |
 
-Charts come from `ghcr.io/kyleseneker/media-operator`; each `config.yml` pins its version. All watch `arr`, with metrics and ServiceMonitors enabled. The API group is `media-operator.dev/v1alpha1`. Custom resources live under `apps/arr/media-config/` and deploy as the `arr-media-config` Application. The `media-operator` Application holds the fleet-wide PrometheusRule (`MediaOperatorConfigNotSynced`, `MediaOperatorDriftNeverSettles`), which covers all seven operators.
+Charts come from `ghcr.io/kyleseneker/media-operator`; each `config.yml` pins its version. All watch `media`, with metrics and ServiceMonitors enabled. The API group is `media-operator.dev/v1alpha1`. Custom resources live under `apps/media/media-config/` and deploy as the `media-config` Application. The `media-operator` Application holds the fleet-wide PrometheusRule (`MediaOperatorConfigNotSynced`, `MediaOperatorDriftNeverSettles`), which covers all seven operators.
 
 ## Ownership and reconciliation
 
 Each resource declares its service endpoint, credential Secret references, reconciliation interval, and `deletionPolicy: orphan`. Removing the CR leaves application settings intact. Prowlarr owns indexer sync to Sonarr/Radarr; Recyclarr owns quality profiles and custom-format scores. Avoid managing the same settings through multiple controllers or manual edits.
 
-Application APIs must be reachable and credentials valid before reconciliation succeeds. Inspect CR status and operator logs for failed reconciliation, including HTTP 401s. `make arr-keys-adopt` transfers generated keys into Vault at `homelab/apps/arr`; ESO then reconciles `arr-api-keys`. Jellyfin, qBittorrent, Seerr, Tdarr, and provider credentials have their own Secret references. qBittorrent clients authenticate even from the pod network.
+Application APIs must be reachable and credentials valid before reconciliation succeeds. Inspect CR status and operator logs for failed reconciliation, including HTTP 401s. `make media-keys-adopt` transfers generated keys into Vault at `homelab/apps/media`; ESO then reconciles `media-api-keys`. Jellyfin, qBittorrent, Seerr, Tdarr, and provider credentials have their own Secret references. qBittorrent clients authenticate even from the pod network.
 
 ## Cold-start gaps
 

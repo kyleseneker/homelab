@@ -32,9 +32,9 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 
 | Schedule | Cron | Scope | TTL |
 |----------|------|-------|-----|
-| `daily-stateful` | 03:00 UTC daily | `arr`, `monitoring`, `auth`, `home-automation` namespaces to `local` | 7 days |
+| `daily-stateful` | 03:00 UTC daily | `media`, `monitoring`, `auth`, `home-automation` namespaces to `local` | 7 days |
 | `weekly-full-cluster` | 04:00 UTC Sunday | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups`, to `local` | 30 days |
-| `weekly-offsite` | 05:00 UTC Sunday | `arr`, `monitoring`, `auth`, `home-automation`, `argocd`, `vault`, `external-secrets` to `offsite` | 30 days |
+| `weekly-offsite` | 05:00 UTC Sunday | `media`, `monitoring`, `auth`, `home-automation`, `argocd`, `vault`, `external-secrets` to `offsite` | 30 days |
 
 ### Resources
 

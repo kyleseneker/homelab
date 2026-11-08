@@ -16,7 +16,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://tdarr.home.seneker.io
-          internal_host: http://arr-tdarr.arr.svc.cluster.local:8265
+          internal_host: http://tdarr.media.svc.cluster.local:8265
           internal_host_ssl_validation: false
           authorization_flow:
             !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
@@ -54,7 +54,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://sonarr.home.seneker.io
-          internal_host: http://arr-sonarr.arr.svc.cluster.local:8989
+          internal_host: http://sonarr.media.svc.cluster.local:8989
           internal_host_ssl_validation: false
           skip_path_regex: |-
             ^/api/.*
@@ -77,7 +77,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://radarr.home.seneker.io
-          internal_host: http://arr-radarr.arr.svc.cluster.local:7878
+          internal_host: http://radarr.media.svc.cluster.local:7878
           internal_host_ssl_validation: false
           skip_path_regex: |-
             ^/api/.*
@@ -100,7 +100,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://prowlarr.home.seneker.io
-          internal_host: http://arr-prowlarr.arr.svc.cluster.local:9696
+          internal_host: http://prowlarr.media.svc.cluster.local:9696
           internal_host_ssl_validation: false
           skip_path_regex: |-
             ^/api/.*
@@ -123,7 +123,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://bazarr.home.seneker.io
-          internal_host: http://arr-bazarr.arr.svc.cluster.local:6767
+          internal_host: http://bazarr.media.svc.cluster.local:6767
           internal_host_ssl_validation: false
           skip_path_regex: |-
             ^/api/.*
@@ -146,7 +146,7 @@ data:
         attrs:
           mode: proxy
           external_host: https://qbit.home.seneker.io
-          internal_host: http://arr-vpn-downloads.arr.svc.cluster.local:8080
+          internal_host: http://downloads.media.svc.cluster.local:8080
           internal_host_ssl_validation: false
           skip_path_regex: |-
             ^/api/.*

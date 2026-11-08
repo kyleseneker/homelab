@@ -10,9 +10,9 @@ FlareSolverr is a proxy server that bypasses Cloudflare and DDoS-GUARD protectio
 | Image | `ghcr.io/flaresolverr/flaresolverr` |
 | Port | 8191 |
 | HTTPRoute | -- (internal only) |
-| Namespace | `arr` |
-| ArgoCD app | `arr-flaresolverr` |
-| Internal URL | `http://arr-flaresolverr.arr.svc.cluster.local:8191` |
+| Namespace | `media` |
+| ArgoCD app | `flaresolverr` |
+| Internal URL | `http://flaresolverr.media.svc.cluster.local:8191` |
 
 ### Resources
 
@@ -23,7 +23,7 @@ FlareSolverr is a proxy server that bypasses Cloudflare and DDoS-GUARD protectio
 
 ## Key Configuration
 
-- Timezone injected from ConfigMap `arr-env`.
+- Timezone injected from ConfigMap `media-env`.
 - `LOG_LEVEL` set to `info` (options: `debug`, `info`, `warn`, `error`).
 - Stateless -- no persistent storage required.
 - No ingress -- accessed only by Prowlarr via in-cluster service DNS.
@@ -37,7 +37,7 @@ FlareSolverr itself requires no configuration. To connect it to Prowlarr:
 1. Open `https://prowlarr.home.seneker.io`.
 2. Go to **Settings > Indexers**.
 3. Click **+** and select **FlareSolverr**.
-4. Set the **Tag** (e.g., `flaresolverr`) and the **Host**: `http://arr-flaresolverr.arr.svc.cluster.local:8191`.
+4. Set the **Tag** (e.g., `flaresolverr`) and the **Host**: `http://flaresolverr.media.svc.cluster.local:8191`.
 5. Save.
 6. On any indexer that requires Cloudflare solving, add the `flaresolverr` tag.
 

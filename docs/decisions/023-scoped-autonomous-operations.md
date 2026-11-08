@@ -10,7 +10,7 @@ OpenClaw diagnoses cluster problems and responds to Slack messages and applicati
 
 ## Decision
 
-Give OpenClaw explicit cluster read permissions for diagnosis, without Secret reads or pod exec. Limit Kubernetes writes to `deployments/scale` for `homepage` and `arr-flaresolverr` in the `arr` namespace, using a namespaced Role with `resourceNames`.
+Give OpenClaw explicit cluster read permissions for diagnosis, without Secret reads or pod exec. Limit Kubernetes writes to `deployments/scale` for `homepage` and `flaresolverr` in the `media` namespace, using a namespaced Role with `resourceNames`.
 
 The intended remediation is restoring those companion workloads to their declared replica counts. GitOps remains the desired-state owner. Node changes, arbitrary workload-template changes and deletion are outside OpenClaw's Kubernetes permissions.
 

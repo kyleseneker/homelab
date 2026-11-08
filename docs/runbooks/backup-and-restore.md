@@ -8,9 +8,9 @@ Velero runs three automated backup schedules:
 
 | Schedule | Scope | Retention | Time | Target |
 |----------|-------|-----------|------|--------|
-| `daily-stateful` | `arr`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily | Garage (`local`) |
+| `daily-stateful` | `media`, `monitoring`, `auth` namespaces | 7 days | 3:00 AM daily | Garage (`local`) |
 | `weekly-full-cluster` | All except `kube-system`, `kube-public`, `nfs-provisioner`, `backups` | 30 days | 4:00 AM Sunday | Garage (`local`) |
-| `weekly-offsite` | `arr`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
+| `weekly-offsite` | `media`, `monitoring`, `auth`, `argocd`, `vault`, `external-secrets` | 30 days | 5:00 AM Sunday | AWS S3 (offsite) |
 
 Times are UTC. The schedules capture Kubernetes objects and eligible mounted volume data through Kopia. Offsite is a selected recovery set, not a copy of the local schedule; it excludes the local backup store in `backups` to avoid copying local archives again. Local-path data requires the separate dump/restore procedure below.
 
@@ -359,7 +359,7 @@ velero --namespace backups schedule get
 4. Verify pods are running after the restore completes:
 
     ```bash
-    kubectl get pods -n arr
+    kubectl get pods -n media
     kubectl get pods -n monitoring
     ```
 
@@ -371,7 +371,7 @@ velero --namespace backups schedule get
 Restore only specific namespaces:
 
 ```bash
-velero --namespace backups restore create --from-backup <backup-name> --include-namespaces arr
+velero --namespace backups restore create --from-backup <backup-name> --include-namespaces media
 ```
 
 Restore only specific resource types:
@@ -385,7 +385,7 @@ Combine both filters:
 
 ```bash
 velero --namespace backups restore create --from-backup <backup-name> \
-  --include-namespaces arr \
+  --include-namespaces media \
   --include-resources deployments,services,persistentvolumeclaims
 ```
 
@@ -465,7 +465,7 @@ If a restore completes but PVC data is missing:
 
 ## Restoring Local-Path Application Databases
 
-The `arr-config-backups` and `uptime-kuma-backups` PVCs hold staged database dumps. Velero restores those NFS volumes; it does not automatically install dumps into the applications' local-path PVCs.
+The `config-backups` and `uptime-kuma-backups` PVCs hold staged database dumps. Velero restores those NFS volumes; it does not automatically install dumps into the applications' local-path PVCs.
 
 1. Pause GitOps reconciliation for the target workload and stop its writer. For a drill, use an isolated namespace, fresh PVCs, and disabled ingress/notifications; do not map a test pod to the production NFS path or local PV.
 2. Restore the backup-holder volume into the isolated target, confirm the relevant PodVolumeRestore completed, and inspect the dump timestamp/size. A successful Backup object alone is insufficient.
@@ -538,7 +538,7 @@ HCP Terraform access for S3 credentials and a trusted recovery machine.
    python3 scripts/restore-kopia-offsite.py \
      --credentials-dir .lab/recovery-credentials-hcp \
      --password-file .lab/volume-recovery/kopia-password \
-     --namespace arr --snapshot <snapshot-id> \
+     --namespace media --snapshot <snapshot-id> \
      --output .lab/volume-recovery/application
    ```
 

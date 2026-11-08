@@ -29,7 +29,7 @@ The Prometheus TSDB is on `local-path` for a different reason: heavy random I/O 
 **Volumes are not backed up.** Velero's Kopia file-system backup cannot read `hostPath` volumes. Every `local-path` PVC is captured as a PVC and PV object holding no data, and Velero logs this as a *warning* -- the backup still reports `Completed`.
 
 !!! danger "A restore recreates these volumes empty"
-    Coverage is provided at the application layer instead. `arr-config-backup` dumps each *arr SQLite database nightly through SQLite's online backup API onto an `nfs-client` volume Velero does read; `uptime-kuma-backup` does the same for `kuma.db`. The Prometheus TSDB is deliberately left uncovered.
+    Coverage is provided at the application layer instead. `config-backup` dumps each *arr SQLite database nightly through SQLite's online backup API onto an `nfs-client` volume Velero does read; `uptime-kuma-backup` does the same for `kuma.db`. The Prometheus TSDB is deliberately left uncovered.
 
     Both backup jobs depend on a holder Deployment keeping the target volume mounted -- fs-backup only reads volumes attached to a running pod, so without the holder the mechanism silently captures nothing.
 

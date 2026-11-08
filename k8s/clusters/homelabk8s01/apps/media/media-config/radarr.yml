@@ -1,0 +1,58 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: RadarrConfig
+metadata:
+  name: radarr
+  namespace: media
+spec:
+  connection:
+    url: http://radarr.media.svc.cluster.local:7878
+    apiKeySecretRef:
+      name: media-api-keys
+      key: radarr-api-key
+  reconcile:
+    interval: 5m
+    deletionPolicy: orphan
+  rootFolders:
+    - path: /data/media/movies
+  downloadClients:
+    - name: qBittorrent
+      implementation: QBittorrent
+      configContract: QBittorrentSettings
+      protocol: torrent
+      host: downloads.media.svc.cluster.local
+      port: 8080
+      category: movies
+      enable: true
+      usernameSecretRef:
+        name: qbittorrent-credentials
+        key: username
+      passwordSecretRef:
+        name: qbittorrent-credentials
+        key: password
+  downloadClientConfig:
+    enableCompletedDownloadHandling: true
+    autoRedownloadFailed: true
+  notifications:
+    - name: Jellyfin
+      implementation: MediaBrowser
+      configContract: MediaBrowserSettings
+      onDownload: true
+      onUpgrade: true
+      onRename: true
+      fields:
+        - name: host
+          value: jellyfin.media.svc.cluster.local
+        - name: port
+          value: 8096
+        - name: useSsl
+          value: false
+        - name: updateLibrary
+          value: true
+        - name: notify
+          value: false
+        - name: apiKey
+          valueFrom:
+            name: jellyfin-credentials
+            key: api-key
+  mediaManagement:
+    downloadPropersAndRepacks: doNotPrefer

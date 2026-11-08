@@ -1,7 +1,0 @@
-appName: arr-prereqs
-namespace: ''
-sourceType: git
-gitPath: k8s/clusters/homelabk8s01/apps/arr/prereqs
-createNamespace: false
-syncOptions:
-  - ServerSideApply=true

@@ -23,9 +23,9 @@ def configmap_data(path):
 
 class RecyclarrRuntimeTests(unittest.TestCase):
     def test_process_identity_matches_nfs_media_identity(self):
-        media = configmap_data(APPS / "arr/prereqs/env.yml")
-        values = yaml.safe_load((APPS / "arr/recyclarr/values.yml").read_text())
-        holder = yaml.safe_load((APPS / "arr/recyclarr/state-holder.yml").read_text())
+        media = configmap_data(APPS / "media/prereqs/env.yml")
+        values = yaml.safe_load((APPS / "media/recyclarr/values.yml").read_text())
+        holder = yaml.safe_load((APPS / "media/recyclarr/state-holder.yml").read_text())
         for security in (values["defaultPodOptions"]["securityContext"],
                          holder["spec"]["template"]["spec"]["securityContext"]):
             self.assertEqual(security["runAsUser"], int(media["PUID"]))
@@ -42,7 +42,7 @@ class BackupRuntimeTests(unittest.TestCase):
         self.target = self.root / "backup"
         self.source.mkdir()
         self.target.mkdir()
-        self.scripts = configmap_data(APPS / "arr/config-backup/script.yml")
+        self.scripts = configmap_data(APPS / "media/config-backup/script.yml")
 
     def run_script(self, script, **environment):
         script = script.replace('Path("/data")', f"Path({str(self.source)!r})")

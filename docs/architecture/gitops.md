@@ -20,13 +20,13 @@ flowchart TD
     infraConfigs --> prometheusStack["kube-prometheus-stack/config.yml"]
     infraConfigs --> moreInfra["..."]
 
-    appConfigs --> arrDir["arr/"]
+    appConfigs --> mediaDir["media/"]
     appConfigs --> homepage["homepage/config.yml"]
 
-    arrDir --> prereqs["prereqs/config.yml"]
-    arrDir --> sonarr["sonarr/config.yml"]
-    arrDir --> radarr["radarr/config.yml"]
-    arrDir --> moreArr["..."]
+    mediaDir --> prereqs["prereqs/config.yml"]
+    mediaDir --> sonarr["sonarr/config.yml"]
+    mediaDir --> radarr["radarr/config.yml"]
+    mediaDir --> moreArr["..."]
 ```
 
 ### ApplicationSet Definition
@@ -56,7 +56,7 @@ Each app directory contains up to three files consumed by the ApplicationSet:
 2. **Values ref**: Git repo reference for the values file
 3. **Kustomize source** (optional): Supporting resources from the same directory
 
-**Git-directory apps** (`sourceType: git` -- network-policies, gateway, gateway-api, kyverno-policies, etcd-backup, arr-prereqs, arr-media-config, arr-config-backup) produce single-source Applications pointing to a git path.
+**Git-directory apps** (`sourceType: git` -- network-policies, gateway, gateway-api, kyverno-policies, etcd-backup, media-prereqs, media-config, config-backup) produce single-source Applications pointing to a git path.
 
 All directory sources use `sourceType: git`, including local-path-provisioner. ArgoCD detects `kustomization.yml` in the target directory and builds it.
 
@@ -69,14 +69,14 @@ Each Application syncs independently. ApplicationSet-generated apps have no cros
 
 The cost of that independence is that **there is no ordering mechanism at all**. `argocd.argoproj.io/sync-wave` orders resources *within* one Application's sync; it does nothing between Applications, because the applicationset-controller creates them directly with no parent Application syncing them. Any wave annotation on a generated Application -- there is still one in `local-path-provisioner/config.yml` -- is inert.
 
-Ordering emerges from failure and retry instead. An app targeting the `arr` namespace before `arr-prereqs` has created it fails, backs off, and succeeds on a later attempt. With `retry: limit 10` and backoff from 10s to 3m, dependencies can converge after transient failures. Convergence is not guaranteed: missing secret material, Vault initialization or dependencies that outlive the retry budget require intervention and a new sync.
+Ordering emerges from failure and retry instead. An app targeting the `media` namespace before `media-prereqs` has created it fails, backs off, and succeeds on a later attempt. With `retry: limit 10` and backoff from 10s to 3m, dependencies can converge after transient failures. Convergence is not guaranteed: missing secret material, Vault initialization or dependencies that outlive the retry budget require intervention and a new sync.
 
 ## Namespace Strategy
 
 Two patterns based on whether a namespace is shared:
 
 - **Chart-created namespaces:** `CreateNamespace=true` ensures namespaces exist. Some Applications additionally own namespace manifests for labels or annotations; check their Kustomize resources. Monitoring is shared by several Applications.
-- **Shared namespace** (arr): A dedicated `arr/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
+- **Shared namespace** (media): A dedicated `media/prereqs` Application owns the namespace, shared PV, and shared ConfigMap.
 
 Bootstrap resources are outside this ApplicationSet. After changing `k8s/bootstrap`, use `make k8s-bootstrap-drift` to review drift and explicitly reconcile the bootstrap manifests. Changes there do not deploy through an ordinary application sync. Renovate's Argo CD updates land in `k8s/components/argocd` and also need this step; the `ArgoCDVersionDrift` alert fires when the running version has differed from the pin for a day.
 

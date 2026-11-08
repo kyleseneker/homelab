@@ -1,0 +1,136 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-default-deny
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingressDeny:
+    - fromEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-allow-gateway
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - ingress
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-allow-internal
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-allow-monitoring
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+---
+# Egress: implicit deny model. Any endpoint with an egress rule denies all
+# other egress by default in Cilium, so we don't need egressDeny.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-egress
+  namespace: media
+spec:
+  description: "Default egress rules for all media pods"
+  endpointSelector: {}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: media
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "2049"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-egress-vpn
+  namespace: media
+spec:
+  description: "Allow Gluetun VPN sidecar full internet access for VPN tunnels"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: downloads
+  egress:
+    - toEntities:
+        - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-egress-media-operator
+  namespace: media
+spec:
+  description: "Allow media-operator to watch its CRs on the Kubernetes API"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: media-operator
+  egress:
+    - toEntities:
+        - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: media-allow-auth-outpost
+  namespace: media
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+      toPorts:
+        - ports:
+            - port: "8265"
+              protocol: TCP
+            - port: "8989"
+              protocol: TCP
+            - port: "7878"
+              protocol: TCP
+            - port: "9696"
+              protocol: TCP
+            - port: "6767"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP

@@ -11,7 +11,7 @@ spec.loader.exec_module(quarantine)
 class RecoveryQuarantine(unittest.TestCase):
     def test_execution_and_stale_cilium_keys_are_selected(self):
         cases = {
-            '/registry/pods/arr/sonarr': '/registry/pods/',
+            '/registry/pods/media/sonarr': '/registry/pods/',
             '/registry/cronjobs/backups/etcd-backup': '/registry/cronjobs/',
             '/registry/minions/old-node': '/registry/minions/',
             '/registry/admissionregistration.k8s.io/validatingwebhookconfigurations/policy':

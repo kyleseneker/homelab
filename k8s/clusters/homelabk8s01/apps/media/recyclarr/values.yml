@@ -1,0 +1,64 @@
+defaultPodOptions:
+  securityContext:
+    # Match the NAS media identity used by media-env and NFS-owned Git checkouts.
+    runAsUser: 977
+    runAsGroup: 988
+    fsGroup: 988
+    runAsNonRoot: true
+controllers:
+  main:
+    type: cronjob
+    cronjob:
+      schedule: 0 */6 * * *
+      concurrencyPolicy: Forbid
+      successfulJobsHistory: 1
+      failedJobsHistory: 3
+    containers:
+      main:
+        image:
+          repository: ghcr.io/recyclarr/recyclarr
+          tag: 8.8.1
+        args:
+          - sync
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+        envFrom:
+          - configMapRef:
+              name: media-env
+persistence:
+  state:
+    type: persistentVolumeClaim
+    storageClass: nfs-client
+    accessMode: ReadWriteMany
+    size: 256Mi
+    globalMounts:
+      - path: /config
+  tmp:
+    type: emptyDir
+    globalMounts:
+      - path: /tmp
+  config:
+    type: configMap
+    name: recyclarr-config
+    globalMounts:
+      - path: /config/recyclarr.yml
+        subPath: recyclarr.yml
+        readOnly: true
+  secrets:
+    type: secret
+    name: recyclarr-secrets
+    globalMounts:
+      - path: /config/secrets.yml
+        subPath: secrets.yml
+        readOnly: true

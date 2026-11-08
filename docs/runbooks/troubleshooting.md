@@ -126,10 +126,10 @@ Applications report permission denied errors when accessing files on NFS volumes
 
 **Resolution:**
 
-Check that the `PUID` and `PGID` values in the `arr-env` ConfigMap match the user/group ownership on the NAS share. LinuxServer.io containers use these environment variables to set the runtime user.
+Check that the `PUID` and `PGID` values in the `media-env` ConfigMap match the user/group ownership on the NAS share. LinuxServer.io containers use these environment variables to set the runtime user.
 
 ```bash
-kubectl get configmap -n arr arr-env -o yaml
+kubectl get configmap -n media media-env -o yaml
 ```
 
 ## Network Issues
@@ -173,7 +173,7 @@ dig <app-name>.home.seneker.io
 The Gluetun VPN container fails to establish a connection, blocking qBittorrent.
 
 ```bash
-kubectl logs -n arr -l app.kubernetes.io/instance=arr-vpn-downloads -c gluetun
+kubectl logs -n media -l app.kubernetes.io/instance=downloads -c gluetun
 ```
 
 **Common causes:**
@@ -256,7 +256,7 @@ kubectl annotate externalsecret <name> -n <namespace> \
 ### A PVC Stays `Terminating`
 
 A PVC is not released while any pod still references it, including pods that have already
-completed. The `arr-config-backup-*` CronJobs mount each app's config volume, so a `Completed`
+completed. The `config-backup-*` CronJobs mount each app's config volume, so a `Completed`
 backup pod holds the claim long after the job finished. Scaling the application to zero is not
 enough.
 

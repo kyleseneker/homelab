@@ -266,7 +266,7 @@ flowchart TD
     loki -->|"log queries"| grafana
     prom -->|"alerting rules"| am
 
-    subgraph arr["arr Namespace"]
+    subgraph media["media Namespace"]
         exportarr["Exportarr\n(ServiceMonitors)"]
         arrApps["Sonarr, Radarr,\nProwlarr, Bazarr"]
     end

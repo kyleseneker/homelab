@@ -11,9 +11,9 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 | Image | `ghcr.io/haveagitgat/tdarr` |
 | Ports | 8265 (web UI), 8266 (server) |
 | HTTPRoute | `tdarr.home.seneker.io`, proxied through the Authentik outpost |
-| Namespace | `arr` |
-| ArgoCD app | `arr-tdarr` |
-| Internal URL | `http://arr-tdarr.arr.svc.cluster.local:8265` |
+| Namespace | `media` |
+| ArgoCD app | `tdarr` |
+| Internal URL | `http://tdarr.media.svc.cluster.local:8265` |
 | Configuration | `TdarrConfig` CR, reconciled by the media-operator |
 
 ### Storage
@@ -21,7 +21,7 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 | Volume | Type | Size | Mount Path | Notes |
 |--------|------|------|------------|-------|
 | `config` | PVC (`local-path`) | 5Gi | `/app/server` | Server database and configuration |
-| `data` | PVC (existing `arr-data`) | -- | `/data` | Shared media library and transcode cache, mounted whole so the two share a filesystem |
+| `data` | PVC (existing `media-data`) | -- | `/data` | Shared media library and transcode cache, mounted whole so the two share a filesystem |
 | `dri` | hostPath | -- | `/dev/dri` | Intel GPU device |
 
 ### Resources
@@ -38,7 +38,7 @@ GPU limit: `gpu.intel.com/i915: 1`. `nodeSelector`: `gpu: intel`.
 
 ## Key Configuration
 
-Environment from ConfigMap `arr-env` (TZ, PUID, PGID) plus:
+Environment from ConfigMap `media-env` (TZ, PUID, PGID) plus:
 
 | Variable | Value | Notes |
 |----------|-------|-------|
@@ -53,7 +53,7 @@ Environment from ConfigMap `arr-env` (TZ, PUID, PGID) plus:
 ## Configuration as Code
 
 Libraries, flows and worker counts come from the `TdarrConfig` CR in
-`apps/arr/media-config/tdarr.yml`. Nothing here is set through the web UI.
+`apps/media/media-config/tdarr.yml`. Nothing here is set through the web UI.
 
 The libraries run the community One Flow set with `disable_video: true`, so the flow performs
 audio and container work and leaves the video stream untouched.
@@ -86,7 +86,7 @@ on this Intel GPU.
 
 | Dependency | Purpose |
 |------------|---------|
-| Shared media (`arr-data`) | Reads and writes the library |
+| Shared media (`media-data`) | Reads and writes the library |
 | Intel GPU node | Hardware decode for health checks and any future encode work |
 | media-operator | Reconciles libraries, flows and worker counts |
 

@@ -28,7 +28,7 @@ class ReadOnlyRecovery(unittest.TestCase):
             credentials, password = self.prepare(root)
             output = root / 'restore'
             with patch.object(restore.subprocess, 'run', return_value=SimpleNamespace(returncode=0, stdout=b'')) as run:
-                restore.restore(credentials, password, 'arr', 'a' * 32, output, Path('/kopia'))
+                restore.restore(credentials, password, 'media', 'a' * 32, output, Path('/kopia'))
             connection = run.call_args_list[0]
             self.assertIn('--readonly', connection.args[0])
             self.assertIn('--no-persist-credentials', connection.args[0])
@@ -36,7 +36,7 @@ class ReadOnlyRecovery(unittest.TestCase):
             self.assertEqual(connection.kwargs['env']['KOPIA_PASSWORD'], 'test-only-password')
             self.assertEqual([p.name for p in output.iterdir()], ['retrieval.json'])
             with self.assertRaises(FileExistsError):
-                restore.restore(credentials, password, 'arr', 'a' * 32, output, Path('/kopia'))
+                restore.restore(credentials, password, 'media', 'a' * 32, output, Path('/kopia'))
 
     def test_failed_reader_removes_connection_state_and_withholds_diagnostics(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -44,9 +44,9 @@ class ReadOnlyRecovery(unittest.TestCase):
             credentials, password = self.prepare(root)
             with patch.object(restore.subprocess, 'run', return_value=SimpleNamespace(returncode=1, stdout=b'sensitive', stderr=b'sensitive')):
                 with self.assertRaisesRegex(RuntimeError, 'output withheld'):
-                    restore.restore(credentials, password, 'arr', 'a' * 32, root / 'restore', Path('/kopia'))
+                    restore.restore(credentials, password, 'media', 'a' * 32, root / 'restore', Path('/kopia'))
             self.assertEqual(list((root / 'restore').iterdir()), [])
 
     def test_rejects_parent_traversal_before_reading_credentials(self):
         with self.assertRaises(ValueError):
-            restore.restore(Path('/unused'), Path('/unused'), 'arr', 'a' * 32 + '/../other', Path('/unused'), Path('/kopia'))
+            restore.restore(Path('/unused'), Path('/unused'), 'media', 'a' * 32 + '/../other', Path('/unused'), Path('/kopia'))

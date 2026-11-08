@@ -14,7 +14,7 @@ Most upgrades involve bumping the container image tag in the application's `valu
 
 ### Example: Upgrading Sonarr
 
-To upgrade Sonarr from `4.0.17` to `4.0.18`, edit `k8s/clusters/homelabk8s01/apps/arr/sonarr/values.yml`:
+To upgrade Sonarr from `4.0.17` to `4.0.18`, edit `k8s/clusters/homelabk8s01/apps/media/sonarr/values.yml`:
 
 ```yaml
 controllers:
@@ -29,7 +29,7 @@ controllers:
 Commit and push:
 
 ```bash
-git add k8s/clusters/homelabk8s01/apps/arr/sonarr/values.yml
+git add k8s/clusters/homelabk8s01/apps/media/sonarr/values.yml
 git commit -m "upgrade sonarr to 4.0.18"
 git push
 ```
@@ -98,13 +98,13 @@ After any upgrade:
 1. Check that the pod is running:
 
     ```bash
-    kubectl get pods -n arr -l app.kubernetes.io/instance=arr-sonarr
+    kubectl get pods -n media -l app.kubernetes.io/instance=sonarr
     ```
 
 2. Check pod logs for errors:
 
     ```bash
-    kubectl logs -n arr -l app.kubernetes.io/instance=arr-sonarr
+    kubectl logs -n media -l app.kubernetes.io/instance=sonarr
     ```
 
 3. Verify the web UI loads by navigating to the app's URL (e.g., `https://sonarr.home.seneker.io`).

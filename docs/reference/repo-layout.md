@@ -119,7 +119,7 @@ homelab/
 │           ├── uptime-kuma/
 │           ├── media-operator/      # Servarr operator (Sonarr/Radarr/Prowlarr config)
 │           ├── media-operator-downloads/  # Download-client operator
-│           └── arr/
+│           └── media/
 │               ├── prereqs/         # Shared namespace, PV, ConfigMap, API keys
 │               ├── media-config/    # Servarr custom resources
 │               ├── config-backup/   # Nightly SQLite dumps to NFS
@@ -159,11 +159,11 @@ The file extension is load-bearing: the generator matches `config.yml`, not `con
 | `sourceType` | Produces | Used by |
 |--------------|----------|---------|
 | `helm` | Multi-source Application: chart repo + `values.yml` from git + optional kustomize dir | Most components |
-| `git` | Single-source Application pointing at `gitPath` | Plain manifests: gateway, network policies, etcd-backup, arr-prereqs |
+| `git` | Single-source Application pointing at `gitPath` | Plain manifests: gateway, network policies, etcd-backup, media-prereqs |
 | `kustomize` | Single-source Application over a kustomize directory | local-path-provisioner |
 
 **Separation of infrastructure and apps.** Infrastructure components (Vault, External Secrets, cert-manager, Cilium Gateway, storage provisioners, monitoring) are the dependencies user-facing applications rest on. Nothing enforces the ordering -- see [Deployment Ordering](../infrastructure/index.md#deployment-ordering) -- but the split keeps the dependency direction legible.
 
-**Namespace strategy.** Single-app namespaces use `CreateNamespace=true` on the Application, requiring no separate namespace manifest. The shared `arr` namespace is owned by a dedicated `arr/prereqs` Application that manages the namespace, shared PV, and shared ConfigMap.
+**Namespace strategy.** Single-app namespaces use `CreateNamespace=true` on the Application, requiring no separate namespace manifest. The shared `media` namespace is owned by a dedicated `media/prereqs` Application that manages the namespace, shared PV, and shared ConfigMap.
 
 **`k8s/bootstrap/` is outside GitOps.** It is applied with `kubectl apply -k` by `make k8s-bootstrap` and is not reconciled by ArgoCD, so it can drift from git undetected. The `ArgoCDVersionDrift` alert catches the most consequential case, a merged Argo CD version bump that was never applied; Renovate updates its expected version together with the install manifest. `make k8s-bootstrap-drift` runs an explicit live comparison; the offline renderer validates manifests without requiring access to a cluster. The ApplicationSet CRD requires `--server-side`; it exceeds the last-applied-configuration annotation limit.

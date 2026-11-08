@@ -1,0 +1,55 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: SeerrConfig
+metadata:
+  name: seerr
+  namespace: media
+spec:
+  connection:
+    url: http://seerr.media.svc.cluster.local:80
+    apiKeySecretRef:
+      name: seerr-api-key
+      key: api-key
+  reconcile:
+    interval: 15m
+    deletionPolicy: orphan
+  jellyfinAuth:
+    hostname: jellyfin.media.svc.cluster.local
+    port: 8096
+    useSsl: false
+    usernameSecretRef:
+      name: jellyfin-credentials
+      key: username
+    passwordSecretRef:
+      name: jellyfin-credentials
+      key: password
+  main:
+    applicationTitle: Seerr
+    applicationUrl: https://seerr.home.seneker.io
+    localLogin: true
+    mediaServerLogin: true
+  sonarr:
+    - name: Sonarr
+      hostname: sonarr.media.svc.cluster.local
+      port: 8989
+      useSsl: false
+      apiKeySecretRef:
+        name: media-api-keys
+        key: sonarr-api-key
+      activeProfileName: WEB-1080p
+      activeDirectory: /data/media/tv
+      enableSeasonFolders: true
+      is4k: false
+      isDefault: true
+  radarr:
+    - name: Radarr
+      hostname: radarr.media.svc.cluster.local
+      port: 7878
+      useSsl: false
+      apiKeySecretRef:
+        name: media-api-keys
+        key: radarr-api-key
+      activeProfileName: HD Bluray + WEB
+      activeDirectory: /data/media/movies
+      minimumAvailability: released
+      is4k: false
+      isDefault: true

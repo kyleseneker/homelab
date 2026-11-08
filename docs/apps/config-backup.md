@@ -7,10 +7,10 @@ Nightly SQLite dumps for six applications and a native Tdarr archive are staged 
 | Property | Value |
 |----------|-------|
 | Type | CronJobs + holder Deployment (`sourceType: git`) |
-| Namespace | `arr` |
-| ArgoCD app | `arr-config-backup` |
+| Namespace | `media` |
+| ArgoCD app | `config-backup` |
 | Image | `python:3.15-alpine` |
-| Target PVC | `arr-config-backups` (`nfs-client`, 2Gi) |
+| Target PVC | `config-backups` (`nfs-client`, 2Gi) |
 | Schedules | Staggered, 01:30--01:36 UTC daily |
 
 ## Why It Exists
@@ -37,7 +37,7 @@ Uptime Kuma is covered separately by `uptime-kuma-backup`, which does the same f
 
 ## The Holder Deployment
 
-`arr-config-backup-holder` is a `pause` container that exists only to keep the `arr-config-backups` PVC mounted.
+`config-backup-holder` is a `pause` container that exists only to keep the `config-backups` PVC mounted.
 
 !!! danger "Without the holder, this backs up nothing"
     Velero's file-system backup only reads volumes attached to a **running** pod. An unmounted PVC is captured as an object with no data -- exactly the failure this whole mechanism exists to avoid. The holder is not optional and must not be scaled to zero.
@@ -46,12 +46,12 @@ Uptime Kuma is covered separately by `uptime-kuma-backup`, which does the same f
 
 | Alert | Fires when |
 |-------|-----------|
-| `ArrConfigBackupStale` | No successful dump within the expected window |
-| `ArrConfigBackupFailed` | A CronJob's last run failed |
-| `ArrConfigBackupVolumeUnmounted` | The holder is absent, so the volume is invisible to Velero |
+| `MediaConfigBackupStale` | No successful dump within the expected window |
+| `MediaConfigBackupFailed` | A CronJob's last run failed |
+| `MediaConfigBackupVolumeUnmounted` | The holder is absent, so the volume is invisible to Velero |
 
 The third alert covers the failure mode that would otherwise be silent: everything reports healthy while nothing is actually being captured.
 
 ## Restoring
 
-The dumps are plain SQLite files on the `arr-config-backups` volume. Follow [Backup & Restore](../runbooks/backup-and-restore.md#restoring-local-path-application-databases), including stopping writers, preserving/removing old WAL sidecars, restoring ownership, and validating data. Settings XML/JSON, plugins, artwork, and other non-database files are not captured by the SQLite dump. qBittorrent config uses NFS and follows the ordinary Velero path.
+The dumps are plain SQLite files on the `config-backups` volume. Follow [Backup & Restore](../runbooks/backup-and-restore.md#restoring-local-path-application-databases), including stopping writers, preserving/removing old WAL sidecars, restoring ownership, and validating data. Settings XML/JSON, plugins, artwork, and other non-database files are not captured by the SQLite dump. qBittorrent config uses NFS and follows the ordinary Velero path.

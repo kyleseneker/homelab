@@ -1,0 +1,9 @@
+appName: media-config
+namespace: media
+sourceType: git
+gitPath: k8s/clusters/homelabk8s01/apps/media/media-config
+createNamespace: false
+hasResources: true
+syncOptions:
+  - ServerSideApply=true
+  - SkipDryRunOnMissingResource=true

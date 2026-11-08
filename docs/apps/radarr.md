@@ -10,16 +10,16 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 | Image | `lscr.io/linuxserver/radarr` |
 | Port | 7878 |
 | HTTPRoute | `radarr.home.seneker.io` |
-| Namespace | `arr` |
-| ArgoCD app | `arr-radarr` |
-| Internal URL | `http://arr-radarr.arr.svc.cluster.local:7878` |
+| Namespace | `media` |
+| ArgoCD app | `radarr` |
+| Internal URL | `http://radarr.media.svc.cluster.local:7878` |
 
 ### Storage
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
 | `config` | PVC (`local-path`) | 5Gi | `/config` |
-| `data` | PVC (existing `arr-data`) | -- | `/data` |
+| `data` | PVC (existing `media-data`) | -- | `/data` |
 
 ### Resources
 
@@ -30,13 +30,13 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 
 ## Key Configuration
 
-- Environment variables injected from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables injected from ConfigMap `media-env` (TZ, PUID, PGID).
 - Liveness, readiness, and startup probes are enabled.
 - ArgoCD sync policy uses `ServerSideApply` and `ServerSideDiff` with automated pruning and self-heal.
 
 ## Post-Deploy Verification
 
-`RadarrConfig` owns `/data/media/movies`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make arr-keys-adopt`, and verify the CR and a test import. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`RadarrConfig` owns `/data/media/movies`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make media-keys-adopt`, and verify the CR and a test import. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

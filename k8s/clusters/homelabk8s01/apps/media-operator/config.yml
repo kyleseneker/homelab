@@ -1,5 +1,5 @@
 appName: media-operator
-namespace: arr
+namespace: media
 sourceType: git
 gitPath: k8s/clusters/homelabk8s01/apps/media-operator
 createNamespace: false

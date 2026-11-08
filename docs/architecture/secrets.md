@@ -39,20 +39,20 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 |---|---|---|
 | `infrastructure/argocd-notifications-slack` | `argocd-notifications-secret` | `argocd` |
 | `infrastructure/argocd-oidc` | `argocd-secret` | `argocd` |
-| `apps/arr` | `arr-api-keys` | `arr` |
-| `apps/arr` | `arr-prowlarr-env` | `arr` |
-| `apps/arr` | `arr-radarr-env` | `arr` |
-| `apps/arr` | `arr-sonarr-env` | `arr` |
-| `apps/arr` | `exportarr-secrets` | `arr` |
-| `apps/homepage` | `homepage-secrets` | `arr` |
-| `apps/jellyfin` | `jellyfin-credentials` | `arr` |
-| `apps/opensubtitles` | `opensubtitles-credentials` | `arr` |
-| `apps/qbittorrent`, `apps/unpackerr` | `qbittorrent-credentials` | `arr` |
-| `apps/arr` | `recyclarr-secrets` | `arr` |
-| `apps/seerr` | `seerr-api-key` | `arr` |
-| `apps/tdarr` | `tdarr-api-key` | `arr` |
-| `apps/arr`, `apps/unpackerr` | `unpackerr-secrets` | `arr` |
-| `apps/vpn` | `vpn-credentials` | `arr` |
+| `apps/media` | `media-api-keys` | `media` |
+| `apps/media` | `prowlarr-env` | `media` |
+| `apps/media` | `radarr-env` | `media` |
+| `apps/media` | `sonarr-env` | `media` |
+| `apps/media` | `exportarr-secrets` | `media` |
+| `apps/homepage` | `homepage-secrets` | `media` |
+| `apps/jellyfin` | `jellyfin-credentials` | `media` |
+| `apps/opensubtitles` | `opensubtitles-credentials` | `media` |
+| `apps/qbittorrent`, `apps/unpackerr` | `qbittorrent-credentials` | `media` |
+| `apps/media` | `recyclarr-secrets` | `media` |
+| `apps/seerr` | `seerr-api-key` | `media` |
+| `apps/tdarr` | `tdarr-api-key` | `media` |
+| `apps/media`, `apps/unpackerr` | `unpackerr-secrets` | `media` |
+| `apps/vpn` | `vpn-credentials` | `media` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
 | `apps/home-assistant` | `home-assistant-prometheus` | `home-automation` |
 | `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
@@ -67,7 +67,7 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 
 Two ArgoCD Secrets are shared with other writers. `argocd-secret` comes from the bootstrap and also holds ArgoCD's own keys, so its ExternalSecret uses `creationPolicy: Merge`. `argocd-notifications-secret` is left out of the bootstrap render and its ExternalSecret uses `CreateOrMerge`: a server-side bootstrap apply of the empty upstream Secret removed the merged Slack token.
 
-The manifests define the complete property-level contract. Sonarr, Radarr and Prowlarr accept the shared API keys from Vault through injected environment variables. Bazarr and other first-boot generated credentials still require a tested adoption/bootstrap path. `make arr-keys-adopt` can adopt existing application keys without printing them or overwriting sibling fields.
+The manifests define the complete property-level contract. Sonarr, Radarr and Prowlarr accept the shared API keys from Vault through injected environment variables. Bazarr and other first-boot generated credentials still require a tested adoption/bootstrap path. `make media-keys-adopt` can adopt existing application keys without printing them or overwriting sibling fields.
 
 ## Workflow
 
@@ -126,7 +126,7 @@ vault kv put homelab/apps/vpn \
 For immediate rotation, annotate the ExternalSecret to force a sync:
 
 ```bash
-kubectl annotate externalsecret -n arr vpn-credentials \
+kubectl annotate externalsecret -n media vpn-credentials \
   force-sync=$(date +%s) --overwrite
 ```
 

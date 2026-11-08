@@ -91,7 +91,7 @@ Run `make k8s-render` before pushing any change under `k8s/`. It is the only che
 | `make vault-init` | Initialize Vault and configure ESO integration (one-time) |
 | `make vault-put-secret` | Patch one Vault field safely (`SECRET_PATH=... KEY=...`; prompts for the value) |
 | `make vault-status` | Show Vault seal status |
-| `make arr-keys-adopt` | Copy each *arr app's live API key into Vault at `homelab/apps/arr` (never prints the key) |
+| `make media-keys-adopt` | Copy each *arr app's live API key into Vault at `homelab/apps/media` (never prints the key) |
 
 ## AWS
 

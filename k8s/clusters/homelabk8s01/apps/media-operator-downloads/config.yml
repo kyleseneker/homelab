@@ -1,5 +1,5 @@
 appName: media-operator-downloads
-namespace: arr
+namespace: media
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/media-operator
 chartName: media-operator-downloads

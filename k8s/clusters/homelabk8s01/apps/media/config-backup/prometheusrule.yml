@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: config-backup
+  namespace: media
+  labels:
+    app.kubernetes.io/name: config-backup
+spec:
+  groups:
+    - name: config-backup
+      rules:
+        - alert: MediaConfigBackupStale
+          expr: |
+            (time() - kube_cronjob_status_last_successful_time{cronjob=~"config-backup-.*", namespace="media"} > 129600)
+            or (
+              (
+                kube_cronjob_info{cronjob=~"config-backup-.*", namespace="media"}
+                unless on(cronjob) kube_cronjob_status_last_successful_time{cronjob=~"config-backup-.*", namespace="media"}
+              )
+              and on() (time() - max(kube_cronjob_created{cronjob=~"config-backup-.*", namespace="media"}) > 172800)
+            )
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: media config backup is stale
+            description: >-
+              {{ $labels.cronjob }} has not completed a successful run in over 36 hours,
+              or has never reported one. These SQLite databases live on local-path, which
+              Velero's file-system backup cannot read, so this CronJob is the only thing
+              placing them in a backup.
+        - alert: MediaConfigBackupFailed
+          expr: |
+            kube_job_status_failed{job_name=~"config-backup-.*", namespace="media"} > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: media config backup job failed
+            description: >-
+              An config-backup job has failed. Check the job logs:
+              kubectl logs -n media job/{{ $labels.job_name }}
+        - alert: MediaConfigBackupVolumeUnmounted
+          expr: |
+            kube_deployment_status_replicas_available{deployment="config-backup-holder", namespace="media"} < 1
+            or absent(kube_deployment_status_replicas_available{deployment="config-backup-holder", namespace="media"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: media config backup volume is not mounted by any pod
+            description: >-
+              The holder Deployment is not running. Velero's file-system backup only reads
+              volumes attached to a running pod, so while this is down the config dumps are
+              written but never captured by any backup.

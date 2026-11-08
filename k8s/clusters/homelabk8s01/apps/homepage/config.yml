@@ -1,5 +1,5 @@
 appName: homepage
-namespace: arr
+namespace: media
 sourceType: helm
 chartRepo: https://bjw-s-labs.github.io/helm-charts
 chartName: app-template

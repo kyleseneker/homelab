@@ -1,12 +1,12 @@
 # Network Policies
 
-CiliumNetworkPolicies control ingress and egress in `arr`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny.
+CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny.
 
 ## Allowed Paths
 
 | Namespace | Principal ingress paths | Principal egress paths |
 |-----------|-------------------------|------------------------|
-| `arr` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
+| `media` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
 | `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
 | `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |

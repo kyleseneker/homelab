@@ -1,0 +1,58 @@
+apiVersion: media-operator.dev/v1alpha1
+kind: SonarrConfig
+metadata:
+  name: sonarr
+  namespace: media
+spec:
+  connection:
+    url: http://sonarr.media.svc.cluster.local:8989
+    apiKeySecretRef:
+      name: media-api-keys
+      key: sonarr-api-key
+  reconcile:
+    interval: 5m
+    deletionPolicy: orphan
+  rootFolders:
+    - path: /data/media/tv
+  downloadClients:
+    - name: qBittorrent
+      implementation: QBittorrent
+      configContract: QBittorrentSettings
+      protocol: torrent
+      host: downloads.media.svc.cluster.local
+      port: 8080
+      category: tv
+      enable: true
+      usernameSecretRef:
+        name: qbittorrent-credentials
+        key: username
+      passwordSecretRef:
+        name: qbittorrent-credentials
+        key: password
+  downloadClientConfig:
+    enableCompletedDownloadHandling: true
+    autoRedownloadFailed: true
+  notifications:
+    - name: Jellyfin
+      implementation: MediaBrowser
+      configContract: MediaBrowserSettings
+      onDownload: true
+      onUpgrade: true
+      onRename: true
+      fields:
+        - name: host
+          value: jellyfin.media.svc.cluster.local
+        - name: port
+          value: 8096
+        - name: useSsl
+          value: false
+        - name: updateLibrary
+          value: true
+        - name: notify
+          value: false
+        - name: apiKey
+          valueFrom:
+            name: jellyfin-credentials
+            key: api-key
+  mediaManagement:
+    downloadPropersAndRepacks: doNotPrefer

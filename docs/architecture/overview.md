@@ -72,21 +72,21 @@ flowchart LR
 | Descheduler | Pod rebalancing across nodes (CronJob) | `kube-system` |
 | VPA | Workload right-sizing recommendations (recommend-only) | `kube-system` |
 | Goldilocks | Auto-creates VPA CRs, recommendation dashboard | `goldilocks` |
-| Jellyfin | Media server | `arr` |
-| Sonarr | TV series management | `arr` |
-| Radarr | Movie management | `arr` |
-| Prowlarr | Indexer management | `arr` |
-| Bazarr | Subtitle management | `arr` |
-| Seerr | Media request management | `arr` |
-| qBittorrent | Torrent client (via Gluetun VPN sidecar) | `arr` |
-| Recyclarr | Quality profile sync (CronJob) | `arr` |
-| Tdarr | Media transcoding | `arr` |
-| Unpackerr | Extraction of compressed downloads | `arr` |
-| FlareSolverr | Captcha-solving proxy for Prowlarr | `arr` |
-| Media Operator | Declarative Sonarr/Radarr/Prowlarr configuration | `arr` |
-| Config Backup | Nightly SQLite dumps of *arr databases | `arr` |
-| Exportarr | Prometheus exporter for *arr app metrics | `arr` |
-| Homepage | Dashboard | `arr` |
+| Jellyfin | Media server | `media` |
+| Sonarr | TV series management | `media` |
+| Radarr | Movie management | `media` |
+| Prowlarr | Indexer management | `media` |
+| Bazarr | Subtitle management | `media` |
+| Seerr | Media request management | `media` |
+| qBittorrent | Torrent client (via Gluetun VPN sidecar) | `media` |
+| Recyclarr | Quality profile sync (CronJob) | `media` |
+| Tdarr | Media transcoding | `media` |
+| Unpackerr | Extraction of compressed downloads | `media` |
+| FlareSolverr | Captcha-solving proxy for Prowlarr | `media` |
+| Media Operator | Declarative Sonarr/Radarr/Prowlarr configuration | `media` |
+| Config Backup | Nightly SQLite dumps of *arr databases | `media` |
+| Exportarr | Prometheus exporter for *arr app metrics | `media` |
+| Homepage | Dashboard | `media` |
 | Uptime Kuma | Synthetic monitoring and status page | `monitoring` |
 
 ## Naming Conventions

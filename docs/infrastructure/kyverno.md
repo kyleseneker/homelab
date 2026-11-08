@@ -29,8 +29,8 @@ Each policy autogenerates rules for DaemonSets, Deployments, Jobs, CronJobs, Rep
 | Policy | What It Checks | Excluded Namespaces |
 |--------|----------------|---------------------|
 | `require-resource-limits` | All containers have CPU and memory limits | backups, local-path-storage |
-| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` | arr, auth, backups, intel-gpu-operator, monitoring, nfs-provisioner, local-path-storage |
-| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` | arr, auth, backups, monitoring, nfs-provisioner, local-path-storage |
+| `require-run-as-nonroot` | Containers set `runAsNonRoot: true` | auth, backups, intel-gpu-operator, media, monitoring, nfs-provisioner, local-path-storage |
+| `require-readonly-rootfs` | Containers set `readOnlyRootFilesystem: true` | auth, backups, media, monitoring, nfs-provisioner, local-path-storage |
 | `disallow-latest-tag` | Images use a non-latest tag or SHA-256 digest | |
 | `require-labels` | Pods have the `app.kubernetes.io/name` label | backups, intel-gpu-operator, nfs-provisioner |
 
@@ -42,7 +42,7 @@ Image tags and security contexts are checked on regular, init and ephemeral cont
 
 The five policies above exclude namespaces where compliance is not feasible:
 
-- **arr, auth**: linuxserver and Authentik images require root and writable root filesystems (s6-overlay init system)
+- **media, auth**: linuxserver and Authentik images require root and writable root filesystems (s6-overlay init system)
 - **backups**: Velero dynamically creates backup/restore/maintenance Job pods with specs we do not control
 - **intel-gpu-operator**: GPU device plugin DaemonSet requires host-level access
 - **monitoring**: Alloy requires root for reading host log files
@@ -66,8 +66,8 @@ Namespaces are not excluded from these controls, because one workload that needs
 
 | Workload | Namespace | Allowed |
 |----------|-----------|---------|
-| Jellyfin, Tdarr | `arr` | `hostPath` `/dev/dri` |
-| Gluetun (`arr-vpn-downloads`) | `arr` | `NET_ADMIN`, sysctl `net.ipv4.conf.all.src_valid_mark` |
+| Jellyfin, Tdarr | `media` | `hostPath` `/dev/dri` |
+| Gluetun (`downloads`) | `media` | `NET_ADMIN`, sysctl `net.ipv4.conf.all.src_valid_mark` |
 | Velero node-agent | `backups` | `hostPath` `/var/lib/kubelet/pods`, `/var/lib/kubelet/plugins` |
 | Velero pod volume backup/restore hosting pods | `backups` | `hostPath` below `/var/lib/kubelet/pods/` for the volume each pod copies, plus node-agent's `/var/lib/kubelet/pods` and `/var/lib/kubelet/plugins`, which every hosting pod inherits |
 | etcd-backup | `backups` | `hostPath` for etcd's PKI and the control-plane configuration |

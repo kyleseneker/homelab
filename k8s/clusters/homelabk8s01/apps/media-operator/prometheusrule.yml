@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: media-operator
-  namespace: arr
+  namespace: media
   labels:
     app.kubernetes.io/name: media-operator
 spec:

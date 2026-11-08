@@ -1,0 +1,72 @@
+defaultPodOptions:
+  annotations:
+    reloader.stakater.com/auto: 'true'
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: lscr.io/linuxserver/prowlarr
+          tag: 2.7.0
+        envFrom:
+          - configMapRef:
+              name: media-env
+          - secretRef:
+              name: prowlarr-env
+        env:
+          PROWLARR__AUTH__METHOD: External
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+            add:
+              - SETUID
+              - SETGID
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        probes:
+          liveness:
+            enabled: true
+          readiness:
+            enabled: true
+          startup:
+            enabled: true
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 9696
+route:
+  main:
+    enabled: true
+    kind: HTTPRoute
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: homelab-gateway
+        namespace: default
+        sectionName: https-home
+    hostnames:
+      - prowlarr.home.seneker.io
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: ak-outpost-authentik-embedded-outpost
+            namespace: auth
+            port: 9000
+persistence:
+  config:
+    type: persistentVolumeClaim
+    existingClaim: prowlarr-config
+    globalMounts:
+      - path: /config

@@ -19,7 +19,7 @@ spec.loader.exec_module(contract)
 
 class ApplicationSetContractTests(unittest.TestCase):
     def setUp(self):
-        self.directory = ROOT / "k8s/clusters/homelabk8s01/apps/arr/sonarr"
+        self.directory = ROOT / "k8s/clusters/homelabk8s01/apps/media/sonarr"
         self.data = yaml.safe_load((self.directory / "config.yml").read_text())
 
     def test_actual_generator_contract(self):
@@ -120,7 +120,7 @@ sys.exit(2 if "-cas=0" in sys.argv else 0)
             vault.chmod(0o755)
             value = 'literal $HOME $(touch should-not-exist) `false` "quotes"\nsecond line'
             env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}", VAULT_TOKEN="test",
-                       SECRET_PATH="apps/arr", KEY="sonarr-api-key", VAL=value,
+                       SECRET_PATH="apps/media", KEY="sonarr-api-key", VAL=value,
                        CALL_LOG=str(directory / "calls"))
             result = subprocess.run([str(ROOT / "scripts/vault-put-secret.sh")], env=env, capture_output=True)
             self.assertNotEqual(result.returncode, 0)
@@ -145,7 +145,7 @@ if sys.argv[2] == "patch":
 ''')
             vault.chmod(0o755)
             env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}", VAULT_TOKEN="test",
-                       SECRET_PATH="apps/arr", KEY="sonarr-api-key", VAL="value",
+                       SECRET_PATH="apps/media", KEY="sonarr-api-key", VAL="value",
                        CALL_LOG=str(directory / "calls"))
             result = subprocess.run([str(ROOT / "scripts/vault-put-secret.sh")], env=env, capture_output=True)
             self.assertEqual(result.returncode, 0)
@@ -162,7 +162,7 @@ with open(os.environ["CALL_LOG"], "a") as out:
 ''')
         vault.chmod(0o755)
         env = dict(os.environ, PATH=f"{directory}:{os.environ['PATH']}", VAULT_TOKEN="test",
-                   SECRET_PATH="apps/arr", KEY="sonarr-api-key", CALL_LOG=str(directory / "calls"))
+                   SECRET_PATH="apps/media", KEY="sonarr-api-key", CALL_LOG=str(directory / "calls"))
         env.pop("VAL", None)
         return env
 

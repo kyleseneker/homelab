@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: homepage-config
-  namespace: arr
+  namespace: media
 data:
   settings.yaml: |
     title: Homelab
@@ -66,7 +66,7 @@ data:
             description: Media server
             widget:
               type: jellyfin
-              url: http://arr-jellyfin.arr.svc.cluster.local:8096
+              url: http://jellyfin.media.svc.cluster.local:8096
               key: "{{HOMEPAGE_VAR_JELLYFIN_KEY}}"
               enableBlocks: true
               enableNowPlaying: true
@@ -77,7 +77,7 @@ data:
             description: Media requests
             widget:
               type: seerr
-              url: http://arr-seerr.arr.svc.cluster.local:80
+              url: http://seerr.media.svc.cluster.local:80
               key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
         - Home Assistant:
             icon: home-assistant.svg
@@ -90,7 +90,7 @@ data:
             description: Torrent client
             widget:
               type: qbittorrent
-              url: http://arr-vpn-downloads.arr.svc.cluster.local:8080
+              url: http://downloads.media.svc.cluster.local:8080
               username: admin
               password: "{{HOMEPAGE_VAR_QBIT_PASSWORD}}"
         - Sonarr:
@@ -99,7 +99,7 @@ data:
             description: TV shows
             widget:
               type: sonarr
-              url: http://arr-sonarr.arr.svc.cluster.local:8989
+              url: http://sonarr.media.svc.cluster.local:8989
               key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
         - Radarr:
             icon: radarr.svg
@@ -107,7 +107,7 @@ data:
             description: Movies
             widget:
               type: radarr
-              url: http://arr-radarr.arr.svc.cluster.local:7878
+              url: http://radarr.media.svc.cluster.local:7878
               key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
         - Prowlarr:
             icon: prowlarr.svg
@@ -115,7 +115,7 @@ data:
             description: Indexer manager
             widget:
               type: prowlarr
-              url: http://arr-prowlarr.arr.svc.cluster.local:9696
+              url: http://prowlarr.media.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
         - Bazarr:
             icon: bazarr.svg
@@ -123,7 +123,7 @@ data:
             description: Subtitles
             widget:
               type: bazarr
-              url: http://arr-bazarr.arr.svc.cluster.local:6767
+              url: http://bazarr.media.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
         - Tdarr:
             icon: tdarr.png
@@ -131,7 +131,7 @@ data:
             description: Transcoding
             widget:
               type: tdarr
-              url: http://arr-tdarr.arr.svc.cluster.local:8265
+              url: http://tdarr.media.svc.cluster.local:8265
     - Observability:
         - Grafana:
             icon: grafana.svg

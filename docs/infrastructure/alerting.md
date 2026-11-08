@@ -54,7 +54,7 @@ Defined in `kube-prometheus-stack/homelab-rules.yml` as a standalone `Prometheus
 
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
-| `ArrAppDown` | critical | 5m | Any arr deployment has 0 available replicas |
+| `MediaAppDown` | critical | 5m | Any media deployment has 0 available replicas |
 | `GluetunVPNDown` | warning | 10m | Gluetun VPN sidecar container not ready |
 
 ### Infrastructure Health

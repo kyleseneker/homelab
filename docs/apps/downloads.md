@@ -7,8 +7,8 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 | Property | Value |
 |----------|-------|
 | Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Namespace | `arr` |
-| ArgoCD app | `arr-vpn-downloads` |
+| Namespace | `media` |
+| ArgoCD app | `downloads` |
 | HTTPRoute | `qbit.home.seneker.io` |
 
 ### Containers
@@ -24,7 +24,7 @@ This deployment runs a multi-container pod combining a VPN sidecar (Gluetun) wit
 |--------|------|------|------------|-------|
 | `gluetun-config` | PVC (`nfs-client`) | 256Mi | `/gluetun` | All containers |
 | `qbit-config` | PVC (`nfs-client`) | 1Gi | `/config` | qBittorrent only |
-| `data` | PVC (existing `arr-data`) | -- | `/data` | All containers |
+| `data` | PVC (existing `media-data`) | -- | `/data` | All containers |
 
 ### Resources
 
@@ -39,7 +39,7 @@ Gluetun is a native sidecar (`initContainers`, `restartPolicy: Always`). Its sta
 
 ```mermaid
 flowchart TB
-    subgraph pod["Pod: arr-vpn-downloads"]
+    subgraph pod["Pod: downloads"]
         direction TB
         subgraph netns["Shared Network Namespace"]
             gluetun["Gluetun\n(VPN tunnel)"]
@@ -69,7 +69,7 @@ flowchart TB
 ### qBittorrent
 
 - `WEBUI_PORT`: `8080`
-- Environment variables from ConfigMap `arr-env` (TZ, PUID, PGID).
+- Environment variables from ConfigMap `media-env` (TZ, PUID, PGID).
 - Startup is gated by Gluetun's native-sidecar startup probe. The former chart `dependsOn` value was ignored.
 
 ### Pod Security
@@ -99,7 +99,7 @@ Verify the CR is ready, a download-client connection test succeeds, and the torr
 | Sonarr | Sends TV download requests to qBittorrent |
 | Radarr | Sends movie download requests to qBittorrent |
 | Unpackerr | Monitors completed downloads and extracts compressed archives |
-| VPN credentials | ExternalSecret `vpn-credentials` must exist in the `arr` namespace (synced from Vault) |
+| VPN credentials | ExternalSecret `vpn-credentials` must exist in the `media` namespace (synced from Vault) |
 
 ## Upstream
 

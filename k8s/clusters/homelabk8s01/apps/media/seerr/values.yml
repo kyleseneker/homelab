@@ -1,0 +1,21 @@
+fullnameOverride: seerr
+
+extraEnvFrom:
+  - configMapRef:
+      name: media-env
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+
+config:
+  persistence:
+    existingClaim: seerr-config
+
+route:
+  main:
+    enabled: false

@@ -21,4 +21,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: homepage
-    namespace: arr
+    namespace: media

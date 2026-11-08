@@ -10,7 +10,7 @@ Homepage is a dashboard that aggregates all homelab services into a single page 
 | Image | `ghcr.io/gethomepage/homepage` |
 | Port | 3000 |
 | HTTPRoute | `home.seneker.io` |
-| Namespace | `arr` |
+| Namespace | `media` |
 | ArgoCD app | `homepage` |
 
 ### Storage
@@ -67,7 +67,7 @@ All configuration files are mounted read-only from the `homepage-config` ConfigM
     ```
 
 2. Open `https://home.seneker.io` and verify all service widgets display correctly.
-3. If any widget shows an error, confirm the corresponding API key is correct and the target service is reachable from the `arr` namespace.
+3. If any widget shows an error, confirm the corresponding API key is correct and the target service is reachable from the `media` namespace.
 
 !!! note
     The `homepage-secrets` Secret is marked as `optional: true` in the deployment. Homepage will start without it, but service widgets that require API keys will not function until the secret is created.

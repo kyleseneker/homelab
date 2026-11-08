@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config-backup-script
+  namespace: media
+  labels:
+    app.kubernetes.io/name: config-backup
+data:
+  copy-latest.py: |
+    import os
+    import pathlib
+    import shutil
+    import sys
+    import time
+    import zipfile
+
+    app = os.environ["APP_NAME"]
+    source = pathlib.Path(os.environ["SOURCE_DIR"])
+    target = pathlib.Path("/backup") / app
+    target.mkdir(parents=True, exist_ok=True)
+
+    archives = sorted(
+        (p for p in source.glob("*.zip") if p.is_file()),
+        key=lambda p: p.stat().st_mtime,
+    )
+
+    if not archives:
+        print(f"{app}: no archive found in {source}", file=sys.stderr)
+        sys.exit(1)
+
+    newest = archives[-1]
+    if time.time() - newest.stat().st_mtime > 48 * 60 * 60:
+        print(f"{app}: newest native archive is over 48 hours old", file=sys.stderr)
+        sys.exit(1)
+    with zipfile.ZipFile(newest) as archive:
+        if archive.testzip() is not None:
+            print(f"{app}: native archive failed its CRC check", file=sys.stderr)
+            sys.exit(1)
+
+    destination = target / "latest.zip"
+    staged = target / "latest.zip.tmp"
+    shutil.copy2(newest, staged)
+    staged.replace(destination)
+    print(f"{app}: {newest.name} -> {destination} ({destination.stat().st_size} bytes)")
+  dump.py: |
+    import os
+    import pathlib
+    import sqlite3
+    import sys
+
+    app = os.environ["APP_NAME"]
+    source = pathlib.Path("/data")
+    target = pathlib.Path("/backup") / app
+    target.mkdir(parents=True, exist_ok=True)
+
+    skip = {"logs.db"}
+    databases = sorted(
+        p
+        for p in source.rglob("*")
+        if p.is_file() and p.suffix in (".db", ".sqlite3", ".sqlite") and p.name not in skip
+    )
+
+    if not databases:
+        print(f"{app}: no sqlite database found under {source}", file=sys.stderr)
+        sys.exit(1)
+
+    failures = 0
+    for db in databases:
+        relative = db.relative_to(source)
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        staged = destination.with_name(destination.name + ".tmp")
+        try:
+            src = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+            dst = sqlite3.connect(staged)
+            with dst:
+                src.backup(dst)
+            dst.close()
+            src.close()
+            staged.replace(destination)
+            print(f"{app}: {relative} -> {destination} ({destination.stat().st_size} bytes)")
+        except Exception as exc:
+            failures += 1
+            print(f"{app}: FAILED {relative}: {exc}", file=sys.stderr)
+            staged.unlink(missing_ok=True)
+
+    sys.exit(1 if failures else 0)

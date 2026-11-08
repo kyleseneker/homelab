@@ -1,4 +1,4 @@
-watchNamespace: arr
+watchNamespace: media
 metrics:
   enabled: true
   serviceMonitor:

@@ -10,15 +10,15 @@ Unpackerr monitors download clients for completed downloads containing compresse
 | Image | `ghcr.io/unpackerr/unpackerr` |
 | Port | 5656 (health/metrics only) |
 | HTTPRoute | -- (internal only) |
-| Namespace | `arr` |
-| ArgoCD app | `arr-unpackerr` |
-| Internal URL | `http://arr-unpackerr.arr.svc.cluster.local:5656` |
+| Namespace | `media` |
+| ArgoCD app | `unpackerr` |
+| Internal URL | `http://unpackerr.media.svc.cluster.local:5656` |
 
 ### Storage
 
 | Volume | Type | Size | Mount Path |
 |--------|------|------|------------|
-| `data` | PVC (existing `arr-data`) | -- | `/data` |
+| `data` | PVC (existing `media-data`) | -- | `/data` |
 
 ### Resources
 
@@ -29,7 +29,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 
 ## Key Configuration
 
-- Timezone injected from ConfigMap `arr-env`.
+- Timezone injected from ConfigMap `media-env`.
 - All configuration is via environment variables -- no config file needed.
 - Connects to Sonarr, Radarr, and qBittorrent via in-cluster service DNS.
 - API keys and passwords are injected from the `unpackerr-secrets` Secret (synced from Vault via ESO).
@@ -62,7 +62,7 @@ Unpackerr monitors download clients for completed downloads containing compresse
 4. Verify the pod is running and check logs for successful connections:
 
     ```bash
-    kubectl logs -n arr -l app.kubernetes.io/instance=arr-unpackerr
+    kubectl logs -n media -l app.kubernetes.io/instance=unpackerr
     ```
 
     Look for messages confirming connections to Sonarr, Radarr, and qBittorrent.

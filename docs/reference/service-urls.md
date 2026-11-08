@@ -41,23 +41,23 @@ Used for app-to-app communication within the cluster. These follow the standard 
 
 | Service | URL |
 |---------|-----|
-| Sonarr | `http://arr-sonarr.arr.svc.cluster.local:8989` |
-| Radarr | `http://arr-radarr.arr.svc.cluster.local:7878` |
-| Prowlarr | `http://arr-prowlarr.arr.svc.cluster.local:9696` |
-| Bazarr | `http://arr-bazarr.arr.svc.cluster.local:6767` |
-| Jellyfin | `http://arr-jellyfin.arr.svc.cluster.local:8096` |
-| Seerr | `http://arr-seerr.arr.svc.cluster.local:80` |
-| qBittorrent | `http://arr-vpn-downloads.arr.svc.cluster.local:8080` |
-| Tdarr | `http://arr-tdarr.arr.svc.cluster.local:8265` |
+| Sonarr | `http://sonarr.media.svc.cluster.local:8989` |
+| Radarr | `http://radarr.media.svc.cluster.local:7878` |
+| Prowlarr | `http://prowlarr.media.svc.cluster.local:9696` |
+| Bazarr | `http://bazarr.media.svc.cluster.local:6767` |
+| Jellyfin | `http://jellyfin.media.svc.cluster.local:8096` |
+| Seerr | `http://seerr.media.svc.cluster.local:80` |
+| qBittorrent | `http://downloads.media.svc.cluster.local:8080` |
+| Tdarr | `http://tdarr.media.svc.cluster.local:8265` |
 | Loki | `http://loki.monitoring.svc.cluster.local:3100` |
 | Garage (S3) | `http://garage.backups.svc.cluster.local:3900` |
 | Garage (admin, metrics) | `http://garage.backups.svc.cluster.local:3903` |
-| Exportarr (Sonarr) | `http://arr-exportarr-sonarr.arr.svc.cluster.local:9707` |
-| Exportarr (Radarr) | `http://arr-exportarr-radarr.arr.svc.cluster.local:9708` |
-| Exportarr (Prowlarr) | `http://arr-exportarr-prowlarr.arr.svc.cluster.local:9709` |
-| Exportarr (Bazarr) | `http://arr-exportarr-bazarr.arr.svc.cluster.local:9710` |
-| FlareSolverr | `http://arr-flaresolverr.arr.svc.cluster.local:8191` |
-| Unpackerr | `http://arr-unpackerr.arr.svc.cluster.local:5656` |
+| Exportarr (Sonarr) | `http://exportarr-sonarr.media.svc.cluster.local:9707` |
+| Exportarr (Radarr) | `http://exportarr-radarr.media.svc.cluster.local:9708` |
+| Exportarr (Prowlarr) | `http://exportarr-prowlarr.media.svc.cluster.local:9709` |
+| Exportarr (Bazarr) | `http://exportarr-bazarr.media.svc.cluster.local:9710` |
+| FlareSolverr | `http://flaresolverr.media.svc.cluster.local:8191` |
+| Unpackerr | `http://unpackerr.media.svc.cluster.local:5656` |
 | Uptime Kuma | `http://uptime-kuma.monitoring.svc.cluster.local:3001` |
 | NUT Exporter | `http://nut-exporter.monitoring.svc.cluster.local:9199` |
 | Authentik | `http://authentik-server.auth.svc.cluster.local` |

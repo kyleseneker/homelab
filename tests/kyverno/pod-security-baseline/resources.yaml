@@ -284,9 +284,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: jellyfin-dri
-  namespace: arr
+  namespace: media
   labels:
-    app.kubernetes.io/name: arr-jellyfin
+    app.kubernetes.io/name: jellyfin
 spec:
   containers:
     - name: main
@@ -300,9 +300,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: jellyfin-etc
-  namespace: arr
+  namespace: media
   labels:
-    app.kubernetes.io/name: arr-jellyfin
+    app.kubernetes.io/name: jellyfin
 spec:
   containers:
     - name: main
@@ -319,9 +319,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: sonarr-dri
-  namespace: arr
+  namespace: media
   labels:
-    app.kubernetes.io/name: arr-sonarr
+    app.kubernetes.io/name: sonarr
 spec:
   containers:
     - name: main
@@ -335,9 +335,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: gluetun
-  namespace: arr
+  namespace: media
   labels:
-    app.kubernetes.io/name: arr-vpn-downloads
+    app.kubernetes.io/name: downloads
 spec:
   containers:
     - name: main
@@ -355,9 +355,9 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: gluetun-sys-admin
-  namespace: arr
+  namespace: media
   labels:
-    app.kubernetes.io/name: arr-vpn-downloads
+    app.kubernetes.io/name: downloads
 spec:
   containers:
     - name: main
