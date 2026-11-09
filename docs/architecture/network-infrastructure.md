@@ -130,7 +130,15 @@ Management VLAN outbound to External and Gateway is allowed by zone defaults (fo
 
 ## DNS
 
-Static entries for each service are configured in the UniFi Network controller's local DNS records, pointing to the Cilium L2 gateway VIP. The local records hold only `home.seneker.io` names ([ADR-030](../decisions/030-public-domain-and-certificates.md)); `proxmox.home.seneker.io` points at the Proxmox host, 192.168.10.2.
+The UniFi Network controller's local DNS holds three records, all under `home.seneker.io` ([ADR-030](../decisions/030-public-domain-and-certificates.md)):
+
+| Record | Address | Purpose |
+|--------|---------|---------|
+| `*.home.seneker.io` | 192.168.10.201 | Every service behind the Cilium Gateway |
+| `home.seneker.io` | 192.168.10.201 | Homepage; a wildcard does not match the bare name |
+| `proxmox.home.seneker.io` | 192.168.10.2 | The Proxmox host |
+
+New services need no DNS change: an HTTPRoute on the Gateway is enough. The more specific `proxmox` record takes precedence over the wildcard. The gateway applies record changes a few seconds after they are saved.
 
 `seneker.io` is a public domain in Route 53, but `home.seneker.io` names exist only in these local records; public DNS returns nothing for them. The public zone carries only the ACME challenge record and deliberately public sites.
 

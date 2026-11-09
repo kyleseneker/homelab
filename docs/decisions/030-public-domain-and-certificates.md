@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-11-08: a single `*.home.seneker.io` record in the UniFi gateway replaced the per-service records, so a new route needs no DNS change.
 
 ## Context
 
@@ -22,7 +22,7 @@ Serve homelab services under `home.seneker.io`, a subdomain of the household dom
 
 - **Registration**: `seneker.io` is registered through Route 53. `terraform/aws` manages the registration (auto-renew, transfer lock, contact privacy) and the hosted zone.
 - **Names**: Household services are named `<app>.home.seneker.io`, and `home.seneker.io` itself serves the Homepage dashboard that links to the rest. Names directly under `seneker.io`, such as a blog or resume, are reserved for deliberately public sites.
-- **Split-horizon DNS**: `home.seneker.io` records exist only in the UniFi gateway's local DNS, pointing at the Cilium L2 addresses. The public zone holds no homelab records. It carries the homelab's ACME challenge record and the public sites' records, and Terraform manages its contents.
+- **Split-horizon DNS**: `home.seneker.io` records exist only in the UniFi gateway's local DNS. A wildcard record, `*.home.seneker.io`, points every service name at the Cilium Gateway's L2 address. The bare `home.seneker.io`, which a wildcard does not match, and `proxmox.home.seneker.io`, which points at the Proxmox host, keep their own records. A name without a route resolves to the Gateway, which answers 404. The public zone holds no homelab records. It carries the homelab's ACME challenge record and the public sites' records, and Terraform manages its contents.
 
 ### Certificates
 

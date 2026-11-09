@@ -134,6 +134,8 @@ persistence:
 
 Replace the `<placeholder>` values with your application's specifics.
 
+The hostname needs no DNS record: the UniFi wildcard record `*.home.seneker.io` already resolves it to the Gateway ([DNS](../architecture/network-infrastructure.md#dns)).
+
 !!! tip
     Use an existing app's `values.yml` as a starting point. The Sonarr values at `k8s/clusters/homelabk8s01/apps/media/sonarr/values.yml` is a good reference for a typical media application.
 
@@ -188,15 +190,7 @@ If the application requires secrets (API keys, credentials, etc.):
 
 5. Reference the secret in `values.yml` via `envFrom` or `env.valueFrom`.
 
-## Step 5: Add a DNS Entry
-
-Add a DNS record for the new hostname (`<app-name>.home.seneker.io`) pointing to the Cilium L2 VIP assigned to the `homelab-gateway`. The gateway IP can be found with:
-
-```bash
-kubectl get gateway homelab-gateway -n default -o jsonpath='{.status.addresses[0].value}'
-```
-
-## Step 6: Commit and Push
+## Step 5: Commit and Push
 
 ```bash
 git add k8s/clusters/homelabk8s01/apps/media/<app-name>/

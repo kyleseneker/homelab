@@ -31,7 +31,7 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 |---|---|---|
 | N1, N7 | VLAN 99 and management access are configured. Management-service isolation still needs an endpoint-by-endpoint check. | Test Proxmox, NAS and AMT reachability from management clients and ordinary workloads; close unintended paths |
 | N2 | The IoT VLAN and its SSID are configured ([ADR-026](../decisions/026-iot-vlan.md)), but smart home devices still join the household SSID on Default. | Move devices and verify isolation in [Phase 3](phase-3-network.md#37-move-smart-home-devices-to-the-iot-vlan) |
-| N3 | Internal DNS records and Gateway address allocations are manual. | Record recoverable allocations and select a supported DNS automation path in [Phase 3](phase-3-network.md#33-automate-internal-dns) |
+| N3 | A UniFi wildcard record resolves every service name to the Gateway, whose address is not pinned. | Pin the Gateway address in [Phase 3](phase-3-network.md#33-pin-the-gateway-address) |
 | N4 | WireGuard and Teleport are implemented with Homelab, Management and Default access. | Record an off-LAN DNS, TLS, login and management-access check |
 | N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#34-plan-external-access-for-jellyfin) |
 | N6 | Cilium egress policies cover selected namespaces and destinations. | Inventory coverage and required traffic before tightening policies |

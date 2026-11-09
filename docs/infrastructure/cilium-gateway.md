@@ -23,7 +23,7 @@ The `homelab-gateway` resource defines four listeners. A wildcard listener does 
 - **`https-home-root` (443):** Terminates TLS for `home.seneker.io` with the same certificate. Allows routes from all namespaces.
 - **`http-home` and `http-home-root` (80):** Accept traffic for the same names and redirect it to HTTPS (`gateway/http-redirect.yml`).
 
-The Gateway does not currently request a fixed address. Record its live `status.addresses` and the DNS records before adding `spec.addresses`; recreating it can otherwise assign a different IP from the pool. The repository cannot determine which address is safe to pin without that inventory.
+The Gateway does not currently request a fixed address. Its live address, 192.168.10.201, is what the UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at. Recreating the Gateway can assign a different IP from the pool and break every service name until those two records are updated; pinning it with `spec.addresses` is tracked in [Phase 3](../roadmap/phase-3-network.md#33-pin-the-gateway-address).
 
 ### L2 Announcements
 

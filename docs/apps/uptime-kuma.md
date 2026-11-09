@@ -34,10 +34,9 @@ Uptime Kuma is a self-hosted monitoring tool that provides synthetic HTTP/TCP/DN
 
 ## Post-Deploy Setup
 
-1. Add a UniFi DNS record for `status.home.seneker.io`.
-2. Confirm the direct route and intended visibility of the public status page.
-3. Open `https://status.home.seneker.io` and create an admin account.
-4. Add HTTP monitors for each service:
+1. Confirm the direct route and intended visibility of the public status page.
+2. Open `https://status.home.seneker.io` and create an admin account.
+3. Add HTTP monitors for each service:
 
     | Monitor | URL |
     |---------|-----|

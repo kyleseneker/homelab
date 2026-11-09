@@ -2,7 +2,7 @@
 
 ## External URLs (Browser Access)
 
-These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`), with DNS entries in the UniFi gateway pointing to the gateway VIP. They use publicly trusted certificates, which work on any device without extra setup ([ADR-030](../decisions/030-public-domain-and-certificates.md)), and resolve only on the home network or over the VPN.
+These are the hostnames routed by the Cilium Gateway API (`homelab-gateway`), resolved by the UniFi gateway's `*.home.seneker.io` wildcard record, which points at the gateway VIP. They use publicly trusted certificates, which work on any device without extra setup ([ADR-030](../decisions/030-public-domain-and-certificates.md)), and resolve only on the home network or over the VPN.
 
 | Service | URL |
 |---------|-----|

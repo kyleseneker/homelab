@@ -16,7 +16,7 @@ Set `internal_host` to the app's in-cluster Service URL and `external_host` to `
 
 ### 2. Point the HTTPRoute at the outpost
 
-Attach the route to the gateway's `https-home` listener with the `<app>.home.seneker.io` hostname, and add a UniFi DNS record for it pointing to the gateway VIP. Replace the route's `backendRefs` with the outpost Service in the `auth` namespace on port 9000. A backendRef that crosses namespaces needs a matching `ReferenceGrant` in `auth`, or the route reports `ResolvedRefs=False` and the gateway serves a 500.
+Attach the route to the gateway's `https-home` listener with the `<app>.home.seneker.io` hostname; the UniFi wildcard record already resolves it. Replace the route's `backendRefs` with the outpost Service in the `auth` namespace on port 9000. A backendRef that crosses namespaces needs a matching `ReferenceGrant` in `auth`, or the route reports `ResolvedRefs=False` and the gateway serves a 500.
 
 ### 3. Allow the outpost to reach the app
 

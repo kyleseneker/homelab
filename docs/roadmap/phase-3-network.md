@@ -1,6 +1,6 @@
 # Phase 3 -- Network
 
-**Status:** In progress. WireGuard, Teleport, management-VLAN access and the IoT VLAN are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking and DNS automation remain planned.
+**Status:** In progress. WireGuard, Teleport, management-VLAN access, the IoT VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking and a pinned Gateway address remain planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
@@ -39,27 +39,16 @@
 
 The VPN is implemented. The remaining tasks document client configuration and verification of the existing remote-access path.
 
-## 3.3 Automate Internal DNS
+## 3.3 Pin the Gateway Address
 
-- [ ] Choose a DNS approach (see below)
-- [ ] Deploy and configure the chosen service with a recovery path available when Kubernetes is down
-- [ ] Migrate the existing UniFi `home.seneker.io` records to the chosen service and verify client lookups
-- [ ] Test record creation, updates, and deletion if using external-dns
-- [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md)
+- [ ] Add `spec.addresses` with the live address, 192.168.10.201, to `homelab-gateway` and confirm Cilium keeps the same IP
+- [ ] Verify the wildcard and `home.seneker.io` records still resolve and every Blackbox probe passes afterwards
 
 | | |
 |---|---|
-| **Why** | DNS uses static entries in the UniFi console. Every new service requires a manual edit. |
+| **Why** | The UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at the Gateway's address ([DNS](../architecture/network-infrastructure.md#dns)). The Gateway does not request a fixed address, so recreating it could take a different IP from the pool and break every service name. |
 
-**Options:**
-
-| Option | Approach | Automation | Bonus |
-|--------|----------|------------|-------|
-| A | external-dns + an authoritative DNS service with a supported update API | Watches supported Kubernetes resources and manages records | DNS automation end-to-end |
-| B | Pi-hole or AdGuard Home | Centralized manual entries unless separately integrated with a supported updater | Ad-blocking and a DNS query dashboard |
-| C | Stay with UniFi static entries | Manual | No new components |
-
-Pi-hole or AdGuard Home remains an option for centralized DNS and ad-blocking. Full record automation requires a supported provider/API; it does not follow automatically from deploying either service.
+One wildcard covers every name behind the single Gateway address. If services later need their own LoadBalancer addresses, revisit record automation: external-dns needs a provider whose credentials can be limited to DNS, and Pi-hole or AdGuard Home add centralized entries and ad-blocking but not automation on their own.
 
 ## 3.4 Plan External Access for Jellyfin
 
