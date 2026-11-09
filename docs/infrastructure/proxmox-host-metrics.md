@@ -31,7 +31,7 @@ The job is not named `node-exporter`. The chart's node rules, recording rules an
 
 - **SATA SMART**: the collectors package's `smartmon` timer runs only when `/dev/sd*` or `/dev/hd*` exists. The host has only the NVMe drive, which the `nvme` timer covers.
 - **LVM thin pool**: VM disks provision a fraction of the 1.7 TiB `local-lvm` pool, so it cannot fill. Check `lvs` before provisioning disks that approach its size.
-- **UNAS Pro**: the NAS is not scraped.
+- **UNAS Pro**: the NAS is scraped over SNMP by the [SNMP Exporter](snmp-exporter.md), which does not cover its drives.
 
 ## Upstream Documentation
 

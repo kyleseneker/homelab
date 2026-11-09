@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: unas-snmp
+  namespace: monitoring
+spec:
+  groups:
+    - name: nas-health
+      rules:
+        - alert: NASMetricsAbsent
+          expr: absent(up{job="unas-snmp"} == 1)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UNAS Pro SNMP metrics have disappeared"
+            description: "Prometheus cannot read the UNAS Pro over SNMP. The NAS, its SNMP agent or snmp-exporter is down, or the SNMPv3 credentials no longer match. NAS fan and temperature alerts are blind."
+
+        - alert: NASFanStopped
+          expr: lmFanSensorsValue{job="unas-snmp", lmFanSensorsDevice=~"fan1|fan2"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "UNAS Pro {{ $labels.lmFanSensorsDevice }} has stopped"
+            description: "{{ $labels.lmFanSensorsDevice }} reports 0 RPM. The drives will overheat without airflow."
+
+        - alert: NASHot
+          expr: lmTempSensorsValue{job="unas-snmp"} / 1000 >= 80
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UNAS Pro {{ $labels.lmTempSensorsDevice }} above 80C"
+            description: "{{ $labels.lmTempSensorsDevice }} has read {{ $value | printf \"%.0f\" }}C for 15 minutes. Check the fans and the closet's airflow."

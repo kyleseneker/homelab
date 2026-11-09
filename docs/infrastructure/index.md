@@ -28,6 +28,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Alloy | monitoring | helm | alloy | 1.15.0 |
 | Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 11.20.2 |
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
+| SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.0 |
 | Authentik | auth | helm | authentik | 2026.8.5 |
 | Reloader | kube-system | helm | reloader | 2.2.19 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |

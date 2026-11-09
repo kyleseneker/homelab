@@ -185,6 +185,24 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: monitoring-egress-snmp-exporter
+  namespace: monitoring
+spec:
+  description: "Allow snmp-exporter to query SNMP on the UNAS Pro"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-snmp-exporter
+  egress:
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "161"
+              protocol: UDP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: monitoring-egress-uptime-kuma
   namespace: monitoring
 spec:

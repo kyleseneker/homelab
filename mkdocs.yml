@@ -95,6 +95,7 @@ nav:
       - Alloy: infrastructure/alloy.md
       - NUT Exporter: infrastructure/nut-exporter.md
       - Proxmox Host Metrics: infrastructure/proxmox-host-metrics.md
+      - SNMP Exporter: infrastructure/snmp-exporter.md
       - Garage: infrastructure/garage.md
       - Velero: infrastructure/velero.md
       - etcd Backup: infrastructure/etcd-backup.md

@@ -101,6 +101,16 @@ Metrics come from node-exporter on the hypervisor ([Proxmox Host Metrics](proxmo
 | `ProxmoxNVMeWearing` | warning | 1h | More than 80% of rated write endurance used |
 | `ProxmoxCPUHot` | warning | 30m | CPU package at or above 95°C |
 
+### NAS Health
+
+Defined in `snmp-exporter/prometheusrule.yml` from the UNAS Pro's SNMP agent ([SNMP Exporter](snmp-exporter.md)). The agent does not report drive or pool health.
+
+| Alert | Severity | For | Condition |
+|-------|----------|-----|-----------|
+| `NASMetricsAbsent` | warning | 15m | The `unas-snmp` target is down or missing |
+| `NASFanStopped` | critical | 5m | `fan1` or `fan2` reports 0 RPM |
+| `NASHot` | warning | 15m | Any NAS temperature sensor at or above 80°C |
+
 The root filesystem holds container images, the journal and `local-path` volumes. `make k8s-node-disk` caps the journal at 1G and sets the kubelet to remove images unused for 7 days, and any unused image once the disk passes 75%, so images alone do not reach the 80% alert. kubeadm's default starts that cleanup only at 85%. The kubelet settings are `k8s_kubelet_config` in `ansible/group_vars/all/vars.yml`, used by `kubeadm init` and merged into the cluster's `kubelet-config` ConfigMap, which joins and upgrades copy to each node.
 
 ## Adding New Rules

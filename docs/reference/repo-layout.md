@@ -104,6 +104,7 @@ homelab/
 │       │   ├── loki/
 │       │   ├── alloy/
 │       │   ├── nut-exporter/
+│       │   ├── snmp-exporter/       # UNAS Pro SNMPv3 metrics
 │       │   ├── garage/
 │       │   ├── velero/
 │       │   ├── etcd-backup/

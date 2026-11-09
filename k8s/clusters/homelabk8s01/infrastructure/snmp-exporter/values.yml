@@ -1,0 +1,91 @@
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+containerSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+extraArgs:
+  - --config.file=/etc/snmp_exporter/snmp.yml
+  - --config.expand-environment-variables
+envFrom:
+  - secretRef:
+      name: unas-snmp
+serviceMonitor:
+  enabled: false
+  selfMonitor:
+    enabled: true
+config: |
+  auths:
+    unas_v3:
+      version: 3
+      security_level: authPriv
+      username: ${UNAS_SNMP_USERNAME}
+      password: ${UNAS_SNMP_PASSWORD}
+      auth_protocol: SHA
+      priv_protocol: AES
+      priv_password: ${UNAS_SNMP_PASSWORD}
+  modules:
+    lm_sensors:
+      walk:
+        - 1.3.6.1.4.1.2021.13.16.2.1.2
+        - 1.3.6.1.4.1.2021.13.16.2.1.3
+        - 1.3.6.1.4.1.2021.13.16.3.1.2
+        - 1.3.6.1.4.1.2021.13.16.3.1.3
+        - 1.3.6.1.4.1.2021.13.16.4.1.2
+        - 1.3.6.1.4.1.2021.13.16.4.1.3
+      metrics:
+        - name: lmTempSensorsValue
+          oid: 1.3.6.1.4.1.2021.13.16.2.1.3
+          type: gauge
+          help: The temperature of this sensor in mC - 1.3.6.1.4.1.2021.13.16.2.1.3
+          indexes:
+            - labelname: lmTempSensorsIndex
+              type: gauge
+          lookups:
+            - labels: [lmTempSensorsIndex]
+              labelname: lmTempSensorsDevice
+              oid: 1.3.6.1.4.1.2021.13.16.2.1.2
+              type: DisplayString
+            - labels: []
+              labelname: lmTempSensorsIndex
+        - name: lmFanSensorsValue
+          oid: 1.3.6.1.4.1.2021.13.16.3.1.3
+          type: gauge
+          help: The rotation speed of this fan in RPM - 1.3.6.1.4.1.2021.13.16.3.1.3
+          indexes:
+            - labelname: lmFanSensorsIndex
+              type: gauge
+          lookups:
+            - labels: [lmFanSensorsIndex]
+              labelname: lmFanSensorsDevice
+              oid: 1.3.6.1.4.1.2021.13.16.3.1.2
+              type: DisplayString
+            - labels: []
+              labelname: lmFanSensorsIndex
+        - name: lmVoltSensorsValue
+          oid: 1.3.6.1.4.1.2021.13.16.4.1.3
+          type: gauge
+          help: The voltage of this sensor in mV - 1.3.6.1.4.1.2021.13.16.4.1.3
+          indexes:
+            - labelname: lmVoltSensorsIndex
+              type: gauge
+          lookups:
+            - labels: [lmVoltSensorsIndex]
+              labelname: lmVoltSensorsDevice
+              oid: 1.3.6.1.4.1.2021.13.16.4.1.2
+              type: DisplayString
+            - labels: []
+              labelname: lmVoltSensorsIndex

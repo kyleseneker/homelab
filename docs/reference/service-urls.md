@@ -61,5 +61,6 @@ Used for app-to-app communication within the cluster. These follow the standard 
 | Unpackerr | `http://unpackerr.media.svc.cluster.local:5656` |
 | Uptime Kuma | `http://uptime-kuma.monitoring.svc.cluster.local:3001` |
 | NUT Exporter | `http://nut-exporter.monitoring.svc.cluster.local:9199` |
+| SNMP Exporter | `http://snmp-exporter-prometheus-snmp-exporter.monitoring.svc.cluster.local:9116` |
 | Authentik | `http://authentik-server.auth.svc.cluster.local` |
 | Vault | `http://vault.vault.svc.cluster.local:8200` |

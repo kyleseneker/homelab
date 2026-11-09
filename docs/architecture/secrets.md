@@ -62,6 +62,7 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `infrastructure/alertmanager-slack` | `alertmanager-slack-webhook` | `monitoring` |
 | `infrastructure/grafana` | `grafana-admin` | `monitoring` |
 | `infrastructure/grafana-oidc` | `grafana-oidc-secret` | `monitoring` |
+| `infrastructure/unas-snmp` | `unas-snmp` | `monitoring` |
 
 `apps/home-assistant` also holds `backup-encryption-key`, which nothing syncs; it exists for restores.
 
