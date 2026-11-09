@@ -138,7 +138,7 @@ The UniFi Network controller's local DNS holds three records, all under `home.se
 | `home.seneker.io` | 192.168.10.201 | Homepage; a wildcard does not match the bare name |
 | `proxmox.home.seneker.io` | 192.168.10.2 | The Proxmox host |
 
-New services need no DNS change: an HTTPRoute on the Gateway is enough. The more specific `proxmox` record takes precedence over the wildcard. The gateway applies record changes a few seconds after they are saved.
+New services need no DNS change: an HTTPRoute on the Gateway is enough. The Gateway pins 192.168.10.201 with `spec.addresses` ([Cilium Gateway](../infrastructure/cilium-gateway.md#gateway)). The more specific `proxmox` record takes precedence over the wildcard. The gateway applies record changes a few seconds after they are saved.
 
 `seneker.io` is a public domain in Route 53, but `home.seneker.io` names exist only in these local records; public DNS returns nothing for them. The public zone carries only the ACME challenge record and deliberately public sites.
 

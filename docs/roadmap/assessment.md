@@ -23,17 +23,16 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | P3 | The MS-01's 10G SFP+ ports are available; its current GbE path limits storage and inter-host transfers. | [Phase 3](phase-3-network.md): 10G switch and DAC links |
 | P4 | All three Kubernetes VMs share one Proxmox host. | [Phase 4](phase-4-compute-and-storage.md): second MS-01 and workload distribution |
 | P5 | The MS-01's PCIe slot is available for expansion. | [Phase 7](phase-7-long-term-vision.md): dedicated GPU, subject to fit, power and cooling |
-| P6 | Intel AMT is provisioned in firmware; the management-port connection remains a task. | Complete the connection and test access with the host OS unavailable in [Phase 3](phase-3-network.md#35-complete-intel-amt-connectivity) |
+| P6 | Intel AMT is provisioned in firmware; the management-port connection remains a task. | Complete the connection and test access with the host OS unavailable in [Phase 3](phase-3-network.md#34-complete-intel-amt-connectivity) |
 
 ## Network Layer
 
 | IDs | Current assessment | Next step |
 |---|---|---|
 | N1, N7 | VLAN 99 and management access are configured. Management-service isolation still needs an endpoint-by-endpoint check. | Test Proxmox, NAS and AMT reachability from management clients and ordinary workloads; close unintended paths |
-| N2 | The IoT VLAN and its SSID are configured ([ADR-026](../decisions/026-iot-vlan.md)), but smart home devices still join the household SSID on Default. | Move devices and verify isolation in [Phase 3](phase-3-network.md#37-move-smart-home-devices-to-the-iot-vlan) |
-| N3 | A UniFi wildcard record resolves every service name to the Gateway, whose address is not pinned. | Pin the Gateway address in [Phase 3](phase-3-network.md#33-pin-the-gateway-address) |
+| N2 | The IoT VLAN and its SSID are configured ([ADR-026](../decisions/026-iot-vlan.md)), but smart home devices still join the household SSID on Default. | Move devices and verify isolation in [Phase 3](phase-3-network.md#36-move-smart-home-devices-to-the-iot-vlan) |
 | N4 | WireGuard and Teleport are implemented with Homelab, Management and Default access. | Record an off-LAN DNS, TLS, login and management-access check |
-| N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#34-plan-external-access-for-jellyfin) |
+| N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#33-plan-external-access-for-jellyfin) |
 | N6 | Cilium egress policies cover selected namespaces and destinations. | Inventory coverage and required traffic before tightening policies |
 | N8 | The configured Cilium pool, `10.0.0.0/8`, contains the Kubernetes service range, `10.96.0.0/12`. | Inventory production and routed/VPN ranges, then rehearse the production migration using the lab's verified non-overlapping ranges |
 

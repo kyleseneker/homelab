@@ -46,7 +46,7 @@ Serve homelab services under `home.seneker.io`, a subdomain of the household dom
 - **Services directly under `seneker.io`**: Shorter names, but internal services would share a namespace, a wildcard certificate and a challenge record with public sites. A compromise of the cluster's certificate or DNS credentials would then reach them too.
 - **A delegated subdomain zone for cert-manager**: Isolates challenge records in their own zone. The record-name IAM condition gives the same scope without a second zone.
 - **Another DNS provider**: Cloudflare and others are supported by cert-manager. Route 53 is already in the homelab's AWS account and Terraform, and GoDaddy's DNS API has been restricted for small accounts.
-- **Tunnel or overlay certificates (Tailscale, Cloudflare Tunnel)**: Couple internal TLS to an external-access decision ([Phase 3.4](../roadmap/phase-3-network.md#34-plan-external-access-for-jellyfin)) and to a third party.
+- **Tunnel or overlay certificates (Tailscale, Cloudflare Tunnel)**: Couple internal TLS to an external-access decision ([Phase 3.3](../roadmap/phase-3-network.md#33-plan-external-access-for-jellyfin)) and to a third party.
 
 ## Consequences
 

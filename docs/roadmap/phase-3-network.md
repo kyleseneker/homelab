@@ -1,6 +1,6 @@
 # Phase 3 -- Network
 
-**Status:** In progress. WireGuard, Teleport, management-VLAN access, the IoT VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking and a pinned Gateway address remain planned.
+**Status:** In progress. WireGuard, Teleport, management-VLAN access, the IoT VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking remains planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
@@ -39,18 +39,7 @@
 
 The VPN is implemented. The remaining tasks document client configuration and verification of the existing remote-access path.
 
-## 3.3 Pin the Gateway Address
-
-- [ ] Add `spec.addresses` with the live address, 192.168.10.201, to `homelab-gateway` and confirm Cilium keeps the same IP
-- [ ] Verify the wildcard and `home.seneker.io` records still resolve and every Blackbox probe passes afterwards
-
-| | |
-|---|---|
-| **Why** | The UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at the Gateway's address ([DNS](../architecture/network-infrastructure.md#dns)). The Gateway does not request a fixed address, so recreating it could take a different IP from the pool and break every service name. |
-
-One wildcard covers every name behind the single Gateway address. If services later need their own LoadBalancer addresses, revisit record automation: external-dns needs a provider whose credentials can be limited to DNS, and Pi-hole or AdGuard Home add centralized entries and ad-blocking but not automation on their own.
-
-## 3.4 Plan External Access for Jellyfin
+## 3.3 Plan External Access for Jellyfin
 
 - [ ] Choose an external access approach (see below)
 - [ ] Implement and test on the intended client devices
@@ -71,7 +60,7 @@ One wildcard covers every name behind the single Gateway address. If services la
 
 **Planned starting point:** VPN-only for personal use. Select and test a public access method when enabling sharing with friends and family.
 
-## 3.5 Complete Intel AMT Connectivity
+## 3.4 Complete Intel AMT Connectivity
 
 - [ ] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
 - [ ] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
@@ -80,7 +69,7 @@ One wildcard covers every name behind the single Gateway address. If services la
 
 AMT is configured in firmware. This completes the physical management connection described in [ADR-017](../decisions/017-intel-amt-oob-management.md).
 
-## 3.6 Verify Management Isolation and Address Planning
+## 3.5 Verify Management Isolation and Address Planning
 
 - [ ] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads
 - [ ] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
@@ -88,7 +77,7 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] Document and rehearse the production address migration, using the lab's verified separate pod/service ranges as a baseline
 - [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
 
-## 3.7 Move Smart Home Devices to the IoT VLAN
+## 3.6 Move Smart Home Devices to the IoT VLAN
 
 - [ ] Before moving devices, set the IoT SSID to a long random pre-shared key or per-device keys ([ADR-026](../decisions/026-iot-vlan.md)), so devices are provisioned only once
 - [ ] Move each Wi-Fi smart home device from the household SSID to the IoT SSID, re-provisioning through its vendor app or factory reset where it stores only one network
@@ -101,7 +90,7 @@ AMT is configured in firmware. This completes the physical management connection
 | **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients and the NAS that serves the cluster's NFS storage. |
 
 
-## 3.8 Move Services to home.seneker.io
+## 3.7 Move Services to home.seneker.io
 
 - [ ] Verify a household iPhone reaches each service without installing anything (Jellyfin, Seerr, the status page, Homepage, Grafana and the Authentik login verified)
 - [x] Retire the `homelab.local` names, the internal CA chain, trust-manager and the CA trust guide
@@ -116,7 +105,7 @@ AMT is configured in firmware. This completes the physical management connection
 
 - [ ] 10G link between MS-01 and at least one other device
 - [ ] Remote client verification recorded
-- [ ] DNS centralized or automated through the chosen approach
+- [x] Internal DNS needs no per-service records and the Gateway address is pinned
 - [ ] External access path chosen and implemented for Jellyfin
 - [ ] Intel AMT connected and remote management tested
 - [ ] Management reachability and pod/service/VPN address boundaries verified

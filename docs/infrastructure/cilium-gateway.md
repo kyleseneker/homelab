@@ -23,7 +23,7 @@ The `homelab-gateway` resource defines four listeners. A wildcard listener does 
 - **`https-home-root` (443):** Terminates TLS for `home.seneker.io` with the same certificate. Allows routes from all namespaces.
 - **`http-home` and `http-home-root` (80):** Accept traffic for the same names and redirect it to HTTPS (`gateway/http-redirect.yml`).
 
-The Gateway does not currently request a fixed address. Its live address, 192.168.10.201, is what the UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at. Recreating the Gateway can assign a different IP from the pool and break every service name until those two records are updated; pinning it with `spec.addresses` is tracked in [Phase 3](../roadmap/phase-3-network.md#33-pin-the-gateway-address).
+The Gateway requests 192.168.10.201 through `spec.addresses`, because the UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at it ([DNS](../architecture/network-infrastructure.md#dns)). Cilium copies the address to the generated `cilium-gateway-homelab-gateway` Service as the `io.cilium/lb-ipam-ips` annotation, so LB-IPAM keeps the same IP when the Gateway or Service is recreated. If the requested address cannot be assigned, Cilium reports `Programmed=False` with reason `AddressNotUsable`.
 
 ### L2 Announcements
 

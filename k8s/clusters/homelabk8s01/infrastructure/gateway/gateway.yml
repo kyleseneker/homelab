@@ -5,6 +5,10 @@ metadata:
   namespace: default
 spec:
   gatewayClassName: cilium
+  # The UniFi *.home.seneker.io and home.seneker.io records point here.
+  addresses:
+    - type: IPAddress
+      value: 192.168.10.201
   listeners:
     - name: https-home
       protocol: HTTPS
