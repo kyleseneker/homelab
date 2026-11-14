@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: hashicorp/vault:2.2.1
+          image: hashicorp/vault:2.2.2
           command:
             - sh
             - -ec
