@@ -32,17 +32,28 @@ ships 2.8.5-1 only in forky and sid, and trixie-backports has no NUT package
 ## Decision
 
 Rebuild Debian's 2.8.5-1 source package for trixie and install it on the Proxmox host
-from this repository's GitHub releases.
+from a signed APT repository, [kyleseneker/apt](https://github.com/kyleseneker/apt),
+served by GitHub Pages at `https://kyleseneker.github.io/apt`.
 
-- `packaging/nut/build.sh` downloads the source package with `dget`, which verifies the
-  `.dsc` signature against the Debian keyring and the checksums of the source files. It
-  adds the local revision `~homelab13+1` and builds the binary packages in a
-  `debian:trixie` container.
-- The `nut-backport` workflow builds on every change to `packaging/nut/` and publishes
-  the packages and `SHA256SUMS` as a release on `main`. It does not replace an existing
-  release; a new build needs a new local revision.
-- The `pve_ups` role downloads the packages the host uses, checks the SHA-256 checksums
-  pinned in its defaults and installs them.
+- The repository's build script downloads the source package with `dget`, which
+  verifies the `.dsc` signature against the Debian keyring and the checksums of the
+  source files. It adds the local revision `~homelab13+2` and builds the binary
+  packages in a `debian:trixie` container.
+- The build applies upstream fixes that are not in a NUT release yet as Debian patches.
+  It carries [edc06fb](https://github.com/networkupstools/nut/commit/edc06fb39435b892d5daeec53cb4845cb12d1d50)
+  ([nut#3136](https://github.com/networkupstools/nut/issues/3136)), which fixes a
+  2.8.5 regression. When both report descriptor reads fail, 2.8.5 retries with lengths
+  read past the end of an array and can accept a truncated descriptor. The driver then
+  runs with no readings and an empty `ups.status`, which happened on about one start in
+  eight on this UPS. With the fix the driver exits and systemd starts it again.
+- Its workflow publishes each package version once. It adds the packages to `pool/`,
+  regenerates the indexes with `apt-ftparchive` and signs `InRelease` with a dedicated
+  ed25519 key. A published file is never replaced; a new build needs a new local
+  revision.
+- The `pve_ups` role installs the repository's public key from this repository, adds
+  the source with `Signed-By`, and pins the repository to priority 1 except for the
+  NUT packages. It installs `nut`, `nut-client` and `nut-server` at the pinned version
+  with `apt`.
 - Return to the distribution package once trixie-backports or a later Proxmox VE
   release ships NUT 2.8.5 or later. The local revision sorts below Debian's `2.8.5-1`,
   so a host upgrade to a Debian release that ships it replaces the backport; a
@@ -59,6 +70,14 @@ from this repository's GitHub releases.
   releases, so the patches would have to be carried and rebased.
 - **Build NUT from the upstream source**: Loses Debian's packaging: the systemd units,
   maintainer scripts and file layout the role relies on.
+- **Publish the packages as release assets of this repository**: Needs no signing key,
+  but presents a package as a release of the homelab, and the role has to download,
+  verify and install the files itself, including the ordering that `nut-client`'s
+  `Breaks` on older `nut-server` requires and the handling of modified configuration
+  files.
+- **Publish the packages as OCI artifacts in GitHub's container registry**: GitHub
+  Packages has no Debian registry, so the host would need an OCI client such as `oras`,
+  and apt could not use it as a source.
 
 ## Consequences
 
@@ -66,9 +85,15 @@ from this repository's GitHub releases.
   distribution package returns. Debian's trixie updates for 2.8.1 no longer apply; the
   fix in `2.8.1-5+deb13u1` (`upsmon` clearing the calibration flag) has been upstream
   since 2.8.2.
-- Rebuilding needs only a change to `NUT_DEBIAN_VERSION` or `LOCAL_REVISION` and new
-  checksums in the role's defaults.
+- Each carried patch is dropped when the package is rebuilt from a NUT release that
+  includes it.
+- The signing key expires on 2031-11-13. The private key exists only as the
+  repository's `APT_SIGNING_KEY` Actions secret. Replacing the key means updating the
+  public key in both repositories and re-signing the indexes.
+- The pin keeps the repository from replacing any package outside the NUT set, even if
+  it later publishes one.
+- `apt-get update` on the Proxmox host depends on GitHub Pages for this source.
 - A failed report read leaves that value unchanged for one update cycle instead of
   forcing a reconnection.
-- Rolling back means installing Debian's 2.8.1 packages again with
+- Rolling back means removing the pin and installing Debian's 2.8.1 packages again with
   `--allow-downgrades`.
