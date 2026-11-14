@@ -68,6 +68,9 @@ sidecar:
       cpu: 200m
       memory: 128Mi
 lokiCanary:
+  extraArgs:
+    - -streamname=service_name
+    - -streamvalue=loki-canary
   resources:
     requests:
       cpu: 10m
