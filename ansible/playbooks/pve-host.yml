@@ -16,7 +16,8 @@
       when: pve_cloud_init_enabled | default(false) | bool
     - pve_pci_mapping
     - pve_api_token
-    - pve_ups
+    - role: pve_ups
+      tags: [pve_ups]
     - role: pve_node_exporter
       tags: [pve_node_exporter]
     - role: tfc_agent
