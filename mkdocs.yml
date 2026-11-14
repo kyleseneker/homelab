@@ -153,6 +153,7 @@ nav:
       - Multus IoT Attachments: decisions/028-multus-iot-attachments.md
       - Home Assistant: decisions/029-home-assistant.md
       - Public Domain and Certificates: decisions/030-public-domain-and-certificates.md
+      - NUT Backport: decisions/031-nut-backport.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md
