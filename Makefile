@@ -85,7 +85,7 @@ packer-build: ## Build K8s node VM template on Proxmox with a temporary build to
 # Proxmox host  (override with PVE_HOST=<name>)
 # ---------------------------------------------------------------------------
 
-.PHONY: pve-configure pve-firewall pve-network pve-node-exporter pve-ssh
+.PHONY: pve-configure pve-firewall pve-network pve-node-exporter pve-ups pve-ssh
 
 PLAYBOOK_VAULT_ARGS := $(if $(wildcard $(VAULT_PW_FILE)),$(VAULT_ARGS),)
 
@@ -100,6 +100,9 @@ pve-network: ## Apply Proxmox host networking; console-attended (ADR-016)
 
 pve-node-exporter: ## Install node-exporter and the NVMe collector on the Proxmox host
 	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_node_exporter
+
+pve-ups: ## Configure the UPS driver, NUT server and shutdown monitor on the Proxmox host
+	cd $(ANSIBLE_DIR) && ansible-playbook $(PLAYBOOK_VAULT_ARGS) -i inventory/$(PVE_HOST)/hosts.yml playbooks/pve-host.yml --tags pve_ups
 
 pve-ssh: ## SSH into Proxmox host
 	ssh root@$$(cd $(ANSIBLE_DIR) && grep ansible_host inventory/$(PVE_HOST)/hosts.yml | head -1 | awk '{print $$2}')
