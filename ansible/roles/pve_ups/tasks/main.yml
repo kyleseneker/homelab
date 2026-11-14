@@ -7,13 +7,53 @@
     fail_msg: Store vault_pve_ups_upsmon_password in Ansible Vault (at least 16 letters, digits, underscores or hyphens).
   no_log: true
 
+- name: Install the kyleseneker apt repository key
+  ansible.builtin.copy:
+    src: kyleseneker-apt.asc
+    dest: /etc/apt/keyrings/kyleseneker-apt.asc
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Add the kyleseneker apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/kyleseneker.sources
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Types: deb
+      URIs: {{ pve_ups_apt_repo_url }}
+      Suites: {{ ansible_facts['distribution_release'] }}
+      Components: main
+      Signed-By: /etc/apt/keyrings/kyleseneker-apt.asc
+
+- name: Limit the kyleseneker apt repository to NUT
+  ansible.builtin.copy:
+    dest: /etc/apt/preferences.d/kyleseneker
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      Package: *
+      Pin: release o=kyleseneker
+      Pin-Priority: 1
+
+      Package: nut nut-client nut-server libupsclient7 libnutscan4
+      Pin: release o=kyleseneker
+      Pin-Priority: 500
+
 - name: Install NUT packages
   ansible.builtin.apt:
     name:
-      - nut
-      - nut-client
-      - nut-server
-    state: present
+      - "nut={{ pve_ups_nut_version }}"
+      - "nut-client={{ pve_ups_nut_version }}"
+      - "nut-server={{ pve_ups_nut_version }}"
+    update_cache: true
+  notify:
+    - Restart nut-driver
+    - Restart nut-server
+    - Restart nut-monitor
 
 - name: Add udev rule for UPS USB access
   ansible.builtin.template:
