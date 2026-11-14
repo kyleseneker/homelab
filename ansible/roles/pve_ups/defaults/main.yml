@@ -4,6 +4,9 @@ pve_ups_driver: usbhid-ups
 pve_ups_port: auto
 pve_ups_description: "CyberPower CP1500PFCRM2U"
 
+pve_ups_apt_repo_url: https://kyleseneker.github.io/apt
+pve_ups_nut_version: "2.8.5-1~homelab13+2"
+
 pve_ups_shutdown_command: /usr/local/sbin/nut-shutdown.sh
 
 # Seconds to wait for VMs to shut down gracefully before force stopping
