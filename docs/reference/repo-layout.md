@@ -18,6 +18,8 @@ homelab/
 │   ├── render-manifests.sh          # Render every ApplicationSet manifest offline
 │   ├── check-alert-metrics.sh       # Verify alert selectors match live Prometheus series
 │   └── gen-crd-schemas.sh           # Generate kubeconform schemas from media-operator, Gateway API and Cilium CRDs
+├── packaging/
+│   └── nut/build.sh                 # Rebuild Debian's NUT source package for trixie (ADR-031)
 ├── packer/
 │   └── k8s-node/                    # K8s node VM template
 │       ├── k8s-node.pkr.hcl         # Packer build config (proxmox-iso)
@@ -139,7 +141,8 @@ homelab/
 │               └── exportarr/
 ├── .github/workflows/
 │   ├── validate.yml                 # Lint, kubeconform, secret scan, manifest render
-│   └── docs.yml                     # Build and publish the MkDocs site
+│   ├── docs.yml                     # Build and publish the MkDocs site
+│   └── nut-backport.yml             # Build and release the NUT backport for the Proxmox host
 ├── .pre-commit-config.yaml          # Pre-commit hooks
 ├── .yamllint.yml                    # YAML lint rules
 ├── .ansible-lint                    # Ansible lint rules
