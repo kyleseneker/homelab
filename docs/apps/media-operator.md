@@ -30,7 +30,13 @@ The v0.34.1 controller passed a lab check against the restored Sonarr: stale ID 
 
 The Bazarr English profile ID also requires validation during a clean rebuild. Prowlarr indexers select the built-in `Standard` sync profile by name, so a rebuilt Prowlarr resolves its current ID; a missing or renamed profile blocks indexer writes and reports a reconciliation failure. Tdarr's large imported flow graph and IDs are operational configuration, not proof that every path is safe: validate library-specific flags and test a copied file before enabling a new flow or changing deletion/replacement behavior.
 
-The operators are pinned to 0.41.0 in production and restore-lab configurations.
+The operators are pinned to 0.42.0 in production and restore-lab configurations.
+0.42.0 stops resetting settings a config leaves out on items that already exist
+and drops the CRD defaults behind them; resources stored before keep their
+defaulted values. It records events, logs JSON, watches Secrets by metadata and
+takes its finalizer off these resources, none of which sets `deletionPolicy`.
+The Bazarr `ENV:` settings and qBittorrent share limits here are already in the
+shape it requires. Argo applies its CRD changes with the charts.
 0.41.0 adds settings across every operator and makes Seerr's `sonarr` and
 `radarr` lists, which `seerr.yml` now uses. It also keeps existing Jellyfin
 libraries as declared, folders included; the live Movies and TV Shows libraries
