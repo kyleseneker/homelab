@@ -83,7 +83,7 @@ flowchart LR
 | Tdarr | Media transcoding | `media` |
 | Unpackerr | Extraction of compressed downloads | `media` |
 | FlareSolverr | Captcha-solving proxy for Prowlarr | `media` |
-| Media Operator | Declarative Sonarr/Radarr/Prowlarr configuration | `media` |
+| Arrchitect | Declarative configuration of the media apps | `media` |
 | Config Backup | Nightly SQLite dumps of *arr databases | `media` |
 | Exportarr | Prometheus exporter for *arr app metrics | `media` |
 | Homepage | Dashboard | `media` |

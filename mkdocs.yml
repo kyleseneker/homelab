@@ -73,7 +73,7 @@ nav:
       - Tdarr: apps/tdarr.md
       - Unpackerr: apps/unpackerr.md
       - Exportarr: apps/exportarr.md
-      - Media Operator: apps/media-operator.md
+      - Arrchitect: apps/arrchitect.md
       - Config Backup: apps/config-backup.md
       - FlareSolverr: apps/flaresolverr.md
       - Homepage: apps/homepage.md

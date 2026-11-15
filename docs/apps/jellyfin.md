@@ -43,7 +43,7 @@ GPU limit: `gpu.intel.com/i915: 1`
 
 ## Post-Deploy Verification
 
-`JellyfinConfig` declares the administrator credentials, Movies/TV libraries, and QSV settings. Populate `jellyfin-credentials`, verify reconciliation and the administrator login, then test a hardware-transcoded playback. Music is not currently a declared library. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`JellyfinConfig` declares the administrator credentials, Movies/TV libraries, and QSV settings. Populate `jellyfin-credentials`, verify reconciliation and the administrator login, then test a hardware-transcoded playback. Music is not currently a declared library. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 
@@ -62,4 +62,4 @@ GPU limit: `gpu.intel.com/i915: 1`
 Jellyfin's own folder watching does not work over NFS, because inotify events do not cross the
 mount. Sonarr and Radarr each hold a `MediaBrowser` notification with `updateLibrary` enabled, so
 an import tells Jellyfin to refresh rather than waiting for a scheduled scan. Both notifications
-are reconciled by the media-operator.
+are reconciled by Arrchitect.

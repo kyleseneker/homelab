@@ -69,7 +69,7 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 
 ## Configuration Layer
 
-Seven media-operator chart configurations and eight media Config resources are present, alongside Recyclarr and Authentik blueprints. Remaining work is to prove initial configuration, secret dependencies and restoration of valuable runtime state.
+The Arrchitect chart configuration and eight media Config resources are present, alongside Recyclarr and Authentik blueprints. Remaining work is to prove initial configuration, secret dependencies and restoration of valuable runtime state.
 
 | IDs | Current assessment | Next step |
 |---|---|---|
