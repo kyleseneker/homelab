@@ -58,7 +58,7 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 | [Unpackerr](unpackerr.md) | `media` | -- | Automatic extraction of compressed downloads | `ghcr.io/unpackerr/unpackerr` |
 | [Exportarr](exportarr.md) | `media` | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr` |
 | [FlareSolverr](flaresolverr.md) | `media` | -- | Captcha-solving proxy for Prowlarr indexers | `ghcr.io/flaresolverr/flaresolverr` |
-| [Media Operator](media-operator.md) | `media` | -- | Eight application configurations through seven operators | Media Operator OCI charts |
+| [Arrchitect](arrchitect.md) | `media` | -- | Eight application configurations through one operator | `ghcr.io/kyleseneker/charts/arrchitect` |
 | [Config Backup](config-backup.md) | `media` | -- | Nightly SQLite/native-archive staging | `python` |
 | [Homepage](homepage.md) | `media` | `home.seneker.io` | Dashboard aggregating all services | `ghcr.io/gethomepage/homepage` |
 | [Uptime Kuma](uptime-kuma.md) | `monitoring` | `status.home.seneker.io` | Synthetic monitoring and status page | `louislam/uptime-kuma` |

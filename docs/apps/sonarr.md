@@ -36,7 +36,7 @@ Sonarr automates TV series management -- it monitors for new episodes, searches 
 
 ## Post-Deploy Verification
 
-`SonarrConfig` owns `/data/media/tv`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make media-keys-adopt`, and verify the CR and a test import. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`SonarrConfig` owns `/data/media/tv`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make media-keys-adopt`, and verify the CR and a test import. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

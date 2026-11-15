@@ -41,7 +41,7 @@ Seerr authenticates through **Jellyfin** directly. The deployed configuration en
 
 ## Post-Deploy Verification
 
-`SeerrConfig` declares Jellyfin authentication and Sonarr/Radarr integrations. Verify the credentials and initial setup, then confirm the configured quality profile IDs match the profiles Recyclarr created before testing a request. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`SeerrConfig` declares Jellyfin authentication and Sonarr/Radarr integrations. Verify the credentials and initial setup, then confirm the configured quality profile IDs match the profiles Recyclarr created before testing a request. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

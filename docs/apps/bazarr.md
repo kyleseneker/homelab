@@ -36,7 +36,7 @@ Bazarr automates subtitle downloading for media managed by Sonarr and Radarr. It
 
 ## Post-Deploy Verification
 
-`BazarrConfig` declares Sonarr/Radarr connections, English subtitles, and providers. Populate `opensubtitles-credentials` and the API-key Secret, then verify the CR is ready and download a representative subtitle. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`BazarrConfig` declares Sonarr/Radarr connections, English subtitles, and providers. Populate `opensubtitles-credentials` and the API-key Secret, then verify the CR is ready and download a representative subtitle. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

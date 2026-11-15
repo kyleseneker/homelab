@@ -17,7 +17,7 @@ homelab/
 │   ├── vault-init.sh                # One-time Vault init + ESO K8s auth setup
 │   ├── render-manifests.sh          # Render every ApplicationSet manifest offline
 │   ├── check-alert-metrics.sh       # Verify alert selectors match live Prometheus series
-│   └── gen-crd-schemas.sh           # Generate kubeconform schemas from media-operator, Gateway API and Cilium CRDs
+│   └── gen-crd-schemas.sh           # Generate kubeconform schemas from Arrchitect, Gateway API and Cilium CRDs
 ├── packer/
 │   └── k8s-node/                    # K8s node VM template
 │       ├── k8s-node.pkr.hcl         # Packer build config (proxmox-iso)
@@ -119,11 +119,10 @@ homelab/
 │       └── apps/                    # User-facing applications
 │           ├── homepage/
 │           ├── uptime-kuma/
-│           ├── media-operator/      # Servarr operator (Sonarr/Radarr/Prowlarr config)
-│           ├── media-operator-downloads/  # Download-client operator
+│           ├── arrchitect/          # Media app configuration operator
 │           └── media/
 │               ├── prereqs/         # Shared namespace, PV, ConfigMap, API keys
-│               ├── media-config/    # Servarr custom resources
+│               ├── media-config/    # Arrchitect custom resources
 │               ├── config-backup/   # Nightly SQLite dumps to NFS
 │               ├── jellyfin/
 │               ├── sonarr/

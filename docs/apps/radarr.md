@@ -36,7 +36,7 @@ Radarr automates movie management -- it monitors for releases, searches indexers
 
 ## Post-Deploy Verification
 
-`RadarrConfig` owns `/data/media/movies`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make media-keys-adopt`, and verify the CR and a test import. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`RadarrConfig` owns `/data/media/movies`, qBittorrent, and Jellyfin notifications. Recyclarr owns quality profiles. Initialize application authentication as needed, run `make media-keys-adopt`, and verify the CR and a test import. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

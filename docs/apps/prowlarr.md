@@ -37,7 +37,7 @@ Prowlarr does not require the shared `media-data` volume because it does not int
 
 ## Post-Deploy Verification
 
-`ProwlarrConfig` owns indexers, Sonarr/Radarr app sync, and the FlareSolverr proxy. Initialize authentication as needed, run `make media-keys-adopt`, then verify indexer tests and application sync. Make persistent setting changes in the CR. See [Media Operator](media-operator.md) for configuration ownership and cold-start prerequisites.
+`ProwlarrConfig` owns indexers, Sonarr/Radarr app sync, and the FlareSolverr proxy. Initialize authentication as needed, run `make media-keys-adopt`, then verify indexer tests and application sync. Make persistent setting changes in the CR. See [Arrchitect](arrchitect.md) for configuration ownership and cold-start prerequisites.
 
 ## Dependencies
 

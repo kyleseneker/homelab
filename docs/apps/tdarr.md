@@ -14,7 +14,7 @@ does not re-encode video -- see [ADR-019](../decisions/019-transcode-policy.md).
 | Namespace | `media` |
 | ArgoCD app | `tdarr` |
 | Internal URL | `http://tdarr.media.svc.cluster.local:8265` |
-| Configuration | `TdarrConfig` CR, reconciled by the media-operator |
+| Configuration | `TdarrConfig` CR, reconciled by Arrchitect |
 
 ### Storage
 
@@ -88,7 +88,7 @@ on this Intel GPU.
 |------------|---------|
 | Shared media (`media-data`) | Reads and writes the library |
 | Intel GPU node | Hardware decode for health checks and any future encode work |
-| media-operator | Reconciles libraries, flows and worker counts |
+| [Arrchitect](arrchitect.md) | Reconciles libraries, flows and worker counts |
 
 ## Upstream
 

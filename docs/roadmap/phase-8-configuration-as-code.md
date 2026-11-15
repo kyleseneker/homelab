@@ -15,7 +15,7 @@
 | Blackbox Probe resources | Reproducible HTTP/HTTPS reachability monitoring |
 | Vault + External Secrets | Shared application keys and credentials, with bootstrap exceptions |
 
-Configarr is not being adopted alongside this ownership model. Its overlapping capabilities would require a deliberate migration, not another reconciler writing the same settings. Separate-repository operator tests/releases belong to the media-operator backlog; homelab tracks the pinned contract it consumes.
+Configarr is not being adopted alongside this ownership model. Its overlapping capabilities would require a deliberate migration, not another reconciler writing the same settings. Separate-repository operator tests/releases belong to the Arrchitect backlog; homelab tracks the pinned contract it consumes.
 
 ## 8.2 Prove empty-database bootstrap
 
