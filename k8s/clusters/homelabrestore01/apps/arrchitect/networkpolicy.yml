@@ -13,20 +13,40 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/instance: restore-media-operator-pvr
+              app.kubernetes.io/instance: restore-arrchitect
       ports:
         - protocol: TCP
           port: 8989
 ---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: operator-to-prowlarr
+  namespace: restore-sonarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-prowlarr
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: restore-arrchitect
+      ports:
+        - protocol: TCP
+          port: 9696
+---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: media-operator-egress
+  name: arrchitect-egress
   namespace: restore-sonarr
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/instance: restore-media-operator-pvr
+      app.kubernetes.io/instance: restore-arrchitect
   egress:
     - toEntities:
         - kube-apiserver
@@ -47,4 +67,12 @@ spec:
       toPorts:
         - ports:
             - port: "8989"
+              protocol: TCP
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: restore-sonarr
+            app.kubernetes.io/name: restore-prowlarr
+      toPorts:
+        - ports:
+            - port: "9696"
               protocol: TCP

@@ -1,4 +1,4 @@
-apiVersion: media-operator.dev/v1alpha1
+apiVersion: arrchitect.dev/v1alpha1
 kind: JellyfinConfig
 metadata:
   name: jellyfin

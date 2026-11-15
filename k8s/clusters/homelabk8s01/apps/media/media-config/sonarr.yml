@@ -1,4 +1,4 @@
-apiVersion: media-operator.dev/v1alpha1
+apiVersion: arrchitect.dev/v1alpha1
 kind: SonarrConfig
 metadata:
   name: sonarr
@@ -52,7 +52,8 @@ spec:
           value: false
         - name: apiKey
           valueFrom:
-            name: jellyfin-credentials
-            key: api-key
+            secretKeyRef:
+              name: jellyfin-credentials
+              key: api-key
   mediaManagement:
     downloadPropersAndRepacks: doNotPrefer

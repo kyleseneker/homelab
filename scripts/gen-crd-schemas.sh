@@ -30,7 +30,7 @@ while IFS= read -r cfg; do
     echo "  FAILED to pull ${name} ${ver}" >&2; exit 1; }
   printf '%s\n' "${chart}@${ver}" >> "$work/pulled-charts"
   count=$((count+1))
-done < <(grep -rl 'chartRepo: ghcr.io/kyleseneker/media-operator' k8s/clusters/*/apps/*/config.yml | sort)
+done < <(grep -rl 'chartRepo: ghcr.io/kyleseneker/charts' k8s/clusters/*/apps/*/config.yml | sort)
 
 # Cilium's operator installs its CRDs at runtime, so no chart carries them.
 # Take them from the source at the version the cluster is installed with.
@@ -50,6 +50,7 @@ work, out = sys.argv[1], sys.argv[2]
 n = 0
 paths = glob.glob(os.path.join(work, "*", "crds", "*.yaml"))
 paths += glob.glob(os.path.join(work, "*", "crds", "*.yml"))
+paths += glob.glob(os.path.join(work, "*", "files", "crds", "*.yaml"))
 paths += glob.glob("k8s/components/gateway-api/*.yml")
 paths += glob.glob(os.path.join(os.environ["CILIUM_CRDS"], "*", "*.yaml"))
 if os.environ.get("RENDERED_MANIFESTS_DIR"):

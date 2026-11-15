@@ -9,7 +9,7 @@ spec:
     - https://github.com/kyleseneker/homelab.git
     - https://bjw-s-labs.github.io/helm-charts
     - https://charts.external-secrets.io
-    - ghcr.io/kyleseneker/media-operator
+    - ghcr.io/kyleseneker/charts
   destinations:
     - server: https://kubernetes.default.svc
       namespace: restore-*

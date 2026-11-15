@@ -1,9 +1,9 @@
-appName: restore-media-operator-indexers
+appName: restore-arrchitect
 namespace: restore-sonarr
 sourceType: helm
-chartRepo: ghcr.io/kyleseneker/media-operator
-chartName: media-operator-indexers
-chartVersion: "0.42.0"
+chartRepo: ghcr.io/kyleseneker/charts
+chartName: arrchitect
+chartVersion: "0.1.0"
 createNamespace: false
 hasResources: true
 syncOptions:
