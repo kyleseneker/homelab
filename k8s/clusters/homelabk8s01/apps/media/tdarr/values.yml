@@ -10,7 +10,7 @@ controllers:
               name: media-env
         env:
           # Tdarr 3 enables API authentication on a fresh config, and /app/configs
-          # is not persisted. The route is behind Authentik and the media-operator
+          # is not persisted. The route is behind Authentik, and Arrchitect
           # and Homepage call the API without a key.
           auth: 'false'
           serverIP: 0.0.0.0

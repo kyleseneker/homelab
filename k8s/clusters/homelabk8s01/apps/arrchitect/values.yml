@@ -1,0 +1,21 @@
+apps:
+  sonarr: true
+  radarr: true
+  lidarr: false
+  readarr: false
+  prowlarr: true
+  flaresolverr: false
+  bazarr: true
+  qbittorrent: true
+  sabnzbd: false
+  jellyfin: true
+  plex: false
+  seerr: true
+  maintainerr: false
+  tdarr: true
+  autobrr: false
+watchNamespace: media
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true

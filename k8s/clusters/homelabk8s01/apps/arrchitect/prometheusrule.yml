@@ -1,24 +1,24 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: media-operator
+  name: arrchitect
   namespace: media
   labels:
-    app.kubernetes.io/name: media-operator
+    app.kubernetes.io/name: arrchitect
 spec:
   groups:
-    - name: media-operator
+    - name: arrchitect
       rules:
-        - alert: MediaOperatorDriftNeverSettles
+        - alert: ArrchitectDriftNeverSettles
           expr: |
             sum by (app, resource_type, name) (
-              increase(media_operator_drift_corrected_total[2h])
+              increase(arrchitect_drift_corrected_total[2h])
             ) > 6
           for: 30m
           labels:
             severity: warning
           annotations:
-            summary: media-operator keeps rewriting {{ $labels.name }}
+            summary: Arrchitect keeps rewriting {{ $labels.name }}
             description: >-
               {{ $labels.app }} {{ $labels.resource_type }} {{ $labels.name }} has been
               corrected more than six times in two hours, so the write is not settling.
@@ -27,9 +27,9 @@ spec:
               they never apply, so a correction that never sticks is indistinguishable
               from a successful one without this alert. Compare the CR against the live
               value to tell the two apart.
-        - alert: MediaOperatorConfigNotSynced
+        - alert: ArrchitectConfigNotSynced
           expr: |
-            media_operator_config_synced == 0
+            arrchitect_config_synced == 0
           for: 15m
           labels:
             severity: warning

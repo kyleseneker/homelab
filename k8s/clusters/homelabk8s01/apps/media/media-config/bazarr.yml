@@ -1,4 +1,4 @@
-apiVersion: media-operator.dev/v1alpha1
+apiVersion: arrchitect.dev/v1alpha1
 kind: BazarrConfig
 metadata:
   name: bazarr
@@ -34,11 +34,16 @@ spec:
     - name: opensubtitlescom
       enabled: true
       settings:
-        username: ENV:opensubtitles-credentials:username
-        password: ENV:opensubtitles-credentials:password
         use_hash: "true"
         include_ai_translated: "false"
         include_machine_translated: "false"
+      secretSettings:
+        username:
+          name: opensubtitles-credentials
+          key: username
+        password:
+          name: opensubtitles-credentials
+          key: password
     - name: podnapisi
       enabled: true
     - name: tvsubtitles

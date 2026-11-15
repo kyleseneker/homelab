@@ -1,0 +1,28 @@
+apps:
+  sonarr: true
+  radarr: false
+  lidarr: false
+  readarr: false
+  prowlarr: true
+  flaresolverr: false
+  bazarr: false
+  qbittorrent: false
+  sabnzbd: false
+  jellyfin: false
+  plex: false
+  seerr: false
+  maintainerr: false
+  tdarr: false
+  autobrr: false
+watchNamespace: restore-sonarr
+metrics:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

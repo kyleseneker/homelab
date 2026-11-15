@@ -1,4 +1,4 @@
-apiVersion: media-operator.dev/v1alpha1
+apiVersion: arrchitect.dev/v1alpha1
 kind: TdarrConfig
 metadata:
   name: tdarr
@@ -13,10 +13,11 @@ spec:
     interval: 15m
     deletionPolicy: orphan
   workers:
-    transcodeGPU: 1
-    transcodeCPU: 1
-    healthcheckGPU: 0
-    healthcheckCPU: 1
+    - nodeName: InternalNode
+      transcodeGPU: 1
+      transcodeCPU: 1
+      healthcheckGPU: 0
+      healthcheckCPU: 1
   flows:
     - id: htpX8Ypt1
       name: 1 - Input

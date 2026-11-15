@@ -1,7 +1,0 @@
-appName: media-operator
-namespace: media
-sourceType: git
-gitPath: k8s/clusters/homelabk8s01/apps/media-operator
-createNamespace: false
-syncOptions:
-  - ServerSideApply=true

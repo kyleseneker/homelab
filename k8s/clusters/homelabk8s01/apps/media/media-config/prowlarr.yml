@@ -1,4 +1,4 @@
-apiVersion: media-operator.dev/v1alpha1
+apiVersion: arrchitect.dev/v1alpha1
 kind: ProwlarrConfig
 metadata:
   name: prowlarr
@@ -20,7 +20,7 @@ spec:
       configContract: FlareSolverrSettings
       host: http://flaresolverr.media.svc.cluster.local:8191
       requestTimeout: 60
-      tags:
+      tagLabels:
         - flaresolverr
   applications:
     - name: Sonarr
@@ -83,7 +83,7 @@ spec:
       enable: true
       appProfileName: Standard
       priority: 25
-      tags:
+      tagLabels:
         - flaresolverr
       fields:
         - name: definitionFile
@@ -96,7 +96,7 @@ spec:
       enable: true
       appProfileName: Standard
       priority: 30
-      tags:
+      tagLabels:
         - flaresolverr
       fields:
         - name: definitionFile
