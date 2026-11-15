@@ -18,8 +18,8 @@ manifests can reconstruct.
 ## Decision
 
 Reconcile application configuration with a purpose-built Kubernetes operator,
-[kyleseneker/media-operator](https://github.com/kyleseneker/media-operator), under the API
-group `media-operator.dev/v1alpha1`.
+[kyleseneker/arrchitect](https://github.com/kyleseneker/arrchitect) (Arrchitect), under the API
+group `arrchitect.dev/v1alpha1`.
 
 Configuration is declared in CRs beside the manifests that deploy the app, and a controller
 converges the app's live state toward them. Recyclarr owns quality definitions, profiles, custom
@@ -27,10 +27,10 @@ formats and naming; the operator owns application wiring and its other declared 
 
 ### Taxonomy
 
-Fifteen kinds across nine API groups -- `pvr` (Sonarr, Radarr, Lidarr, Readarr), `downloads`,
-`indexers`, `mediaservers`, `requests`, `subtitles`, `transcode`, `automation`, `curation`.
-Each group ships as its own chart and manager, so an application that is not deployed costs
-nothing to run.
+Fifteen kinds in one API group, one per application: Sonarr, Radarr, Lidarr, Readarr,
+Prowlarr, FlareSolverr, Bazarr, qBittorrent, SABnzbd, Jellyfin, Plex, Seerr, Maintainerr, Tdarr
+and Autobrr. One chart and manager run them all, and the chart's `apps` values turn off the
+applications that are not deployed, along with their CRDs, RBAC and controllers.
 
 Indexers are declared only against Prowlarr. Prowlarr's own sync fans them into Sonarr and
 Radarr, which removes the largest ordering hazard between instances.
@@ -46,8 +46,8 @@ Radarr, which removes the largest ordering hazard between instances.
 - **Unreachable is not an error.** A health check gates every reconcile; an unreachable app
   requeues without returning an error, which keeps it out of exponential backoff while an
   application restarts.
-- **Finalizers with a per-CR `deletionPolicy`** (`orphan` or `delete`) and a give-up path, so
-  a dead application cannot wedge `kubectl delete` or an ArgoCD prune.
+- **A per-CR `deletionPolicy`** (`orphan` or `delete`). Only `delete` adds a finalizer, and it
+  has a give-up path, so a dead application cannot wedge `kubectl delete` or an ArgoCD prune.
 - **`driftPolicy: observe`** records drift without writing, so a CR can be adopted against a
   live instance and measured before the operator is given write authority.
 
