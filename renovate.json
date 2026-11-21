@@ -200,6 +200,16 @@
       "allowedVersions": "<0.12.0"
     },
     {
+      "description": "Kyverno 1.20.0 (chart 3.10.0) rewrites the PolicyExceptions' controller paths twice and denies their workloads (kyverno/kyverno#18675); the fix ships in 1.20.1",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "kyverno"
+      ],
+      "allowedVersions": "!/^3\\.10\\.0$/"
+    },
+    {
       "description": "kube-prometheus-stack and Loki majors can carry migrations; open one PR per major so they are taken in order",
       "matchDatasources": [
         "helm"
