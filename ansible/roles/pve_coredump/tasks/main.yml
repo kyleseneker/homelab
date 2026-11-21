@@ -1,0 +1,5 @@
+---
+- name: Keep crash dumps for later analysis
+  ansible.builtin.apt:
+    name: systemd-coredump
+    state: present
