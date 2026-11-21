@@ -69,6 +69,25 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 
 **Available:** 2x 10G SFP+, PCIe x16 slot, 2x M.2 NVMe slots.
 
+#### Known Issues
+
+**Crashes on CPU core 12 around boot and shutdown (open).** Host processes intermittently segfault, or report Perl syntax errors in files that are intact on disk. Every recorded case ran on logical CPU 6 or 7, the two threads of physical core 12:
+
+| Date | Event | CPU |
+|------|-------|-----|
+| 2026-08-05 | Kernel oops in `ksmd` (the reason for the `pve_disable_ksm` role) | 7 |
+| 2026-08-07 boot | `pve-ha-lrm`: syntax error in `PVE/API2/Qemu.pm` | not logged |
+| 2026-11-21 shutdown | `qm`, `pveproxy`, `pvedaemon` segfaults; a syntax error in `PVE/JSONSchema.pm` | 6, 7 |
+| 2026-11-21 15:48 boot | `pve-ha-lrm` and `pve-startall-delay` segfaults | 6 |
+| 2026-11-21 16:21 boot | `pvesh startall` and repeated `qm` segfaults; a syntax error in `PVE/UPID.pm`. The VMs did not start | 6 |
+
+- **Evidence:** most segfaults share one signature (`perl` offset `0x4b01b`, fault address `0x20411`). Package checksums match, and nothing pins work to these CPUs. Core 12 is one of the two favored cores, which boost to 5.4 GHz. None of the crashes ran on the other favored core, core 8.
+- **Not reproduced:** pinned Perl module loads, xz round trips and a 90-second full-chip load (core 12 held at 4.9 GHz or below) all ran clean.
+- **Ruled out:** BIOS 1.27 is the latest Minisforum release. Microcode 0x6134 (`intel-microcode` 3.20260925) did not stop the crashes.
+- **Mitigation:** `pve_guests_retry` retries guest autostart when it fails.
+- **Evidence capture:** `pve_coredump` installs `systemd-coredump`. After a crash, `coredumpctl list` shows it and `coredumpctl info <pid>` shows the registers and backtrace.
+- **Leading explanation:** a marginal core rather than a software bug, but this is unproven. A core dump from the next crash would settle it.
+
 #### VM Allocation
 
 | Node | Role | vCPU | RAM | PCI Passthrough |

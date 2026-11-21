@@ -10,6 +10,10 @@
     - pve_iommu
     - role: pve_serial_console
       tags: [pve_serial_console]
+    - role: pve_guests_retry
+      tags: [pve_guests_retry]
+    - role: pve_coredump
+      tags: [pve_coredump]
     - role: pve_disable_wireless
       tags: [pve_disable_wireless]
     - role: pve_disable_ksm
