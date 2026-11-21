@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: ProwlarrConfig
+kind: Prowlarr
 metadata:
   name: prowlarr
   namespace: restore-sonarr
@@ -10,7 +10,7 @@ spec:
       name: restore-prowlarr-api-key
       key: api-key
   reconcile:
-    interval: 1m
+    intervalSeconds: 60
     deletionPolicy: orphan
   applications:
     - name: Sonarr

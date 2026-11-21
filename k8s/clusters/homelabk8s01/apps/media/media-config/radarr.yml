@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: RadarrConfig
+kind: Radarr
 metadata:
   name: radarr
   namespace: media
@@ -10,25 +10,10 @@ spec:
       name: media-api-keys
       key: radarr-api-key
   reconcile:
-    interval: 5m
+    intervalSeconds: 300
     deletionPolicy: orphan
   rootFolders:
     - path: /data/media/movies
-  downloadClients:
-    - name: qBittorrent
-      implementation: QBittorrent
-      configContract: QBittorrentSettings
-      protocol: torrent
-      host: downloads.media.svc.cluster.local
-      port: 8080
-      category: movies
-      enable: true
-      usernameSecretRef:
-        name: qbittorrent-credentials
-        key: username
-      passwordSecretRef:
-        name: qbittorrent-credentials
-        key: password
   downloadClientConfig:
     enableCompletedDownloadHandling: true
     autoRedownloadFailed: true
@@ -57,3 +42,27 @@ spec:
               key: api-key
   mediaManagement:
     downloadPropersAndRepacks: doNotPrefer
+---
+apiVersion: arrchitect.dev/v1alpha1
+kind: RadarrDownloadClient
+metadata:
+  name: radarr-qbittorrent
+  namespace: media
+spec:
+  radarrRef:
+    name: radarr
+  deletionPolicy: orphan
+  name: qBittorrent
+  implementation: QBittorrent
+  configContract: QBittorrentSettings
+  protocol: torrent
+  host: downloads.media.svc.cluster.local
+  port: 8080
+  category: movies
+  enable: true
+  usernameSecretRef:
+    name: qbittorrent-credentials
+    key: username
+  passwordSecretRef:
+    name: qbittorrent-credentials
+    key: password

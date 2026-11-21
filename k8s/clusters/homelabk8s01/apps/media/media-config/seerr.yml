@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: SeerrConfig
+kind: Seerr
 metadata:
   name: seerr
   namespace: media
@@ -10,7 +10,7 @@ spec:
       name: seerr-api-key
       key: api-key
   reconcile:
-    interval: 15m
+    intervalSeconds: 900
     deletionPolicy: orphan
   jellyfinAuth:
     hostname: jellyfin.media.svc.cluster.local

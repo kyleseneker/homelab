@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: SonarrConfig
+kind: Sonarr
 metadata:
   name: sonarr
   namespace: restore-sonarr
@@ -10,7 +10,7 @@ spec:
       name: restore-sonarr-api-key
       key: api-key
   reconcile:
-    interval: 1m
+    intervalSeconds: 60
     deletionPolicy: orphan
   # This writable lab-only directory contains no production media.
   rootFolders:
