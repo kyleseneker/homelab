@@ -14,7 +14,7 @@ The controls are gated so that nothing changes until a phase turns it on:
 
 ## Before you start
 
-- **A way back if the host loses its network.** Intel AMT is not connected yet ([Phase 3.4](../roadmap/phase-3-network.md#34-complete-intel-amt-connectivity)), and Phase 4 changes the host's only data path. Either be at the console, or use Phase 4's revert timer and stay where you can reach the MS-01.
+- **A way back if the host loses its network.** Intel AMT answers at `192.168.99.5`, but its power control and console access are untested ([Phase 3.4](../roadmap/phase-3-network.md#34-complete-intel-amt-connectivity)), and Phase 4 changes the host's only data path. Either be at the console, or use Phase 4's revert timer and stay where you can reach the MS-01.
 - The cluster is healthy. Every node is Ready, Argo applications are Synced and Healthy, and no alerts are firing other than Watchdog.
 - Commands that change the host or production nodes run in manual mode.
 - Record the baseline:

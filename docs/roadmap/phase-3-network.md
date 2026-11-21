@@ -62,10 +62,11 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 
 ## 3.4 Complete Intel AMT Connectivity
 
-- [ ] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
-- [ ] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
+- [x] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
+- [x] Keep `nic1` up on the host so the igc driver does not power its PHY down
+- [x] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
 - [ ] Test remote power control and console access with the host OS unavailable
-- [ ] Update the hardware and port inventory
+- [x] Update the hardware and port inventory
 
 AMT is configured in firmware. This completes the physical management connection described in [ADR-017](../decisions/017-intel-amt-oob-management.md).
 

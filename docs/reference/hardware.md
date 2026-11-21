@@ -65,9 +65,7 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | Wireless | Intel AX211 (Wi-Fi 6E + Bluetooth 5.2) -- unused |
 | Management | Intel AMT (vPro Enterprise) -- static 192.168.99.5 on Management VLAN 99, TLS only (ADR-017) |
 
-**In use:** nic0 (2.5G RJ45) to USW-16-PoE for the Proxmox host bridge. NVMe slot 1. iGPU via VFIO passthrough.
-
-**Configured but not cabled:** nic1 carries Intel AMT and is activated in firmware, but is patched into a switch port that is not on VLAN 99, so it has no link and AMT is unreachable. See gap P6 in the [assessment](../roadmap/assessment.md).
+**In use:** nic0 (2.5G RJ45) to USW-16-PoE port 2 for the Proxmox host bridge. nic1 (2.5G RJ45) to port 4 for Intel AMT; the host keeps it up with no address. NVMe slot 1. iGPU via VFIO passthrough.
 
 **Available:** 2x 10G SFP+, PCIe x16 slot, 2x M.2 NVMe slots.
 
