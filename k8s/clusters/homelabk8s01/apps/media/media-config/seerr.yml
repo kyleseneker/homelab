@@ -13,15 +13,9 @@ spec:
     intervalSeconds: 900
     deletionPolicy: orphan
   jellyfinAuth:
-    hostname: jellyfin.media.svc.cluster.local
-    port: 8096
-    useSsl: false
-    usernameSecretRef:
-      name: jellyfin-credentials
-      key: username
-    passwordSecretRef:
-      name: jellyfin-credentials
-      key: password
+    appRef:
+      kind: Jellyfin
+      name: jellyfin
   main:
     applicationTitle: Seerr
     applicationUrl: https://seerr.home.seneker.io
@@ -29,12 +23,9 @@ spec:
     mediaServerLogin: true
   sonarr:
     - name: Sonarr
-      hostname: sonarr.media.svc.cluster.local
-      port: 8989
-      useSsl: false
-      apiKeySecretRef:
-        name: media-api-keys
-        key: sonarr-api-key
+      appRef:
+        kind: Sonarr
+        name: sonarr
       activeProfileName: WEB-1080p
       activeDirectory: /data/media/tv
       enableSeasonFolders: true
@@ -42,12 +33,9 @@ spec:
       isDefault: true
   radarr:
     - name: Radarr
-      hostname: radarr.media.svc.cluster.local
-      port: 7878
-      useSsl: false
-      apiKeySecretRef:
-        name: media-api-keys
-        key: radarr-api-key
+      appRef:
+        kind: Radarr
+        name: radarr
       activeProfileName: HD Bluray + WEB
       activeDirectory: /data/media/movies
       minimumAvailability: released
