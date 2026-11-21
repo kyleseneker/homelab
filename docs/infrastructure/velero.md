@@ -8,7 +8,7 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 |-------|-------|
 | Chart | `velero` |
 | Repository | <https://vmware-tanzu.github.io/helm-charts> |
-| Version | 12.2.2 |
+| Version | 12.2.5 |
 | Namespace | `backups` (CreateNamespace=true) |
 
 ## Key Configuration

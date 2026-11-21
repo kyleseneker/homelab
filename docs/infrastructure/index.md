@@ -16,7 +16,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | NFS Provisioner | nfs-provisioner | helm | nfs-subdir-external-provisioner | 4.0.18 |
 | Local-Path Provisioner | local-path-storage | kustomize | (plain manifests) | -- |
 | Garage | backups | helm | app-template | 5.3.0 |
-| Velero | backups | helm | velero | 12.2.2 |
+| Velero | backups | helm | velero | 12.2.5 |
 | etcd Backup | backups | git | (CronJob) | -- |
 | Kyverno | kyverno | helm | kyverno | 3.9.2 |
 | Kyverno Policies | -- | git | (plain manifests) | -- |
@@ -28,12 +28,12 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Alloy | monitoring | helm | alloy | 1.15.0 |
 | Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 11.20.2 |
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
-| SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.0 |
+| SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.1 |
 | Authentik | auth | helm | authentik | 2026.8.6 |
-| Reloader | kube-system | helm | reloader | 2.2.19 |
+| Reloader | kube-system | helm | reloader | 2.2.20 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |
 | VPA | kube-system | helm | vertical-pod-autoscaler | 0.11.0 |
-| Goldilocks | goldilocks | helm | goldilocks | 11.2.0 |
+| Goldilocks | goldilocks | helm | goldilocks | 11.2.1 |
 
 ## Deployment Ordering
 
