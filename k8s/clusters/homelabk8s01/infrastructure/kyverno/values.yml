@@ -53,6 +53,17 @@ backgroundController:
     limits:
       memory: 192Mi
 cleanupController:
+  rbac:
+    clusterRole:
+      extraResources:
+        - apiGroups:
+            - ""
+          resources:
+            - pods
+          verbs:
+            - delete
+            - list
+            - watch
   resources:
     requests:
       cpu: 50m

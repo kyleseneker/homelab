@@ -1,0 +1,28 @@
+apiVersion: policies.kyverno.io/v1
+kind: DeletingPolicy
+metadata:
+  name: cleanup-rejected-pods
+  annotations:
+    policies.kyverno.io/title: Clean Up Rejected Pods
+    policies.kyverno.io/category: Other
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/description: >-
+      Deletes pods the kubelet rejected at admission. After a node restart, pods that request a
+      device-plugin resource such as gpu.intel.com/i915 can be re-admitted before the plugin
+      registers again; they fail with UnexpectedAdmissionError while their replacements run.
+      Kubernetes keeps failed pods until 12,500 accumulate, so the records otherwise stay.
+spec:
+  schedule: "0 * * * *"
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        resources:
+          - pods
+  conditions:
+    - name: rejected-at-admission
+      expression: >-
+        object.status.?phase.orValue('') == 'Failed' &&
+        object.status.?reason.orValue('') == 'UnexpectedAdmissionError'
