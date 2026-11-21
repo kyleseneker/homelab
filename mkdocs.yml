@@ -122,6 +122,7 @@ nav:
       - Adding App to SSO: runbooks/adding-app-to-sso.md
       - Authentik Emergency Bypass: runbooks/authentik-emergency-bypass.md
       - Hypervisor Network Isolation: runbooks/hypervisor-network-isolation.md
+      - Intel AMT Console: runbooks/intel-amt-console.md
   - Decisions:
       - kubeadm Bootstrap: decisions/001-kubeadm-cluster-bootstrap.md
       - Cilium as CNI: decisions/002-cilium-cni.md

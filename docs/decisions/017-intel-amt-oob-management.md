@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. Amended 2026-11-21: once cabled, `nic1` still had no link, because Proxmox left the port down and the igc driver powers the PHY down with it. The host now keeps `nic1` up, with no address and IPv6 disabled, through the `pve_network` Ansible role. Serial-over-LAN and KVM use the TLS redirection port 16995, not port 664 as first recorded.
+Accepted. Amended 2026-11-21: once cabled, `nic1` still had no link, because Proxmox left the port down and the igc driver powers the PHY down with it. The host now keeps `nic1` up, with no address and IPv6 disabled, through the `pve_network` Ansible role. Serial-over-LAN and KVM use the TLS redirection port 16995, not port 664 as first recorded. KVM captures the integrated GPU, which is passed through to a Kubernetes VM, so it shows firmware, GRUB and early boot but never a host shell. Serial-over-LAN is the host console: the `pve_serial_console` role sends the kernel console to the AMT serial port (`ttyS4`) and runs a login prompt on it. The redirection port, Serial-over-LAN and KVM were enabled from MeshCommander, and on 2026-11-21 both consoles worked from the workstation, KVM without a consent code. The [console runbook](../runbooks/intel-amt-console.md) covers access.
 
 ## Context
 
@@ -89,12 +89,14 @@ Notes:
 2. From the workstation, browse to `https://192.168.99.5:16993` and accept the self-signed certificate
 3. Log in with username `admin` and the MEBx password
 4. Test a power action (e.g., graceful restart) to confirm remote control works
-5. Install MeshCommander for KVM and Serial-over-LAN access. Port 16995 refused connections on 2026-11-21 while 16993 and 664 accepted them, so enable the redirection port in MeshCommander before testing either
+5. Start MeshCommander as described in the [console runbook](../runbooks/intel-amt-console.md). Enable the redirection port, Serial-over-LAN and KVM; port 16995 stays closed until the redirection port is on
 
 ### Access Methods
 
 - **Web UI**: `https://192.168.99.5:16993` -- browser-based management console for power control and settings
-- **MeshCommander**: Open-source desktop client for KVM, Serial-over-LAN, and power control
+- **MeshCommander**: Open-source client for KVM, Serial-over-LAN, and power control, run in a container per the [console runbook](../runbooks/intel-amt-console.md). The web UI cannot open either console
+- **Serial-over-LAN**: The host console, with kernel messages and a login prompt on `ttyS4`
+- **KVM**: Firmware setup, GRUB and early boot only, because the integrated GPU belongs to a VM once the host boots
 - **Power actions**: On, off, hard reset, graceful shutdown via web UI or MeshCommander
 
 ### Network Security

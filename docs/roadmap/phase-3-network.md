@@ -64,8 +64,10 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 
 - [x] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
 - [x] Keep `nic1` up on the host so the igc driver does not power its PHY down
+- [x] Send the host console to AMT Serial-over-LAN (`ttyS4`), since KVM loses the integrated GPU to a VM after boot
 - [x] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
-- [ ] Test remote power control and console access with the host OS unavailable
+- [x] Open Serial-over-LAN and KVM sessions from the workstation ([console runbook](../runbooks/intel-amt-console.md))
+- [ ] Shut the host down and power it on through AMT; confirm GRUB on the remote desktop, boot messages on the terminal, and AMT reachable after Proxmox starts
 - [x] Update the hardware and port inventory
 
 AMT is configured in firmware. This completes the physical management connection described in [ADR-017](../decisions/017-intel-amt-oob-management.md).

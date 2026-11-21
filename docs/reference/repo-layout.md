@@ -62,6 +62,7 @@ homelab/
 │   │   ├── pve_iommu/               # IOMMU/VFIO setup
 │   │   ├── pve_pci_mapping/         # PCI device mapping
 │   │   ├── pve_network/             # Bridges and VLAN subinterfaces
+│   │   ├── pve_serial_console/      # Host console on AMT Serial-over-LAN
 │   │   ├── pve_restore_lab/         # Internal bridge, firewall and lab template
 │   │   ├── pve_ups/                 # NUT server for the CyberPower UPS
 │   │   ├── pve_node_exporter/       # Host node-exporter and NVMe collector
