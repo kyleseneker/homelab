@@ -4,6 +4,12 @@ iface lo inet loopback
 auto {{ pve_network_physical_port }}
 iface {{ pve_network_physical_port }} inet manual
 
+{% if pve_network_amt_port %}
+auto {{ pve_network_amt_port }}
+iface {{ pve_network_amt_port }} inet manual
+	pre-up sysctl -w net.ipv6.conf.{{ pve_network_amt_port }}.disable_ipv6=1
+
+{% endif %}
 auto {{ pve_network_bridge }}
 iface {{ pve_network_bridge }} inet static
 	address {{ pve_network_homelab_address }}

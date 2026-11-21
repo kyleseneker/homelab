@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-11-21: once cabled, `nic1` still had no link, because Proxmox left the port down and the igc driver powers the PHY down with it. The host now keeps `nic1` up, with no address and IPv6 disabled, through the `pve_network` Ansible role. Serial-over-LAN and KVM use the TLS redirection port 16995, not port 664 as first recorded.
 
 ## Context
 
@@ -29,16 +29,18 @@ AMT binds to the I226-LM (nic1), not the I226-V (nic0). The "LM" variant include
 
 Use a dedicated cable and switch port for the AMT-capable nic1, separating management connectivity from the host's Linux bridge.
 
+The host OS must keep nic1 administratively up. While Linux has the port down, the igc driver powers the PHY down, so AMT has no link. The `pve_network` role configures nic1 as `inet manual` with IPv6 disabled and leaves it out of every bridge, so the host has no address on it and AMT is the only endpoint on the port.
+
 ### AMT Configuration
 
 | Setting | Value |
 |---------|-------|
 | NIC | nic1 (I226-LM), dedicated cable to switch |
 | Network | Static IP 192.168.99.5/24, gateway 192.168.99.1 |
-| Transport | TLS only (CSME 16.x enforces this; ports 16993, 16995, 664) |
+| Transport | TLS only (CSME 16.x enforces this): 16993 for WS-Management and the web UI, 16995 for redirection, 664 for secure ASF RMCP |
 | Authentication | Digest authentication with a strong, unique password |
-| KVM | Enabled (port 16995) |
-| Serial-over-LAN | Enabled (port 664) |
+| KVM | Enabled (redirection port 16995) |
+| Serial-over-LAN | Enabled (redirection port 16995) |
 | Storage Redirection | Disabled (not needed for normal operations) |
 | User Consent | None (operator is always the homelab admin) |
 
@@ -87,7 +89,7 @@ Notes:
 2. From the workstation, browse to `https://192.168.99.5:16993` and accept the self-signed certificate
 3. Log in with username `admin` and the MEBx password
 4. Test a power action (e.g., graceful restart) to confirm remote control works
-5. Install MeshCommander for KVM and Serial-over-LAN access
+5. Install MeshCommander for KVM and Serial-over-LAN access. Port 16995 refused connections on 2026-11-21 while 16993 and 664 accepted them, so enable the redirection port in MeshCommander before testing either
 
 ### Access Methods
 
