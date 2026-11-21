@@ -1,0 +1,19 @@
+---
+- name: Send the kernel console to the serial port
+  ansible.builtin.copy:
+    dest: /etc/default/grub.d/serial-console.cfg
+    content: |
+      GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX console=tty0 console={{ pve_serial_console_device }},{{ pve_serial_console_speed }}n8"
+    mode: "0644"
+  register: pve_serial_console_grub_updated
+
+- name: Update GRUB # noqa: no-handler
+  ansible.builtin.command: update-grub
+  changed_when: true
+  when: pve_serial_console_grub_updated.changed
+
+- name: Run a login prompt on the serial port
+  ansible.builtin.systemd_service:
+    name: "serial-getty@{{ pve_serial_console_device }}.service"
+    enabled: true
+    state: started

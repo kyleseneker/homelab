@@ -8,6 +8,8 @@
       tags: [pve_firewall]
     - pve_repos
     - pve_iommu
+    - role: pve_serial_console
+      tags: [pve_serial_console]
     - role: pve_disable_wireless
       tags: [pve_disable_wireless]
     - role: pve_disable_ksm

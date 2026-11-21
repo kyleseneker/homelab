@@ -1,0 +1,4 @@
+---
+# ADR-017: ttyS4 is the Intel AMT Serial-over-LAN controller (PCI 00:16.3).
+pve_serial_console_device: ttyS4
+pve_serial_console_speed: 115200
