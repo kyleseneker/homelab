@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: JellyfinConfig
+kind: Jellyfin
 metadata:
   name: jellyfin
   namespace: media
@@ -7,7 +7,7 @@ spec:
   connection:
     url: http://jellyfin.media.svc.cluster.local:8096
   reconcile:
-    interval: 15m
+    intervalSeconds: 900
     deletionPolicy: orphan
   adminUser:
     usernameSecretRef:

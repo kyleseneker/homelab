@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: TdarrConfig
+kind: Tdarr
 metadata:
   name: tdarr
   namespace: media
@@ -10,7 +10,7 @@ spec:
       name: tdarr-api-key
       key: api-key
   reconcile:
-    interval: 15m
+    intervalSeconds: 900
     deletionPolicy: orphan
   workers:
     - nodeName: InternalNode

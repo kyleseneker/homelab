@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: BazarrConfig
+kind: Bazarr
 metadata:
   name: bazarr
   namespace: media
@@ -10,7 +10,7 @@ spec:
       name: media-api-keys
       key: bazarr-api-key
   reconcile:
-    interval: 15m
+    intervalSeconds: 900
     deletionPolicy: orphan
   general:
     useSonarr: true
@@ -34,16 +34,22 @@ spec:
     - name: opensubtitlescom
       enabled: true
       settings:
-        use_hash: "true"
-        include_ai_translated: "false"
-        include_machine_translated: "false"
-      secretSettings:
-        username:
-          name: opensubtitles-credentials
-          key: username
-        password:
-          name: opensubtitles-credentials
-          key: password
+        - name: use_hash
+          value: "true"
+        - name: include_ai_translated
+          value: "false"
+        - name: include_machine_translated
+          value: "false"
+        - name: username
+          valueFrom:
+            secretKeyRef:
+              name: opensubtitles-credentials
+              key: username
+        - name: password
+          valueFrom:
+            secretKeyRef:
+              name: opensubtitles-credentials
+              key: password
     - name: podnapisi
       enabled: true
     - name: tvsubtitles

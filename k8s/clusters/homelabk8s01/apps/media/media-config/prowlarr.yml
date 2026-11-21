@@ -1,5 +1,5 @@
 apiVersion: arrchitect.dev/v1alpha1
-kind: ProwlarrConfig
+kind: Prowlarr
 metadata:
   name: prowlarr
   namespace: media
@@ -10,7 +10,7 @@ spec:
       name: media-api-keys
       key: prowlarr-api-key
   reconcile:
-    interval: 5m
+    intervalSeconds: 300
     deletionPolicy: orphan
   tags:
     - label: flaresolverr

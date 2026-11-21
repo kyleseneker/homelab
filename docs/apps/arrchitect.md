@@ -4,20 +4,20 @@ Arrchitect reconciles eight media application configurations from Git. It manage
 
 | Custom resource | Application |
 |-----------------|-------------|
-| SonarrConfig | Sonarr |
-| RadarrConfig | Radarr |
-| ProwlarrConfig | Prowlarr |
-| QBittorrentConfig | qBittorrent |
-| JellyfinConfig | Jellyfin |
-| SeerrConfig | Seerr |
-| BazarrConfig | Bazarr |
-| TdarrConfig | Tdarr |
+| Sonarr, SonarrDownloadClient | Sonarr |
+| Radarr, RadarrDownloadClient | Radarr |
+| Prowlarr | Prowlarr |
+| QBittorrent | qBittorrent |
+| Jellyfin | Jellyfin |
+| Seerr | Seerr |
+| Bazarr | Bazarr |
+| Tdarr | Tdarr |
 
 The `arrchitect` Application installs the `arrchitect` chart from `ghcr.io/kyleseneker/charts` at the version pinned in its `config.yml`. Its `values.yml` turns on only the eight applications above, so the chart installs only their CRDs and RBAC. The operator watches `media`, with metrics and a ServiceMonitor enabled. The API group is `arrchitect.dev/v1alpha1`, and `kubectl -n media get arrchitect` lists every resource with its `Ready` and `Synced` conditions. Custom resources live under `apps/media/media-config/` and deploy as the `media-config` Application. The `arrchitect` Application also holds the PrometheusRule (`ArrchitectConfigNotSynced`, `ArrchitectDriftNeverSettles`).
 
 ## Ownership and reconciliation
 
-Each resource declares its service endpoint, credential Secret references, reconciliation interval, and `deletionPolicy: orphan`. Removing the CR leaves application settings intact. Prowlarr owns indexer sync to Sonarr/Radarr; Recyclarr owns quality profiles and custom-format scores. Avoid managing the same settings through multiple controllers or manual edits.
+Each application's resource declares its service endpoint, credential Secret references, `intervalSeconds`, and `deletionPolicy: orphan`. Sonarr's and Radarr's qBittorrent download clients are `SonarrDownloadClient` and `RadarrDownloadClient` resources that name their application and also set `deletionPolicy: orphan`, overriding the `delete` default. Removing the CR leaves application settings intact. Prowlarr owns indexer sync to Sonarr/Radarr; Recyclarr owns quality profiles and custom-format scores. Avoid managing the same settings through multiple controllers or manual edits.
 
 Application APIs must be reachable and credentials valid before reconciliation succeeds. Inspect CR status and operator logs for failed reconciliation, including HTTP 401s. `make media-keys-adopt` transfers generated keys into Vault at `homelab/apps/media`; ESO then reconciles `media-api-keys`. Jellyfin, qBittorrent, Seerr, Tdarr, and provider credentials have their own Secret references. qBittorrent clients authenticate even from the pod network.
 
@@ -25,7 +25,7 @@ All declared resources keep `deletionPolicy: orphan` and the default enforcement
 
 ## Cold-start gaps
 
-The repository does not yet demonstrate a fully unattended rebuild. Generated API keys, initial account setup, and restored database state must agree with Vault. Run the adoption step after application initialization or restore, then verify all eight CRs become ready.
+The repository does not yet demonstrate a fully unattended rebuild. Generated API keys, initial account setup, and restored database state must agree with Vault. Run the adoption step after application initialization or restore, then verify every resource becomes ready.
 
 Seerr declares Sonarr's `WEB-1080p` and Radarr's `HD Bluray + WEB` profiles by name. The operator resolves each name against the application's quality-profile API before writing the connection. Run Recyclarr first so the profiles exist. Missing or ambiguous names and API failures leave the existing connection intact and report a reconciliation failure.
 
