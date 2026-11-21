@@ -55,18 +55,12 @@ spec:
     - name: tvsubtitles
       enabled: true
   sonarrConnection:
-    host: sonarr.media.svc.cluster.local
-    port: 8989
-    ssl: false
-    apiKeySecretRef:
-      name: media-api-keys
-      key: sonarr-api-key
+    appRef:
+      kind: Sonarr
+      name: sonarr
     onlyMonitored: false
   radarrConnection:
-    host: radarr.media.svc.cluster.local
-    port: 7878
-    ssl: false
-    apiKeySecretRef:
-      name: media-api-keys
-      key: radarr-api-key
+    appRef:
+      kind: Radarr
+      name: radarr
     onlyMonitored: false

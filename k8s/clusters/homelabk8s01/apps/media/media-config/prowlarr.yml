@@ -24,14 +24,10 @@ spec:
         - flaresolverr
   applications:
     - name: Sonarr
-      implementation: Sonarr
-      configContract: SonarrSettings
+      appRef:
+        kind: Sonarr
+        name: sonarr
       syncLevel: fullSync
-      prowlarrUrl: http://prowlarr.media.svc.cluster.local:9696
-      baseUrl: http://sonarr.media.svc.cluster.local:8989
-      apiKeySecretRef:
-        name: media-api-keys
-        key: sonarr-api-key
       syncCategories: [5000, 5010, 5020, 5030, 5040, 5045, 5050]
     - name: Radarr
       implementation: Radarr

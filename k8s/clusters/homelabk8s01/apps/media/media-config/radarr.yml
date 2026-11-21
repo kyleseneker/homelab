@@ -53,16 +53,8 @@ spec:
     name: radarr
   deletionPolicy: orphan
   name: qBittorrent
-  implementation: QBittorrent
-  configContract: QBittorrentSettings
-  protocol: torrent
-  host: downloads.media.svc.cluster.local
-  port: 8080
+  appRef:
+    kind: QBittorrent
+    name: qbittorrent
   category: movies
   enable: true
-  usernameSecretRef:
-    name: qbittorrent-credentials
-    key: username
-  passwordSecretRef:
-    name: qbittorrent-credentials
-    key: password
