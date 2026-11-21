@@ -49,7 +49,7 @@ The host OS must keep nic1 administratively up. While Linux has the port down, t
 Two switch ports are required for the MS-01:
 
 1. **nic0 port** (Proxmox host): Native VLAN = Homelab (10), tagged VLAN = Management (99).
-2. **nic1 port** (AMT): Access port on Management VLAN (99). No trunking needed -- AMT sends only untagged traffic.
+2. **nic1 port** (AMT): Access port on Management VLAN (99), with tagged VLAN management set to Block All. AMT sends only untagged traffic, and blocking tagged frames keeps the host from reaching other VLANs through this port.
 
 ### MEBx Setup Steps
 

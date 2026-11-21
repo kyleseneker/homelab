@@ -80,7 +80,7 @@ USW-16-PoE, from the switch MAC forwarding table and port configuration:
 |------|--------|------|
 | 1 | Uplink to Dream Router 7 | Trunk |
 | 2 | MS-01 `nic0` | Native Homelab (10), tagged Management (99) and IoT (20); Default excluded |
-| 4 | MS-01 `nic1` (Intel AMT) | Native Management (99) |
+| 4 | MS-01 `nic1` (Intel AMT) | Native Management (99); tagged VLANs blocked |
 | 5 | USP PDU Pro | Management (99) |
 | 7 | UNAS Pro | Default (1) |
 
