@@ -30,11 +30,26 @@ results:
       - node-exporter
     kind: Pod
     result: pass
+  - policy: disallow-host-namespaces
+    resources:
+      - node-exporter-daemonset
+    kind: DaemonSet
+    result: pass
   - policy: disallow-host-path
     resources:
       - deploy-host-path
     kind: Deployment
     result: fail
+  - policy: disallow-host-path
+    resources:
+      - jellyfin
+    kind: Deployment
+    result: pass
+  - policy: disallow-host-path
+    resources:
+      - node-exporter-daemonset
+    kind: DaemonSet
+    result: pass
   - policy: disallow-host-path
     resources:
       - host-path-etc
@@ -74,6 +89,11 @@ results:
       - container-port-only
       - node-exporter
     kind: Pod
+    result: pass
+  - policy: disallow-host-ports
+    resources:
+      - node-exporter-daemonset
+    kind: DaemonSet
     result: pass
   - policy: disallow-privileged-containers
     resources:
