@@ -63,6 +63,8 @@ postgresql:
       enabled: true
       storageClass: nfs-client
       size: 5Gi
+    livenessProbe:
+      failureThreshold: 60
     resources:
       requests:
         cpu: 50m
