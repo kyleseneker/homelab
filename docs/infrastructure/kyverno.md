@@ -22,7 +22,7 @@ Kyverno is a Kubernetes-native policy engine that validates, mutates, and genera
 
 ## Policies
 
-Policies are deployed as `ValidatingPolicy` resources (`policies.kyverno.io/v1`) via a separate ArgoCD Application (`kyverno-policies`). All policies use `validationActions: [Deny]` with `failurePolicy: Fail` -- non-compliant pods are rejected at admission time, and the webhook fails closed.
+Admission policies are deployed as `ValidatingPolicy` resources (`policies.kyverno.io/v1`) via a separate ArgoCD Application (`kyverno-policies`), which also holds the [cleanup policy](#cleanup). All admission policies use `validationActions: [Deny]` with `failurePolicy: Fail` -- non-compliant pods are rejected at admission time, and the webhook fails closed.
 
 Each policy autogenerates rules for DaemonSets, Deployments, Jobs, CronJobs, ReplicaSets, ReplicationControllers and StatefulSets, so a non-compliant controller is rejected before it creates Pods. Exact namespace exclusions use `matchConstraints.namespaceSelector`; `cilium-test-*` is matched through `namespaceObject`, because autogen rewrites `object.metadata` for controllers. Unlike the legacy `ClusterPolicy`, which allowed updates to objects that already violated it, a ValidatingPolicy denies those updates too: fix existing violations before tightening a policy. Kyverno 1.19 deprecated `ClusterPolicy`; these policies replaced the original five on 2026-10-31 after running beside them in Audit mode with identical results on every workload.
 
@@ -37,6 +37,10 @@ Each policy autogenerates rules for DaemonSets, Deployments, Jobs, CronJobs, Rep
 These five policies also exclude the base system namespaces: kube-system, kyverno, argocd, and cilium-test-*.
 
 Image tags and security contexts are checked on regular, init and ephemeral containers. Resource limits apply to regular and init containers; Kubernetes does not permit resources on ephemeral containers. Namespace exclusions also exempt unrelated workloads sharing those namespaces and should be narrowed after a rendered-workload audit.
+
+### Cleanup
+
+`cleanup-rejected-pods`, a `DeletingPolicy`, deletes `Failed` pods whose reason is `UnexpectedAdmissionError` every hour. After a node-3 restart, the kubelet re-admits Jellyfin and Tdarr before the Intel GPU plugin registers `gpu.intel.com/i915` again. Those pods are rejected while their replacements start normally, and Kubernetes keeps failed pods until 12,500 accumulate. The cleanup controller's cluster role gets `delete`, `list` and `watch` on pods through `cleanupController.rbac.clusterRole.extraResources`.
 
 ### Namespace Exclusions
 
@@ -115,7 +119,7 @@ Kyverno deploys four controllers:
 |------------|---------|
 | Admission Controller | Intercepts API requests and evaluates policies |
 | Background Controller | Scans existing resources against policies |
-| Cleanup Controller | Manages resource cleanup based on policy TTLs |
+| Cleanup Controller | Runs `DeletingPolicy` schedules and cleanup TTLs |
 | Reports Controller | Generates and manages policy reports |
 
 ## Upstream Documentation
