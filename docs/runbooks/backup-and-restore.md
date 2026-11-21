@@ -607,7 +607,7 @@ The dump was retrieved from S3, without reading NAS data during restoration. Rec
 
 ### Verified Application and OIDC Recovery
 
-After restoring the database, create `restore-authentik-server` in `restore-auth` with the original `AUTHENTIK_SECRET_KEY` under `secret-key`, using private process input. Apply `k8s/clusters/homelabrestore01/apps/authentik-server` with the lab kubeconfig. This is a separate deployment step: it starts the matching Authentik 2026.8.5 server and permits only lab PostgreSQL and DNS egress. The database Service is internal; server access uses a localhost-only port-forward. No worker or embedded outpost runs, and no production blueprints are mounted.
+After restoring the database, create `restore-authentik-server` in `restore-auth` with the original `AUTHENTIK_SECRET_KEY` under `secret-key`, using private process input. Apply `k8s/clusters/homelabrestore01/apps/authentik-server` with the lab kubeconfig. This is a separate deployment step: it starts an Authentik server at production's version and permits only lab PostgreSQL and DNS egress. The database Service is internal; server access uses a localhost-only port-forward. No worker or embedded outpost runs, and no production blueprints are mounted.
 
 The application recovery check passed against the S3-restored database:
 
@@ -619,6 +619,26 @@ The application recovery check passed against the S3-restored database:
 - The server could reach lab PostgreSQL; public HTTPS, lab/production APIs and NAS probes timed out.
 
 This verifies emergency administrator login and the restored provider's OIDC protocol flow with a lab callback. It does not verify ordinary password/MFA login, a running ArgoCD/Grafana client, production TLS/routes, proxy outposts, worker tasks or independently escrowed recovery credentials. The original secret key and backup credentials were still obtained from production. Keep those remaining checks separate from this successful application restore, and delete private test links, cookies and client credentials after use.
+
+### Repeat After the 2026.8 Upgrade
+
+Authentik migrates a database only from the previous release. The lab is usually off while production upgrades, so its restored database falls behind the server image. When the gap is more than one release, restore a fresh offsite dump instead of starting the server. In the lab, pause reconciliation of `restore-authentik-server`, scale it to zero, and recreate `authentik_restore` empty before running the restore above. On 2026-10-31 the lab image moved from 2026.2.1 to 2026.8.5 over a 2026.2 database. The server crash-looped until this repeat:
+
+| Evidence | Result |
+|----------|--------|
+| Offsite backup | `velero-weekly-offsite-20261115050011`, Completed |
+| Kopia snapshot | `f6db2cf3a507dc44fc7b8ef13101c1a4` in `velero/kopia/auth/` |
+| Dump completed | 2026-11-15 01:45:03 UTC |
+| S3 retrieval | 2026-11-21 18:29:10–18:29:15 UTC |
+| Restored archive | 17,824,078 bytes |
+| SHA-256 | `86cd03eb7689dc038e0b1f253313c37817165688e386ec942af566e5b9d5d9b6` |
+| Destination | Lab PostgreSQL 17.11, `authentik_restore` recreated with zero public tables |
+| Restore result | Exit 0 in a single transaction, 18:30:05–18:30:10 UTC |
+| Counts matching production | 230 tables, 3 users, 11 applications, 11 providers, 15 flows, 777 migrations |
+| Application | Authentik 2026.8.6 Ready 22 seconds after start; all 11 OIDC discovery documents returned HTTP 200 |
+| Isolation | Lab PostgreSQL reachable; public HTTPS, both APIs and NAS NFS timed out |
+
+The repository password again came from the running production cluster.
 
 ## Tdarr Native Archive Recovery
 
