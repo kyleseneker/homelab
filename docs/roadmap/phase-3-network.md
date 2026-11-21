@@ -67,10 +67,10 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 - [x] Send the host console to AMT Serial-over-LAN (`ttyS4`), since KVM loses the integrated GPU to a VM after boot
 - [x] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
 - [x] Open Serial-over-LAN and KVM sessions from the workstation ([console runbook](../runbooks/intel-amt-console.md))
-- [ ] Shut the host down and power it on through AMT; confirm GRUB on the remote desktop, boot messages on the terminal, and AMT reachable after Proxmox starts
+- [x] Shut the host down and power it on through AMT: AMT answered with the host off and after Proxmox started, the kernel console came up on `ttyS4`, and the VMs and cluster recovered (2026-11-21)
 - [x] Update the hardware and port inventory
 
-AMT is configured in firmware. This completes the physical management connection described in [ADR-017](../decisions/017-intel-amt-oob-management.md).
+This completes the out-of-band management described in [ADR-017](../decisions/017-intel-amt-oob-management.md). No one watched the remote desktop during the test boot, so confirm GRUB appears there during the next planned reboot.
 
 ## 3.5 Verify Management Isolation and Address Planning
 
@@ -110,7 +110,7 @@ AMT is configured in firmware. This completes the physical management connection
 - [ ] Remote client verification recorded
 - [x] Internal DNS needs no per-service records and the Gateway address is pinned
 - [ ] External access path chosen and implemented for Jellyfin
-- [ ] Intel AMT connected and remote management tested
+- [x] Intel AMT connected and remote management tested
 - [ ] Management reachability and pod/service/VPN address boundaries verified
 - [ ] Smart home devices on the IoT VLAN with isolation verified
 - [ ] Household services served at `home.seneker.io` with publicly trusted certificates
