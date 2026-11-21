@@ -23,7 +23,6 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 | P3 | The MS-01's 10G SFP+ ports are available; its current GbE path limits storage and inter-host transfers. | [Phase 3](phase-3-network.md): 10G switch and DAC links |
 | P4 | All three Kubernetes VMs share one Proxmox host. | [Phase 4](phase-4-compute-and-storage.md): second MS-01 and workload distribution |
 | P5 | The MS-01's PCIe slot is available for expansion. | [Phase 7](phase-7-long-term-vision.md): dedicated GPU, subject to fit, power and cooling |
-| P6 | Intel AMT is cabled to port 4 on VLAN 99, and its Serial-over-LAN and KVM consoles work from the workstation. A shutdown and power-on through AMT is untested. | Run the power test in [Phase 3](phase-3-network.md#34-complete-intel-amt-connectivity) |
 
 ## Network Layer
 
