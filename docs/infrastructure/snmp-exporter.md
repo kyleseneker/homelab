@@ -8,7 +8,7 @@ Reads the UNAS Pro's SNMPv3 agent and republishes it as Prometheus metrics: reac
 |-------|-------|
 | Chart | `prometheus-snmp-exporter` |
 | Repository | <https://prometheus-community.github.io/helm-charts> |
-| Version | 9.21.0 |
+| Version | 9.21.1 |
 | Image | `quay.io/prometheus/snmp-exporter` |
 | Namespace | `monitoring` |
 | Port | 9116 |
