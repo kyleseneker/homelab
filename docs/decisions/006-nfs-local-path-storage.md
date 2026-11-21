@@ -32,7 +32,7 @@ Use two storage provisioners, each suited to its workload:
 
 ## Consequences
 
-- NFS latency spikes can cause probe failures. Application health check timeouts must accommodate storage latency.
+- NFS latency spikes can cause probe failures. Application health check timeouts must accommodate storage latency. The UniFi router and NAS install firmware updates automatically overnight, and each reboot pauses I/O on the `hard` NFS mounts for up to about seven minutes. A liveness probe on an NFS-backed database must outlast that pause; Authentik's Postgres allows ten minutes.
 - Applications with SQLite databases use `local-path` instead of `nfs-client` for their config volumes. NFS does implement POSIX byte-range locking (NLM in NFSv3, integrated into the protocol in NFSv4), but these databases run in WAL mode, and WAL coordinates through a memory-mapped `-shm` file that is only coherent between processes on the same host — SQLite does not support WAL over a network filesystem. The Servarr projects separately warn against network storage for their databases.
 - Local-path volumes are tied to a specific worker node. If a pod reschedules to a different node, it cannot access the data.
 - Velero's Kopia file-system backup skips the `hostPath` volumes created by local-path-provisioner. Local-path data that must survive node loss therefore needs an application-level backup written onto an `nfs-client` volume for Velero to capture (ADR-013).
