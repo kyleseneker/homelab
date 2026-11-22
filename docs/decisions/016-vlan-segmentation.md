@@ -74,6 +74,8 @@ The nodes, their pods and the Proxmox host share the Homelab VLAN, so traffic be
 - **Cluster access**: the node addresses reach only NUT (3493) and node-exporter (9100), which the cluster's monitoring uses. Pod traffic to the host arrives from the node addresses.
 - **Everything else**, including rpcbind (111), is dropped. ICMP is accepted.
 
+Pods face a second boundary in the cluster itself: a cluster-wide Cilium policy denies every pod the host's administration ports, the NAS's administration ports and the whole Management VLAN ([Network Policies](../infrastructure/network-policies.md#infrastructure-administration)).
+
 ### Hypervisor Enforcement
 
 The Proxmox host keeps each VM on its own VLAN and addresses, so compromising a guest does not grant Layer 2 access to another VLAN or another host's identity.
