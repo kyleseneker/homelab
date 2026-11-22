@@ -1,0 +1,17 @@
+[OPTIONS]
+
+enable: {{ pve_firewall_enabled | bool | ternary(1, 0) }}
+{% if pve_firewall_local_network %}
+
+[ALIASES]
+
+local_network {{ pve_firewall_local_network }} # The default would be the whole auto-detected local network
+{% endif %}
+{% if pve_firewall_management_sources %}
+
+[IPSET management] # Admin access to the Proxmox host (ADR-016)
+
+{% for source in pve_firewall_management_sources %}
+{{ source.cidr }} # {{ source.comment }}
+{% endfor %}
+{% endif %}

@@ -2,6 +2,21 @@
 tfc_agent_token: "{{ vault_tfc_agent_token }}"
 # ADR-016 hypervisor enforcement; see the hypervisor isolation runbook.
 pve_firewall_enabled: true
+pve_firewall_host_enabled: true
+# The single node's cluster network; the default is the whole Homelab VLAN, nodes and pods included.
+pve_firewall_local_network: 192.168.99.0/24
+pve_firewall_management_sources:
+  - cidr: 192.168.10.160/27
+    comment: Workstation DHCP block
+  - cidr: 192.168.3.0/24
+    comment: WireGuard VPN clients
+  - cidr: 192.168.99.0/24
+    comment: Management VLAN
+pve_firewall_host_rules:
+  - rule: IN ACCEPT -source 192.168.10.50,192.168.10.51,192.168.10.52 -p tcp -dport 3493,9100 -log nolog
+    comment: "Cluster monitoring: NUT and node-exporter"
+  - rule: IN ACCEPT -p icmp -log nolog
+    comment: Ping
 pve_network_vlan_aware: true
 # ADR-028: VLAN 20 reaches the workers' IoT NICs as access ports.
 pve_network_trunk_vlans:

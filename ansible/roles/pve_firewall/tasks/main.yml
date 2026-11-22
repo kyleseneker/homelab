@@ -1,25 +1,22 @@
 ---
-- name: Read host firewall options
-  ansible.builtin.command: pvesh get /nodes/{{ pve_firewall_node }}/firewall/options --output-format json
-  register: pve_firewall_host_options
-  changed_when: false
+# Proxmox adds local_network to the management set, so without both the host
+# firewall still allows SSH and the web UI from the whole detected network.
+- name: Require a management set and local_network before enabling the host firewall
+  ansible.builtin.assert:
+    that:
+      - pve_firewall_management_sources | length > 0
+      - pve_firewall_local_network | length > 0
+  when: pve_firewall_host_enabled | bool
 
-# The host firewall defaults to enabled once the datacenter switch is on, with a
-# DROP input policy, so it is disabled explicitly before that switch flips.
-- name: Keep the host firewall disabled
-  ansible.builtin.command: pvesh set /nodes/{{ pve_firewall_node }}/firewall/options --enable 0
-  when: (pve_firewall_host_options.stdout | from_json).enable | default(1) | int != 0
-  changed_when: true
+# /etc/pve is the cluster filesystem: no atomic renames, and it sets its own file modes.
+- name: Write the host firewall # noqa: risky-file-permissions
+  ansible.builtin.template:
+    src: host.fw.j2
+    dest: "/etc/pve/nodes/{{ pve_firewall_node }}/host.fw"
+    unsafe_writes: true
 
-- name: Read datacenter firewall options
-  ansible.builtin.command: pvesh get /cluster/firewall/options --output-format json
-  register: pve_firewall_cluster_options
-  changed_when: false
-
-- name: Set the datacenter firewall switch
-  ansible.builtin.command: >-
-    pvesh set /cluster/firewall/options --enable {{ pve_firewall_enabled | bool | ternary(1, 0) }}
-  when: >-
-    (pve_firewall_cluster_options.stdout | from_json).enable | default(0) | int
-    != (pve_firewall_enabled | bool | ternary(1, 0))
-  changed_when: true
+- name: Write the datacenter firewall # noqa: risky-file-permissions
+  ansible.builtin.template:
+    src: cluster.fw.j2
+    dest: /etc/pve/firewall/cluster.fw
+    unsafe_writes: true
