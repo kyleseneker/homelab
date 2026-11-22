@@ -5,7 +5,7 @@
     state: directory
     mode: "0755"
 
-# The host's Perl tools have crashed at boot; see the MS-01 known issues in the hardware reference.
+# A faulty core once crashed the autostart at boot; see Known Issues in the hardware reference.
 - name: Retry guest autostart when it fails
   ansible.builtin.copy:
     dest: /etc/systemd/system/pve-guests.service.d/retry.conf

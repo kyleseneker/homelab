@@ -55,7 +55,7 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | Spec | Detail |
 |------|--------|
 | Model | MS-01-S1390 (barebones) |
-| CPU | Intel Core i9-13900H (6P+8E / 20T, up to 5.4 GHz, vPro Enterprise) |
+| CPU | Intel Core i9-13900H (6P+8E / 20T, up to 5.4 GHz, vPro Enterprise); core 12 isolated, 18 threads scheduled |
 | RAM | Crucial CT2K32G52S42U5 (2x32 GB DDR5-5200 SO-DIMM, dual-channel) |
 | Storage | WD Black SN850X 2TB NVMe (PCIe 4.0 x4, M.2 2280 slot 1) |
 | iGPU | Intel Iris Xe (i915, PCI 0000:00:02.0, passed through to K8s via VFIO) |
@@ -71,22 +71,22 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 
 #### Known Issues
 
-**Crashes on CPU core 12 around boot and shutdown (open).** Host processes intermittently segfault, or report Perl syntax errors in files that are intact on disk. Every recorded case ran on logical CPU 6 or 7, the two threads of physical core 12:
+**CPU core 12 corrupts memory under load (mitigated: core isolated).** Physical core 12, logical CPUs 6 and 7, is one of the two favored cores that boost to 5.4 GHz. Around boot and shutdown, processes on it segfaulted or reported Perl syntax errors in files that were intact on disk. The kernel's `isolcpus=6,7`, set by the `pve_isolate_cpus` role, keeps it out of general scheduling, leaving 18 threads for the host and VMs.
 
 | Date | Event | CPU |
 |------|-------|-----|
 | 2026-08-05 | Kernel oops in `ksmd` (the reason for the `pve_disable_ksm` role) | 7 |
 | 2026-08-07 boot | `pve-ha-lrm`: syntax error in `PVE/API2/Qemu.pm` | not logged |
-| 2026-11-21 shutdown | `qm`, `pveproxy`, `pvedaemon` segfaults; a syntax error in `PVE/JSONSchema.pm` | 6, 7 |
+| 2026-11-21 15:44 shutdown | `qm`, `pveproxy`, `pvedaemon` segfaults; a syntax error in `PVE/JSONSchema.pm` | 6, 7 |
 | 2026-11-21 15:48 boot | `pve-ha-lrm` and `pve-startall-delay` segfaults | 6 |
 | 2026-11-21 16:21 boot | `pvesh startall` and repeated `qm` segfaults; a syntax error in `PVE/UPID.pm`. The VMs did not start | 6 |
+| 2026-11-21 18:02-18:23 | Segfaults in `pvedaemon`, `pveproxy`, `pve-ha-crm`; a syntax error in `PVE/Storage/RBDPlugin.pm` | 6, 7 |
 
-- **Evidence:** most segfaults share one signature (`perl` offset `0x4b01b`, fault address `0x20411`). Package checksums match, and nothing pins work to these CPUs. Core 12 is one of the two favored cores, which boost to 5.4 GHz. None of the crashes ran on the other favored core, core 8.
-- **Not reproduced:** pinned Perl module loads, xz round trips and a 90-second full-chip load (core 12 held at 4.9 GHz or below) all ran clean.
-- **Ruled out:** BIOS 1.27 is the latest Minisforum release. Microcode 0x6134 (`intel-microcode` 3.20260925) did not stop the crashes.
-- **Mitigation:** `pve_guests_retry` retries guest autostart when it fails.
-- **Evidence capture:** `pve_coredump` installs `systemd-coredump`. After a crash, `coredumpctl list` shows it and `coredumpctl info <pid>` shows the registers and backtrace.
-- **Leading explanation:** a marginal core rather than a software bug, but this is unproven. A core dump from the next crash would settle it.
+- **Isolation test (2026-11-21):** before isolation, 7 of 13 boot and shutdown events had a crash or bogus syntax error, every one with a recorded CPU on core 12. With CPUs 6-7 isolated, 0 of 7 did. RAM or a software bug would have kept failing on other cores.
+- **Core dump:** `pveproxy` crashed in `Perl_sv_clear` following a reference whose stored target was `0x1`. Memory held that value, which most likely means the integer 1 with the reference flag (`0x800`) set by a single wrong bit.
+- **Not the cause:** package checksums match. BIOS 1.27 is the latest Minisforum release. Microcode 0x6134 (`intel-microcode` 3.20260925) did not help. The fault did not reproduce in steady state or under a 90-second full-chip load, where core 12 stays at 4.9 GHz or below.
+- **Defenses kept:** `pve_guests_retry` retries guest autostart when it fails. `pve_coredump` keeps crash dumps (`coredumpctl list`, `coredumpctl info <pid>`).
+- **Fix:** the CPU is soldered, so replacement means a warranty claim on the unit. Remove `pve_isolate_cpus_list` from the host inventory after a replacement.
 
 #### VM Allocation
 
