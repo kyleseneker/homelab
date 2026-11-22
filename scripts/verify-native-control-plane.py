@@ -222,7 +222,7 @@ def verify():
     wait_for_controller_leases(lambda: json.loads(api('/apis/coordination.k8s.io/v1/namespaces/kube-system/leases'))['items'])
     blocked = []
     for host, port in [('1.1.1.1', 443), ('192.168.10.51', 10250),
-                       ('192.168.1.158', 2049), ('172.26.0.1', 22)]:
+                       ('192.168.10.10', 2049), ('172.26.0.1', 22)]:
         try:
             connection = socket.create_connection((host, port), timeout=2)
         except socket.timeout:

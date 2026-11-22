@@ -102,7 +102,7 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: auth
     - toCIDR:
-        - 192.168.1.158/32
+        - 192.168.10.10/32
       toPorts:
         - ports:
             - port: "2049"

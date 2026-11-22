@@ -85,7 +85,7 @@ This completes the out-of-band management described in [ADR-017](../decisions/01
 - [ ] Before moving devices, set the IoT SSID to a long random pre-shared key or per-device keys ([ADR-026](../decisions/026-iot-vlan.md)), so devices are provisioned only once
 - [ ] Move each Wi-Fi smart home device from the household SSID to the IoT SSID, re-provisioning through its vendor app or factory reset where it stores only one network
 - [ ] Verify app control, casting and AirPlay from household clients, and vendor-cloud control from off the LAN
-- [ ] From a client on VLAN 20, confirm that Default (including the NAS), Homelab and Management refuse new connections
+- [ ] From a client on VLAN 20, confirm that Default, Homelab (including the NAS) and Management refuse new connections
 - [ ] Update the [network infrastructure docs](../architecture/network-infrastructure.md) with anything that had to stay on Default and why
 
 | | |

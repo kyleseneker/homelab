@@ -13,7 +13,7 @@ The NFS Provisioner dynamically creates PersistentVolumes backed by an NFS share
 
 ## Key Configuration
 
-- **NFS Server**: `192.168.1.158` (Unifi NAS data export)
+- **NFS Server**: `192.168.10.10` (Unifi NAS data export, Homelab VLAN)
 - **Mount Options**: `vers=3`, `hard`, `intr`
 - **StorageClass**: `nfs-client`
     - Set as the cluster default storage class
