@@ -9,6 +9,12 @@ for ups in $(upsc -l 2>/dev/null); do
 done
 
 packages() { dpkg-query -W -f '${Package} ${Version}\n' | sha256sum; }
+record_success() {
+  local dir=/var/lib/prometheus/node-exporter
+  [ -d "$dir" ] || return 0
+  printf '# HELP pve_patch_window_last_success_timestamp_seconds Last time the patch window finished without errors.\n# TYPE pve_patch_window_last_success_timestamp_seconds gauge\npve_patch_window_last_success_timestamp_seconds %s\n' "$(date +%s)" > "$dir/.patch_window.prom.tmp"
+  mv "$dir/.patch_window.prom.tmp" "$dir/patch_window.prom"
+}
 apt_opts=(-q -o DPkg::Lock::Timeout=600)
 
 before=$(packages)
@@ -23,7 +29,9 @@ proxmox-boot-tool kernel pin "$kernel"
 
 if [ "$(packages)" = "$before" ]; then
   echo "No package changes; not rebooting."
+  record_success
   exit 0
 fi
 echo "Packages changed; rebooting."
+record_success
 systemctl reboot

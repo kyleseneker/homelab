@@ -433,3 +433,49 @@ spec:
           annotations:
             summary: "{{ $labels.namespace }}/{{ $labels.container }} restarting repeatedly"
             description: "Container {{ $labels.container }} restarted {{ $value | printf \"%.0f\" }} times in 6h. Too slow to trip CrashLoopBackOff, so the crashloop alerts stay quiet."
+
+    - name: homelab-patching
+      rules:
+        - alert: ProxmoxSecurityUpdatesPending
+          expr: sum by (instance) (apt_upgrades_pending{job="proxmox-host", origin=~".*-security.*"}) > 0
+          for: 3d
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} security updates have been pending on {{ $labels.instance }} for 3 days"
+            description: "unattended-upgrades installs Debian security updates daily, so updates still pending after 3 days mean it has stopped. ADR-032 allows 14 days. Check journalctl -u apt-daily-upgrade and /var/log/unattended-upgrades."
+
+        - alert: ProxmoxPackageListsStale
+          expr: |
+            (time() - apt_package_cache_timestamp_seconds{job="proxmox-host"}) > 2 * 86400
+            or
+            (time() - node_textfile_mtime_seconds{job="proxmox-host", file=~".*apt\\.prom"}) > 3600
+            or
+            (absent(apt_package_cache_timestamp_seconds{job="proxmox-host"}) and on() up{job="proxmox-host"} == 1)
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Proxmox update data is stale"
+            description: "Either apt-get update has not succeeded for 2 days or the prometheus-node-exporter-apt timer stopped writing apt.prom. The host cannot see new updates, and the patching alerts are blind."
+
+        - alert: ProxmoxPatchWindowMissed
+          expr: |
+            (time() - pve_patch_window_last_success_timestamp_seconds{job="proxmox-host"}) > 35 * 86400
+            or
+            (absent(pve_patch_window_last_success_timestamp_seconds{job="proxmox-host"}) and on() up{job="proxmox-host"} == 1)
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "The Proxmox patch window has not succeeded in 35 days"
+            description: "pve-patch-window.service applies the monthly full upgrade, including Proxmox and kernel updates. Check journalctl -u pve-patch-window; it skips a window while the UPS is on battery and stops without rebooting if the upgrade fails."
+
+        - alert: NodeRebootPending
+          expr: max by (node) (kured_reboot_required) > 0
+          for: 3d
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.node }} has needed a reboot for 3 days"
+            description: "kured reboots nodes between 01:30 and 03:00 when no other alert is firing. A reboot pending for 3 days means a firing alert is blocking it or the drain keeps failing. Check kubectl -n kube-system logs ds/kured."
