@@ -32,6 +32,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Authentik | auth | helm | authentik | 2026.8.6 |
 | Reloader | kube-system | helm | reloader | 2.2.20 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |
+| Kured | kube-system | helm | kured | 6.1.0 |
 | VPA | kube-system | helm | vertical-pod-autoscaler | 0.11.0 |
 | Goldilocks | goldilocks | helm | goldilocks | 11.2.1 |
 

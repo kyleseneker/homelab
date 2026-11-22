@@ -103,6 +103,7 @@ nav:
       - Authentik: infrastructure/authentik.md
       - Reloader: infrastructure/reloader.md
       - Descheduler: infrastructure/descheduler.md
+      - Kured: infrastructure/kured.md
       - Kyverno: infrastructure/kyverno.md
       - Network Policies: infrastructure/network-policies.md
       - Alerting: infrastructure/alerting.md

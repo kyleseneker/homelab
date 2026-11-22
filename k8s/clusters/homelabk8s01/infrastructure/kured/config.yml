@@ -1,0 +1,11 @@
+appName: kured
+namespace: kube-system
+sourceType: helm
+chartRepo: https://kubereboot.github.io/charts
+chartName: kured
+chartVersion: 6.1.0
+createNamespace: false
+syncOptions:
+  - ServerSideApply=true
+  - ServerSideDiff=true
+hasResources: false
