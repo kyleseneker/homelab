@@ -9,6 +9,8 @@
     - pve_repos
     - role: pve_unattended_upgrades
       tags: [pve_unattended_upgrades]
+    - role: pve_patch_window
+      tags: [pve_patch_window]
     - pve_iommu
     - role: pve_serial_console
       tags: [pve_serial_console]
