@@ -1,0 +1,38 @@
+configuration:
+  period: 10m
+  timeZone: America/Chicago
+  # Clear of the UniFi firmware window, the evening backups and the host's 03:30 patch window.
+  startTime: "1:30"
+  endTime: "3:00"
+  rebootMethod: signal
+  useRebootSentinelHostPath: true
+  drainTimeout: 30m
+  lockTtl: 2h
+  annotateNodes: true
+  preferNoScheduleTaint: weave.works/kured-node-reboot
+  prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring:9090
+  alertFilterRegexp: ^(Watchdog|InfoInhibitor)$
+  alertFiringOnly: true
+containerSecurityContext:
+  privileged: false
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    add:
+      - KILL
+    drop:
+      - ALL
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 64Mi
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+metrics:
+  create: true
+service:
+  create: true
