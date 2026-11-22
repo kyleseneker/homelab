@@ -1,6 +1,6 @@
 # Alloy
 
-Alloy is a telemetry collector that runs as a DaemonSet, collecting pod logs from every node, plus the Dream Router's syslog, and shipping them to Loki for aggregation.
+Alloy is a telemetry collector that runs as a DaemonSet, collecting pod logs from every node and shipping them to Loki for aggregation.
 
 ## Details
 
@@ -35,22 +35,6 @@ Alloy also collects Kubernetes API server audit logs from the host filesystem:
 2. **loki.source.file** -- tails the matched audit log file.
 3. **loki.process** -- parses audit events as JSON, extracting `level`, `verb`, and `user` into Loki labels.
 4. **loki.write** -- ships parsed audit events to Loki with `job=kubernetes-audit` and `source=audit` labels.
-
-### UniFi Syslog Pipeline
-
-Alloy receives the Dream Router's activity log ([ADR-033](../decisions/033-network-monitoring.md)):
-
-1. **loki.source.syslog "unifi"** -- listens on UDP 5514 for RFC3164 syslog and adds `job=unifi-syslog`.
-2. **loki.relabel** -- keeps the sender's hostname as `host` and its syslog tag as `app`.
-3. **loki.process** -- matches the CEF header (`CEF:0|Ubiquiti|UniFi Network|<version>|<event id>|<event name>|<severity>|...`) and stores `event_id`, `event_name` and `cef_severity` as structured metadata, so they add no Loki streams. Lines without a CEF header pass through unchanged.
-4. **loki.write** -- ships the events to Loki.
-
-The `alloy-syslog` Service exposes the listener at 192.168.10.202, UDP 514, pinned with the `lbipam.cilium.io/ips` annotation. It uses `externalTrafficPolicy: Local`: the node holding the L2 announcement delivers to its own Alloy pod without address translation, so `monitoring-alloy-syslog` can admit 192.168.10.1 and deny every other source outside the cluster. Every node runs an Alloy pod, so the announcing node always has a backend. Node ports are not allocated.
-
-Loki stamps events when they arrive; the router's RFC3164 timestamps carry no year or time zone. Query them in Grafana Explore:
-
-- `{job="unifi-syslog"}` -- every event
-- `sum by (event_name) (count_over_time({job="unifi-syslog"}[1h]))` -- events per type in the last hour
 
 ## Cluster Integration
 
