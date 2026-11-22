@@ -95,7 +95,7 @@ Pods are stuck in `ContainerCreating` with mount errors referencing the NFS serv
 
 ```bash
 # Verify NAS is reachable
-ping 192.168.1.158
+ping 192.168.10.10
 
 # Check NFS provisioner pod
 kubectl get pods -n nfs-provisioner

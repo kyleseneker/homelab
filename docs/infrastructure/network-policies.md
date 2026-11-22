@@ -27,7 +27,7 @@ Authentik's database is only reachable through its same-namespace rule. OIDC cli
 `deny-infrastructure-admin`, a CiliumClusterwideNetworkPolicy, selects every pod and denies egress to:
 
 - The Proxmox host's SSH (22), rpcbind (111), SPICE proxy (3128) and web UI (8006) on 192.168.10.2. NUT (3493) and node-exporter (9100) stay reachable for monitoring.
-- The NAS's SSH (22) and web UI (80, 443) on 192.168.1.158. NFS and SNMP stay reachable.
+- The NAS's SSH (22) and web UI (80, 443) on 192.168.10.10. NFS and SNMP stay reachable.
 - The whole Management VLAN, 192.168.99.0/24.
 
 Deny rules take precedence over any allow rule. The policy sets `enableDefaultDeny` to false in both directions: without it, Cilium would put every pod into default-deny egress, because a policy with egress rules of any kind enables it. It does not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).

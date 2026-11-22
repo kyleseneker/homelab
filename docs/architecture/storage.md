@@ -107,7 +107,7 @@ All media applications share a single 10Ti PersistentVolume backed by a dedicate
 | Capacity | 10Ti |
 | Access Mode | ReadWriteMany |
 | NFS Path | Environment-specific (configured in `k8s/clusters/homelabk8s01/apps/media/prereqs/shared-data-pv.yml`) |
-| NFS Server | Unifi NAS (`192.168.1.158`) |
+| NFS Server | Unifi NAS (`192.168.10.10`, Homelab VLAN) |
 | PVC Name | `media-data` |
 | PVC Namespace | `media` |
 

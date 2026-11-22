@@ -90,7 +90,7 @@ Before transferring backup data:
 - Both nodes are Ready at the intended version; Cilium and CoreDNS are healthy.
 - Machine IDs and SSH host keys differ between the two clones and production nodes.
 - The VM and pod address ranges match the table above and do not overlap production.
-- Public HTTPS and DNS work from the lab; connections to production API `192.168.10.50:6443`, NAS `192.168.1.158:2049`, host SSH `172.26.0.1:22` and Management `192.168.99.2:22` are blocked.
+- Public HTTPS and DNS work from the lab; connections to production API `192.168.10.50:6443`, NAS `192.168.10.10:2049`, host SSH `172.26.0.1:22` and Management `192.168.99.2:22` are blocked.
 - No NFS mounts or production credentials exist on the lab nodes.
 - All production nodes and applications remain healthy.
 

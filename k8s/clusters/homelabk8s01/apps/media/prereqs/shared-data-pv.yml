@@ -18,7 +18,7 @@ spec:
     - async
     - noatime
   nfs:
-    server: 192.168.1.158
+    server: 192.168.10.10
     path: /volume/3378ed38-0d32-49cd-b634-08ab63e14f07/.srv/.unifi-drive/Media/.data/library
 ---
 apiVersion: v1

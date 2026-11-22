@@ -12,7 +12,7 @@ Reads the UNAS Pro's SNMPv3 agent and republishes it as Prometheus metrics: reac
 | Image | `quay.io/prometheus/snmp-exporter` |
 | Namespace | `monitoring` |
 | Port | 9116 |
-| Target | `192.168.1.158`, UDP 161 (the UNAS Pro) |
+| Target | `192.168.10.10`, UDP 161 (the UNAS Pro) |
 | Prometheus job | `unas-snmp`, instance `unas-pro` |
 | Credentials | Vault `infrastructure/unas-snmp` (`username`, `password`) synced to Secret `unas-snmp` |
 

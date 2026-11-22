@@ -93,7 +93,7 @@ spec:
     - toEntities:
         - kube-apiserver
     - toCIDR:
-        - 192.168.1.158/32
+        - 192.168.10.10/32
       toPorts:
         - ports:
             - port: "2049"
@@ -194,7 +194,7 @@ spec:
       app.kubernetes.io/name: prometheus-snmp-exporter
   egress:
     - toCIDR:
-        - 192.168.1.158/32
+        - 192.168.10.10/32
       toPorts:
         - ports:
             - port: "161"
