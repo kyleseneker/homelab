@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted. Amended 2026-11-21: once cabled, `nic1` still had no link, because Proxmox left the port down and the igc driver powers the PHY down with it. The host now keeps `nic1` up, with no address and IPv6 disabled, through the `pve_network` Ansible role. Serial-over-LAN and KVM use the TLS redirection port 16995, not port 664 as first recorded. KVM captures the integrated GPU, which is passed through to a Kubernetes VM, so it shows firmware, GRUB and early boot but never a host shell. Serial-over-LAN is the host console: the `pve_serial_console` role sends the kernel console to the AMT serial port (`ttyS4`) and runs a login prompt on it. The redirection port, Serial-over-LAN and KVM were enabled from MeshCommander, and on 2026-11-21 both consoles worked from the workstation, KVM without a consent code. A shutdown and power-on through AMT the same day passed: AMT answered with the host off and after Proxmox started. The [console runbook](../runbooks/intel-amt-console.md) covers access.
+Accepted
 
 ## Context
 
@@ -44,6 +44,10 @@ The host OS must keep nic1 administratively up. While Linux has the port down, t
 | Storage Redirection | Disabled (not needed for normal operations) |
 | User Consent | None (operator is always the homelab admin) |
 
+### Host Console
+
+KVM captures the integrated GPU, which is passed through to a Kubernetes VM, so it shows firmware setup, GRUB and early boot but never a host shell. Serial-over-LAN is the host console: the `pve_serial_console` role sends the kernel console to the AMT serial port (`ttyS4`) and runs a login prompt on it. Both use the TLS redirection port 16995, which stays closed until the redirection port is enabled in MeshCommander.
+
 ### Switch Port Configuration
 
 Two switch ports are required for the MS-01:
@@ -80,7 +84,7 @@ Intel(R) AMT Configuration
 
 Notes:
 - **TLS is enforced by hardware.** CSME 16.1+ (Raptor Lake) permanently disables insecure ports 16992, 16994, and 623. There is no MEBx option to toggle this.
-- **User Consent "None" may not be available** in Client Control Mode (manual MEBx provisioning). If greyed out, set to "KVM" and change to "None" later via MeshCommander after activating Admin Control Mode.
+- **Manual provisioning activates Admin Control Mode**, so User Consent can be None. Client Control Mode, used by host-based provisioning, always requires consent for KVM.
 - **Activate Network Access** transitions AMT from pre-provisioned to operational. Do this after all other settings are configured.
 
 ### Verification

@@ -2,14 +2,14 @@
 
 ## Status
 
-Accepted. Amended 2026-11-21: the nodes also install Ubuntu's `noble-updates` pocket daily, so they meet the one-month target for regular updates, and they report pending updates to Prometheus through a vendored apt collector. This closes the node metrics gap recorded below.
+Accepted
 
 ## Context
 
 Renovate keeps the versions pinned in Git current: container images, Helm charts and the ArgoCD install manifest ([Renovate](../infrastructure/renovate.md)). Packages installed on the machines themselves are not in Git, so nothing tracked them.
 
 - **Kubernetes nodes** (Ubuntu 24.04 VMs) ran `unattended-upgrades` with Ubuntu's defaults, so security updates installed daily. Nothing rebooted them, so kernel and library fixes waited for an unrelated host reboot.
-- **The Proxmox host** had no automatic updates and no schedule. The `pve_repos` role could run a full upgrade (`pve_repos_upgrade_packages=true`), but only when someone remembered to. On 2026-11-21 the host was 242 packages behind, including 49 security updates and the Proxmox VE 9.1 to 9.2 upgrade, with no full upgrade for over three months. No alert reported it.
+- **The Proxmox host** had no automatic updates and no schedule. The `pve_repos` role could run a full upgrade (`pve_repos_upgrade_packages=true`), but only when someone remembered to. It fell months behind, including dozens of security updates and a Proxmox VE minor release, and no alert reported it.
 
 Common references set the bar this ADR adopts:
 
