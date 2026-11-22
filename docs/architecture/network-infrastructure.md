@@ -144,16 +144,16 @@ Everything else, rpcbind (111) included, is dropped. `local_network` is set to 1
 
 Tested 2026-11-21 from the workstation (192.168.10.160/27), node-2 and a pod in a namespace without network policies:
 
-| Endpoint | Workstation | Node and pod |
-|----------|-------------|--------------|
-| Proxmox 192.168.10.2: SSH, web UI, SPICE, rpcbind | Open | Refused |
-| Proxmox 192.168.10.2: NUT 3493, node-exporter 9100 | Open | Open |
-| Management VLAN: Proxmox 192.168.99.2, AMT, switch and PDU SSH | Open | Refused |
-| Gateway web consoles (192.168.1.1, .10.1, .99.1) | Open | Refused |
-| NAS 192.168.1.158: web UI 443 | Open | **Open** |
-| NAS 192.168.1.158: NFS 2049 | Open | Open |
+| Endpoint | Workstation | Node | Pod |
+|----------|-------------|------|-----|
+| Proxmox 192.168.10.2: SSH, web UI, SPICE, rpcbind | Open | Refused | Refused |
+| Proxmox 192.168.10.2: NUT 3493, node-exporter 9100 | Open | Open | Open |
+| Management VLAN: Proxmox 192.168.99.2, AMT, switch and PDU SSH | Open | Refused | Refused |
+| Gateway web consoles (192.168.1.1, .10.1, .99.1) | Open | Refused | Refused |
+| NAS 192.168.1.158: web UI 443 | Open | **Open** | Refused |
+| NAS 192.168.1.158: NFS 2049 | Open | Open | Open |
 
-The switch and PDU have no local web UI, and SSH is off on the NAS and the gateway. The NAS web UI is still open to the cluster through rule 2, which permits every port; closing it is pending.
+The switch and PDU have no local web UI, and SSH is off on the NAS and the gateway. Pods are refused by the host firewall, the zone firewall and the cluster-wide Cilium policy ([Network Policies](../infrastructure/network-policies.md#infrastructure-administration)). The nodes still reach the NAS web UI through rule 2, which permits every port; moving the NAS off the household network is planned.
 
 ## DNS
 

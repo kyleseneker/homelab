@@ -1,6 +1,6 @@
 # Network Policies
 
-CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny.
+CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny. One cluster-wide policy denies every pod access to infrastructure administration.
 
 ## Allowed Paths
 
@@ -21,6 +21,16 @@ The manifests in `infrastructure/network-policies/` are the detailed source of t
 The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
 
 Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The proxy needs both egress from `auth` and ingress on each backend's namespace. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
+
+## Infrastructure Administration
+
+`deny-infrastructure-admin`, a CiliumClusterwideNetworkPolicy, selects every pod and denies egress to:
+
+- The Proxmox host's SSH (22), rpcbind (111), SPICE proxy (3128) and web UI (8006) on 192.168.10.2. NUT (3493) and node-exporter (9100) stay reachable for monitoring.
+- The NAS's SSH (22) and web UI (80, 443) on 192.168.1.158. NFS and SNMP stay reachable.
+- The whole Management VLAN, 192.168.99.0/24.
+
+Deny rules take precedence over any allow rule. The policy sets `enableDefaultDeny` to false in both directions: without it, Cilium would put every pod into default-deny egress, because a policy with egress rules of any kind enables it. It does not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).
 
 ## Remaining Boundaries
 
