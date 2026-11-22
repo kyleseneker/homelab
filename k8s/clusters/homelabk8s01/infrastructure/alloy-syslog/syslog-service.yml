@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-syslog-udp
+  namespace: monitoring
+  annotations:
+    lbipam.cilium.io/ips: 192.168.10.202
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  allocateLoadBalancerNodePorts: false
+  selector:
+    app.kubernetes.io/name: alloy-syslog
+    app.kubernetes.io/instance: alloy-syslog
+  ports:
+    - name: syslog
+      port: 514
+      targetPort: syslog
+      protocol: UDP

@@ -175,7 +175,7 @@ The gateway's mDNS proxy runs in automatic mode with all predefined services ena
 
 ## Syslog
 
-The Dream Router sends its activity log as CEF to Alloy at 192.168.10.202, UDP 514 ([ADR-033](../decisions/033-network-monitoring.md), [Alloy](../infrastructure/alloy.md#unifi-syslog-pipeline)). The destination is set in the UniFi Network UI under **Settings → Control Plane → Integrations → Activity Logging** with **SIEM Server** selected, not in Git. The router sends from 192.168.10.1, its Homelab address, and Gateway → Homelab traffic is allowed by the zone defaults, so no firewall rule is involved.
+The Dream Router sends its activity log as CEF to Alloy at 192.168.10.202, UDP 514 ([ADR-033](../decisions/033-network-monitoring.md), [Alloy Syslog](../infrastructure/alloy-syslog.md)). The destination is set in the UniFi Network UI under **Settings → Control Plane → Integrations → Activity Logging** with **SIEM Server** selected, not in Git. The router sends from 192.168.10.1, its Homelab address, and Gateway → Homelab traffic is allowed by the zone defaults, so no firewall rule is involved.
 
 ## Remote Access
 
