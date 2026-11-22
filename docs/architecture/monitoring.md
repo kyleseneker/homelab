@@ -37,7 +37,8 @@ flowchart LR
 | Node Exporter | Host-level hardware and OS metrics | DaemonSet | None |
 | kube-state-metrics | Kubernetes object state metrics | Deployment | None |
 | Loki | Log aggregation and querying | StatefulSet (single-binary) | 10Gi PVC (`nfs-client`), 168h retention |
-| Alloy | Pod log, audit log and Dream Router syslog collection | DaemonSet | None (streams to Loki) |
+| Alloy | Pod log collection and shipping | DaemonSet | None (streams to Loki) |
+| Alloy Syslog | Receives the Dream Router's syslog | Deployment | None (streams to Loki) |
 | Exportarr | Prometheus metrics exporter for *arr apps | Multi-Deployment (one per target) | None |
 | NUT Exporter | UPS metrics from the CyberPower unit via NUT | Deployment | None |
 | Blackbox exporter | Git-managed HTTP/TLS endpoint probes | Deployment | None |
@@ -81,7 +82,7 @@ Blackbox `Probe` resources verify trusted HTTPS against direct health endpoints 
 The network feeds the same stack from two sources ([ADR-033](../decisions/033-network-monitoring.md)):
 
 - **Latency and loss**: [Smokeping Prober](../infrastructure/smokeping-prober.md) pings the gateway, the NAS and three public resolvers once a second from inside the cluster. Prometheus alerts on sustained loss; short blips show on the dashboard.
-- **Gateway events**: the Dream Router sends its activity log over syslog to Alloy, which ships it to Loki as `job=unifi-syslog` ([Alloy](../infrastructure/alloy.md#unifi-syslog-pipeline)).
+- **Gateway events**: the Dream Router sends its activity log over syslog to a dedicated Alloy instance, which ships it to Loki as `job=unifi-syslog` ([Alloy Syslog](../infrastructure/alloy-syslog.md)).
 
 The **Network** Grafana dashboard puts both side by side: round-trip time, loss and a latency heatmap per target above UniFi event counts and the event log, so a lag spike can be matched to what the router recorded at the same moment. The probes run from wired nodes and do not measure Wi-Fi.
 
@@ -268,6 +269,7 @@ flowchart TD
         am["Alertmanager"]
         ksm["kube-state-metrics"]
         smokeping["Smokeping Prober"]
+        alloySyslog["Alloy Syslog"]
     end
 
     ne -->|"host metrics"| prom
@@ -275,7 +277,8 @@ flowchart TD
     appPods -->|"ServiceMonitor / PodMonitor"| prom
     appPods -->|"stdout/stderr"| alloyDs
     auditLog -->|"audit events"| alloyDs
-    router -->|"CEF over UDP 514"| alloyDs
+    router -->|"CEF over UDP 514"| alloySyslog
+    alloySyslog -->|"UniFi events"| loki
     smokeping -->|"latency and loss"| prom
     alloyDs -->|"labeled logs"| loki
     prom -->|"metrics queries"| grafana
