@@ -74,8 +74,8 @@ This completes the out-of-band management described in [ADR-017](../decisions/01
 
 ## 3.5 Verify Management Isolation and Address Planning
 
-- [ ] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads
-- [ ] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
+- [x] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads ([results](../architecture/network-infrastructure.md#management-access))
+- [x] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
 - [ ] Inventory Cilium pod allocations, the Kubernetes service range and routed/VPN networks; the configured `10.0.0.0/8` pool contains the `10.96.0.0/12` service range
 - [ ] Document and rehearse the production address migration, using the lab's verified separate pod/service ranges as a baseline
 - [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
