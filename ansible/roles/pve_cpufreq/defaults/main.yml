@@ -1,0 +1,4 @@
+---
+pve_cpufreq_governor: powersave
+pve_cpufreq_epp: balance_performance
+pve_cpufreq_max_khz: ""

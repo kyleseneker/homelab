@@ -66,6 +66,7 @@ homelab/
 │   │   ├── pve_network/             # Bridges and VLAN subinterfaces
 │   │   ├── pve_serial_console/      # Host console on AMT Serial-over-LAN
 │   │   ├── pve_isolate_cpus/        # Keep faulty CPUs out of scheduling (isolcpus)
+│   │   ├── pve_cpufreq/             # CPU governor, energy preference and frequency cap
 │   │   ├── pve_guests_retry/        # Retry guest autostart when it fails
 │   │   ├── pve_coredump/            # Keep crash dumps (systemd-coredump)
 │   │   ├── node_unattended_upgrades/ # Daily Ubuntu security and regular updates on nodes

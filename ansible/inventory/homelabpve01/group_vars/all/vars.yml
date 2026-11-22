@@ -9,5 +9,7 @@ pve_network_trunk_vlans:
   - 20
 # Core 12 corrupts memory under load; see Known Issues in the hardware reference.
 pve_isolate_cpus_list: "6,7"
+# Keeps the favored cores off their 5.4 GHz bin; see Known Issues in the hardware reference.
+pve_cpufreq_max_khz: 5200000
 # Kernel 7.0 is untested here; the patch window keeps booting the newest 6.17.
 pve_patch_window_kernel_series: "6.17"

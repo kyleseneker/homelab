@@ -1,0 +1,35 @@
+---
+- name: Install the CPU frequency policy script
+  ansible.builtin.template:
+    src: pve-cpufreq.sh.j2
+    dest: /usr/local/sbin/pve-cpufreq
+    mode: "0755"
+  register: pve_cpufreq_script
+
+- name: Install the CPU frequency policy service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pve-cpufreq.service
+    content: |
+      [Unit]
+      Description=CPU frequency policy: governor, energy preference and frequency cap
+      DefaultDependencies=no
+      After=systemd-modules-load.service
+      Before=sysinit.target
+      ConditionPathExists=/sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/local/sbin/pve-cpufreq
+
+      [Install]
+      WantedBy=sysinit.target
+    mode: "0644"
+  register: pve_cpufreq_service
+
+- name: Apply the CPU frequency policy now and at boot
+  ansible.builtin.systemd_service:
+    name: pve-cpufreq.service
+    enabled: true
+    state: "{{ 'restarted' if pve_cpufreq_script.changed or pve_cpufreq_service.changed else 'started' }}"
+    daemon_reload: "{{ pve_cpufreq_service.changed }}"
