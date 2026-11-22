@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-11-21: the nodes also install Ubuntu's `noble-updates` pocket daily, so they meet the one-month target for regular updates, and they report pending updates to Prometheus through a vendored apt collector. This closes the node metrics gap recorded below.
 
 ## Context
 
@@ -37,7 +37,7 @@ Common references set the bar this ADR adopts:
 
 ### Kubernetes Nodes
 
-1. **Daily security updates** through Ubuntu's `unattended-upgrades` defaults, unchanged. Automatic reboot stays off.
+1. **Daily updates.** The `node_unattended_upgrades` role adds Ubuntu's `noble-updates` pocket to the default security origins of `unattended-upgrades`. Packages from the Kubernetes and Docker repositories are not allowed origins, and `kubelet`, `kubeadm`, `kubectl` and `containerd.io` are held, so they change only through their upgrade playbooks. Automatic reboot stays off.
 2. **Coordinated reboots** with [kured](../infrastructure/kured.md). When an update creates `/var/run/reboot-required`, kured drains the node, reboots it and uncordons it, one node at a time, between 01:30 and 03:00. It waits while any alert other than `Watchdog` is firing.
 
 ### Monitoring
@@ -48,6 +48,7 @@ The `homelab-patching` alert group ([Alerting](../infrastructure/alerting.md#pat
 - **Stale update data**, so the patching alerts cannot fail silently.
 - **A missed patch window**, after 35 days without a success.
 - **A node reboot** pending for 3 days, which means kured is blocked.
+- **Node updates:** security updates pending for 3 days, Ubuntu updates for 35 days, and stale update data. The `node_apt_metrics` role runs the same `apt_info.py` collector as the host, vendored because Debian's `prometheus-node-exporter-collectors` package depends on `prometheus-node-exporter`, which would start a second exporter on the port the cluster's DaemonSet uses. That DaemonSet reads the textfile directory through `--collector.textfile.directory`.
 
 ## Alternatives Considered
 
@@ -61,5 +62,6 @@ The `homelab-patching` alert group ([Alerting](../infrastructure/alerting.md#pat
 - **Planned outage:** the cluster has an unattended outage of about 5 minutes on the first Sunday of most months, at 03:30.
 - **Node reboots:** nodes reboot overnight a day after updates that need it. Rebooting node-1, the control plane, makes the API unavailable for a few minutes.
 - **Firing alerts block node reboots,** so a long-firing alert delays node patching until `NodeRebootPending` reports it.
-- **Pending update counts for the nodes are not collected yet.** Debian's `prometheus-node-exporter-collectors` package depends on `prometheus-node-exporter`, which would start a second exporter on the port the cluster's DaemonSet uses. Collecting them means vendoring the `apt_info.py` collector script into a node role and reading the textfile directory from the cluster's node-exporter. Until then, a stalled `unattended-upgrades` on a node shows up only through `NodeRebootPending` after the next kernel update.
+- **Vendored collector:** `node_apt_metrics/files/apt_info.py` is a copy and does not update with the host's package; refresh it when the upstream script changes.
+- **Node kernels:** regular Ubuntu updates include kernel updates, so kured reboots nodes more often than security updates alone would cause.
 - **Kernel 7.0** needs its own tested change before `pve_patch_window_kernel_series` is cleared.

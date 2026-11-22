@@ -479,3 +479,35 @@ spec:
           annotations:
             summary: "{{ $labels.node }} has needed a reboot for 3 days"
             description: "kured reboots nodes between 01:30 and 03:00 when no other alert is firing. A reboot pending for 3 days means a firing alert is blocking it or the drain keeps failing. Check kubectl -n kube-system logs ds/kured."
+
+        - alert: NodeSecurityUpdatesPending
+          expr: sum by (instance) (apt_upgrades_pending{job="node-exporter", origin=~".*-security.*"}) > 0
+          for: 3d
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $value }} security updates have been pending on {{ $labels.instance }} for 3 days"
+            description: "unattended-upgrades installs Ubuntu security updates daily, so updates still pending after 3 days mean it has stopped. ADR-032 allows 14 days. Check journalctl -u apt-daily-upgrade and /var/log/unattended-upgrades on the node."
+
+        - alert: NodeUpdatesPending
+          expr: sum by (instance) (apt_upgrades_pending{job="node-exporter", origin=~"Ubuntu:.*"}) > 0
+          for: 35d
+          labels:
+            severity: warning
+          annotations:
+            summary: "Ubuntu updates have been pending on {{ $labels.instance }} for 35 days"
+            description: "unattended-upgrades installs Ubuntu's security and updates pockets daily. Packages from the Kubernetes and Docker repositories are excluded; they follow their own upgrade playbooks. Check /var/log/unattended-upgrades on the node."
+
+        - alert: NodeUpdateDataStale
+          expr: |
+            (time() - apt_package_cache_timestamp_seconds{job="node-exporter"}) > 2 * 86400
+            or
+            (time() - node_textfile_mtime_seconds{job="node-exporter", file=~".*apt\\.prom"}) > 3600
+            or
+            (count by (instance) (node_uname_info{job="node-exporter"}) unless count by (instance) (apt_package_cache_timestamp_seconds{job="node-exporter"}))
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Update data from {{ $labels.instance }} is stale or missing"
+            description: "Either apt-get update has not succeeded for 2 days or the apt-info-metrics timer stopped writing apt.prom. The node patching alerts are blind for this node."

@@ -68,6 +68,8 @@ homelab/
 │   │   ├── pve_isolate_cpus/        # Keep faulty CPUs out of scheduling (isolcpus)
 │   │   ├── pve_guests_retry/        # Retry guest autostart when it fails
 │   │   ├── pve_coredump/            # Keep crash dumps (systemd-coredump)
+│   │   ├── node_unattended_upgrades/ # Daily Ubuntu security and regular updates on nodes
+│   │   ├── node_apt_metrics/        # Pending-update metrics for node-exporter
 │   │   ├── pve_restore_lab/         # Internal bridge, firewall and lab template
 │   │   ├── pve_ups/                 # NUT server for the CyberPower UPS
 │   │   ├── pve_node_exporter/       # Host node-exporter and NVMe collector

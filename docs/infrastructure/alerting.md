@@ -103,7 +103,7 @@ Metrics come from node-exporter on the hypervisor ([Proxmox Host Metrics](proxmo
 
 ### Patching
 
-Thresholds follow [ADR-032](../decisions/032-os-patching.md). Host data comes from the `apt` and patch window textfiles on the hypervisor; node reboot data comes from [kured](kured.md).
+Thresholds follow [ADR-032](../decisions/032-os-patching.md). Host data comes from the `apt` and patch window textfiles on the hypervisor. Node data comes from the `apt.prom` textfile that `node_apt_metrics` writes on each node, read by the cluster's node-exporter, and from [kured](kured.md).
 
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
@@ -111,6 +111,9 @@ Thresholds follow [ADR-032](../decisions/032-os-patching.md). Host data comes fr
 | `ProxmoxPackageListsStale` | warning | 1h | `apt-get update` has not succeeded for 2 days, or `apt.prom` is over an hour old or missing |
 | `ProxmoxPatchWindowMissed` | warning | 1h | `pve-patch-window` has not succeeded for 35 days, or its timestamp is missing |
 | `NodeRebootPending` | warning | 3d | A node has needed a reboot that kured has not done |
+| `NodeSecurityUpdatesPending` | warning | 3d | Ubuntu security updates are pending on a node |
+| `NodeUpdatesPending` | warning | 35d | Ubuntu updates are pending on a node; Kubernetes and Docker repository packages are excluded |
+| `NodeUpdateDataStale` | warning | 1h | A node's package lists are 2 days old, or its `apt.prom` is over an hour old or missing |
 
 ### NAS Health
 

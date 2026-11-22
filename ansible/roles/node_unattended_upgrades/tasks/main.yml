@@ -1,0 +1,25 @@
+---
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Refresh package lists and apply upgrades daily
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: "0644"
+
+# ADR-032: regular Ubuntu updates join the default security origins. Held packages
+# (kubelet, kubeadm, kubectl, containerd.io) stay put, and kured handles reboots.
+- name: Add Ubuntu's updates pocket to unattended upgrades
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-local
+    content: |
+      Unattended-Upgrade::Allowed-Origins {
+        "${distro_id}:${distro_codename}-updates";
+      };
+      Unattended-Upgrade::Automatic-Reboot "false";
+    mode: "0644"
