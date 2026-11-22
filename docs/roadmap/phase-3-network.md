@@ -1,10 +1,10 @@
 # Phase 3 -- Network
 
-**Status:** In progress. WireGuard, Teleport, management-VLAN access, the IoT VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking remains planned.
+**Status:** In progress. WireGuard, Teleport, management-VLAN access with out-of-band management, the IoT VLAN, the NAS on the Homelab VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking remains planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
-**Addresses:** P3, P6, N1–N8, and M2 in the [assessment](assessment.md).
+**Addresses:** P3, N2, N4–N6, N8 and M2 in the [assessment](assessment.md).
 
 ---
 
@@ -60,22 +60,12 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 
 **Planned starting point:** VPN-only for personal use. Select and test a public access method when enabling sharing with friends and family.
 
-## 3.4 Complete Intel AMT Connectivity
+## 3.4 Confirm AMT Remote Desktop at Boot
 
-- [x] Connect the MS-01's `nic1` management interface to the reserved USW-16-PoE port 4 on native Management VLAN 99
-- [x] Keep `nic1` up on the host so the igc driver does not power its PHY down
-- [x] Send the host console to AMT Serial-over-LAN (`ttyS4`), since KVM loses the integrated GPU to a VM after boot
-- [x] Verify TLS access to AMT at `192.168.99.5` from a permitted management client
-- [x] Open Serial-over-LAN and KVM sessions from the workstation ([console runbook](../runbooks/intel-amt-console.md))
-- [x] Shut the host down and power it on through AMT: AMT answered with the host off and after Proxmox started, the kernel console came up on `ttyS4`, and the VMs and cluster recovered (2026-11-21)
-- [x] Update the hardware and port inventory
+- [ ] Watch the GRUB menu on the AMT remote desktop during a planned reboot ([console runbook](../runbooks/intel-amt-console.md))
 
-This completes the out-of-band management described in [ADR-017](../decisions/017-intel-amt-oob-management.md). No one watched the remote desktop during the test boot, so confirm GRUB appears there during the next planned reboot.
+## 3.5 Plan Cluster Address Ranges
 
-## 3.5 Verify Management Isolation and Address Planning
-
-- [x] Record which interfaces expose Proxmox, NAS and AMT management; test access from permitted clients and ordinary workloads ([results](../architecture/network-infrastructure.md#management-access))
-- [x] Move or filter management endpoints that remain reachable outside their intended boundary, preserving a tested administration path
 - [ ] Inventory Cilium pod allocations, the Kubernetes service range and routed/VPN networks; the configured `10.0.0.0/8` pool contains the `10.96.0.0/12` service range
 - [ ] Document and rehearse the production address migration, using the lab's verified separate pod/service ranges as a baseline
 - [ ] Record Gateway IP and DNS allocations so they can be recovered when Kubernetes is unavailable
@@ -90,13 +80,12 @@ This completes the out-of-band management described in [ADR-017](../decisions/01
 
 | | |
 |---|---|
-| **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients and the NAS that serves the cluster's NFS storage. |
+| **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients. |
 
 
 ## 3.7 Move Services to home.seneker.io
 
 - [ ] Verify a household iPhone reaches each service without installing anything (Jellyfin, Seerr, the status page, Homepage, Grafana and the Authentik login verified)
-- [x] Retire the `homelab.local` names, the internal CA chain, trust-manager and the CA trust guide
 
 | | |
 |---|---|
@@ -108,9 +97,7 @@ This completes the out-of-band management described in [ADR-017](../decisions/01
 
 - [ ] 10G link between MS-01 and at least one other device
 - [ ] Remote client verification recorded
-- [x] Internal DNS needs no per-service records and the Gateway address is pinned
 - [ ] External access path chosen and implemented for Jellyfin
-- [x] Intel AMT connected and remote management tested
-- [ ] Management reachability and pod/service/VPN address boundaries verified
+- [ ] Pod, service and VPN address boundaries verified
 - [ ] Smart home devices on the IoT VLAN with isolation verified
 - [ ] Household services served at `home.seneker.io` with publicly trusted certificates
