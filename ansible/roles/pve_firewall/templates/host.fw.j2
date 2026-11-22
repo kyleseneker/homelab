@@ -1,0 +1,11 @@
+[OPTIONS]
+
+enable: {{ pve_firewall_host_enabled | bool | ternary(1, 0) }}
+{% if pve_firewall_host_rules %}
+
+[RULES]
+
+{% for rule in pve_firewall_host_rules %}
+{{ rule.rule }} # {{ rule.comment }}
+{% endfor %}
+{% endif %}

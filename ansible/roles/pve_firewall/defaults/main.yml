@@ -1,5 +1,8 @@
 ---
-# ADR-016: the datacenter switch lets per-VM anti-spoofing filters run. The host
-# firewall stays off; host access control remains the UniFi zone firewall.
+# ADR-016: the datacenter switch enables the per-VM anti-spoofing filters.
 pve_firewall_enabled: false
+pve_firewall_host_enabled: false
 pve_firewall_node: "{{ inventory_hostname }}"
+pve_firewall_local_network: ""
+pve_firewall_management_sources: []
+pve_firewall_host_rules: []

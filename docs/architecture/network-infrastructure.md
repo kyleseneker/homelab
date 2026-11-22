@@ -128,6 +128,33 @@ There is no explicit deny into Management. Isolation comes from the zone default
 
 Management VLAN outbound to External and Gateway is allowed by zone defaults (for updates, NTP).
 
+### Proxmox Host Firewall
+
+The nodes and the host share 192.168.10.0/24, so the zone firewall never sees traffic between them. The host firewall covers that path ([ADR-016](../decisions/016-vlan-segmentation.md#proxmox-host-firewall)):
+
+| Port | Service | Allowed from |
+|------|---------|--------------|
+| 22, 8006, 3128 | SSH, web UI and API, SPICE proxy | `management` set: 192.168.10.160/27, 192.168.3.0/24, 192.168.99.0/24 |
+| 3493, 9100 | NUT, node-exporter | Nodes 192.168.10.50 -- .52, which pod traffic is masqueraded behind |
+| ICMP | Ping | Anywhere |
+
+Everything else, rpcbind (111) included, is dropped. `local_network` is set to 192.168.99.0/24, because Proxmox adds it to the `management` set and would otherwise detect the whole Homelab VLAN.
+
+### Management Access
+
+Tested 2026-11-21 from the workstation (192.168.10.160/27), node-2 and a pod in a namespace without network policies:
+
+| Endpoint | Workstation | Node and pod |
+|----------|-------------|--------------|
+| Proxmox 192.168.10.2: SSH, web UI, SPICE, rpcbind | Open | Refused |
+| Proxmox 192.168.10.2: NUT 3493, node-exporter 9100 | Open | Open |
+| Management VLAN: Proxmox 192.168.99.2, AMT, switch and PDU SSH | Open | Refused |
+| Gateway web consoles (192.168.1.1, .10.1, .99.1) | Open | Refused |
+| NAS 192.168.1.158: web UI 443 | Open | **Open** |
+| NAS 192.168.1.158: NFS 2049 | Open | Open |
+
+The switch and PDU have no local web UI, and SSH is off on the NAS and the gateway. The NAS web UI is still open to the cluster through rule 2, which permits every port; closing it is pending.
+
 ## DNS
 
 The UniFi Network controller's local DNS holds three records, all under `home.seneker.io` ([ADR-030](../decisions/030-public-domain-and-certificates.md)):

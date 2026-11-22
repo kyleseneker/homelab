@@ -6,7 +6,8 @@ The controls are gated so that nothing changes until a phase turns it on:
 
 | Control | Where | Gate |
 |---|---|---|
-| Datacenter firewall switch, host firewall off | `pve_firewall` role | `pve_firewall_enabled` |
+| Datacenter firewall switch | `pve_firewall` role | `pve_firewall_enabled` |
+| Host firewall allow-list ([ADR-016](../decisions/016-vlan-segmentation.md#proxmox-host-firewall)) | `pve_firewall` role | `pve_firewall_host_enabled` |
 | VLAN-aware `vmbr0` trunking VLAN 99 | `pve_network` role | `pve_network_vlan_aware` |
 | Anti-spoofing IP filters on node NICs | `proxmox-vm` module | `l2_pool_cidrs` in each cluster's `terraform.tfvars` |
 | Access-port NICs on the native VLAN | `proxmox-vm` module | `nic_vlan_id = 1` |
@@ -49,7 +50,7 @@ This affects no VM, because every VM NIC has its firewall flag off.
     make pve-firewall
     ```
 
-    The role disables the host firewall before turning on the datacenter switch. Once the switch is on, the host firewall would otherwise default to enabled with a DROP input policy.
+    The role writes the host firewall disabled unless `pve_firewall_host_enabled` is set, before it turns on the datacenter switch. Once the switch is on, a host firewall with no setting defaults to enabled with a DROP input policy.
 
     The switch also sets `bridge-nf-call-iptables`, so bridged VM-to-VM traffic starts passing the host's own nftables rules. The restore lab's forward chain accepts traffic that stays on `vmbr1` before its private-address drop; without that rule, the lab nodes lose each other within a minute.
 

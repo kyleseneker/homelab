@@ -17,7 +17,7 @@ Prometheus scrapes node-exporter on the Proxmox host, `homelabpve01`, for the ha
 
 The `pve_node_exporter` role installs node-exporter from the Debian repository and binds it to the host's Homelab VLAN address. The `prometheus-node-exporter-nvme` timer from the collectors package runs `nvme smart-log` every 15 minutes and writes `nvme.prom` into node-exporter's textfile directory, `/var/lib/prometheus/node-exporter`. The package's `apt` timer also publishes pending upgrades and `node_reboot_required`.
 
-The `ScrapeConfig` carries the `release: kube-prometheus-stack` label, which the chart's default `scrapeConfigSelector` matches, as the Blackbox `Probe` resources do. The nodes and the host share `192.168.10.0/24`, so scrapes do not cross the UniFi zone firewall; the Cilium egress policy is the only gate.
+The `ScrapeConfig` carries the `release: kube-prometheus-stack` label, which the chart's default `scrapeConfigSelector` matches, as the Blackbox `Probe` resources do. The nodes and the host share `192.168.10.0/24`, so scrapes do not cross the UniFi zone firewall. The Cilium egress policy and the host firewall, which accepts 9100 only from the node addresses, are the gates.
 
 The job is not named `node-exporter`. The chart's node rules, recording rules and dashboards select `job="node-exporter"` and aggregate it into cluster capacity, which would count the hypervisor's CPU and memory on top of the VMs that consume them. The homelab node-health rules (`HighNodeCPU`, `HighNodeMemory`, `NodeRootDiskFillingUp`, `NodeDiskPressure`) select no job, so they cover the host as well. Host-specific alerts are listed in [Alerting](alerting.md#proxmox-host-health).
 
