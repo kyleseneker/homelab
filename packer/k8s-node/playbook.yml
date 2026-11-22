@@ -9,6 +9,8 @@
   roles:
     - base
     - k8s_prereqs
+    - node_unattended_upgrades
+    - node_apt_metrics
   tasks:
     - name: Install NFS client
       ansible.builtin.include_role:

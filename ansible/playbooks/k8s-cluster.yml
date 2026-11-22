@@ -27,6 +27,17 @@
   roles:
     - k8s_worker
 
+- name: Node patching (ADR-032)
+  hosts: k8s_cluster
+  become: true
+  roles:
+    - role: node_unattended_upgrades
+      tags:
+        - node_unattended_upgrades
+    - role: node_apt_metrics
+      tags:
+        - node_apt_metrics
+
 # One node at a time, since a kubelet configuration change restarts the kubelet.
 - name: Node disk limits
   hosts: k8s_cluster

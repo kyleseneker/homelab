@@ -1,6 +1,6 @@
 # Kured
 
-Kured (Kubernetes Reboot Daemon) reboots nodes after their automatic updates need a restart, as part of the patching policy in [ADR-032](../decisions/032-os-patching.md). The Ubuntu nodes install security updates daily with `unattended-upgrades`, which never reboots on its own; when an update needs a restart, Ubuntu creates `/var/run/reboot-required`. Kured sees the file, drains the node, reboots it and uncordons it when it returns, one node at a time.
+Kured (Kubernetes Reboot Daemon) reboots nodes after their automatic updates need a restart, as part of the patching policy in [ADR-032](../decisions/032-os-patching.md). The Ubuntu nodes install security and regular updates daily with `unattended-upgrades`, which never reboots on its own; when an update needs a restart, Ubuntu creates `/var/run/reboot-required`. Kured sees the file, drains the node, reboots it and uncordons it when it returns, one node at a time.
 
 ## Details
 

@@ -1,0 +1,56 @@
+---
+# Debian's collectors package would also install a second node-exporter, so the apt collector is vendored.
+- name: Install the apt collector's dependencies
+  ansible.builtin.apt:
+    name:
+      - python3-apt
+      - python3-prometheus-client
+    state: present
+
+- name: Install the apt collector
+  ansible.builtin.copy:
+    src: apt_info.py
+    dest: /usr/local/sbin/apt-info-metrics
+    mode: "0755"
+
+- name: Create the node-exporter textfile directory
+  ansible.builtin.file:
+    path: /var/lib/prometheus/node-exporter
+    state: directory
+    mode: "0755"
+
+- name: Install the apt metrics service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/apt-info-metrics.service
+    content: |
+      [Unit]
+      Description=Write apt update metrics for node-exporter
+
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/sh -c '/usr/local/sbin/apt-info-metrics > /var/lib/prometheus/node-exporter/.apt.prom.tmp && mv /var/lib/prometheus/node-exporter/.apt.prom.tmp /var/lib/prometheus/node-exporter/apt.prom'
+    mode: "0644"
+  register: node_apt_metrics_service
+
+- name: Install the apt metrics timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/apt-info-metrics.timer
+    content: |
+      [Unit]
+      Description=Write apt update metrics every 15 minutes
+
+      [Timer]
+      OnBootSec=2min
+      OnUnitActiveSec=15min
+
+      [Install]
+      WantedBy=timers.target
+    mode: "0644"
+  register: node_apt_metrics_timer
+
+- name: Enable the apt metrics timer
+  ansible.builtin.systemd_service:
+    name: apt-info-metrics.timer
+    enabled: true
+    state: started
+    daemon_reload: "{{ node_apt_metrics_service.changed or node_apt_metrics_timer.changed }}"
