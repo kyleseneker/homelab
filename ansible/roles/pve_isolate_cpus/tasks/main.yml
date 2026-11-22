@@ -1,0 +1,21 @@
+---
+- name: Keep the listed CPUs out of general scheduling
+  ansible.builtin.copy:
+    dest: /etc/default/grub.d/isolcpus.cfg
+    content: |
+      GRUB_CMDLINE_LINUX="$GRUB_CMDLINE_LINUX isolcpus={{ pve_isolate_cpus_list }}"
+    mode: "0644"
+  when: pve_isolate_cpus_list | length > 0
+  register: pve_isolate_cpus_set
+
+- name: Remove CPU isolation
+  ansible.builtin.file:
+    path: /etc/default/grub.d/isolcpus.cfg
+    state: absent
+  when: pve_isolate_cpus_list | length == 0
+  register: pve_isolate_cpus_unset
+
+- name: Update GRUB # noqa: no-handler
+  ansible.builtin.command: update-grub
+  changed_when: true
+  when: pve_isolate_cpus_set.changed or pve_isolate_cpus_unset.changed

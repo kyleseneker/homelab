@@ -63,6 +63,7 @@ homelab/
 │   │   ├── pve_pci_mapping/         # PCI device mapping
 │   │   ├── pve_network/             # Bridges and VLAN subinterfaces
 │   │   ├── pve_serial_console/      # Host console on AMT Serial-over-LAN
+│   │   ├── pve_isolate_cpus/        # Keep faulty CPUs out of scheduling (isolcpus)
 │   │   ├── pve_guests_retry/        # Retry guest autostart when it fails
 │   │   ├── pve_coredump/            # Keep crash dumps (systemd-coredump)
 │   │   ├── pve_restore_lab/         # Internal bridge, firewall and lab template
