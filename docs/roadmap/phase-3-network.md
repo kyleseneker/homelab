@@ -1,6 +1,6 @@
 # Phase 3 -- Network
 
-**Status:** In progress. WireGuard, Teleport, management-VLAN access with out-of-band management, the IoT VLAN, the NAS on the Homelab VLAN and wildcard internal DNS are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking remains planned.
+**Status:** In progress. WireGuard, Teleport, management-VLAN access with out-of-band management, the IoT VLAN, the NAS on the Homelab VLAN, wildcard internal DNS and household services at `home.seneker.io` with publicly trusted certificates are implemented; smart home devices have not moved to the IoT VLAN yet, and 10G networking remains planned.
 
 **Goal:** Unlock the hardware capabilities already in the rack, improve network segmentation, and enable remote access.
 
@@ -82,15 +82,6 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 |---|---|
 | **Why** | VLAN 20, its SSID and firewall zone are configured ([ADR-026](../decisions/026-iot-vlan.md)), but every smart home device still joins the household SSID. Until they move, they share a broadcast domain with household clients. |
 
-
-## 3.7 Move Services to home.seneker.io
-
-- [ ] Verify a household iPhone reaches each service without installing anything (Jellyfin, Seerr, the status page, Homepage, Grafana and the Authentik login verified)
-
-| | |
-|---|---|
-| **Why** | Household devices do not trust the internal CA, and `.local` is reserved for Multicast DNS. Publicly trusted certificates on a real domain work on every device with nothing to install. |
-
 ---
 
 ## Definition of Done
@@ -100,4 +91,3 @@ The VPN is implemented. The remaining tasks document client configuration and ve
 - [ ] External access path chosen and implemented for Jellyfin
 - [ ] Pod, service and VPN address boundaries verified
 - [ ] Smart home devices on the IoT VLAN with isolation verified
-- [ ] Household services served at `home.seneker.io` with publicly trusted certificates
