@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+
+for policy in /sys/devices/system/cpu/cpufreq/policy*; do
+  echo {{ pve_cpufreq_governor }} > "$policy/scaling_governor"
+{% if pve_cpufreq_epp %}
+  echo {{ pve_cpufreq_epp }} > "$policy/energy_performance_preference"
+{% endif %}
+{% if pve_cpufreq_max_khz %}
+  echo {{ pve_cpufreq_max_khz }} > "$policy/scaling_max_freq"
+{% else %}
+  cat "$policy/cpuinfo_max_freq" > "$policy/scaling_max_freq"
+{% endif %}
+done

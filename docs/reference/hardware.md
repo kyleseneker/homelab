@@ -55,7 +55,7 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | Spec | Detail |
 |------|--------|
 | Model | MS-01-S1390 (barebones) |
-| CPU | Intel Core i9-13900H (6P+8E / 20T, up to 5.4 GHz, vPro Enterprise); core 12 isolated, 18 threads scheduled |
+| CPU | Intel Core i9-13900H (6P+8E / 20T, up to 5.4 GHz, vPro Enterprise); core 12 isolated, 18 threads scheduled, capped at 5.2 GHz |
 | RAM | Crucial CT2K32G52S42U5 (2x32 GB DDR5-5200 SO-DIMM, dual-channel) |
 | Storage | WD Black SN850X 2TB NVMe (PCIe 4.0 x4, M.2 2280 slot 1) |
 | iGPU | Intel Iris Xe (i915, PCI 0000:00:02.0, passed through to K8s via VFIO) |
@@ -70,6 +70,8 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 **Available:** 2x 10G SFP+, PCIe x16 slot, 2x M.2 NVMe slots.
 
 **Kernel:** stays on the 6.17 series after the Proxmox VE 9.2 upgrade on 2026-11-21. `pve_patch_window_kernel_series: "6.17"` makes each patch window pin the newest installed 6.17 kernel with `proxmox-boot-tool kernel pin`. Kernel 7.0, the 9.2 default, is installed but not booted until it is tested on its own: a 7.0.14-8 build was reported to panic with PCI serial ports, which the AMT console uses. To move to 7.0, clear the variable and run `proxmox-boot-tool kernel unpin`.
+
+**CPU power:** the `pve_cpufreq` role replaces the Proxmox default `performance` governor, which holds every busy core at its top turbo frequency and voltage, with `powersave` and the `balance_performance` energy preference, Intel's default, so the processor picks its own frequency. `pve_cpufreq_max_khz: 5200000` removes the favored cores' 5.4 GHz bin; the other cores already top out at or below 5.2 GHz. Both reduce heat on a cooler that otherwise lets cores reach the 100°C limit several times a second at light load (see Known Issues). In 5-minute samples on 2026-11-21, the change stopped thermal throttling, lowered the package from 75.5°C to 58.2°C on average (98°C to 73°C at peak) and cut package power from 45 W to 18 W.
 
 #### Known Issues
 
@@ -88,8 +90,10 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 - **Isolation test (2026-11-21):** before isolation, 7 of 13 boot and shutdown events had a crash or bogus syntax error, every one with a recorded CPU on core 12. With CPUs 6-7 isolated, 0 of 7 did. RAM or a software bug would have kept failing on other cores.
 - **Core dump:** `pveproxy` crashed in `Perl_sv_clear` following a reference whose stored target was `0x1`. Memory held that value, which most likely means the integer 1 with the reference flag (`0x800`) set by a single wrong bit.
 - **Not the cause:** package checksums match. BIOS 1.27 is the latest Minisforum release. Microcode 0x6134 (`intel-microcode` 3.20260925) did not help. The fault did not reproduce in steady state or under a 90-second full-chip load, where core 12 stays at 4.9 GHz or below.
+- **Not memory:** In-Band ECC is enabled in the BIOS; `igen6_edac` registers only when it is, and it registered on every boot. It has logged no corrected or uncorrected errors, and the kernel has logged no machine-check errors, since the journal began in July 2026. The bad values arise inside the core.
+- **Heat:** in the 14 days before isolation, core 12 hit the 100°C throttle limit 7.1 million times, more than any other core (core 8, the other favored core, 5.1 million; the other P-cores 0.5 to 1.7 million), and averaged 78.9°C against a package average of 85.8°C at light load. Throttling protects the chip and does not itself corrupt data, but sustained peak voltage and temperature age silicon, so the most-throttled core failing first fits wear as well as a manufacturing defect. With core 12 isolated, core 8 took over its share. `pve_cpufreq` lowers that heat (see CPU power above).
 - **Defenses kept:** `pve_guests_retry` retries guest autostart when it fails. `pve_coredump` keeps crash dumps (`coredumpctl list`, `coredumpctl info <pid>`).
-- **Fix:** the CPU is soldered, so replacement means a warranty claim on the unit. Remove `pve_isolate_cpus_list` from the host inventory after a replacement.
+- **Fix:** the CPU is soldered, so replacement means a warranty claim on the unit. Minisforum's US policy covers units bought from its US store and excludes unauthorized disassembly, so do not open the unit (for example, to repaste it) before deciding on a claim. Remove `pve_isolate_cpus_list` from the host inventory after a replacement, and revisit `pve_cpufreq_max_khz`.
 
 #### VM Allocation
 

@@ -16,6 +16,8 @@
       tags: [pve_serial_console]
     - role: pve_isolate_cpus
       tags: [pve_isolate_cpus]
+    - role: pve_cpufreq
+      tags: [pve_cpufreq]
     - role: pve_guests_retry
       tags: [pve_guests_retry]
     - role: pve_coredump
