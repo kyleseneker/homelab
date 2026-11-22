@@ -5,6 +5,7 @@ resources:
   - backups.yml
   - external-secrets.yml
   - home-automation.yml
+  - infrastructure-admin.yml
   - kyverno.yml
   - media.yml
   - monitoring.yml

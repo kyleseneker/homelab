@@ -1,0 +1,38 @@
+---
+# ADR-016: no pod reaches infrastructure administration. Deny rules alone would
+# switch every pod to default-deny egress, so enableDefaultDeny is off.
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: deny-infrastructure-admin
+spec:
+  description: "Deny all pods access to the admin ports of the Proxmox host and the NAS, and to the Management VLAN"
+  endpointSelector: {}
+  enableDefaultDeny:
+    egress: false
+    ingress: false
+  egressDeny:
+    - toCIDR:
+        - 192.168.10.2/32
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP
+            - port: "111"
+              protocol: ANY
+            - port: "3128"
+              protocol: TCP
+            - port: "8006"
+              protocol: TCP
+    - toCIDR:
+        - 192.168.1.158/32
+      toPorts:
+        - ports:
+            - port: "22"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+    - toCIDR:
+        - 192.168.99.0/24
