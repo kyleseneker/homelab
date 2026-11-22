@@ -6,7 +6,7 @@ Accepted. The IoT VLAN (20) is recorded separately in [ADR-026](026-iot-vlan.md)
 
 ## Context
 
-The site has two VLANs: Default (VLAN 1, 192.168.1.0/24) for household devices and the NAS, and Homelab (VLAN 10, 192.168.10.0/24) for Proxmox and Kubernetes. Infrastructure management interfaces -- the Proxmox web UI, switch management, PDU management, and NAS management -- share these VLANs with production and household traffic. A misconfigured firewall rule or compromised device on either VLAN could reach management interfaces that control power, networking, storage, and the hypervisor.
+The site has two VLANs: Default (VLAN 1, 192.168.1.0/24) for household devices, and Homelab (VLAN 10, 192.168.10.0/24) for Proxmox, Kubernetes and the NAS. Infrastructure management interfaces -- the Proxmox web UI, switch management, PDU management, and NAS management -- share these VLANs with production and household traffic. A misconfigured firewall rule or compromised device on either VLAN could reach management interfaces that control power, networking, storage, and the hypervisor.
 
 The Kubernetes nodes are virtual machines on the same Proxmox bridge as the host's management interface, and the MS-01's switch port is a trunk. Two properties of that setup decide whether VLAN boundaries hold for the guests:
 
@@ -23,8 +23,8 @@ Add a Management VLAN (VLAN 99, 192.168.99.0/24) dedicated to infrastructure man
 
 | VLAN ID | Name | Subnet | Purpose |
 |---------|------|--------|---------|
-| 1 | Default | 192.168.1.0/24 | Household devices, NAS data plane, Wi-Fi clients |
-| 10 | Homelab | 192.168.10.0/24 | Proxmox host, Kubernetes VMs, cluster services |
+| 1 | Default | 192.168.1.0/24 | Household devices, Wi-Fi clients |
+| 10 | Homelab | 192.168.10.0/24 | Proxmox host, Kubernetes VMs, NAS, cluster services |
 | 99 | Management | 192.168.99.0/24 | Infrastructure management interfaces |
 
 VLAN IDs follow a convention where the ID matches the third octet of the subnet (VLAN 10 = 192.168.10.0/24, VLAN 99 = 192.168.99.0/24). VLAN 1 is the exception as the default/native VLAN.
@@ -38,7 +38,7 @@ VLAN IDs follow a convention where the ID matches the third octet of the subnet 
 | USW-16-PoE | DHCP | -- | Management only |
 | USP PDU Pro | DHCP | -- | Management only |
 | Intel AMT (MS-01) | 192.168.99.5 | -- | Out-of-band management, dedicated NIC (ADR-017) |
-| UNAS Pro | N/A (stays on Default) | 192.168.1.158 | Cannot dual-home; management stays on Default VLAN |
+| UNAS Pro | N/A (shares its data address) | 192.168.10.10 | Cannot dual-home; Homelab VLAN with the nodes |
 
 ### Switch Port Configuration
 
@@ -46,7 +46,7 @@ Devices that need both data and management access use trunk ports:
 
 - **MS-01 (nic0)**: Native VLAN = Homelab (10), tagged VLAN = Management (99). Proxmox has a VLAN 99 subinterface for management. STP disabled on this port to prevent flapping from the Linux bridge.
 - **MS-01 (nic1)**: Access port on Management (99). Dedicated to Intel AMT out-of-band management (ADR-017).
-- **UNAS Pro**: Default VLAN access port only. The UNAS Pro does not support dual-homing -- setting a management VLAN override moves its only interface off the Default VLAN, breaking NFS. Management stays on the Default VLAN.
+- **UNAS Pro**: Homelab VLAN access port. Only the homelab uses the NAS, so it sits with the nodes that mount it. The UNAS Pro does not support dual-homing -- a management VLAN override would move its only interface and break NFS -- so its web UI shares the data address.
 - **USW-16-PoE and USP PDU Pro**: Management VLAN assigned through the UniFi controller.
 
 ### Firewall Rules
@@ -61,7 +61,7 @@ Rule 1 matches an address range rather than a host. The workstation uses a rotat
 
 The Default VLAN is not permitted into Management. It carries household devices, which would otherwise gain an unrestricted path to the hypervisor, the switch, the PDU, and Intel AMT.
 
-Household clients reach the Homelab VLAN only at the gateway VIP, on 80 and 443. They have no path to the Proxmox host, node ports or Cilium's overlay, and administration happens from the Homelab Wi-Fi or the VPN. The NAS keeps its own rule for NFSv3 lock callbacks to the nodes. The limit is built from block rules with negated matches ahead of the zone pair's allow rule, because an allow rule restricted by address and port did not match traffic there.
+Household clients reach the Homelab VLAN only at the gateway VIP, on 80 and 443. They have no path to the Proxmox host, node ports or Cilium's overlay, and administration happens from the Homelab Wi-Fi or the VPN. The limit is built from block rules with negated matches ahead of the zone pair's allow rule, because an allow rule restricted by address and port did not match traffic there.
 
 The UniFi console on the Dream Router 7 is also a management interface. It is managed day to day from household phones and laptops, so household clients, the workstation block and VPN clients reach its web console, and its own login protects it. SSH to the gateway is limited to the workstation block and VPN clients. The rest of the Homelab zone (the Proxmox host, the nodes, and pod traffic behind them) and the IoT zone reach the gateway only for DHCP, DNS, NTP, mDNS and ICMP.
 
@@ -101,16 +101,16 @@ The Proxmox host keeps each VM on its own VLAN and addresses, so compromising a 
 
 - **VLAN isolation over port-based filtering**: A VLAN boundary means management traffic is invisible to devices on other VLANs at Layer 2. That holds for virtual machines only when the hypervisor enforces VLAN membership: a non-filtering bridge on a trunk port makes every guest a member of every trunked VLAN. Firewall rules provide additional protection, but the VLAN alone prevents accidental exposure if a rule is misconfigured.
 - **Dual-homing Proxmox rather than moving it**: Proxmox must remain on the Homelab VLAN (192.168.10.2) because Terraform, Ansible, and kubeconfig all reference that IP. Adding a management interface on VLAN 99 provides an independent path to the hypervisor without changing any automation.
-- **NAS data path stays on Default VLAN**: The NAS IP (192.168.1.158) is referenced in NFS mounts, Kubernetes PVs, and CiliumNetworkPolicy egress rules across the cluster. Moving NFS to a different VLAN would require changes to dozens of files and would break Kubernetes storage during the transition. Only the management interface moves.
+- **NAS on the Default VLAN**: Household devices could reach it directly, but nothing outside the homelab uses it. NFS would cross the gateway, so gateway restarts would interrupt storage, and the firewall would need a Homelab-to-NAS allow rule plus a return path for NFSv3 lock callbacks, opening the NAS web UI to every node and pod.
 - **DHCP for most management devices**: The gateway and Proxmox host use static IPs (configured on the devices themselves). Other management devices (switch, PDU) use DHCP for simplicity; AMT has a static address so emergency access does not depend on DHCP (ADR-017). DHCP reservations can be added later if stable addressing becomes important.
 - **VLAN 99 as the ID**: A high, distinctive number that is unlikely to collide with future VLANs (IoT, guest, etc.) and is immediately recognizable as management in firewall logs and switch configs.
 
 ## Consequences
 
 - Proxmox is now dual-homed. If the VLAN 99 subinterface is misconfigured, it could affect the primary Homelab interface. Changes to `/etc/network/interfaces` should be tested carefully with console access available.
-- The household-to-Homelab block rules work only ahead of that zone pair's allow rule. UniFi appends new policies to the end of a zone pair, so the order is set explicitly, through the UniFi Integration API or the UI, and any new rule there needs the same care. The NAS is excluded from the broad block rule, so its NFS lock callbacks do not depend on the order.
-- Switch ports for the MS-01 and NAS become trunk ports carrying two VLANs. Port profile changes must update both the native and tagged VLAN assignments atomically to avoid connectivity loss.
-- The UNAS Pro does not support dual-homing. Setting a management VLAN override moves its only network interface, breaking NFS access for the entire cluster. The NAS management interface remains on the Default VLAN.
+- The household-to-Homelab block rules work only ahead of that zone pair's allow rule. UniFi appends new policies to the end of a zone pair, so the order is set explicitly, through the UniFi Integration API or the UI, and any new rule there needs the same care.
+- The MS-01's switch port becomes a trunk carrying several VLANs. Port profile changes must update both the native and tagged VLAN assignments atomically to avoid connectivity loss.
+- The NAS web UI shares the Homelab VLAN with the nodes, which reach it at Layer 2; the UNAS Pro has no host firewall. The cluster-wide Cilium policy keeps pods off it.
 - Hypervisor enforcement and host firewall changes affect the host's only data path. Make them with the AMT console ([ADR-017](017-intel-amt-oob-management.md)) or a revert timer on the host that restores the previous configuration unless it is cancelled, after rehearsing VLAN filtering and the VM firewall on the restore lab's VMs. Those VMs share the host, so the datacenter-level firewall switch affects production even during rehearsal.
 - A VM firewall left at Proxmox's default input policy of DROP would cut the node off. The ACCEPT policies are part of the change, not an afterthought.
 - With the datacenter firewall on, Proxmox sets `bridge-nf-call-iptables`, so traffic between VMs on the same bridge also passes the host's netfilter hooks and connection tracking. Host nftables rules written for routed traffic must accept traffic that stays within its bridge, as the restore lab's rules do. A VM whose traffic the host masquerades also needs its firewall-bridge leg in a separate conntrack zone, or the NAT decision is made before routing and egress leaves unmasqueraded ([Proxmox network configuration](https://pve.proxmox.com/wiki/Network_Configuration)); the restore lab's rules set that zone.
