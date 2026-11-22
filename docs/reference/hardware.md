@@ -83,6 +83,7 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 | 2026-11-21 15:48 boot | `pve-ha-lrm` and `pve-startall-delay` segfaults | 6 |
 | 2026-11-21 16:21 boot | `pvesh startall` and repeated `qm` segfaults; a syntax error in `PVE/UPID.pm`. The VMs did not start | 6 |
 | 2026-11-21 18:02-18:23 | Segfaults in `pvedaemon`, `pveproxy`, `pve-ha-crm`; a syntax error in `PVE/Storage/RBDPlugin.pm` | 6, 7 |
+| 2026-11-21 20:25-20:30, re-enabled on PVE 9.2 | `pveproxy` segfaults at two shutdowns | 6 |
 
 - **Isolation test (2026-11-21):** before isolation, 7 of 13 boot and shutdown events had a crash or bogus syntax error, every one with a recorded CPU on core 12. With CPUs 6-7 isolated, 0 of 7 did. RAM or a software bug would have kept failing on other cores.
 - **Core dump:** `pveproxy` crashed in `Perl_sv_clear` following a reference whose stored target was `0x1`. Memory held that value, which most likely means the integer 1 with the reference flag (`0x800`) set by a single wrong bit.
