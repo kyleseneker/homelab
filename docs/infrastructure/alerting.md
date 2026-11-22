@@ -101,6 +101,17 @@ Metrics come from node-exporter on the hypervisor ([Proxmox Host Metrics](proxmo
 | `ProxmoxNVMeWearing` | warning | 1h | More than 80% of rated write endurance used |
 | `ProxmoxCPUHot` | warning | 30m | CPU package at or above 95°C |
 
+### Patching
+
+Thresholds follow [ADR-032](../decisions/032-os-patching.md). Host data comes from the `apt` and patch window textfiles on the hypervisor; node reboot data comes from [kured](kured.md).
+
+| Alert | Severity | For | Condition |
+|-------|----------|-----|-----------|
+| `ProxmoxSecurityUpdatesPending` | warning | 3d | Debian security updates are pending on the host |
+| `ProxmoxPackageListsStale` | warning | 1h | `apt-get update` has not succeeded for 2 days, or `apt.prom` is over an hour old or missing |
+| `ProxmoxPatchWindowMissed` | warning | 1h | `pve-patch-window` has not succeeded for 35 days, or its timestamp is missing |
+| `NodeRebootPending` | warning | 3d | A node has needed a reboot that kured has not done |
+
 ### NAS Health
 
 Defined in `snmp-exporter/prometheusrule.yml` from the UNAS Pro's SNMP agent ([SNMP Exporter](snmp-exporter.md)). The agent does not report drive or pool health.
