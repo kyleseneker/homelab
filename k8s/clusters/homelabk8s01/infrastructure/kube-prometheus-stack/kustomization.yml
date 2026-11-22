@@ -6,6 +6,7 @@ resources:
   - alertmanager-slack-external-secret.yml
   - dashboard-cluster-capacity.yml
   - dashboard-namespace-resources.yml
+  - dashboard-network.yml
   - grafana-external-secret.yml
   - grafana-oidc-external-secret.yml
   - homelab-rules.yml

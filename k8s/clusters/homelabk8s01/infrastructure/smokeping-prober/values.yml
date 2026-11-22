@@ -1,0 +1,95 @@
+defaultPodOptions:
+  annotations:
+    reloader.stakater.com/auto: 'true'
+  securityContext:
+    runAsUser: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    sysctls:
+      - name: net.ipv4.ping_group_range
+        value: "65534 65534"
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: quay.io/superq/smokeping-prober
+          tag: v0.12.0
+        args:
+          - --config.file=/etc/smokeping_prober/config.yml
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /
+                port: 9374
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /
+                port: 9374
+configMaps:
+  config:
+    data:
+      config.yml: |
+        targets:
+          - hosts: [192.168.10.1]
+            protocol: udp
+            network: ip4
+            labels:
+              scope: lan
+              target: gateway
+          - hosts: [192.168.10.10]
+            protocol: udp
+            network: ip4
+            labels:
+              scope: lan
+              target: nas
+          - hosts: [1.1.1.1]
+            protocol: udp
+            network: ip4
+            labels:
+              scope: internet
+              target: cloudflare
+          - hosts: [8.8.8.8]
+            protocol: udp
+            network: ip4
+            labels:
+              scope: internet
+              target: google
+          - hosts: [9.9.9.9]
+            protocol: udp
+            network: ip4
+            labels:
+              scope: internet
+              target: quad9
+persistence:
+  config:
+    type: configMap
+    identifier: config
+    globalMounts:
+      - path: /etc/smokeping_prober
+        readOnly: true
+service:
+  main:
+    controller: main
+    ports:
+      metrics:
+        port: 9374

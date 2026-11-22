@@ -61,6 +61,11 @@ Cilium replaces MetalLB for LoadBalancer IP allocation. It operates in Layer 2 m
 - **Mode:** L2 ARP announcement
 - **Consumers:** The `homelab-gateway` Gateway and any LoadBalancer Service
 
+| Address | Consumer |
+|---------|----------|
+| 192.168.10.201 | `homelab-gateway`, HTTP and HTTPS |
+| 192.168.10.202 | `alloy-syslog`, UDP 514 for the Dream Router's syslog ([Alloy](../infrastructure/alloy.md#unifi-syslog-pipeline)) |
+
 !!! note "L2 Limitations"
     In L2 mode, all traffic for a given VIP is handled by a single node (the current ARP responder). Failover occurs when the node becomes unavailable, at which point another node takes over the VIP.
 

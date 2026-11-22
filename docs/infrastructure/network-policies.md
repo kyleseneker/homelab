@@ -8,7 +8,7 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 |-----------|-------------------------|------------------------|
 | `media` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
 | `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
-| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions |
+| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus, the Dream Router's syslog to Alloy on UDP 5514 | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert, probe and ICMP echo exceptions |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
@@ -18,7 +18,7 @@ The manifests in `infrastructure/network-policies/` are the detailed source of t
 
 ## Enforcement Model
 
-The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
+The named `*-default-deny` policies explicitly deny ingress from `world`. `monitoring-default-deny` skips Alloy, which receives the Dream Router's syslog; `monitoring-alloy-syslog` denies every source outside the cluster except 192.168.10.1 instead ([ADR-033](../decisions/033-network-monitoring.md)). Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
 
 Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The proxy needs both egress from `auth` and ingress on each backend's namespace. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
 

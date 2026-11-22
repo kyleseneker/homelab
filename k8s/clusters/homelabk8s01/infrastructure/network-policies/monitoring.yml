@@ -4,10 +4,39 @@ metadata:
   name: monitoring-default-deny
   namespace: monitoring
 spec:
-  endpointSelector: {}
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/name
+        operator: NotIn
+        values:
+          - alloy
   ingressDeny:
     - fromEntities:
         - world
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-alloy-syslog
+  namespace: monitoring
+spec:
+  description: "Accept syslog from the Dream Router and deny every other source outside the cluster"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: alloy
+  ingressDeny:
+    - fromCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 192.168.10.1/32
+        - cidr: ::/0
+  ingress:
+    - fromCIDR:
+        - 192.168.10.1/32
+      toPorts:
+        - ports:
+            - port: "5514"
+              protocol: UDP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -199,6 +228,28 @@ spec:
         - ports:
             - port: "161"
               protocol: UDP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-egress-smokeping-prober
+  namespace: monitoring
+spec:
+  description: "Allow smokeping-prober to ping the gateway, the NAS and public resolvers"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: smokeping-prober
+  egress:
+    - toCIDR:
+        - 192.168.10.1/32
+        - 192.168.10.10/32
+        - 1.1.1.1/32
+        - 8.8.8.8/32
+        - 9.9.9.9/32
+      icmps:
+        - fields:
+            - type: EchoRequest
+              family: IPv4
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

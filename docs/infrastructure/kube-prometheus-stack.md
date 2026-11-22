@@ -46,14 +46,15 @@ kube-prometheus-stack provides a comprehensive cluster monitoring solution, bund
 
 ### Custom Dashboards
 
-Two capacity planning dashboards are provisioned via sidecar ConfigMaps (label `grafana_dashboard: "1"`):
+Three dashboards are provisioned via sidecar ConfigMaps (label `grafana_dashboard: "1"`):
 
 | Dashboard | Description |
 |-----------|-------------|
 | Cluster Capacity Overview | CPU/memory requested vs allocatable vs used, utilization gauges, pod count, namespace pie charts |
 | Namespace Resource Breakdown | Per-namespace tables with requests, limits, usage, efficiency %, stacked usage timeseries |
+| Network | Round-trip time, packet loss and a latency heatmap from [Smokeping Prober](smokeping-prober.md), above UniFi event counts and the event log from Loki |
 
-These complement the built-in kube-prometheus-stack dashboards, which focus on detailed drill-down views rather than high-level capacity planning.
+These complement the built-in kube-prometheus-stack dashboards, which focus on detailed drill-down views rather than high-level capacity planning or the network.
 
 ### Disabled Components
 
