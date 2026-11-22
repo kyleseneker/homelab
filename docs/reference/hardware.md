@@ -69,6 +69,8 @@ Proxmox VE hypervisor. Runs all Kubernetes VMs.
 
 **Available:** 2x 10G SFP+, PCIe x16 slot, 2x M.2 NVMe slots.
 
+**Kernel:** pinned to `6.17.13-21-pve` with `proxmox-boot-tool kernel pin` since the Proxmox VE 9.2 upgrade on 2026-11-21. Kernel 7.0, the 9.2 default, is installed but not booted until it is tested on its own: a 7.0.14-8 build was reported to panic with PCI serial ports, which the AMT console uses. `proxmox-boot-tool kernel unpin` returns to the default.
+
 #### Known Issues
 
 **CPU core 12 corrupts memory under load (mitigated: core isolated).** Physical core 12, logical CPUs 6 and 7, is one of the two favored cores that boost to 5.4 GHz. Around boot and shutdown, processes on it segfaulted or reported Perl syntax errors in files that were intact on disk. The kernel's `isolcpus=6,7`, set by the `pve_isolate_cpus` role, keeps it out of general scheduling, leaving 18 threads for the host and VMs.

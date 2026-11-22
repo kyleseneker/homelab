@@ -7,6 +7,8 @@
     - role: pve_firewall
       tags: [pve_firewall]
     - pve_repos
+    - role: pve_unattended_upgrades
+      tags: [pve_unattended_upgrades]
     - pve_iommu
     - role: pve_serial_console
       tags: [pve_serial_console]
