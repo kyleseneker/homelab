@@ -73,52 +73,6 @@ alloy:
         }
         forward_to = [loki.write.default.receiver]
       }
-
-      loki.source.syslog "unifi" {
-        listener {
-          address       = "0.0.0.0:5514"
-          protocol      = "udp"
-          syslog_format = "rfc3164"
-          labels        = { job = "unifi-syslog" }
-        }
-        relabel_rules = loki.relabel.unifi_syslog.rules
-        forward_to    = [loki.process.unifi_syslog.receiver]
-      }
-
-      loki.relabel "unifi_syslog" {
-        forward_to = []
-
-        rule {
-          source_labels = ["__syslog_message_hostname"]
-          target_label  = "host"
-        }
-
-        rule {
-          source_labels = ["__syslog_message_app_name"]
-          target_label  = "app"
-        }
-      }
-
-      loki.process "unifi_syslog" {
-        stage.regex {
-          expression = `^(?:CEF:)?\s*\d+\|[^|]*\|[^|]*\|[^|]*\|(?P<event_id>[^|]*)\|(?P<event_name>[^|]*)\|(?P<cef_severity>[^|]*)\|`
-        }
-
-        stage.structured_metadata {
-          values = {
-            event_id     = "",
-            event_name   = "",
-            cef_severity = "",
-          }
-        }
-
-        forward_to = [loki.write.default.receiver]
-      }
-  extraPorts:
-    - name: syslog
-      port: 5514
-      targetPort: 5514
-      protocol: UDP
   resources:
     requests:
       cpu: 50m
