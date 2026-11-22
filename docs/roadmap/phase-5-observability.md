@@ -1,6 +1,6 @@
 # Phase 5 — Observability
 
-**Status:** In progress. Metrics, Loki/Alloy logs, capacity and Exportarr dashboards, Blackbox probes and an external heartbeat are implemented. Tracing and SLO-based alerting remain planned.
+**Status:** In progress. Metrics, Loki/Alloy logs, capacity and Exportarr dashboards, Blackbox probes, network latency probes, gateway syslog and an external heartbeat are implemented. Tracing and SLO-based alerting remain planned.
 
 **Goal:** Complete metrics, logs and traces, make dashboards reproducible, and add SLO-driven operations alongside tested alert delivery.
 
@@ -45,6 +45,18 @@ Set targets from household needs and observed behavior. Application availability
 - [ ] Exercise exporter failure, missing metrics, certificate readiness failure and a failed backup through notification delivery.
 - [ ] Exercise receiver downtime and confirm the intended fallback or independent detection path.
 
+## 5.6 Network Monitoring
+
+- [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their CEF event names have been observed.
+- [ ] Add a latency alert from a week of baseline round-trip data.
+- [ ] Decide how UniFi controller metrics (per-radio channel use, per-client signal and retries, switch port errors) reach Prometheus. unpoller needs an exception to the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md).
+- [ ] Ping the access points to measure the wireless mesh backhaul. This needs fixed access point addresses and an ICMP rule from the nodes to the Default VLAN.
+- [ ] Export IPFIX flows from the gateway to show which devices use the bandwidth during lag.
+- [ ] Add a scheduled internet speed test.
+- [ ] Evaluate a Wi-Fi sensor client that runs the same probes over Wi-Fi.
+
+The probes and syslog from [ADR-033](../decisions/033-network-monitoring.md) show wired, gateway and internet problems. Wi-Fi quality needs controller metrics or a probe on Wi-Fi.
+
 ## Definition of Done
 
 - [ ] Request traces are visible in Grafana with documented instrumentation coverage.
@@ -52,3 +64,4 @@ Set targets from household needs and observed behavior. Application availability
 - [ ] Service objectives have recording rules, burn-rate alerts and dashboards.
 - [ ] Synthetic probes cover HTTPS endpoints with clear expected responses.
 - [ ] Log collection, alert delivery and the external heartbeat are tested.
+- [ ] Wi-Fi, gateway and internet problems show on the Network dashboard, and sustained ones alert.

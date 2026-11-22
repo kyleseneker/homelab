@@ -173,6 +173,10 @@ See [Networking - Application Hostnames](networking.md#application-hostnames) fo
 
 The gateway's mDNS proxy runs in automatic mode with all predefined services enabled (AirPlay, Chromecast, HomeKit, Matter and others). It forwards only on Default and IoT, so household clients discover services advertised on the IoT VLAN and nothing is reflected into Homelab or Management. The scope is each network's mDNS forwarding flag (`mdnsForwardingEnabled` in the Integration API's network object); the site-level `mdns` setting's network list does not control it. Matter is the exception: its controller needs an interface on the devices' VLAN rather than the proxy; see [ADR-026](../decisions/026-iot-vlan.md#consequences).
 
+## Syslog
+
+The Dream Router sends its activity log as CEF to Alloy at 192.168.10.202, UDP 514 ([ADR-033](../decisions/033-network-monitoring.md), [Alloy](../infrastructure/alloy.md#unifi-syslog-pipeline)). The destination is set in the UniFi Network UI under **Settings → Control Plane → Integrations → Activity Logging** with **SIEM Server** selected, not in Git. The router sends from 192.168.10.1, its Homelab address, and Gateway → Homelab traffic is allowed by the zone defaults, so no firewall rule is involved.
+
 ## Remote Access
 
 | Method | Status | Reaches |

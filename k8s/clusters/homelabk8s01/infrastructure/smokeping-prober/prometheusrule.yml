@@ -1,0 +1,59 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: smokeping-prober
+  namespace: monitoring
+spec:
+  groups:
+    - name: network-reachability
+      rules:
+        - alert: SmokepingProberAbsent
+          expr: absent(up{job="smokeping-prober"} == 1)
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Network latency probes have stopped"
+            description: "Prometheus cannot scrape smokeping-prober. LAN and internet packet loss alerts are blind."
+
+        - alert: LANPacketLoss
+          expr: |
+            1 - (
+              sum by (target) (rate(smokeping_response_duration_seconds_count{scope="lan"}[5m]))
+              /
+              sum by (target) (rate(smokeping_requests_total{scope="lan"}[5m]))
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Packet loss to the {{ $labels.target }}"
+            description: "{{ $value | humanizePercentage }} of pings from the cluster to the {{ $labels.target }} have gone unanswered for 10 minutes. The wired path through the switch or the device itself is failing."
+
+        - alert: InternetPacketLoss
+          expr: |
+            min(
+              1 - (
+                sum by (target) (rate(smokeping_response_duration_seconds_count{scope="internet"}[5m]))
+                /
+                sum by (target) (rate(smokeping_requests_total{scope="internet"}[5m]))
+              )
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Packet loss to the internet"
+            description: "At least {{ $value | humanizePercentage }} of pings to every public resolver have gone unanswered for 10 minutes. Check LANPacketLoss for the gateway first; if it is quiet, the problem is the WAN link or the ISP."
+
+        - alert: InternetUnreachable
+          expr: |
+            sum(rate(smokeping_response_duration_seconds_count{scope="internet"}[2m])) == 0
+            and
+            sum(rate(smokeping_requests_total{scope="internet"}[2m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "The internet is unreachable"
+            description: "No public resolver has answered a ping for 5 minutes. Slack delivery needs the internet, so this notification arrives once the link recovers."

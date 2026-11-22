@@ -9,4 +9,4 @@ syncOptions:
   - ServerSideApply=true
   - ServerSideDiff=true
   - SkipDryRunOnMissingResource=true
-hasResources: false
+hasResources: true
