@@ -223,6 +223,6 @@ Before the apply the packet arrives; afterwards it does not, while VXLAN from th
 
 ## Record the result
 
-- Remove the completed tasks from [Phase 3.5](../roadmap/phase-3-network.md#35-verify-management-isolation-and-address-planning), and remove findings N9 and N10 from the [assessment](../roadmap/assessment.md).
+- Remove the completed tasks from [Phase 3.5](../roadmap/phase-3-network.md#35-plan-cluster-address-ranges), and remove findings N9 and N10 from the [assessment](../roadmap/assessment.md).
 - Update the [network infrastructure](../architecture/network-infrastructure.md) page: the bridge is VLAN-aware, and rule 2's boundary now holds at Layer 2.
 - VLAN 20 for [ADR-028](../decisions/028-multus-iot-attachments.md) is in `pve_network_trunk_vlans`, and each worker's `net1` is an access port on it. A further VLAN follows the same path: tag it on switch port 2, append it to `pve_network_trunk_vlans` with the revert timer armed, then give only the VMs that need it an access-port NIC.

@@ -28,7 +28,6 @@ The additional drives, 10G equipment and compute hosts are planned purchases. Th
 
 | IDs | Current assessment | Next step |
 |---|---|---|
-| N1, N7 | VLAN 99 and management access are configured. Management-service isolation still needs an endpoint-by-endpoint check. | Test Proxmox, NAS and AMT reachability from management clients and ordinary workloads; close unintended paths |
 | N2 | The IoT VLAN and its SSID are configured ([ADR-026](../decisions/026-iot-vlan.md)), but smart home devices still join the household SSID on Default. | Move devices and verify isolation in [Phase 3](phase-3-network.md#36-move-smart-home-devices-to-the-iot-vlan) |
 | N4 | WireGuard and Teleport are implemented with Homelab, Management and Default access. | Record an off-LAN DNS, TLS, login and management-access check |
 | N5, M2 | VPN provides private remote access. Public Jellyfin access remains planned for clients that cannot use a VPN. | Choose and test the intended client experience in [Phase 3](phase-3-network.md#33-plan-external-access-for-jellyfin) |
