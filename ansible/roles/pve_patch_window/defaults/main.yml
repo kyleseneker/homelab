@@ -1,0 +1,3 @@
+---
+pve_patch_window_schedule: "Sun *-*-01..07 03:30"
+pve_patch_window_kernel_series: ""

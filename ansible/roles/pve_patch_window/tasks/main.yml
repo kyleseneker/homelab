@@ -1,0 +1,45 @@
+---
+- name: Install the patch window script
+  ansible.builtin.template:
+    src: pve-patch-window.sh.j2
+    dest: /usr/local/sbin/pve-patch-window
+    mode: "0755"
+
+- name: Install the patch window service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pve-patch-window.service
+    content: |
+      [Unit]
+      Description=Proxmox patch window: full upgrade, then reboot if anything changed
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/local/sbin/pve-patch-window
+      TimeoutStartSec=2h
+    mode: "0644"
+  register: pve_patch_window_service
+
+- name: Install the patch window timer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/pve-patch-window.timer
+    content: |
+      [Unit]
+      Description=Monthly Proxmox patch window
+
+      [Timer]
+      OnCalendar={{ pve_patch_window_schedule }}
+      Persistent=false
+
+      [Install]
+      WantedBy=timers.target
+    mode: "0644"
+  register: pve_patch_window_timer
+
+- name: Enable the patch window timer
+  ansible.builtin.systemd_service:
+    name: pve-patch-window.timer
+    enabled: true
+    state: started
+    daemon_reload: "{{ pve_patch_window_service.changed or pve_patch_window_timer.changed }}"

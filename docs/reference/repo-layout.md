@@ -58,6 +58,7 @@ homelab/
 │   │   ├── k8s_worker/              # kubeadm join
 │   │   ├── pve_repos/               # Proxmox repo config
 │   │   ├── pve_unattended_upgrades/ # Daily Debian security updates only
+│   │   ├── pve_patch_window/        # Monthly full upgrade and reboot
 │   │   ├── pve_api_token/           # Proxmox API token
 │   │   ├── pve_cloud_init/          # Cloud-init template
 │   │   ├── pve_iommu/               # IOMMU/VFIO setup

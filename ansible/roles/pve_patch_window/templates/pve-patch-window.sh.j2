@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive APT_LISTCHANGES_FRONTEND=none
+
+for ups in $(upsc -l 2>/dev/null); do
+  case "$(upsc "$ups" ups.status 2>/dev/null)" in
+    *OB*) echo "UPS $ups is on battery; skipping this window."; exit 1 ;;
+  esac
+done
+
+packages() { dpkg-query -W -f '${Package} ${Version}\n' | sha256sum; }
+apt_opts=(-q -o DPkg::Lock::Timeout=600)
+
+before=$(packages)
+apt-get "${apt_opts[@]}" update
+apt-get "${apt_opts[@]}" -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold full-upgrade
+{% if pve_patch_window_kernel_series %}
+
+kernel=$(find /boot -maxdepth 1 -name 'vmlinuz-{{ pve_patch_window_kernel_series }}.*-pve' -printf '%f\n' | sed 's/^vmlinuz-//' | sort -V | tail -1)
+[ -n "$kernel" ] || { echo "No {{ pve_patch_window_kernel_series }} kernel installed; not rebooting."; exit 1; }
+proxmox-boot-tool kernel pin "$kernel"
+{% endif %}
+
+if [ "$(packages)" = "$before" ]; then
+  echo "No package changes; not rebooting."
+  exit 0
+fi
+echo "Packages changed; rebooting."
+systemctl reboot
