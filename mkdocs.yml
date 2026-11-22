@@ -157,6 +157,7 @@ nav:
       - Public Domain and Certificates: decisions/030-public-domain-and-certificates.md
       - NUT Backport: decisions/031-nut-backport.md
       - OS Patching: decisions/032-os-patching.md
+      - Network Monitoring: decisions/033-network-monitoring.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md
