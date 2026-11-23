@@ -30,14 +30,10 @@ spec:
       syncLevel: fullSync
       syncCategories: [5000, 5010, 5020, 5030, 5040, 5045, 5050]
     - name: Radarr
-      implementation: Radarr
-      configContract: RadarrSettings
+      appRef:
+        kind: Radarr
+        name: radarr
       syncLevel: fullSync
-      prowlarrUrl: http://prowlarr.media.svc.cluster.local:9696
-      baseUrl: http://radarr.media.svc.cluster.local:7878
-      apiKeySecretRef:
-        name: media-api-keys
-        key: radarr-api-key
       syncCategories: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060]
   indexers:
     - name: YTS

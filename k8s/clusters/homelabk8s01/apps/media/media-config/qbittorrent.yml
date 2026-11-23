@@ -18,6 +18,8 @@ spec:
   preferences:
     savePath: /data/torrents
     tempPathEnabled: true
+    tempPath: /data/torrents/incomplete
+    upnp: false
     maxRatioEnabled: true
     maxRatio: '1.0'
     maxRatioAction: stop

@@ -42,6 +42,7 @@ spec:
               key: api-key
   mediaManagement:
     downloadPropersAndRepacks: doNotPrefer
+    deleteEmptyFolders: true
 ---
 apiVersion: arrchitect.dev/v1alpha1
 kind: SonarrDownloadClient
