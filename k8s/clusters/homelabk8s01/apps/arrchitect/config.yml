@@ -3,7 +3,7 @@ namespace: media
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/charts
 chartName: arrchitect
-chartVersion: "0.5.0"
+chartVersion: "0.6.0"
 createNamespace: false
 hasResources: true
 syncOptions:
