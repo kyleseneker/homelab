@@ -114,7 +114,7 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | 12 | Internal | Homelab -- 192.168.10.201, all TCP/UDP except 80, 443 | Block | The gateway VIP serves HTTP and HTTPS only |
 | 13 | Internal | IoT -- 192.168.20.10 (Home Assistant) | Block | Household clients reach Home Assistant at `ha.home.seneker.io` through the gateway, never its IoT address |
 | 14 | Homelab -- 192.168.10.50 -- .52 (nodes) | Gateway -- 192.168.10.1, TCP 443 | Allow | unpoller reads the UniFi controller ([ADR-033](../decisions/033-network-monitoring.md)) |
-| 15 | Homelab -- 192.168.10.10 (NAS), UDP source port 10001 | Gateway -- 192.168.10.1 | Allow | The NAS answers the gateway's UniFi device discovery |
+| 15 | Homelab -- 192.168.10.10 (NAS), UDP source ports 5353, 10001 | Gateway -- 192.168.10.1 | Allow | The NAS answers the gateway's UniFi device discovery and mDNS queries |
 | 16 | IoT -- 192.168.20.10 (Home Assistant), UDP source port 5353 | Gateway -- 192.168.20.1 | Allow | Home Assistant answers the mDNS proxy's one-shot queries |
 
 Rules 7 -- 12 match only new connections, so replies to traffic in the other direction are unaffected. Rules 7 -- 10 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
@@ -123,7 +123,7 @@ Rule 14 is evaluated ahead of rule 8, so the nodes reach the console's HTTPS por
 
 Rule 16 is evaluated ahead of rule 7. The mDNS proxy relays household devices' searches onto the IoT VLAN as one-shot queries from a random port, which ask the answer to come straight back to that port; rule 7 permits only the gateway's service ports, so it would block Home Assistant's reply. Household devices still reach Home Assistant only through `ha.home.seneker.io` (rule 13).
 
-Rule 15 is also evaluated ahead of rule 8. The gateway broadcasts UniFi device discovery on every network, and the NAS, a UniFi OS console, answers from UDP 10001. A reply to a broadcast has no connection-tracking entry, so without rule 15 rule 8 treats each one as a new connection and blocks it.
+Rule 15 is also evaluated ahead of rule 8. The gateway broadcasts UniFi device discovery on every network, and the NAS, a UniFi OS console, answers from UDP 10001; it also answers the gateway's one-shot mDNS queries from UDP 5353. A reply to a broadcast or multicast has no connection-tracking entry, so without rule 15 rule 8 treats each one as a new connection and blocks it.
 
 The extenders' management addresses are on the Default VLAN, but they also bridge VLAN 10 for the Homelab SSID. They hear the NAS's own discovery broadcasts there and answer from UDP 10001 through the gateway, so rule 11 blocks those replies as new household-to-Homelab connections. The household-to-NAS boundary stays closed. With the extenders' management on the Management VLAN the replies would continue, but as infrastructure-to-infrastructure traffic that a rule could allow without opening the household side.
 
