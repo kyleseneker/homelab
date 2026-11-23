@@ -11,7 +11,7 @@ Prometheus scrapes node-exporter on the Proxmox host, `homelabpve01`, for the ha
 | Endpoint | `192.168.10.2:9100` (Homelab VLAN only) |
 | Prometheus job | `proxmox-host`, instance `homelabpve01` |
 | Scrape config | `kube-prometheus-stack/proxmox-host-scrape.yml` |
-| Network policy | `monitoring-egress-prometheus-proxmox` |
+| Network policy | `prometheus` in `kube-prometheus-stack/networkpolicy.yml` |
 
 ## How It Works
 

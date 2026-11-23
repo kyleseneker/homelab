@@ -1,6 +1,15 @@
 # Network Policies
 
-CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny. One cluster-wide policy denies every pod access to infrastructure administration.
+CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny. Cluster-wide policies deny every pod access to infrastructure administration.
+
+## Layout
+
+| Where | What |
+|-------|------|
+| `infrastructure/network-policies/<namespace>.yml` | The namespace baseline: world ingress deny, the ingress and egress every pod in the namespace shares |
+| `infrastructure/network-policies/infrastructure-admin.yml` | Cluster-wide denies |
+| `infrastructure/network-policies/cidr-groups.yml` | Named external addresses |
+| `<app>/networkpolicy.yml` | Rules for that app's workloads only, in the app's own Argo CD application |
 
 ## Allowed Paths
 
@@ -8,13 +17,13 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 |-----------|-------------------------|------------------------|
 | `media` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
 | `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
-| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
+| `monitoring` | Gateway, same namespace, cluster access to Prometheus, Authentik to Alertmanager on 9093 | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
 | `backups` | Same namespace, monitoring | DNS, API, NFS and configured backup endpoints |
 
-The manifests in `infrastructure/network-policies/` are the detailed source of truth. Rules select pod labels and **pod target ports**, which may differ from Service ports.
+The manifests are the detailed source of truth. Rules select pod labels and **pod target ports**, which may differ from Service ports.
 
 ## Named Addresses
 

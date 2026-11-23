@@ -35,7 +35,7 @@ The configuration lives in the chart's ConfigMap (`up.conf`). Events come only f
 The UniFi console is a management interface, and [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) keeps the cluster off it with one exception for unpoller:
 
 - The gateway firewall lets the three nodes reach 192.168.10.1 on TCP 443 only ([Network Infrastructure](../architecture/network-infrastructure.md#custom-rules)).
-- Pod traffic leaves the cluster from node addresses, so the `deny-gateway-console` CiliumClusterwideNetworkPolicy denies 192.168.10.1:443 to every pod except unpoller in `monitoring`, and `monitoring-egress-unpoller` allows it there ([Network Policies](network-policies.md#infrastructure-administration)).
+- Pod traffic leaves the cluster from node addresses, so the `deny-gateway-console` CiliumClusterwideNetworkPolicy denies 192.168.10.1:443 to every pod except unpoller in `monitoring`, and the `unpoller` policy in the app's `networkpolicy.yml` allows it there ([Network Policies](network-policies.md#infrastructure-administration)).
 - The API key should belong to a View Only admin, so it can read but not change the network ([Credentials](#credentials)).
 
 unpoller pins the console's self-signed certificate (`CN=unifi.local`, valid until 2027-08-26) through `ssl_cert_paths`: it accepts that certificate and no other. When the console issues a new one, `UnpollerAbsent` fires. Replace `controller.pem` in `values.yml` with the new certificate:

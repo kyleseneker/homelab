@@ -22,7 +22,7 @@ SNMP is enabled in the NAS's own UniFi OS settings, which offer only SNMPv3 with
 
 The chart's ConfigMap holds the `unas_v3` auth and an `lm_sensors` module. The `system`, `if_mib`, `ucd_la_table`, `ucd_memory` and `ucd_system_stats` modules come from the `snmp.yml` bundled in the image, loaded with a second `--config.file`. `--config.expand-environment-variables` fills `${UNAS_SNMP_USERNAME}` and `${UNAS_SNMP_PASSWORD}` from the `unas-snmp` Secret, so the credentials never appear in Git or the ConfigMap.
 
-The `unas-snmp` `ScrapeConfig` uses the multi-target exporter pattern: Prometheus sends the NAS address as the `target` parameter to the exporter's `/snmp` endpoint every 60 seconds. A failed SNMP request returns HTTP 500, so the job's `up` series drops to 0. `monitoring-egress-snmp-exporter` allows UDP 161 to the NAS only; the UniFi zone firewall already allows the Homelab zone to reach the NAS.
+The `unas-snmp` `ScrapeConfig` uses the multi-target exporter pattern: Prometheus sends the NAS address as the `target` parameter to the exporter's `/snmp` endpoint every 60 seconds. A failed SNMP request returns HTTP 500, so the job's `up` series drops to 0. The app's `networkpolicy.yml` allows UDP 161 to the NAS only; the UniFi zone firewall already allows the Homelab zone to reach the NAS.
 
 ## What the NAS Exposes
 

@@ -190,7 +190,11 @@ If the application requires secrets (API keys, credentials, etc.):
 
 5. Reference the secret in `values.yml` via `envFrom` or `env.valueFrom`.
 
-## Step 5: Commit and Push
+## Step 5: Allow Its Traffic (If Needed)
+
+The namespace baseline in `infrastructure/network-policies/<namespace>.yml` covers what every pod in the namespace shares, such as DNS, same-namespace traffic and the gateway. If the app needs more, such as the Kubernetes API, an address outside the cluster or a port another namespace calls, add a `networkpolicy.yml` beside its values, list it in `kustomization.yml` and set `hasResources: true`. Select the app's pods by label, and refer to outside addresses by their `CiliumCIDRGroup` ([Network Policies](../infrastructure/network-policies.md)).
+
+## Step 6: Commit and Push
 
 ```bash
 git add k8s/clusters/homelabk8s01/apps/media/<app-name>/
