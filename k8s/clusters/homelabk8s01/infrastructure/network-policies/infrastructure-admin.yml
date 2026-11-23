@@ -12,8 +12,8 @@ spec:
     egress: false
     ingress: false
   egressDeny:
-    - toCIDR:
-        - 192.168.10.2/32
+    - toCIDRSet:
+        - cidrGroupRef: proxmox-host
       toPorts:
         - ports:
             - port: "22"
@@ -24,8 +24,8 @@ spec:
               protocol: TCP
             - port: "8006"
               protocol: TCP
-    - toCIDR:
-        - 192.168.10.10/32
+    - toCIDRSet:
+        - cidrGroupRef: nas
       toPorts:
         - ports:
             - port: "22"
@@ -34,8 +34,8 @@ spec:
               protocol: TCP
             - port: "443"
               protocol: TCP
-    - toCIDR:
-        - 192.168.99.0/24
+    - toCIDRSet:
+        - cidrGroupRef: management-vlan
 ---
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
@@ -53,8 +53,8 @@ specs:
       egress: false
       ingress: false
     egressDeny:
-      - toCIDR:
-          - 192.168.10.1/32
+      - toCIDRSet:
+          - cidrGroupRef: unifi-gateway
         toPorts:
           - ports:
               - port: "443"
@@ -74,8 +74,8 @@ specs:
       egress: false
       ingress: false
     egressDeny:
-      - toCIDR:
-          - 192.168.10.1/32
+      - toCIDRSet:
+          - cidrGroupRef: unifi-gateway
         toPorts:
           - ports:
               - port: "443"

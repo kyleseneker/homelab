@@ -74,8 +74,8 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
-    - toCIDR:
-        - 192.168.10.10/32
+    - toCIDRSet:
+        - cidrGroupRef: nas
       toPorts:
         - ports:
             - port: "2049"

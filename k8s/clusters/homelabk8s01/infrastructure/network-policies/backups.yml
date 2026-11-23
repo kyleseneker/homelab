@@ -58,8 +58,8 @@ spec:
             k8s:io.kubernetes.pod.namespace: backups
     - toEntities:
         - kube-apiserver
-    - toCIDR:
-        - 192.168.10.10/32
+    - toCIDRSet:
+        - cidrGroupRef: nas
       toPorts:
         - ports:
             - port: "2049"

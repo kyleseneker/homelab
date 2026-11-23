@@ -16,6 +16,19 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 
 The manifests in `infrastructure/network-policies/` are the detailed source of truth. Rules select pod labels and **pod target ports**, which may differ from Service ports.
 
+## Named Addresses
+
+Policies refer to addresses outside the cluster through `CiliumCIDRGroup` objects in `cidr-groups.yml`, with `toCIDRSet: [{cidrGroupRef: <name>}]`, instead of repeating literal CIDRs. The groups carry an ArgoCD sync wave of `-1`, so they exist before the policies that use them; a deny rule naming a missing group matches nothing.
+
+| Group | CIDR | Address |
+|-------|------|---------|
+| `nas` | 192.168.10.10/32 | UNAS Pro |
+| `proxmox-host` | 192.168.10.2/32 | Proxmox host |
+| `unifi-gateway` | 192.168.10.1/32 | Dream Router 7 on the Homelab VLAN |
+| `management-vlan` | 192.168.99.0/24 | Management VLAN |
+
+Exception lists (`except`) accept only literal CIDRs, so Home Assistant's internet egress still lists the private ranges it excludes.
+
 ## Enforcement Model
 
 The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.

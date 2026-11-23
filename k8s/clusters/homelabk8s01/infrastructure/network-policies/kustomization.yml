@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - auth.yml
   - backups.yml
+  - cidr-groups.yml
   - external-secrets.yml
   - home-automation.yml
   - infrastructure-admin.yml

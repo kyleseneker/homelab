@@ -1,0 +1,39 @@
+apiVersion: cilium.io/v2
+kind: CiliumCIDRGroup
+metadata:
+  name: nas
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  externalCIDRs:
+    - 192.168.10.10/32
+---
+apiVersion: cilium.io/v2
+kind: CiliumCIDRGroup
+metadata:
+  name: proxmox-host
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  externalCIDRs:
+    - 192.168.10.2/32
+---
+apiVersion: cilium.io/v2
+kind: CiliumCIDRGroup
+metadata:
+  name: unifi-gateway
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  externalCIDRs:
+    - 192.168.10.1/32
+---
+apiVersion: cilium.io/v2
+kind: CiliumCIDRGroup
+metadata:
+  name: management-vlan
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  externalCIDRs:
+    - 192.168.99.0/24
