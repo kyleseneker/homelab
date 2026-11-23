@@ -22,7 +22,7 @@ Run Gluetun as a Kubernetes native sidecar (`initContainer` with `restartPolicy:
 ## Rationale
 
 - **Kill-switch by design**: Gluetun's firewall blocks non-tunnel download traffic, while its startup probe prevents qBittorrent from starting before the VPN is ready. Explicit firewall exceptions allow the required local API and health-check traffic.
-- **Shared network namespace**: The sidecar pattern means qBittorrent doesn't need any VPN configuration. It sees Gluetun's network as its own. Whenever the tunnel comes up, Gluetun's port-forwarding command sets qBittorrent's listening port to the port PIA forwards, through qBittorrent's API on localhost, which skips the login (`bypassLocalAuth`).
+- **Shared network namespace**: The sidecar pattern means qBittorrent doesn't need any VPN configuration. It sees Gluetun's network as its own. Whenever the tunnel comes up, Gluetun's port-forwarding command sets qBittorrent's listening port to the port PIA forwards, through qBittorrent's API on localhost, which skips the login (`bypassLocalAuth`). It then restarts qBittorrent's DHT, which loses its nodes whenever the listening port is rebound.
 - **Network policy isolation**: The `downloads` CiliumNetworkPolicy selectively allows world egress only for the VPN pod. Other media pods (Sonarr, Radarr) are limited to DNS, intra-namespace, HTTPS, and NFS.
 - **Simplicity**: One pod, one VPN tunnel, one download client. No proxy chains or gateway nodes to manage.
 - **Health checks**: Gluetun exposes a health endpoint via its control server. qBittorrent's container startup depends on Gluetun readiness, preventing traffic before the tunnel is up.
