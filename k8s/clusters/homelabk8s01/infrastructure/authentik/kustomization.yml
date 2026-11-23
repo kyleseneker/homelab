@@ -9,3 +9,4 @@ resources:
   - blueprints-configmap.yml
   - referencegrant.yml
   - backup.yml
+  - networkpolicy.yml
