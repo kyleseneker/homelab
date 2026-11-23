@@ -125,8 +125,8 @@ Router, firewall, and UniFi Network controller. Located on the main floor with a
 | Spec | Detail |
 |------|--------|
 | Model | UDR7 |
-| WAN | 1x 10G SFP+, 1x 2.5G RJ45 |
-| LAN | 1x 2.5G RJ45 (WAN/LAN), 3x 2.5G RJ45 (1x PoE) |
+| WAN | 1x 10G SFP+ (WAN2, Google Fiber), 1x 2.5G RJ45 (Port 4, WAN1, unused); both default to WAN and either can be reassigned to LAN |
+| LAN | 3x 2.5G RJ45 (1x PoE) |
 | Wi-Fi | Tri-band Wi-Fi 7 (2.4 / 5 / 6 GHz, up to 10.6 Gbps aggregate) |
 | IDS/IPS | 2.3 Gbps throughput |
 | Storage | 64 GB microSD (pre-installed, UniFi Protect NVR) |
