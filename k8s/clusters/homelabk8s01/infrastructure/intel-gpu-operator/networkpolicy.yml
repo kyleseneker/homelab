@@ -1,0 +1,22 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: inteldeviceplugins-controller-manager
+  namespace: intel-gpu-operator
+spec:
+  description: "Admission webhook calls from the API server"
+  endpointSelector:
+    matchLabels:
+      control-plane: controller-manager
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingress:
+    - fromEntities:
+        - kube-apiserver
+        # API-server calls can use the control-plane node's CiliumInternalIP.
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "9443"
+              protocol: TCP

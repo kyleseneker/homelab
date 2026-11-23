@@ -1,0 +1,24 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: goldilocks-dashboard
+  namespace: goldilocks
+spec:
+  description: "Authentik's embedded outpost proxies the dashboard"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: goldilocks
+      app.kubernetes.io/component: dashboard
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+            app.kubernetes.io/name: authentik
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP

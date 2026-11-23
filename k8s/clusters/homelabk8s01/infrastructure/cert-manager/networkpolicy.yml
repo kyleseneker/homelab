@@ -1,0 +1,54 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+spec:
+  description: "ACME and Route53 APIs, and the DNS-01 recursive nameservers in values.yml"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+      app.kubernetes.io/component: controller
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  egress:
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toCIDR:
+        - 1.1.1.1/32
+        - 9.9.9.9/32
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-webhook
+  namespace: cert-manager
+spec:
+  description: "Admission webhook calls from the API server"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: webhook
+      app.kubernetes.io/instance: cert-manager
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  ingress:
+    - fromEntities:
+        - kube-apiserver
+        # API-server calls can use the control-plane node's CiliumInternalIP.
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "10250"
+              protocol: TCP
