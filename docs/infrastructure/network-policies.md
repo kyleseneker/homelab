@@ -1,16 +1,16 @@
 # Network Policies
 
-Every pod outside `kube-system` starts in default deny in both directions, with only cluster DNS allowed. Namespace and workload policies add the paths each app needs, so a new namespace starts closed rather than open. Cluster-wide policies also deny every pod access to infrastructure administration.
+Every pod outside `kube-system` starts in default deny in both directions, with only cluster DNS allowed. Each app's own policy adds the paths it needs, so a new namespace starts closed rather than open. Cluster-wide policies also deny every pod access to infrastructure administration.
 
 ## Layout
 
 | Where | What |
 |-------|------|
 | `infrastructure/network-policies/baseline.yml` | Cluster-wide default deny, the world ingress deny and the DNS allow |
-| `infrastructure/network-policies/<namespace>.yml` | The namespace baseline: the ingress and egress every pod in the namespace shares |
+| `infrastructure/network-policies/<namespace>.yml` | Rules shared by several apps in one namespace: same-namespace traffic, Prometheus scraping, the Kubernetes API (`media`, `monitoring`, `backups`, `intel-gpu-operator`) |
 | `infrastructure/network-policies/infrastructure-admin.yml` | Cluster-wide denies of infrastructure administration |
 | `infrastructure/network-policies/cidr-groups.yml` | Named external addresses |
-| `<app>/networkpolicy.yml` | Rules for that app's workloads only, in the app's own Argo CD application |
+| `<app>/networkpolicy.yml` | Everything else, in the app's own Argo CD application: gateway ingress for apps with a direct route, the ports other apps call, addresses outside the cluster. A namespace that holds one app keeps its whole policy here |
 
 Argo CD is installed from `k8s/bootstrap/argocd`, outside the ApplicationSet, so its component rules also live in `argocd.yml`, where Argo CD keeps them in sync.
 
@@ -18,9 +18,9 @@ Argo CD is installed from `k8s/bootstrap/argocd`, outside the ApplicationSet, so
 
 | Namespace | Principal ingress paths | Principal egress paths |
 |-----------|-------------------------|------------------------|
-| `media` | Gateway, same namespace, Prometheus, the Authentik server on proxy backend ports | DNS, same namespace, HTTPS; VPN workload has broader internet access |
-| `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Prometheus on 9300 | DNS, same namespace, Kubernetes API; the server to its proxy backends |
-| `monitoring` | Gateway, same namespace, cluster access to Prometheus, the Authentik server to Alertmanager on 9093 | DNS, same namespace, API; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
+| `media` | Gateway to Jellyfin, Seerr and Homepage; the Authentik server to each proxied app's port; same namespace; Prometheus | DNS, same namespace, HTTPS; VPN workload has broader internet access |
+| `auth` | Gateway to the server on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Prometheus on 9300 | DNS, same namespace, Kubernetes API; the server to its proxy backends |
+| `monitoring` | Gateway to Grafana and Uptime Kuma; same namespace; cluster access to Prometheus; the Authentik server to Alertmanager on 9093 | DNS, same namespace, API; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |

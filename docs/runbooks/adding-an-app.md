@@ -192,7 +192,7 @@ If the application requires secrets (API keys, credentials, etc.):
 
 ## Step 5: Allow Its Traffic (If Needed)
 
-Every pod starts in default deny, with only cluster DNS allowed. The namespace baseline in `infrastructure/network-policies/<namespace>.yml` adds what every pod in the namespace shares, such as same-namespace traffic and the gateway; a new namespace needs its own. If the app needs more, such as the Kubernetes API, an address outside the cluster or a port another namespace calls, add a `networkpolicy.yml` beside its values, list it in `kustomization.yml` and set `hasResources: true`. Select the app's pods by label, and refer to outside addresses by their `CiliumCIDRGroup` ([Network Policies](../infrastructure/network-policies.md)).
+Every pod starts in default deny, with only cluster DNS allowed. Add a `networkpolicy.yml` beside the app's values with what it needs: ingress from the gateway (`fromEntities: [ingress]`) if it has its own route, the ports other apps call, the Kubernetes API, and addresses outside the cluster. List it in `kustomization.yml` and set `hasResources: true`. Select the app's pods by label, and refer to outside addresses by their `CiliumCIDRGroup`. `infrastructure/network-policies/<namespace>.yml` holds only rules shared by several apps in one namespace, such as same-namespace traffic in `media` ([Network Policies](../infrastructure/network-policies.md)).
 
 ## Step 6: Commit and Push
 

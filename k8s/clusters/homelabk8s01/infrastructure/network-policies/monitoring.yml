@@ -1,17 +1,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-allow-gateway
-  namespace: monitoring
-spec:
-  endpointSelector: {}
-  ingress:
-    - fromEntities:
-        - ingress
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: monitoring-allow-internal
   namespace: monitoring
 spec:

@@ -12,7 +12,7 @@ With multiple applications sharing a cluster, a compromised or misconfigured pod
 
 Use CiliumNetworkPolicy resources to define permitted ingress and egress for selected pods. Policies select workloads by namespace and component labels. Once a policy enables enforcement in a direction, traffic in that direction must match an allow rule.
 
-A cluster-wide baseline policy puts every pod outside `kube-system` into default deny in both directions, denies ingress from `world` and allows only cluster DNS. Each namespace's baseline, the rules every pod in it shares, lives in the `network-policies` directory with one file per namespace. Rules for a single workload live in a `networkpolicy.yml` beside that workload's manifests and ship in its Argo CD application, so a workload and the traffic it needs change in one commit. Addresses outside the cluster are named once, as `CiliumCIDRGroup` objects, and policies refer to them by name.
+A cluster-wide baseline policy puts every pod outside `kube-system` into default deny in both directions, denies ingress from `world` and allows only cluster DNS. Everything else lives in a `networkpolicy.yml` beside the app's manifests and ships in its Argo CD application, so an app and the traffic it needs change in one commit; a namespace that holds one app keeps its whole policy there. Only rules that several apps in one namespace share, such as same-namespace traffic, live in the `network-policies` directory, one file per namespace. Addresses outside the cluster are named once, as `CiliumCIDRGroup` objects, and policies refer to them by name.
 
 ## Alternatives Considered
 
@@ -37,7 +37,7 @@ A cluster-wide baseline policy puts every pod outside `kube-system` into default
 
 ## Consequences
 
-- A new namespace starts closed: its pods can resolve names and nothing else until its baseline file lands. A workload that needs more than its namespace baseline brings its own `networkpolicy.yml`.
+- A new namespace starts closed: its pods can resolve names and nothing else until the app's `networkpolicy.yml` lands.
 - Debugging connectivity issues requires familiarity with Cilium's `hubble observe` tooling to trace dropped packets and identify which policy is blocking traffic.
 - Changing an external address means editing its `CiliumCIDRGroup`. `except` lists accept only literal CIDRs, so exclusions still spell out their ranges.
 - Overly restrictive policies can silently break functionality (e.g., a missing scrape exception prevents metrics collection from a new namespace). Policy changes should be tested by verifying service connectivity after deployment.
