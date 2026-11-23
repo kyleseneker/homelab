@@ -1,0 +1,13 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: downloads
+  namespace: media
+spec:
+  description: "Gluetun's VPN tunnel"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: downloads
+  egress:
+    - toEntities:
+        - world
