@@ -43,6 +43,7 @@ flowchart LR
 | NUT Exporter | UPS metrics from the CyberPower unit via NUT | Deployment | None |
 | Blackbox exporter | Git-managed HTTP/TLS endpoint probes | Deployment | None |
 | Smokeping Prober | Once-a-second latency and loss probes to the gateway, NAS and public resolvers | Deployment | None |
+| unpoller | UniFi Wi-Fi, switch and gateway metrics and controller events | Deployment | None |
 | Uptime Kuma | Synthetic HTTP/TCP/DNS monitoring | Deployment | 1Gi PVC (`local-path`) |
 | VPA Recommender | Per-workload CPU/memory right-sizing recommendations | Deployment | None |
 | Goldilocks | Auto-creates VPA CRs, provides recommendation dashboard | Deployment (controller + dashboard) | None |
@@ -67,6 +68,7 @@ Prometheus scrapes metrics from:
 - **Exportarr** -- *arr application metrics (queue depth, library size, missing episodes) via ServiceMonitors
 - **NUT Exporter** -- UPS load, battery charge, runtime, and input voltage
 - **Smokeping Prober** -- round-trip time histograms and packet loss to the gateway, the NAS and three public resolvers
+- **unpoller** -- UniFi radio, extender, Wi-Fi client, switch port and gateway metrics from the controller API
 - **Velero** -- backup and schedule status via its own ServiceMonitor
 - **Application metrics** -- Targets declared by ServiceMonitor or PodMonitor resources; scrape annotations alone are not a configured discovery mechanism
 
@@ -79,12 +81,14 @@ Blackbox `Probe` resources verify trusted HTTPS against direct health endpoints 
 
 ### Network Monitoring
 
-The network feeds the same stack from two sources ([ADR-033](../decisions/033-network-monitoring.md)):
+The network feeds the same stack from three sources ([ADR-033](../decisions/033-network-monitoring.md)):
+
+- **Controller metrics**: [unpoller](../infrastructure/unpoller.md) reads the UniFi controller every 30 seconds: channel use, extender links, every Wi-Fi device's signal and experience score, switch ports and the gateway's WAN monitors. It also forwards the controller's events to Loki.
 
 - **Latency and loss**: [Smokeping Prober](../infrastructure/smokeping-prober.md) pings the gateway, the NAS and three public resolvers once a second from inside the cluster. Prometheus alerts on sustained loss; short blips show on the dashboard.
 - **Gateway events**: the Dream Router sends its activity log over syslog to a dedicated Alloy instance, which ships it to Loki as `job=unifi-syslog` ([Alloy Syslog](../infrastructure/alloy-syslog.md)).
 
-The **Network** Grafana dashboard puts both side by side: round-trip time, loss and a latency heatmap per target above UniFi event counts and the event log, so a lag spike can be matched to what the router recorded at the same moment. The probes run from wired nodes and do not measure Wi-Fi.
+The **Network** Grafana dashboard puts the probes and gateway events side by side: round-trip time, loss and a latency heatmap per target above UniFi event counts and the event log, so a lag spike can be matched to what the router recorded at the same moment. The probes run from wired nodes and do not measure Wi-Fi; the **Wi-Fi** dashboard does, from unpoller's metrics.
 
 ### Alertmanager
 
@@ -270,6 +274,7 @@ flowchart TD
         ksm["kube-state-metrics"]
         smokeping["Smokeping Prober"]
         alloySyslog["Alloy Syslog"]
+        unpoller["unpoller"]
     end
 
     ne -->|"host metrics"| prom
@@ -279,6 +284,9 @@ flowchart TD
     auditLog -->|"audit events"| alloyDs
     router -->|"CEF over UDP 514"| alloySyslog
     alloySyslog -->|"UniFi events"| loki
+    router -->|"controller API"| unpoller
+    unpoller -->|"Wi-Fi and device metrics"| prom
+    unpoller -->|"controller events"| loki
     smokeping -->|"latency and loss"| prom
     alloyDs -->|"labeled logs"| loki
     prom -->|"metrics queries"| grafana

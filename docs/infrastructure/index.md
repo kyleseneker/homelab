@@ -31,6 +31,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
 | SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.1 |
 | Smokeping Prober | monitoring | helm | app-template | 5.3.0 |
+| unpoller | monitoring | helm | app-template | 5.3.0 |
 | Authentik | auth | helm | authentik | 2026.8.6 |
 | Reloader | kube-system | helm | reloader | 2.2.20 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |

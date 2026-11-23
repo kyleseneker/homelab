@@ -8,7 +8,7 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 |-----------|-------------------------|------------------------|
 | `media` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
 | `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
-| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus, the Dream Router's syslog to `alloy-syslog` on UDP 5514 | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert, probe and ICMP echo exceptions |
+| `monitoring` | Gateway, same namespace, Authentik on 9090/9093, cluster access to Prometheus, the Dream Router's syslog to `alloy-syslog` on UDP 5514 | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert, probe and ICMP echo exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
@@ -30,7 +30,9 @@ Authentik's database is only reachable through its same-namespace rule. OIDC cli
 - The NAS's SSH (22) and web UI (80, 443) on 192.168.10.10. NFS and SNMP stay reachable.
 - The whole Management VLAN, 192.168.99.0/24.
 
-Deny rules take precedence over any allow rule. The policy sets `enableDefaultDeny` to false in both directions: without it, Cilium would put every pod into default-deny egress, because a policy with egress rules of any kind enables it. It does not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).
+`deny-gateway-console` denies the UniFi console on 192.168.10.1:443 to every pod except unpoller in `monitoring`. The gateway firewall opens that port to the nodes for unpoller, and pod traffic leaves the cluster from node addresses, so without it any pod could reach the console's login. It has two rules: one for pods not labelled `unpoller`, one for pods labelled `unpoller` outside `monitoring` ([unpoller](unpoller.md#access-to-the-console)).
+
+Deny rules take precedence over any allow rule. Both policies set `enableDefaultDeny` to false in both directions: without it, Cilium would put every pod into default-deny egress, because a policy with egress rules of any kind enables it. They do not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).
 
 ## Remaining Boundaries
 

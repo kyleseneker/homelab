@@ -49,13 +49,15 @@ Set targets from household needs and observed behavior. Application availability
 
 - [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their CEF event names have been observed.
 - [ ] Add a latency alert from a week of baseline round-trip data.
-- [ ] Decide how UniFi controller metrics (per-radio channel use, per-client signal and retries, switch port errors) reach Prometheus. unpoller needs an exception to the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md).
+- [ ] Compare unpoller's controller events with the `alloy-syslog` stream for a week, and retire `alloy-syslog` if the polled events are complete.
+- [ ] Compare the gateway's own WAN latency monitors with the once-a-second probes, and decide whether the probes stay.
+- [ ] Add anomaly alerts from per-hour-of-week baselines for channel busy time, retries, extender link signal, Wi-Fi experience and internet latency, after two weeks of unpoller data.
+- [ ] Post a weekly network health report to Slack: weakest devices, busiest channels, extender links, internet trends and the week's changes.
 - [ ] Ping the access points to measure the wireless mesh backhaul. This needs fixed access point addresses and an ICMP rule from the nodes to the Default VLAN.
 - [ ] Export IPFIX flows from the gateway to show which devices use the bandwidth during lag.
-- [ ] Add a scheduled internet speed test.
 - [ ] Evaluate a Wi-Fi sensor client that runs the same probes over Wi-Fi.
 
-The probes and syslog from [ADR-033](../decisions/033-network-monitoring.md) show wired, gateway and internet problems. Wi-Fi quality needs controller metrics or a probe on Wi-Fi.
+[ADR-033](../decisions/033-network-monitoring.md) combines controller metrics, gateway events and once-a-second probes. A probe on Wi-Fi would add the clients' own view.
 
 ## Definition of Done
 

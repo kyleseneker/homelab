@@ -1,0 +1,34 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: unpoller
+  namespace: monitoring
+spec:
+  groups:
+    - name: unifi
+      rules:
+        - alert: UnpollerAbsent
+          expr: absent(up{job="unpoller"} == 1)
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UniFi metrics have stopped"
+            description: "Prometheus cannot scrape unpoller. Wi-Fi, switch and gateway metrics and the UniFi alerts are blind. Check the pod, the API key in Vault and whether the gateway still presents the pinned certificate."
+
+        - alert: UniFiDeviceRestarted
+          expr: unpoller_device_uptime_seconds < 900
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.name }} restarted"
+            description: "{{ $labels.name }} has been up for {{ $value | humanizeDuration }}. Check the gateway events for a firmware update, a power loss or a crash."
+
+        - alert: UniFiDevicesDisconnected
+          expr: max by (subsystem) (unpoller_site_disconnected) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "UniFi {{ $labels.subsystem }} devices disconnected"
+            description: "The controller reports {{ $value }} disconnected device(s) in the {{ $labels.subsystem }} subsystem for 5 minutes. An extender may have lost its link to the gateway."

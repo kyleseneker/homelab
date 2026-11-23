@@ -36,3 +36,47 @@ spec:
               protocol: TCP
     - toCIDR:
         - 192.168.99.0/24
+---
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: deny-gateway-console
+specs:
+  - description: "Deny every pod except unpoller access to the UniFi console, which the gateway firewall opens to the nodes"
+    endpointSelector:
+      matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: NotIn
+          values:
+            - unpoller
+    enableDefaultDeny:
+      egress: false
+      ingress: false
+    egressDeny:
+      - toCIDR:
+          - 192.168.10.1/32
+        toPorts:
+          - ports:
+              - port: "443"
+                protocol: TCP
+  - description: "Deny pods labelled unpoller outside monitoring access to the UniFi console"
+    endpointSelector:
+      matchExpressions:
+        - key: app.kubernetes.io/name
+          operator: In
+          values:
+            - unpoller
+        - key: k8s:io.kubernetes.pod.namespace
+          operator: NotIn
+          values:
+            - monitoring
+    enableDefaultDeny:
+      egress: false
+      ingress: false
+    egressDeny:
+      - toCIDR:
+          - 192.168.10.1/32
+        toPorts:
+          - ports:
+              - port: "443"
+                protocol: TCP

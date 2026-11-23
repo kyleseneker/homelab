@@ -1,0 +1,105 @@
+defaultPodOptions:
+  annotations:
+    reloader.stakater.com/auto: 'true'
+  securityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    runAsNonRoot: true
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/unpoller/unpoller
+          tag: v5.10.0
+        args:
+          - --config=/etc/unpoller/up.conf
+        envFrom:
+          - secretRef:
+              name: unpoller
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 192Mi
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: 9130
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: 9130
+configMaps:
+  config:
+    data:
+      up.conf: |
+        [poller]
+          quiet = true
+
+        [prometheus]
+          http_listen = "0.0.0.0:9130"
+          interval = "30s"
+
+        [influxdb]
+          disable = true
+
+        [loki]
+          url = "http://loki.monitoring.svc.cluster.local:3100"
+          interval = "2m"
+
+        [unifi.defaults]
+          url = "https://192.168.10.1"
+          sites = ["all"]
+          save_sites = true
+          save_syslog = true
+          save_speedtest = true
+          skip_device_tags = true
+          ssl_cert_paths = ["/etc/unpoller/controller.pem"]
+      controller.pem: |
+        -----BEGIN CERTIFICATE-----
+        MIIDNTCCAh2gAwIBAgIJHIcNTnH8K3cyMA0GCSqGSIb3DQEBCwUAMBYxFDASBgNV
+        BAMTC3VuaWZpLmxvY2FsMB4XDTI1MDUyMzA2NTMzN1oXDTI3MDgyNjA2NTMzN1ow
+        FjEUMBIGA1UEAxMLdW5pZmkubG9jYWwwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+        ggEKAoIBAQC9YK0TmOLnTESzjtmJF69IiueDjESrpyeCFozVrO5fNnmpMIGirJhY
+        7R/lItV5qdLgKCumDn3Y6V1W6eKxefuBnBvnYH8RUf3kw1nuVDjp+NOC6DYK2JOC
+        1jvaTa4z0PcdGelvmjDv0emlTzDI7qiEzNaUCimKzyVNYu2hdaPwzty7p/SDwOiY
+        UgsTIHtmFjSoyNimL/77t8rvQGYm7bHpmSEGrFS9B5T735tyEwSQHIQ55XrNV+Sr
+        iIuaBWG4C26o1mTGrlG3UPkxQ4atW22WQ9cVlCQvG1qUAz5pVzLau/KWndG+1F6A
+        Z/gFYS6GQZo7XIZZCL2IyRLHBpTbv9JPAgMBAAGjgYUwgYIwCwYDVR0PBAQDAgL0
+        MDEGA1UdJQQqMCgGCCsGAQUFBwMBBggrBgEFBQcDAgYIKwYBBQUHAwMGCCsGAQUF
+        BwMIMEAGA1UdEQQ5MDeCC3VuaWZpLmxvY2Fsgglsb2NhbGhvc3SCBVs6OjFdhwR/
+        AAABhxD+gAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBAQCt9j1+XyrB
+        2ipKO+1fm4EWlTLhg1t3BO6xQ6EgKWpCznhb3t3dt/hjnRSqDAZidBWQ57oIckWt
+        K/Wwb6JMx9fbnpGNVuEm1vNvqg9IsIrchDp4f7bC65PE9mFMYRyYYXkSHfox5MHV
+        I4WBOxzj3Kkr7EMMgvBnMI416Dg7Ftn8JbmJnluLKsg5MqHh49ESZWJMbyENWMZN
+        QYgFITri3vYYC9sPCHUzWfFd+AJ0Rl0XhvJb2ANcF99jDaKTHLxuyGDa+Riz52Fp
+        8s6XpNEamE6WjIYmq9ODqehgJ9KuJZnJRHZDrk9LBwIB0Gqzgu7PCmUP66kDCQKk
+        Z2tpUERfBL/f
+        -----END CERTIFICATE-----
+persistence:
+  config:
+    type: configMap
+    identifier: config
+    globalMounts:
+      - path: /etc/unpoller
+        readOnly: true
+service:
+  main:
+    controller: main
+    ports:
+      metrics:
+        port: 9130

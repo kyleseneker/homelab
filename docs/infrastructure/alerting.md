@@ -138,6 +138,16 @@ Defined in `smokeping-prober/prometheusrule.yml` from once-a-second pings out of
 | `InternetPacketLoss` | warning | 10m | Over 5% of pings to every public resolver unanswered |
 | `InternetUnreachable` | critical | 5m | No public resolver answers; Slack delivers it once the link is back |
 
+### UniFi
+
+Defined in `unpoller/prometheusrule.yml` from the UniFi controller's metrics ([unpoller](unpoller.md)).
+
+| Alert | Severity | For | Condition |
+|-------|----------|-----|-----------|
+| `UnpollerAbsent` | warning | 10m | The `unpoller` target is down or missing: the pod, the API key or the pinned certificate |
+| `UniFiDeviceRestarted` | warning | -- | A UniFi device has been up for less than 15 minutes |
+| `UniFiDevicesDisconnected` | warning | 5m | The controller reports a disconnected device in the LAN, WAN or WLAN subsystem |
+
 ## Adding New Rules
 
 Add new `PrometheusRule` resources in the `monitoring` namespace. With `ruleSelectorNilUsesHelmValues: false`, Prometheus picks up all rules regardless of labels.
