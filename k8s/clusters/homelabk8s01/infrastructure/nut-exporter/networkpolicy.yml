@@ -1,0 +1,16 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nut-exporter
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: nut-exporter
+  egress:
+    - toCIDRSet:
+        - cidrGroupRef: proxmox-host
+      toPorts:
+        - ports:
+            - port: "3493"
+              protocol: TCP
