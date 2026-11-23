@@ -16,8 +16,11 @@ spec:
         values:
           - kube-system
   enableDefaultDeny:
-    ingress: false
-    egress: false
+    ingress: true
+    egress: true
+  ingressDeny:
+    - fromEntities:
+        - world
   egress:
     - toEndpoints:
         - matchLabels:
