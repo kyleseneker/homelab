@@ -21,6 +21,8 @@ spec:
     applicationUrl: https://seerr.home.seneker.io
     localLogin: true
     mediaServerLogin: true
+  network:
+    trustProxy: true
   sonarr:
     - name: Sonarr
       appRef:

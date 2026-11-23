@@ -14,14 +14,10 @@ spec:
     deletionPolicy: orphan
   applications:
     - name: Sonarr
-      implementation: Sonarr
-      configContract: SonarrSettings
+      appRef:
+        kind: Sonarr
+        name: sonarr
       syncLevel: fullSync
-      prowlarrUrl: http://restore-prowlarr.restore-sonarr.svc.cluster.local:9696
-      baseUrl: http://restore-sonarr.restore-sonarr.svc.cluster.local:8989
-      apiKeySecretRef:
-        name: restore-sonarr-api-key
-        key: api-key
       syncCategories: [5000, 5040]
   indexers:
     - name: Recovery Fixture

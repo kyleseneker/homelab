@@ -6,6 +6,9 @@ metadata:
 spec:
   connection:
     url: http://jellyfin.media.svc.cluster.local:8096
+    apiKeySecretRef:
+      name: jellyfin-credentials
+      key: api-key
   reconcile:
     intervalSeconds: 900
     deletionPolicy: orphan
