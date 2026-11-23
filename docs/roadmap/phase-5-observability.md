@@ -47,6 +47,7 @@ Set targets from household needs and observed behavior. Application availability
 
 ## 5.6 Network Monitoring
 
+- [ ] Replace unpoller's administrator API key with a View Only admin's key, as [ADR-033](../decisions/033-network-monitoring.md) requires, then delete the administrator key in UniFi.
 - [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their CEF event names have been observed.
 - [ ] Add a latency alert from a week of baseline round-trip data.
 - [ ] Compare unpoller's controller events with the `alloy-syslog` stream for a week, and retire `alloy-syslog` if the polled events are complete.
