@@ -7,3 +7,4 @@ resources:
   - network-attachment.yml
   - prometheus-external-secret.yml
   - prometheusrule.yml
+  - networkpolicy.yml

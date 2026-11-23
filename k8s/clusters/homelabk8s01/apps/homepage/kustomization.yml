@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - configmap.yml
   - homepage-external-secret.yml
+  - networkpolicy.yml
   - rbac.yml

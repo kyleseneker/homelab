@@ -54,10 +54,17 @@ metadata:
   name: grafana
   namespace: monitoring
 spec:
-  description: "Authentik OIDC"
+  description: "Gateway in; Authentik OIDC out"
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: grafana
+  ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
   egress:
     - toEndpoints:
         - matchLabels:

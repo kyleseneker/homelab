@@ -7,6 +7,13 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: uptime-kuma
+  ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "3001"
+              protocol: TCP
   egress:
     - toEntities:
         - cluster

@@ -4,6 +4,26 @@ metadata:
   name: cert-manager
   namespace: cert-manager
 spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9402"
+              protocol: TCP
+  egress:
+    - toEntities:
+        - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cert-manager-controller
+  namespace: cert-manager
+spec:
   description: "ACME and Route53 APIs, and the DNS-01 recursive nameservers in values.yml"
   endpointSelector:
     matchLabels:

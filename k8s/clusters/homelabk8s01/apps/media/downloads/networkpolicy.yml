@@ -4,10 +4,20 @@ metadata:
   name: downloads
   namespace: media
 spec:
-  description: "Gluetun's VPN tunnel"
+  description: "Authentik's outpost in; Gluetun's VPN tunnel out"
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: downloads
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+            app.kubernetes.io/name: authentik
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress:
     - toEntities:
         - world

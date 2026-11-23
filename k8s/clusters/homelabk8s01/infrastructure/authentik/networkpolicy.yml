@@ -4,6 +4,24 @@ metadata:
   name: authentik
   namespace: auth
 spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+    - toEntities:
+        - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-metrics
+  namespace: auth
+spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: authentik
@@ -29,6 +47,12 @@ spec:
       app.kubernetes.io/name: authentik
       app.kubernetes.io/component: server
   ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring

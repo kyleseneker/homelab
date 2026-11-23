@@ -1,0 +1,19 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno
+  namespace: kyverno
+spec:
+  description: "Webhook calls from the API server and the cluster"
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+        - kube-apiserver
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kyverno
+    - toEntities:
+        - kube-apiserver

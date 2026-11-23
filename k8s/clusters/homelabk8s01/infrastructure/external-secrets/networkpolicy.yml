@@ -1,0 +1,26 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: external-secrets
+  namespace: external-secrets
+spec:
+  description: "Webhook calls in; Vault and the API server out"
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+        - kube-apiserver
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: external-secrets
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: vault
+      toPorts:
+        - ports:
+            - port: "8200"
+              protocol: TCP
+    - toEntities:
+        - kube-apiserver

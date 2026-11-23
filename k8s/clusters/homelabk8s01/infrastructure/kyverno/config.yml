@@ -9,4 +9,4 @@ syncOptions:
   - ServerSideApply=true
 annotations:
   argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
-hasResources: false
+hasResources: true
