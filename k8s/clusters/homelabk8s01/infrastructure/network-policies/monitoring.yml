@@ -254,6 +254,24 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: monitoring-egress-unpoller
+  namespace: monitoring
+spec:
+  description: "Allow unpoller to read the UniFi controller on the gateway"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: unpoller
+  egress:
+    - toCIDR:
+        - 192.168.10.1/32
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: monitoring-egress-uptime-kuma
   namespace: monitoring
 spec:

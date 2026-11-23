@@ -98,6 +98,7 @@ nav:
       - Proxmox Host Metrics: infrastructure/proxmox-host-metrics.md
       - SNMP Exporter: infrastructure/snmp-exporter.md
       - Smokeping Prober: infrastructure/smokeping-prober.md
+      - unpoller: infrastructure/unpoller.md
       - Garage: infrastructure/garage.md
       - Velero: infrastructure/velero.md
       - etcd Backup: infrastructure/etcd-backup.md
