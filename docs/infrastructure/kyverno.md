@@ -108,7 +108,7 @@ kubectl get policyreport -A
 
 Kyverno has its own CiliumNetworkPolicy rules:
 
-- **Ingress**: Default deny from world; allow from cluster, kube-apiserver, and host (required for webhook calls)
+- **Ingress**: from cluster, kube-apiserver, and host (required for webhook calls); world is denied cluster-wide
 - **Egress**: DNS, intra-namespace, and kube-apiserver only
 
 ## Architecture

@@ -1,17 +1,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: media-default-deny
-  namespace: media
-spec:
-  endpointSelector: {}
-  ingressDeny:
-    - fromEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: media-allow-gateway
   namespace: media
 spec:
@@ -44,8 +33,6 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
 ---
-# Egress: implicit deny model. Any endpoint with an egress rule denies all
-# other egress by default in Cilium, so we don't need egressDeny.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -55,16 +42,6 @@ spec:
   description: "Default egress rules for all media pods"
   endpointSelector: {}
   egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-            - port: "53"
-              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: media

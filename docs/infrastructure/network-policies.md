@@ -1,13 +1,14 @@
 # Network Policies
 
-CiliumNetworkPolicies control ingress and egress in every namespace that runs pods, except `kube-system`. There is no cluster-wide default deny yet, so a new namespace is open until it gets a baseline. Cluster-wide policies deny every pod access to infrastructure administration.
+Every pod outside `kube-system` starts in default deny in both directions, with only cluster DNS allowed. Namespace and workload policies add the paths each app needs, so a new namespace starts closed rather than open. Cluster-wide policies also deny every pod access to infrastructure administration.
 
 ## Layout
 
 | Where | What |
 |-------|------|
-| `infrastructure/network-policies/<namespace>.yml` | The namespace baseline: world ingress deny, the ingress and egress every pod in the namespace shares |
-| `infrastructure/network-policies/infrastructure-admin.yml` | Cluster-wide denies |
+| `infrastructure/network-policies/baseline.yml` | Cluster-wide default deny, the world ingress deny and the DNS allow |
+| `infrastructure/network-policies/<namespace>.yml` | The namespace baseline: the ingress and egress every pod in the namespace shares |
+| `infrastructure/network-policies/infrastructure-admin.yml` | Cluster-wide denies of infrastructure administration |
 | `infrastructure/network-policies/cidr-groups.yml` | Named external addresses |
 | `<app>/networkpolicy.yml` | Rules for that app's workloads only, in the app's own Argo CD application |
 
@@ -48,7 +49,7 @@ Exception lists (`except`) accept only literal CIDRs, so Home Assistant's intern
 
 ## Enforcement Model
 
-The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
+`baseline`, a CiliumClusterwideNetworkPolicy, selects every pod with a namespace label outside `kube-system`. Cilium's own health, ingress and host endpoints carry no namespace label, so the gateway is not selected. It enables default deny in both directions, denies ingress from `world` and allows egress to cluster DNS. Every other policy only adds allows. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
 
 Cilium also enforces Kubernetes `NetworkPolicy` objects and adds their allows to these. Argo CD's upstream install ships narrow per-component ingress policies, which stay as its ingress layer. Charts that ship broad ones have them turned off: Authentik's PostgreSQL subchart admitted 5432 from any pod and allowed all egress.
 
@@ -68,7 +69,7 @@ Authentik's database is only reachable through its same-namespace rule. OIDC cli
 
 `deny-gateway-console` denies the UniFi console on 192.168.10.1:443 to every pod except unpoller in `monitoring`. The gateway firewall opens that port to the nodes for unpoller, and pod traffic leaves the cluster from node addresses, so without it any pod could reach the console's login. It has two rules: one for pods not labelled `unpoller`, one for pods labelled `unpoller` outside `monitoring` ([unpoller](unpoller.md#access-to-the-console)).
 
-Deny rules take precedence over any allow rule. Both policies set `enableDefaultDeny` to false in both directions: without it, Cilium would put every pod into default-deny egress, because a policy with egress rules of any kind enables it. They do not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).
+Deny rules take precedence over any allow rule. Both policies set `enableDefaultDeny` to false in both directions: they also select `kube-system`, which `baseline` leaves out, and without it Cilium would put those pods into default-deny egress, because a policy with egress rules of any kind enables it. They do not cover host-network pods or the nodes themselves; the Proxmox host firewall and the zone firewall cover those ([ADR-016](../decisions/016-vlan-segmentation.md)).
 
 ## Remaining Boundaries
 
@@ -87,9 +88,8 @@ Test both the expected path and a forbidden path, including an unrelated pod att
 
 Argo CD applies its own policies. If one cuts the repo server off from GitHub, Argo CD cannot sync the fix: delete the policy with `kubectl`, then correct it in Git.
 
-## Rolling Out a New Namespace
+## Changing Policies Safely
 
-1. Read the namespace's open connections from conntrack (`cilium-dbg bpf ct list global` on each agent) as well as new flows from Hubble. Long-lived connections, such as watches on the API server, open no new flows while you watch.
-2. Ship the policies with `enableDefaultDeny: {ingress: false, egress: false}`. Cilium evaluates them and Hubble records the policy that allowed each flow, but nothing is dropped.
-3. Watch for flows that no policy allowed, and add rules for the ones that belong.
-4. Remove `enableDefaultDeny` to enforce, then test each path and watch for drops.
+- **A new namespace** starts closed. Ship its baseline file and the app's `networkpolicy.yml` with the app, then list what is still missing with `hubble observe --namespace <namespace> --verdict DROPPED`.
+- **Narrowing or removing a rule**: Hubble's policy verdicts name the policy that allowed each flow (`hubble observe --namespace <namespace> --type policy-verdict -o json`, fields `egress_allowed_by` and `ingress_allowed_by`). Watch long enough to cover periodic jobs, and read open connections from conntrack (`cilium-dbg bpf ct list global` on each agent), because long-lived connections such as watches on the API server open no new flows while you watch. Remove the rule once nothing relies on it.
+- **Comparing before and after**: `cilium-dbg bpf policy get <endpoint-id>` on the endpoint's node shows the rules Cilium actually enforces. A refactor that should change nothing should leave it identical.

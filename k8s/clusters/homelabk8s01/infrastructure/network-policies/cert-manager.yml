@@ -1,17 +1,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: cert-manager-default-deny
-  namespace: cert-manager
-spec:
-  endpointSelector: {}
-  ingressDeny:
-    - fromEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: cert-manager-allow-monitoring
   namespace: cert-manager
 spec:
@@ -34,15 +23,5 @@ metadata:
 spec:
   endpointSelector: {}
   egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-            - port: "53"
-              protocol: TCP
     - toEntities:
         - kube-apiserver

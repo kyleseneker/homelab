@@ -1,17 +1,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: auth-default-deny
-  namespace: auth
-spec:
-  endpointSelector: {}
-  ingressDeny:
-    - fromEntities:
-        - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: auth-allow-gateway
   namespace: auth
 spec:
@@ -36,7 +25,6 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: auth
 ---
-# Egress: implicit deny model
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -46,16 +34,6 @@ spec:
   description: "Default egress rules for all auth pods"
   endpointSelector: {}
   egress:
-    - toEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-            - port: "53"
-              protocol: TCP
     - toEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: auth
