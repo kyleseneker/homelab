@@ -6,7 +6,7 @@ Physical and logical network architecture below Kubernetes: VLANs, firewall rule
 
 ```mermaid
 flowchart TD
-    internet["Internet"] <-->|"WAN"| DR7
+    internet["Internet<br/>Google Fiber"] <-->|"10G SFP+ (WAN2)"| DR7
 
     subgraph main_floor ["Main Floor"]
         DR7["Dream Router 7<br/>Router / Firewall<br/>UniFi Controller"]
@@ -34,7 +34,9 @@ flowchart TD
     DR7 -.->|"Wi-Fi backhaul"| U6c
 ```
 
-All physical links are Gigabit Ethernet. See [Hardware Inventory](../reference/hardware.md) for full device specs.
+Links inside the house are Gigabit Ethernet; the internet link is 10G SFP+. See [Hardware Inventory](../reference/hardware.md) for full device specs.
+
+Google Fiber connects to the Dream Router's only SFP+ port, which UniFi names WAN2; WAN1 is fixed to the 2.5G copper Port 4. WAN2, labelled `Google Fiber`, is the weighted WAN with failover priority 1 and a 3 Gbps provider capability. WAN1, labelled `Unused (Port 4)`, is failover-only at priority 2 with nothing connected, so its internet checks always read 0%. The WireGuard server is bound to WAN2.
 
 ## VLANs
 
@@ -181,7 +183,7 @@ The gateway's mDNS proxy runs in automatic mode with all predefined services ena
 
 | Method | Status | Reaches |
 |--------|--------|---------|
-| WireGuard VPN | Server enabled on Dream Router 7, `192.168.3.0/24` | Homelab, Management and Default |
+| WireGuard VPN | Server enabled on Dream Router 7, bound to WAN2, `192.168.3.0/24` | Homelab, Management and Default |
 | UniFi Teleport | Enabled | Homelab, Management and Default |
 
 Both land in the `Vpn` firewall zone, which rules 3, 4 and 6 above permit into Homelab, Management and Internal. A VPN client therefore reaches cluster services and the NAS, the Proxmox web UI on either interface, the switch and PDU management pages, and household devices. The IoT VLAN is not reachable over the VPN.
