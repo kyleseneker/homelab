@@ -92,8 +92,8 @@ spec:
             k8s:io.kubernetes.pod.namespace: monitoring
     - toEntities:
         - kube-apiserver
-    - toCIDR:
-        - 192.168.10.10/32
+    - toCIDRSet:
+        - cidrGroupRef: nas
       toPorts:
         - ports:
             - port: "2049"
@@ -124,8 +124,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: prometheus
   egress:
-    - toCIDR:
-        - 192.168.10.2/32
+    - toCIDRSet:
+        - cidrGroupRef: proxmox-host
       toPorts:
         - ports:
             - port: "9100"
@@ -175,8 +175,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: nut-exporter
   egress:
-    - toCIDR:
-        - 192.168.10.2/32
+    - toCIDRSet:
+        - cidrGroupRef: proxmox-host
       toPorts:
         - ports:
             - port: "3493"
@@ -193,8 +193,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: prometheus-snmp-exporter
   egress:
-    - toCIDR:
-        - 192.168.10.10/32
+    - toCIDRSet:
+        - cidrGroupRef: nas
       toPorts:
         - ports:
             - port: "161"
@@ -211,8 +211,8 @@ spec:
     matchLabels:
       app.kubernetes.io/name: unpoller
   egress:
-    - toCIDR:
-        - 192.168.10.1/32
+    - toCIDRSet:
+        - cidrGroupRef: unifi-gateway
       toPorts:
         - ports:
             - port: "443"
