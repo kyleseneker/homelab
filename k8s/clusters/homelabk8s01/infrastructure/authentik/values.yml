@@ -19,6 +19,10 @@ global:
       value: https://auth.home.seneker.io
 server:
   replicas: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   resources:
     requests:
       cpu: 100m
@@ -28,6 +32,10 @@ server:
       memory: 1Gi
 worker:
   replicas: 1
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
   resources:
     requests:
       cpu: 50m
