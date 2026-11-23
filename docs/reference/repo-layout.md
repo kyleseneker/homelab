@@ -124,7 +124,7 @@ homelab/
 │       │   ├── goldilocks/
 │       │   ├── kyverno/
 │       │   ├── kyverno-policies/
-│       │   └── network-policies/
+│       │   └── network-policies/    # Namespace baselines, cluster-wide denies
 │       └── apps/                    # User-facing applications
 │           ├── homepage/
 │           ├── uptime-kuma/
