@@ -115,10 +115,13 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | 13 | Internal | IoT -- 192.168.20.10 (Home Assistant) | Block | Household clients reach Home Assistant at `ha.home.seneker.io` through the gateway, never its IoT address |
 | 14 | Homelab -- 192.168.10.50 -- .52 (nodes) | Gateway -- 192.168.10.1, TCP 443 | Allow | unpoller reads the UniFi controller ([ADR-033](../decisions/033-network-monitoring.md)) |
 | 15 | Homelab -- 192.168.10.10 (NAS), UDP source port 10001 | Gateway -- 192.168.10.1 | Allow | The NAS answers the gateway's UniFi device discovery |
+| 16 | IoT -- 192.168.20.10 (Home Assistant), UDP source port 5353 | Gateway -- 192.168.20.1 | Allow | Home Assistant answers the mDNS proxy's one-shot queries |
 
 Rules 7 -- 12 match only new connections, so replies to traffic in the other direction are unaffected. Rules 7 -- 10 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
 
 Rule 14 is evaluated ahead of rule 8, so the nodes reach the console's HTTPS port on 192.168.10.1 and nothing else beyond rule 8's services; the console's other addresses and port 80 stay blocked. Pod traffic leaves the cluster from node addresses, so the `deny-gateway-console` Cilium policy keeps every pod except unpoller off it ([unpoller](../infrastructure/unpoller.md#access-to-the-console)).
+
+Rule 16 is evaluated ahead of rule 7. The mDNS proxy relays household devices' searches onto the IoT VLAN as one-shot queries from a random port, which ask the answer to come straight back to that port; rule 7 permits only the gateway's service ports, so it would block Home Assistant's reply. Household devices still reach Home Assistant only through `ha.home.seneker.io` (rule 13).
 
 Rule 15 is also evaluated ahead of rule 8. The gateway broadcasts UniFi device discovery on every network, and the NAS, a UniFi OS console, answers from UDP 10001. A reply to a broadcast has no connection-tracking entry, so without rule 15 rule 8 treats each one as a new connection and blocks it.
 
