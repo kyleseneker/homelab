@@ -22,6 +22,9 @@ containerSecurityContext:
       - KILL
     drop:
       - ALL
+  # containerd's default AppArmor profile denies signals to the unconfined host PID 1.
+  appArmorProfile:
+    type: Unconfined
 resources:
   requests:
     cpu: 10m
