@@ -1,0 +1,25 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  description: "Clients across the cluster; HTTPS out for KMS"
+  endpointSelector: {}
+  ingress:
+    - fromEntities:
+        - cluster
+        - kube-apiserver
+        - host
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: vault
+    - toEntities:
+        - kube-apiserver
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

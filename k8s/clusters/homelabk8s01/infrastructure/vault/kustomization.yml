@@ -5,3 +5,4 @@ resources:
   - pdb.yml
   - raft-pvc.yml
   - backup.yml
+  - networkpolicy.yml
