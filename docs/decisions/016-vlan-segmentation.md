@@ -63,7 +63,7 @@ The Default VLAN is not permitted into Management. It carries household devices,
 
 Household clients reach the Homelab VLAN only at the gateway VIP, on 80 and 443. They have no path to the Proxmox host, node ports or Cilium's overlay, and administration happens from the Homelab Wi-Fi or the VPN. The limit is built from block rules with negated matches ahead of the zone pair's allow rule, because an allow rule restricted by address and port did not match traffic there.
 
-The UniFi console on the Dream Router 7 is also a management interface. It is managed day to day from household phones and laptops, so household clients, the workstation block and VPN clients reach its web console, and its own login protects it. SSH to the gateway is limited to the workstation block and VPN clients. The rest of the Homelab zone (the Proxmox host, the nodes, and pod traffic behind them) and the IoT zone reach the gateway only for DHCP, DNS, NTP, mDNS and ICMP.
+The UniFi console on the Dream Router 7 is also a management interface. It is managed day to day from household phones and laptops, so household clients, the workstation block and VPN clients reach its web console, and its own login protects it. SSH to the gateway is limited to the workstation block and VPN clients. The rest of the Homelab zone (the Proxmox host, the nodes, and pod traffic behind them) and the IoT zone reach the gateway only for DHCP, DNS, NTP, mDNS and ICMP, with one exception: the Kubernetes nodes reach the console's HTTPS port on 192.168.10.1, so unpoller can read the controller ([ADR-033](033-network-monitoring.md)). Pod traffic leaves the cluster from node addresses, so a cluster-wide Cilium policy denies that address and port to every other pod.
 
 ### Proxmox Host Firewall
 
