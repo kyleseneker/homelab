@@ -4,39 +4,10 @@ metadata:
   name: monitoring-default-deny
   namespace: monitoring
 spec:
-  endpointSelector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: NotIn
-        values:
-          - alloy-syslog
+  endpointSelector: {}
   ingressDeny:
     - fromEntities:
         - world
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: monitoring-alloy-syslog
-  namespace: monitoring
-spec:
-  description: "Accept syslog from the Dream Router and deny every other source outside the cluster"
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: alloy-syslog
-  ingressDeny:
-    - fromCIDRSet:
-        - cidr: 0.0.0.0/0
-          except:
-            - 192.168.10.1/32
-        - cidr: ::/0
-  ingress:
-    - fromCIDR:
-        - 192.168.10.1/32
-      toPorts:
-        - ports:
-            - port: "5514"
-              protocol: UDP
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

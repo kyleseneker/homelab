@@ -229,7 +229,7 @@ data:
             "type": "loki",
             "uid": "${loki}"
           },
-          "description": "Events the Dream Router sends over syslog, counted by event name.",
+          "description": "Events from the UniFi controller's system log, collected by unpoller and counted by type.",
           "fieldConfig": {
             "defaults": {
               "unit": "short",
@@ -264,8 +264,8 @@ data:
                 "type": "loki",
                 "uid": "${loki}"
               },
-              "legendFormat": "{{event_name}}",
-              "expr": "sum by (event_name) (count_over_time({job=\"unifi-syslog\"} [$__auto]))"
+              "legendFormat": "{{event}}",
+              "expr": "sum by (event) (count_over_time({job=\"unpoller\", application=\"unifi_system_log\"} | json event [$__auto]))"
             }
           ]
         },
@@ -295,9 +295,10 @@ data:
                 "type": "loki",
                 "uid": "${loki}"
               },
-              "expr": "{job=\"unifi-syslog\"}"
+              "expr": "{job=\"unpoller\", application=\"unifi_system_log\"} | json message | line_format \"{{.message}}\""
             }
-          ]
+          ],
+          "description": "The controller's events in plain language. Expand a line for every field, such as signal strength and channel use at a disconnect."
         }
       ],
       "refresh": "1m",
