@@ -122,7 +122,7 @@ Rule 14 is evaluated ahead of rule 8, so the nodes reach the console's HTTPS por
 
 Rule 15 is also evaluated ahead of rule 8. The gateway broadcasts UniFi device discovery on every network, and the NAS, a UniFi OS console, answers from UDP 10001. A reply to a broadcast has no connection-tracking entry, so without rule 15 rule 8 treats each one as a new connection and blocks it.
 
-The extenders' management addresses are on the Default VLAN, but they also bridge VLAN 10 for the Homelab SSID. They hear the NAS's own discovery broadcasts there and answer from UDP 10001 through the gateway, so rule 11 blocks those replies as new household-to-Homelab connections. The household-to-NAS boundary stays closed; moving the extenders' management to the Management VLAN would remove the traffic.
+The extenders' management addresses are on the Default VLAN, but they also bridge VLAN 10 for the Homelab SSID. They hear the NAS's own discovery broadcasts there and answer from UDP 10001 through the gateway, so rule 11 blocks those replies as new household-to-Homelab connections. The household-to-NAS boundary stays closed. With the extenders' management on the Management VLAN the replies would continue, but as infrastructure-to-infrastructure traffic that a rule could allow without opening the household side.
 
 Rule 13 is evaluated ahead of rule 5, so no household browser or app sends Home Assistant credentials in plaintext over VLAN 20. Rule 5 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the cluster and the NAS, or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
