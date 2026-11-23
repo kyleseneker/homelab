@@ -1,6 +1,6 @@
 # Phase 5 — Observability
 
-**Status:** In progress. Metrics, Loki/Alloy logs, capacity and Exportarr dashboards, Blackbox probes, network latency probes, gateway syslog and an external heartbeat are implemented. Tracing and SLO-based alerting remain planned.
+**Status:** In progress. Metrics, Loki/Alloy logs, capacity and Exportarr dashboards, Blackbox probes, network latency probes, UniFi controller metrics and an external heartbeat are implemented. Tracing and SLO-based alerting remain planned.
 
 **Goal:** Complete metrics, logs and traces, make dashboards reproducible, and add SLO-driven operations alongside tested alert delivery.
 
@@ -48,9 +48,8 @@ Set targets from household needs and observed behavior. Application availability
 ## 5.6 Network Monitoring
 
 - [ ] Replace unpoller's administrator API key with a View Only admin's key, as [ADR-033](../decisions/033-network-monitoring.md) requires, then delete the administrator key in UniFi.
-- [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their CEF event names have been observed.
+- [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their event names have been observed in unpoller's system log stream.
 - [ ] Add a latency alert from a week of baseline round-trip data.
-- [ ] Compare unpoller's controller events with the `alloy-syslog` stream for a week, and retire `alloy-syslog` if the polled events are complete.
 - [ ] Compare the gateway's own WAN latency monitors with the once-a-second probes, and decide whether the probes stay.
 - [ ] Add anomaly alerts from per-hour-of-week baselines for channel busy time, retries, extender link signal, Wi-Fi experience and internet latency, after two weeks of unpoller data.
 - [ ] Post a weekly network health report to Slack: weakest devices, busiest channels, extender links, internet trends and the week's changes.
@@ -58,7 +57,7 @@ Set targets from household needs and observed behavior. Application availability
 - [ ] Export IPFIX flows from the gateway to show which devices use the bandwidth during lag.
 - [ ] Evaluate a Wi-Fi sensor client that runs the same probes over Wi-Fi.
 
-[ADR-033](../decisions/033-network-monitoring.md) combines controller metrics, gateway events and once-a-second probes. A probe on Wi-Fi would add the clients' own view.
+[ADR-033](../decisions/033-network-monitoring.md) combines controller metrics and events with once-a-second probes. A probe on Wi-Fi would add the clients' own view.
 
 ## Definition of Done
 
