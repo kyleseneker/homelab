@@ -114,10 +114,15 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | 12 | Internal | Homelab -- 192.168.10.201, all TCP/UDP except 80, 443 | Block | The gateway VIP serves HTTP and HTTPS only |
 | 13 | Internal | IoT -- 192.168.20.10 (Home Assistant) | Block | Household clients reach Home Assistant at `ha.home.seneker.io` through the gateway, never its IoT address |
 | 14 | Homelab -- 192.168.10.50 -- .52 (nodes) | Gateway -- 192.168.10.1, TCP 443 | Allow | unpoller reads the UniFi controller ([ADR-033](../decisions/033-network-monitoring.md)) |
+| 15 | Homelab -- 192.168.10.10 (NAS), UDP source port 10001 | Gateway -- 192.168.10.1 | Allow | The NAS answers the gateway's UniFi device discovery |
 
 Rules 7 -- 12 match only new connections, so replies to traffic in the other direction are unaffected. Rules 7 -- 10 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
 
 Rule 14 is evaluated ahead of rule 8, so the nodes reach the console's HTTPS port on 192.168.10.1 and nothing else beyond rule 8's services; the console's other addresses and port 80 stay blocked. Pod traffic leaves the cluster from node addresses, so the `deny-gateway-console` Cilium policy keeps every pod except unpoller off it ([unpoller](../infrastructure/unpoller.md#access-to-the-console)).
+
+Rule 15 is also evaluated ahead of rule 8. The gateway broadcasts UniFi device discovery on every network, and the NAS, a UniFi OS console, answers from UDP 10001. A reply to a broadcast has no connection-tracking entry, so without rule 15 rule 8 treats each one as a new connection and blocks it.
+
+The extenders' management addresses are on the Default VLAN, but they also bridge VLAN 10 for the Homelab SSID. They hear the NAS's own discovery broadcasts there and answer from UDP 10001 through the gateway, so rule 11 blocks those replies as new household-to-Homelab connections. The household-to-NAS boundary stays closed; moving the extenders' management to the Management VLAN would remove the traffic.
 
 Rule 13 is evaluated ahead of rule 5, so no household browser or app sends Home Assistant credentials in plaintext over VLAN 20. Rule 5 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the cluster and the NAS, or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
