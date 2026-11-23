@@ -35,9 +35,3 @@ spec:
             k8s:io.kubernetes.pod.namespace: monitoring
     - toEntities:
         - kube-apiserver
-    - toCIDRSet:
-        - cidrGroupRef: nas
-      toPorts:
-        - ports:
-            - port: "2049"
-              protocol: TCP
