@@ -19,6 +19,7 @@ The kustomization pulls the upstream `multus-daemonset-thick.yml` pinned to the 
 - **Permissions**: Multus reads attachment definitions and pods. It writes a pod's `k8s.v1.cni.cncf.io/network-status` annotation through the `pods/status` subresource and has no `update` on pods themselves. Upstream grants every verb on attachment definitions and `update` on pods.
 - **Daemon configuration**: `namespaceIsolation` limits a pod to definitions in its own namespace, and `globalNamespaces` names a namespace that does not exist, so `default` is not exempt. Cilium's `05-cilium.conflist` is the readiness indicator, so Multus never serves a pod before Cilium is ready on the node.
 - **Scheduling**: `system-node-critical`, with memory headroom and no CPU limit, because Multus is in every pod's sandbox creation.
+- **Mount propagation**: the host's `/run` mount at `/host/run` uses `HostToContainer`, as `/hostroot` already does. Upstream leaves it private, so the pod keeps a frozen copy of every mount nested under `/run`, including its own root filesystem's view of the host's NFS mounts. After the NAS moved address, that copy held a hard NFS mount to the old address, and each node's kernel retried it indefinitely.
 
 On each node the daemon writes `/etc/cni/net.d/00-multus.conf`, which sorts ahead of Cilium's configuration and names it as the cluster network. Cilium runs with `cni.exclusive: false` so it keeps that file, and with `devices: eth0` so a second node NIC never carries Cilium traffic.
 
