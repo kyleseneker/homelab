@@ -111,8 +111,11 @@ The Management, Homelab and IoT zones block all traffic to and from other zones 
 | 11 | Internal | Homelab, except 192.168.10.201 | Block | Household clients reach only the gateway VIP |
 | 12 | Internal | Homelab -- 192.168.10.201, all TCP/UDP except 80, 443 | Block | The gateway VIP serves HTTP and HTTPS only |
 | 13 | Internal | IoT -- 192.168.20.10 (Home Assistant) | Block | Household clients reach Home Assistant at `ha.home.seneker.io` through the gateway, never its IoT address |
+| 14 | Homelab -- 192.168.10.50 -- .52 (nodes) | Gateway -- 192.168.10.1, TCP 443 | Allow | unpoller reads the UniFi controller ([ADR-033](../decisions/033-network-monitoring.md)) |
 
 Rules 7 -- 12 match only new connections, so replies to traffic in the other direction are unaffected. Rules 7 -- 10 leave ICMP allowed. They implement the console boundary in [ADR-016](../decisions/016-vlan-segmentation.md#firewall-rules) and [ADR-026](../decisions/026-iot-vlan.md).
+
+Rule 14 is evaluated ahead of rule 8, so the nodes reach the console's HTTPS port on 192.168.10.1 and nothing else beyond rule 8's services; the console's other addresses and port 80 stay blocked. Pod traffic leaves the cluster from node addresses, so the `deny-gateway-console` Cilium policy keeps every pod except unpoller off it ([unpoller](../infrastructure/unpoller.md#access-to-the-console)).
 
 Rule 13 is evaluated ahead of rule 5, so no household browser or app sends Home Assistant credentials in plaintext over VLAN 20. Rule 5 is one-way. The IoT zone default only returns traffic to Internal, so smart devices cannot open connections into the household network, the cluster and the NAS, or Management. Nothing permits Homelab, Management or Vpn into IoT.
 
@@ -140,14 +143,15 @@ Everything else, rpcbind (111) included, is dropped. `local_network` is set to 1
 
 ### Management Access
 
-Tested 2026-11-21, and the NAS rows again after its move on 2026-11-22, from the workstation (192.168.10.160/27), node-2 and a pod in a namespace without network policies:
+Tested 2026-11-21, the NAS rows again after its move on 2026-11-22 and the gateway rows after rule 14 the same day, from the workstation (192.168.10.160/27), node-2 and a pod in a namespace without network policies:
 
 | Endpoint | Workstation | Node | Pod |
 |----------|-------------|------|-----|
 | Proxmox 192.168.10.2: SSH, web UI, SPICE, rpcbind | Open | Refused | Refused |
 | Proxmox 192.168.10.2: NUT 3493, node-exporter 9100 | Open | Open | Open |
 | Management VLAN: Proxmox 192.168.99.2, AMT, switch and PDU SSH | Open | Refused | Refused |
-| Gateway web consoles (192.168.1.1, .10.1, .99.1) | Open | Refused | Refused |
+| Gateway web console 192.168.10.1:443 | Open | **Open** | Refused; only unpoller in `monitoring` |
+| Gateway web consoles 192.168.1.1, .99.1, and port 80 | Open | Refused | Refused |
 | NAS 192.168.10.10: web UI 80, 443 | Open | **Open** | Refused |
 | NAS 192.168.10.10: NFS 2049 | Open | Open | Open |
 
