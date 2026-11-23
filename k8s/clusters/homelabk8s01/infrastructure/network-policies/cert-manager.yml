@@ -5,9 +5,6 @@ metadata:
   namespace: cert-manager
 spec:
   endpointSelector: {}
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   ingressDeny:
     - fromEntities:
         - world
@@ -19,9 +16,6 @@ metadata:
   namespace: cert-manager
 spec:
   endpointSelector: {}
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   ingress:
     - fromEndpoints:
         - matchLabels:
@@ -39,9 +33,6 @@ metadata:
   namespace: cert-manager
 spec:
   endpointSelector: {}
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   egress:
     - toEndpoints:
         - matchLabels:

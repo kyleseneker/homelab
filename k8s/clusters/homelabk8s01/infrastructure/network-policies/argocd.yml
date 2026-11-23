@@ -5,9 +5,6 @@ metadata:
   namespace: argocd
 spec:
   endpointSelector: {}
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   ingressDeny:
     - fromEntities:
         - world
@@ -19,9 +16,6 @@ metadata:
   namespace: argocd
 spec:
   endpointSelector: {}
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   egress:
     - toEndpoints:
         - matchLabels:
@@ -49,9 +43,6 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: argocd-server
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   egress:
     - toEndpoints:
         - matchLabels:
@@ -73,9 +64,6 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: argocd-repo-server
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   egress:
     - toEntities:
         - world
@@ -94,9 +82,6 @@ spec:
   endpointSelector:
     matchLabels:
       app.kubernetes.io/name: argocd-notifications-controller
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   egress:
     - toEntities:
         - world

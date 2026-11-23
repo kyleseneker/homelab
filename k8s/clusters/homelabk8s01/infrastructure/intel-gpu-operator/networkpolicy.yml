@@ -8,9 +8,6 @@ spec:
   endpointSelector:
     matchLabels:
       control-plane: controller-manager
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   ingress:
     - fromEntities:
         - kube-apiserver

@@ -102,7 +102,7 @@ Service names resolve only on the home network and the VPN. The UniFi gateway ho
 
 ## Network Policies
 
-CiliumNetworkPolicies enforce ingress and egress isolation in the namespaces that have policies. Rules explicitly allow the gateway, same-namespace traffic and required cross-namespace paths; coverage is not universal. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
+CiliumNetworkPolicies enforce ingress and egress isolation in every namespace that runs pods, except `kube-system`. Rules explicitly allow the gateway, same-namespace traffic and required cross-namespace paths; there is no cluster-wide default deny yet. See the [Network Policies infrastructure page](../infrastructure/network-policies.md) for the full policy breakdown per namespace.
 
 !!! warning "Policy coverage and management-network boundaries"
     Selected namespaces use an implicit egress-deny model with explicit DNS, API, NFS and application exceptions. Some exceptions still allow `world` on HTTPS or broad cluster access, and namespaces without policies remain unrestricted. This does not substitute for firewall isolation of Proxmox and NAS management. Verify positive and negative connection tests before tightening those boundaries.

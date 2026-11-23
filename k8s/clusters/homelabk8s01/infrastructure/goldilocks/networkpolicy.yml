@@ -9,9 +9,6 @@ spec:
     matchLabels:
       app.kubernetes.io/name: goldilocks
       app.kubernetes.io/component: dashboard
-  enableDefaultDeny:
-    ingress: false
-    egress: false
   ingress:
     - fromEndpoints:
         - matchLabels:
