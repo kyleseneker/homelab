@@ -18,13 +18,13 @@ Argo CD is installed from `k8s/bootstrap/argocd`, outside the ApplicationSet, so
 
 | Namespace | Principal ingress paths | Principal egress paths |
 |-----------|-------------------------|------------------------|
-| `media` | Gateway, same namespace, monitoring, Authentik on proxy backend ports | DNS, same namespace, HTTPS, NFS; VPN workload has broader internet access |
-| `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Authentik metrics from monitoring on 9300 | DNS, same namespace, Kubernetes API, NFS, explicit proxy backends |
-| `monitoring` | Gateway, same namespace, cluster access to Prometheus, Authentik to Alertmanager on 9093 | DNS, same namespace, API, NFS; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
-| `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS, NFS |
+| `media` | Gateway, same namespace, monitoring, the Authentik server on proxy backend ports | DNS, same namespace, HTTPS; VPN workload has broader internet access |
+| `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Prometheus on 9300 | DNS, same namespace, Kubernetes API; the server to its proxy backends |
+| `monitoring` | Gateway, same namespace, cluster access to Prometheus, the Authentik server to Alertmanager on 9093 | DNS, same namespace, API; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
+| `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
-| `backups` | Same namespace, monitoring | DNS, API, NFS and configured backup endpoints |
+| `backups` | Same namespace, monitoring | DNS, API and configured backup endpoints |
 | `home-automation` | Gateway and Prometheus on 8123 | DNS, public HTTPS |
 | `argocd` | Argo CD's upstream per-component policies; world denied | DNS, same namespace, API; HTTPS from the repo server and notifications controller; the server to Authentik on 9000 for OIDC |
 | `cert-manager` | Prometheus on 9402; the API server to the webhook on 10250 | DNS, API; the controller to HTTPS for ACME and Route53, and DNS to 1.1.1.1 and 9.9.9.9 for DNS-01 checks |
@@ -57,7 +57,9 @@ Kubelet probes from the pod's own node are always allowed. Admission webhooks ne
 
 A pod that calls an app by its external hostname, such as Argo CD's OIDC issuer `https://auth.home.seneker.io`, goes through the gateway's Envoy. Envoy checks the pod's egress policy against the backend pod, not the gateway address, and answers HTTP 403 when it is not allowed; Hubble shows no drop. Allow egress to the backend pod and port.
 
-Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The proxy needs both egress from `auth` and ingress on each backend's namespace. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
+Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The embedded outpost runs in the Authentik server pods, so a proxied app needs egress from `authentik-server` and ingress from those pods on the app's port; nothing else in `auth` reaches the backends.
+
+NFS volumes are mounted by the kubelet on the node, outside any pod's policy, so no pod needs NFS egress. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
 
 ## Infrastructure Administration
 

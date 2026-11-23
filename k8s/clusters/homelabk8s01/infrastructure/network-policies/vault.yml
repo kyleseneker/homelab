@@ -32,9 +32,3 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
-    - toCIDRSet:
-        - cidrGroupRef: nas
-      toPorts:
-        - ports:
-            - port: "2049"
-              protocol: TCP

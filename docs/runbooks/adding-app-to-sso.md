@@ -22,8 +22,8 @@ Attach the route to the gateway's `https-home` listener with the `<app>.home.sen
 
 The outpost now originates the request, so it needs a network path the gateway previously had:
 
-- ingress on the app's namespace allowing the `auth` namespace on the app's port
-- egress from `auth` to that pod and port
+- ingress on the app's pods from the Authentik server pods, which run the embedded outpost, on the app's port
+- egress from the `authentik-server` policy in `infrastructure/authentik/networkpolicy.yml` to that pod and port
 
 Both are required. Miss either and the browser reaches the outpost, gets its login redirect, then hangs until the proxy times out -- the redirect is issued before the outpost ever contacts the backend, so an unreachable app looks identical to a working one until the moment it stalls.
 
