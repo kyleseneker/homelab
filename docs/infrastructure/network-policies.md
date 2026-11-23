@@ -18,13 +18,13 @@ Argo CD is installed from `k8s/bootstrap/argocd`, outside the ApplicationSet, so
 
 | Namespace | Principal ingress paths | Principal egress paths |
 |-----------|-------------------------|------------------------|
-| `media` | Gateway, same namespace, monitoring, the Authentik server on proxy backend ports | DNS, same namespace, HTTPS; VPN workload has broader internet access |
+| `media` | Gateway, same namespace, Prometheus, the Authentik server on proxy backend ports | DNS, same namespace, HTTPS; VPN workload has broader internet access |
 | `auth` | Gateway on 9000, same namespace; Grafana/ArgoCD OIDC to server on 9000; Prometheus on 9300 | DNS, same namespace, Kubernetes API; the server to its proxy backends |
 | `monitoring` | Gateway, same namespace, cluster access to Prometheus, the Authentik server to Alertmanager on 9093 | DNS, same namespace, API; workload-specific scrape, OIDC, alert and probe exceptions; unpoller to the UniFi console on 192.168.10.1:443 |
 | `vault` | Cluster/API/host | DNS, same namespace, API, HTTPS for KMS |
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
-| `backups` | Same namespace, monitoring | DNS, API and configured backup endpoints |
+| `backups` | Same namespace, Prometheus | DNS, API and configured backup endpoints |
 | `home-automation` | Gateway and Prometheus on 8123 | DNS, public HTTPS |
 | `argocd` | Argo CD's upstream per-component policies; world denied | DNS, same namespace, API; HTTPS from the repo server and notifications controller; the server to Authentik on 9000 for OIDC |
 | `cert-manager` | Prometheus on 9402; the API server to the webhook on 10250 | DNS, API; the controller to HTTPS for ACME and Route53, and DNS to 1.1.1.1 and 9.9.9.9 for DNS-01 checks |
