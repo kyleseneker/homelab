@@ -4,6 +4,7 @@ resources:
   - argocd.yml
   - auth.yml
   - backups.yml
+  - baseline.yml
   - cert-manager.yml
   - cidr-groups.yml
   - external-secrets.yml
