@@ -3,7 +3,7 @@ namespace: restore-sonarr
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/charts
 chartName: arrchitect
-chartVersion: "0.6.0"
+chartVersion: "0.7.0"
 createNamespace: false
 hasResources: true
 syncOptions:
