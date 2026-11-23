@@ -51,6 +51,10 @@ postgresql:
     # The subchart defaults to Bitnami's FIPS mode, which the official image does not use.
     fips:
       openssl: "off"
+    # Bitnami's policy admits 5432 from any pod and all egress, and Cilium adds
+    # its allows to the namespace's own policies.
+    networkPolicy:
+      enabled: false
     podSecurityContext:
       enabled: true
       fsGroup: 988
