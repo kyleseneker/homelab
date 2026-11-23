@@ -203,28 +203,6 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: monitoring-egress-smokeping-prober
-  namespace: monitoring
-spec:
-  description: "Allow smokeping-prober to ping the gateway, the NAS and public resolvers"
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: smokeping-prober
-  egress:
-    - toCIDR:
-        - 192.168.10.1/32
-        - 192.168.10.10/32
-        - 1.1.1.1/32
-        - 8.8.8.8/32
-        - 9.9.9.9/32
-      icmps:
-        - fields:
-            - type: EchoRequest
-              family: IPv4
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: monitoring-egress-unpoller
   namespace: monitoring
 spec:

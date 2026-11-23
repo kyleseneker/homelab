@@ -127,24 +127,15 @@ Defined in `snmp-exporter/prometheusrule.yml` from the UNAS Pro's SNMP agent ([S
 
 The root filesystem holds container images, the journal and `local-path` volumes. `make k8s-node-disk` caps the journal at 1G and sets the kubelet to remove images unused for 7 days, and any unused image once the disk passes 75%, so images alone do not reach the 80% alert. kubeadm's default starts that cleanup only at 85%. The kubelet settings are `k8s_kubelet_config` in `ansible/group_vars/all/vars.yml`, used by `kubeadm init` and merged into the cluster's `kubelet-config` ConfigMap, which joins and upgrades copy to each node.
 
-### Network Reachability
-
-Defined in `smokeping-prober/prometheusrule.yml` from once-a-second pings out of the cluster ([Smokeping Prober](smokeping-prober.md)). Loss is measured over 5 minutes, so a gateway reboot of two or three minutes shows on the Network dashboard without firing.
-
-| Alert | Severity | For | Condition |
-|-------|----------|-----|-----------|
-| `SmokepingProberAbsent` | warning | 10m | The `smokeping-prober` target is down or missing |
-| `LANPacketLoss` | warning | 10m | Over 5% of pings to the gateway or the NAS unanswered |
-| `InternetPacketLoss` | warning | 10m | Over 5% of pings to every public resolver unanswered |
-| `InternetUnreachable` | critical | 5m | No public resolver answers; Slack delivers it once the link is back |
-
 ### UniFi
 
-Defined in `unpoller/prometheusrule.yml` from the UniFi controller's metrics ([unpoller](unpoller.md)).
+Defined in `unpoller/prometheusrule.yml` from the UniFi controller's metrics ([unpoller](unpoller.md)). The internet alerts use the gateway's own checks, so a gateway reboot of two or three minutes stays inside their windows.
 
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
 | `UnpollerAbsent` | warning | 10m | The `unpoller` target is down or missing: the pod, the API key or the pinned certificate |
+| `InternetDown` | critical | 5m | No gateway internet check succeeds on any WAN; Slack delivers it once the link is back |
+| `InternetDegraded` | warning | 10m | The gateway's best internet check target answers less than 90% of the time |
 | `UniFiDeviceRestarted` | warning | -- | A UniFi device has been up for less than 15 minutes |
 | `UniFiDevicesDisconnected` | warning | 5m | The controller reports a disconnected device in the LAN, WAN or WLAN subsystem |
 

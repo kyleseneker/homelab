@@ -1,12 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+  - dashboard-unifi-network.yml
   - dashboard-unpoller-access-points.yml
   - dashboard-unpoller-clients.yml
   - dashboard-unpoller-gateway.yml
   - dashboard-unpoller-sites.yml
   - dashboard-unpoller-switches.yml
-  - dashboard-wifi.yml
   - prometheusrule.yml
   - servicemonitor.yml
   - unpoller-external-secret.yml
