@@ -1,17 +1,6 @@
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: media-allow-gateway
-  namespace: media
-spec:
-  endpointSelector: {}
-  ingress:
-    - fromEntities:
-        - ingress
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
   name: media-allow-internal
   namespace: media
 spec:
@@ -51,32 +40,4 @@ spec:
       toPorts:
         - ports:
             - port: "443"
-              protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: media-allow-auth-outpost
-  namespace: media
-spec:
-  endpointSelector: {}
-  ingress:
-    - fromEndpoints:
-        - matchLabels:
-            k8s:io.kubernetes.pod.namespace: auth
-            app.kubernetes.io/name: authentik
-            app.kubernetes.io/component: server
-      toPorts:
-        - ports:
-            - port: "8265"
-              protocol: TCP
-            - port: "8989"
-              protocol: TCP
-            - port: "7878"
-              protocol: TCP
-            - port: "9696"
-              protocol: TCP
-            - port: "6767"
-              protocol: TCP
-            - port: "8080"
               protocol: TCP
