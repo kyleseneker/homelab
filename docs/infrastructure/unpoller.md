@@ -60,7 +60,7 @@ Reloader restarts the pod when External Secrets refreshes `unpoller`. To rotate,
 
 | Dashboard | Source |
 |-----------|--------|
-| Wi-Fi | This repository: channel busy time, devices per radio, extender links, experience by access point, weakest devices, the gateway's latency monitors, speed tests and uptime |
+| Network | This repository: internet availability and latency from the gateway's checks, speed tests, channel busy time, devices per radio, extender links, experience by access point, weakest devices, the controller's events from Loki and device uptime |
 | UniFi-Poller: Client Insights, UAP Insights, USW Insights, USG Insights, Network Sites | [unpoller/dashboards](https://github.com/unpoller/dashboards) `v2.0.0`, commit `1c97958`, with the import placeholder pointed at the `prometheus` data source |
 
 Alerts are listed in [Alerting](alerting.md#unifi).

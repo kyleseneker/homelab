@@ -14,7 +14,7 @@ spec:
             severity: warning
           annotations:
             summary: "UniFi metrics have stopped"
-            description: "Prometheus cannot scrape unpoller. Wi-Fi, switch and gateway metrics and the UniFi alerts are blind. Check the pod, the API key in Vault and whether the gateway still presents the pinned certificate."
+            description: "Prometheus cannot scrape unpoller. Wi-Fi, switch, gateway and internet metrics, and every UniFi and internet alert, are blind. Check the pod, the API key in Vault and whether the gateway still presents the pinned certificate; a gateway that is down or hung also stops it."
 
         - alert: UniFiDeviceRestarted
           expr: unpoller_device_uptime_seconds < 900
@@ -23,6 +23,24 @@ spec:
           annotations:
             summary: "{{ $labels.name }} restarted"
             description: "{{ $labels.name }} has been up for {{ $value | humanizeDuration }}. Check the gateway events for a firmware update, a power loss or a crash."
+
+        - alert: InternetDown
+          expr: max(unpoller_device_wan_monitor_availability_percent{monitor_type="icmp"}) == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "The internet is down"
+            description: "None of the gateway's internet checks has succeeded on any WAN for 5 minutes. Slack delivery needs the internet, so this notification arrives once the link recovers."
+
+        - alert: InternetDegraded
+          expr: max(unpoller_device_wan_monitor_availability_percent{monitor_type="icmp"}) < 90
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Internet checks are failing"
+            description: "Even the gateway's best internet check target is answering only {{ $value | printf \"%.0f\" }}% of the time. The WAN link or the ISP is dropping traffic."
 
         - alert: UniFiDevicesDisconnected
           expr: max by (subsystem) (unpoller_site_disconnected) > 0

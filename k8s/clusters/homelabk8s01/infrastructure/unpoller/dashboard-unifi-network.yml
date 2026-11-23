@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-wifi
+  name: grafana-dashboard-unifi-network
   namespace: monitoring
   labels:
     grafana_dashboard: "1"
 data:
-  wifi.json: |
+  network.json: |
     {
       "annotations": {
         "list": []
@@ -17,13 +17,201 @@ data:
       "links": [],
       "panels": [
         {
+          "type": "row",
+          "title": "Internet",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+          },
+          "panels": []
+        },
+        {
+          "title": "Internet availability",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Share of the gateway's own internet checks that succeeded, per target, on the best-connected WAN.",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "custom": {
+                "fillOpacity": 5,
+                "lineWidth": 1,
+                "spanNulls": true
+              },
+              "min": 0,
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (target) (unpoller_device_wan_monitor_availability_percent{monitor_type=\"icmp\"})",
+              "legendFormat": "{{target}}"
+            }
+          ]
+        },
+        {
+          "title": "Internet latency",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "The gateway's average ping time to each target. It is refreshed every minute or two, so it shows sustained slowness, not few-second blips.",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "custom": {
+                "fillOpacity": 5,
+                "lineWidth": 1,
+                "spanNulls": true
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "max by (target) (unpoller_device_wan_monitor_latency_average_seconds{monitor_type=\"icmp\"})",
+              "legendFormat": "{{target}}"
+            }
+          ]
+        },
+        {
+          "title": "Speed tests",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 1
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "Results of the gateway's own speed tests.",
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Mbits",
+              "custom": {
+                "fillOpacity": 5,
+                "lineWidth": 1,
+                "spanNulls": true
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "unpoller_speedtest_download_mbps > 0",
+              "legendFormat": "download {{wan_group}}"
+            },
+            {
+              "refId": "B",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "unpoller_speedtest_upload_mbps > 0",
+              "legendFormat": "upload {{wan_group}}"
+            }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Wi-Fi",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 9
+          },
+          "panels": []
+        },
+        {
           "title": "Channel busy time",
           "type": "timeseries",
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 10
           },
           "datasource": {
             "type": "prometheus",
@@ -76,7 +264,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 0
+            "y": 10
           },
           "datasource": {
             "type": "prometheus",
@@ -128,7 +316,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 8
+            "y": 18
           },
           "datasource": {
             "type": "prometheus",
@@ -179,7 +367,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 18
           },
           "datasource": {
             "type": "prometheus",
@@ -232,7 +420,7 @@ data:
             "h": 10,
             "w": 12,
             "x": 0,
-            "y": 16
+            "y": 26
           },
           "datasource": {
             "type": "prometheus",
@@ -295,7 +483,7 @@ data:
             "h": 10,
             "w": 12,
             "x": 12,
-            "y": 16
+            "y": 26
           },
           "datasource": {
             "type": "prometheus",
@@ -352,37 +540,51 @@ data:
           ]
         },
         {
-          "title": "Gateway's internet latency",
+          "type": "row",
+          "title": "Events",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 36
+          },
+          "panels": []
+        },
+        {
+          "title": "UniFi events",
           "type": "timeseries",
           "gridPos": {
             "h": 8,
-            "w": 12,
+            "w": 24,
             "x": 0,
-            "y": 26
+            "y": 37
           },
           "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+            "type": "loki",
+            "uid": "${loki}"
           },
-          "description": "The Dream Router's own pings to its monitoring targets, averaged by the router. Compare with the once-a-second probes on the Network dashboard.",
+          "description": "Events from the UniFi controller's system log, collected by unpoller and counted by type.",
           "fieldConfig": {
             "defaults": {
-              "unit": "s",
+              "unit": "short",
               "custom": {
-                "fillOpacity": 5,
-                "lineWidth": 1,
-                "spanNulls": true
-              }
+                "drawStyle": "bars",
+                "fillOpacity": 60,
+                "stacking": {
+                  "mode": "normal"
+                }
+              },
+              "min": 0
             },
             "overrides": []
           },
           "options": {
             "legend": {
               "displayMode": "table",
-              "placement": "bottom",
+              "placement": "right",
               "calcs": [
-                "mean",
-                "max"
+                "sum"
               ]
             },
             "tooltip": {
@@ -394,73 +596,56 @@ data:
             {
               "refId": "A",
               "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
+                "type": "loki",
+                "uid": "${loki}"
               },
-              "expr": "unpoller_device_wan_monitor_latency_average_seconds{monitor_type=\"icmp\"}",
-              "legendFormat": "{{target}} ({{wan_networkgroup}})"
+              "expr": "sum by (event) (count_over_time({job=\"unpoller\", application=\"unifi_system_log\"} | json event [$__auto]))",
+              "legendFormat": "{{event}}"
             }
           ]
         },
         {
-          "title": "Speed tests",
-          "type": "timeseries",
+          "title": "UniFi event log",
+          "type": "logs",
           "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 26
+            "h": 12,
+            "w": 24,
+            "x": 0,
+            "y": 45
           },
           "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
+            "type": "loki",
+            "uid": "${loki}"
           },
-          "description": "Results of the gateway's own speed tests.",
-          "fieldConfig": {
-            "defaults": {
-              "unit": "Mbits",
-              "custom": {
-                "fillOpacity": 5,
-                "lineWidth": 1,
-                "spanNulls": true
-              }
-            },
-            "overrides": []
-          },
+          "description": "The controller's events in plain language. Expand a line for every field, such as signal strength and channel use at a disconnect.",
           "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "bottom",
-              "calcs": [
-                "mean",
-                "max"
-              ]
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending",
+            "enableLogDetails": true
           },
           "targets": [
             {
               "refId": "A",
               "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
+                "type": "loki",
+                "uid": "${loki}"
               },
-              "expr": "unpoller_speedtest_download_mbps > 0",
-              "legendFormat": "download {{wan_group}}"
-            },
-            {
-              "refId": "B",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "unpoller_speedtest_upload_mbps > 0",
-              "legendFormat": "upload {{wan_group}}"
+              "expr": "{job=\"unpoller\", application=\"unifi_system_log\"} | json message | line_format \"{{.message}}\""
             }
           ]
+        },
+        {
+          "type": "row",
+          "title": "Devices",
+          "collapsed": false,
+          "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 57
+          },
+          "panels": []
         },
         {
           "title": "Uptime",
@@ -469,7 +654,7 @@ data:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 34
+            "y": 58
           },
           "datasource": {
             "type": "prometheus",
@@ -514,7 +699,19 @@ data:
         "unifi"
       ],
       "templating": {
-        "list": []
+        "list": [
+          {
+            "name": "loki",
+            "label": "Logs",
+            "type": "datasource",
+            "query": "loki",
+            "current": {},
+            "hide": 0,
+            "refresh": 1,
+            "regex": "",
+            "options": []
+          }
+        ]
       },
       "time": {
         "from": "now-24h",
@@ -522,7 +719,7 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Wi-Fi",
-      "uid": "homelab-wifi",
+      "title": "Network",
+      "uid": "homelab-unifi-network",
       "version": 1
     }
