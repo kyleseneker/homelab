@@ -1,6 +1,6 @@
 # Network Policies
 
-CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring`, `vault`, `external-secrets`, `kyverno` and `backups`. This is partial namespace coverage, not cluster-wide default deny. Cluster-wide policies deny every pod access to infrastructure administration.
+CiliumNetworkPolicies control ingress and egress in every namespace that runs pods, except `kube-system`. There is no cluster-wide default deny yet, so a new namespace is open until it gets a baseline. Cluster-wide policies deny every pod access to infrastructure administration.
 
 ## Layout
 
@@ -10,6 +10,8 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 | `infrastructure/network-policies/infrastructure-admin.yml` | Cluster-wide denies |
 | `infrastructure/network-policies/cidr-groups.yml` | Named external addresses |
 | `<app>/networkpolicy.yml` | Rules for that app's workloads only, in the app's own Argo CD application |
+
+Argo CD is installed from `k8s/bootstrap/argocd`, outside the ApplicationSet, so its component rules also live in `argocd.yml`, where Argo CD keeps them in sync.
 
 ## Allowed Paths
 
@@ -22,6 +24,12 @@ CiliumNetworkPolicies control ingress and egress in `media`, `auth`, `monitoring
 | `external-secrets` | Cluster/API/host | DNS, same namespace, API, Vault on 8200 |
 | `kyverno` | Cluster/API/host | DNS, same namespace, API |
 | `backups` | Same namespace, monitoring | DNS, API, NFS and configured backup endpoints |
+| `home-automation` | Gateway and Prometheus on 8123 | DNS, public HTTPS |
+| `argocd` | Argo CD's upstream per-component policies; world denied | DNS, same namespace, API; HTTPS from the repo server and notifications controller; the server to Authentik on 9000 for OIDC |
+| `cert-manager` | Prometheus on 9402; the API server to the webhook on 10250 | DNS, API; the controller to HTTPS for ACME and Route53, and DNS to 1.1.1.1 and 9.9.9.9 for DNS-01 checks |
+| `goldilocks` | Authentik's outpost to the dashboard on 8080 | DNS, API |
+| `intel-gpu-operator` | The API server to the webhook on 9443 | DNS, API |
+| `local-path-storage`, `nfs-provisioner` | None | DNS, API |
 
 The manifests are the detailed source of truth. Rules select pod labels and **pod target ports**, which may differ from Service ports.
 
@@ -42,6 +50,12 @@ Exception lists (`except`) accept only literal CIDRs, so Home Assistant's intern
 
 The named `*-default-deny` policies explicitly deny ingress from `world`. Allow rules select the same endpoints and permit required sources. An egress allow rule enables default-deny for other egress on selected endpoints; `egressDeny` is not required. Cilium combines allow rules additively, so another broad allow can defeat an intended narrow boundary.
 
+Cilium also enforces Kubernetes `NetworkPolicy` objects and adds their allows to these. Argo CD's upstream install ships narrow per-component ingress policies, which stay as its ingress layer. Charts that ship broad ones have them turned off: Authentik's PostgreSQL subchart admitted 5432 from any pod and allowed all egress.
+
+Kubelet probes from the pod's own node are always allowed. Admission webhooks need ingress from `kube-apiserver` and `remote-node`, because the API server on the control-plane node can reach them from its Cilium internal address.
+
+A pod that calls an app by its external hostname, such as Argo CD's OIDC issuer `https://auth.home.seneker.io`, goes through the gateway's Envoy. Envoy checks the pod's egress policy against the backend pod, not the gateway address, and answers HTTP 403 when it is not allowed; Hubble shows no drop. Allow egress to the backend pod and port.
+
 Authentik's database is only reachable through its same-namespace rule. OIDC clients no longer receive a namespace-wide allowance to every port. The proxy needs both egress from `auth` and ingress on each backend's namespace. See [Adding an App to SSO](../runbooks/adding-app-to-sso.md).
 
 ## Infrastructure Administration
@@ -58,7 +72,7 @@ Deny rules take precedence over any allow rule. Both policies set `enableDefault
 
 ## Remaining Boundaries
 
-`kube-system`, `argocd`, `cert-manager`, `goldilocks`, `intel-gpu-operator`, storage provisioners and other namespaces have no policies here. Same-namespace access and several infrastructure cluster allowances remain broad. HTTPS access to `world` is not an external-host allowlist and should not be treated as management-network isolation. Network firewalls and Cilium connection tests are required before claiming that boundary is enforced.
+`kube-system` has no policies, by design, and `default` runs no pods. Same-namespace access and several infrastructure cluster allowances remain broad. HTTPS access to `world` is not an external-host allowlist and should not be treated as management-network isolation. Network firewalls and Cilium connection tests are required before claiming that boundary is enforced.
 
 ## Verification
 
@@ -70,3 +84,12 @@ hubble observe --namespace <namespace> --verdict DROPPED
 ```
 
 Test both the expected path and a forbidden path, including an unrelated pod attempting PostgreSQL on 5432, before and after rollout. A successful auth redirect does not test the protected backend. ArgoCD restores out-of-band policy changes; permanent policy changes belong in Git.
+
+Argo CD applies its own policies. If one cuts the repo server off from GitHub, Argo CD cannot sync the fix: delete the policy with `kubectl`, then correct it in Git.
+
+## Rolling Out a New Namespace
+
+1. Read the namespace's open connections from conntrack (`cilium-dbg bpf ct list global` on each agent) as well as new flows from Hubble. Long-lived connections, such as watches on the API server, open no new flows while you watch.
+2. Ship the policies with `enableDefaultDeny: {ingress: false, egress: false}`. Cilium evaluates them and Hubble records the policy that allowed each flow, but nothing is dropped.
+3. Watch for flows that no policy allowed, and add rules for the ones that belong.
+4. Remove `enableDefaultDeny` to enforce, then test each path and watch for drops.
