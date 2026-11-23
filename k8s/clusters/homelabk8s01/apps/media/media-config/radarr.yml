@@ -19,27 +19,17 @@ spec:
     autoRedownloadFailed: true
   notifications:
     - name: Jellyfin
-      implementation: MediaBrowser
-      configContract: MediaBrowserSettings
+      appRef:
+        kind: Jellyfin
+        name: jellyfin
       onDownload: true
       onUpgrade: true
       onRename: true
       fields:
-        - name: host
-          value: jellyfin.media.svc.cluster.local
-        - name: port
-          value: 8096
-        - name: useSsl
-          value: false
         - name: updateLibrary
           value: true
         - name: notify
           value: false
-        - name: apiKey
-          valueFrom:
-            secretKeyRef:
-              name: jellyfin-credentials
-              key: api-key
   mediaManagement:
     downloadPropersAndRepacks: doNotPrefer
     deleteEmptyFolders: true
