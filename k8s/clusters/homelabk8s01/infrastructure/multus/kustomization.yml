@@ -99,6 +99,10 @@ patches:
                     memory: 64Mi
                   limits:
                     memory: 256Mi
+                volumeMounts:
+                  - name: host-run
+                    mountPath: /host/run
+                    mountPropagation: HostToContainer
             initContainers:
               - name: install-multus-binary
                 resources:
