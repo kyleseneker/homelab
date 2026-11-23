@@ -10,5 +10,6 @@ resources:
   - grafana-oidc-external-secret.yml
   - homelab-rules.yml
   - httproutes.yml
+  - networkpolicy.yml
   - prometheus-pdb.yml
   - proxmox-host-scrape.yml
