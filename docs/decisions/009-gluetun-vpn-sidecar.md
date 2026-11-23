@@ -10,7 +10,7 @@ The download client (qBittorrent) must route all traffic through a VPN to protec
 
 ## Decision
 
-Run Gluetun as a Kubernetes native sidecar (`initContainer` with `restartPolicy: Always`) in the same pod as qBittorrent. Its startup probe gates the torrent client. Gluetun establishes a WireGuard tunnel to Private Internet Access (PIA), and qBittorrent shares Gluetun's network namespace so all its traffic is encapsulated. A CiliumNetworkPolicy in the app's `networkpolicy.yml` grants the VPN pod unrestricted world egress while other media pods receive the internal and HTTPS egress declared for them.
+Run Gluetun as a Kubernetes native sidecar (`initContainer` with `restartPolicy: Always`) in the same pod as qBittorrent. Its startup probe gates the torrent client. Gluetun establishes an OpenVPN tunnel to Private Internet Access (PIA), and qBittorrent shares Gluetun's network namespace so all its traffic is encapsulated. A CiliumNetworkPolicy in the app's `networkpolicy.yml` grants the VPN pod unrestricted world egress while other media pods receive the internal and HTTPS egress declared for them.
 
 ## Alternatives Considered
 
@@ -22,13 +22,13 @@ Run Gluetun as a Kubernetes native sidecar (`initContainer` with `restartPolicy:
 ## Rationale
 
 - **Kill-switch by design**: Gluetun's firewall blocks non-tunnel download traffic, while its startup probe prevents qBittorrent from starting before the VPN is ready. Explicit firewall exceptions allow the required local API and health-check traffic.
-- **Shared network namespace**: The sidecar pattern means qBittorrent doesn't need any VPN configuration. It sees Gluetun's network as its own. Port forwarding from PIA is passed through automatically.
+- **Shared network namespace**: The sidecar pattern means qBittorrent doesn't need any VPN configuration. It sees Gluetun's network as its own. Whenever the tunnel comes up, Gluetun's port-forwarding command sets qBittorrent's listening port to the port PIA forwards, through qBittorrent's API on localhost, which skips the login (`bypassLocalAuth`).
 - **Network policy isolation**: The `downloads` CiliumNetworkPolicy selectively allows world egress only for the VPN pod. Other media pods (Sonarr, Radarr) are limited to DNS, intra-namespace, HTTPS, and NFS.
 - **Simplicity**: One pod, one VPN tunnel, one download client. No proxy chains or gateway nodes to manage.
 - **Health checks**: Gluetun exposes a health endpoint via its control server. qBittorrent's container startup depends on Gluetun readiness, preventing traffic before the tunnel is up.
 
 ## Consequences
 
-- The `NET_ADMIN` capability is required for Gluetun to create the WireGuard interface. This is an exception to the default security posture.
+- The `NET_ADMIN` capability is required for Gluetun to create the tunnel interface. This is an exception to the default security posture.
 - PIA credentials are stored in Vault and synced via ExternalSecret. If the VPN provider is changed, both the secret and Gluetun environment variables must be updated.
 - VPN tunnel failures make the download client completely unavailable (by design). Monitoring relies on Gluetun's health check and pod restart behavior.
