@@ -27,6 +27,8 @@ spec:
     maxSeedingTime: 1440
     # All callers, including pods, authenticate with qbittorrent-credentials.
     bypassAuthSubnetWhitelistEnabled: false
+    # Gluetun's port-forward command sets listenPort from localhost.
+    bypassLocalAuth: true
   categories:
     - name: tv
     - name: movies
