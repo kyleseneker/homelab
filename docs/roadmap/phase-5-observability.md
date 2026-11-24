@@ -48,7 +48,6 @@ Set targets from household needs and observed behavior. Application availability
 ## 5.6 Network Monitoring
 
 - [ ] Replace unpoller's administrator API key with a View Only admin's key, as [ADR-033](../decisions/033-network-monitoring.md) requires, then delete the administrator key in UniFi.
-- [ ] Add Loki alerts for gateway and access point events, such as restarts, lost mesh uplinks, firmware updates and WAN failover, once their event names have been observed in unpoller's system log stream.
 - [ ] Add an internet latency alert from a week of the gateway's WAN monitor data.
 - [ ] Add anomaly alerts from per-hour-of-week baselines for channel busy time, retries, extender link signal, Wi-Fi experience and internet latency, after two weeks of unpoller data.
 - [ ] Post a weekly network health report to Slack: weakest devices, busiest channels, extender links, internet trends and the week's changes.

@@ -139,6 +139,14 @@ Defined in `unpoller/prometheusrule.yml` from the UniFi controller's metrics ([u
 | `UniFiDeviceRestarted` | warning | -- | A UniFi device has been up for less than 15 minutes |
 | `UniFiDevicesDisconnected` | warning | 5m | The controller reports a disconnected device in the LAN, WAN or WLAN subsystem |
 
+`unpoller/loki-rules.yml` alerts on the controller's own events in Loki. Each fires within a few minutes of the event and resolves ten minutes later. Client roams and connections, admin activity, updates and firewall blocks stay in Loki without alerting.
+
+| Alert | Severity | Condition |
+|-------|----------|-----------|
+| `UniFiSecurityDetection` | warning | Any security event other than a firewall block, such as an intrusion detection hit, labelled with the event and source client |
+| `UniFiDeviceEvent` | warning | A UniFi device event of medium severity or higher, such as a lost mesh link, a rogue AP or a device going offline, labelled with the device. Re-mesh recoveries and channel changes are excluded. A controller update can log one rogue AP for the gateway's own BSSID |
+| `UniFiUnclassifiedEvent` | warning | An event in a category the other rules do not cover yet, such as a new WAN or power event; classify it into an alert or an exclusion |
+
 ## Adding New Rules
 
 Add new `PrometheusRule` resources in the `monitoring` namespace. With `ruleSelectorNilUsesHelmValues: false`, Prometheus picks up all rules regardless of labels.
@@ -172,6 +180,7 @@ The Loki ruler evaluates LogQL rules and sends their alerts to the same Alertman
 | File | Alerts |
 |------|--------|
 | `infrastructure/loki/home-assistant-rules.yml` | `HomeAssistantLoginFailures`, `HomeAssistantIPBanned` ([Home Assistant](../apps/home-assistant.md#monitoring)) |
+| `infrastructure/unpoller/loki-rules.yml` | `UniFiSecurityDetection`, `UniFiDeviceEvent`, `UniFiUnclassifiedEvent` ([UniFi](#unifi)) |
 
 ## Silencing Alerts
 

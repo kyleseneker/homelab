@@ -7,6 +7,7 @@ resources:
   - dashboard-unpoller-gateway.yml
   - dashboard-unpoller-sites.yml
   - dashboard-unpoller-switches.yml
+  - loki-rules.yml
   - networkpolicy.yml
   - prometheusrule.yml
   - servicemonitor.yml
