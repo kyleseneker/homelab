@@ -60,7 +60,7 @@ Arrchitect does not manage plugins, so install and configure the plugin by hand 
 | LDAP Search Attributes | `uid, cn, mail, displayName` |
 | LDAP Uid Attribute / Username Attribute | `uid` / `cn` |
 | LDAP Admin Base DN | `dc=home,dc=seneker,dc=io` |
-| LDAP Admin Filter | `(memberOf=cn=authentik Admins,ou=groups,dc=home,dc=seneker,dc=io)` |
+| LDAP Admin Filter | `(&(memberOf=cn=Jellyfin Users,ou=groups,dc=home,dc=seneker,dc=io)(memberOf=cn=authentik Admins,ou=groups,dc=home,dc=seneker,dc=io))` |
 | Enable User Creation | On |
 | Allow Password Change | Off |
 | Library Access | Enable access to all libraries |

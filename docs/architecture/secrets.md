@@ -54,6 +54,7 @@ All secrets live under the `homelab` KV v2 mount, organized by layer:
 | `apps/media`, `apps/unpackerr` | `unpackerr-secrets` | `media` |
 | `apps/vpn` | `vpn-credentials` | `media` |
 | `infrastructure/authentik` | `authentik-credentials` | `auth` |
+| `infrastructure/authentik-ldap` | `authentik-credentials`, `authentik-ldap-outpost` | `auth` |
 | `apps/home-assistant` | `home-assistant-prometheus` | `home-automation` |
 | `infrastructure/etcd-backup` | `etcd-backup-credentials` | `backups` |
 | `infrastructure/garage` | `garage-secrets`, `velero-local-credentials` | `backups` |
