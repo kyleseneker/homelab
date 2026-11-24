@@ -290,3 +290,66 @@ data:
         attrs:
           name: Grafana
           provider: !KeyOf grafana-provider
+  ldap.yaml: |
+    version: 1
+    metadata:
+      name: ldap
+    entries:
+      - model: authentik_core.group
+        id: jellyfin-users
+        identifiers:
+          name: Jellyfin Users
+      - model: authentik_core.user
+        id: jellyfin-ldap-bind
+        identifiers:
+          username: jellyfin-ldap-bind
+        attrs:
+          name: Jellyfin LDAP bind
+          type: service_account
+          path: goauthentik.io/service-accounts
+          password: !Env JELLYFIN_LDAP_BIND_PASSWORD
+      - model: authentik_providers_ldap.ldapprovider
+        id: jellyfin-ldap-provider
+        identifiers:
+          name: jellyfin-ldap
+        attrs:
+          base_dn: dc=home,dc=seneker,dc=io
+          bind_mode: cached
+          search_mode: cached
+          # Enabled, a password containing ";" is split as password;TOTP.
+          mfa_support: false
+          authorization_flow:
+            !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+          invalidation_flow:
+            !Find [authentik_flows.flow, [slug, default-invalidation-flow]]
+        permissions:
+          - permission: authentik_providers_ldap.search_full_directory
+            user: !KeyOf jellyfin-ldap-bind
+      - model: authentik_core.application
+        id: jellyfin-app
+        identifiers:
+          slug: jellyfin
+        attrs:
+          name: Jellyfin
+          provider: !KeyOf jellyfin-ldap-provider
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf jellyfin-app
+          group: !KeyOf jellyfin-users
+        attrs:
+          order: 0
+      - model: authentik_policies.policybinding
+        identifiers:
+          target: !KeyOf jellyfin-app
+          user: !KeyOf jellyfin-ldap-bind
+        attrs:
+          order: 10
+      - model: authentik_outposts.outpost
+        identifiers:
+          name: ldap
+        attrs:
+          type: ldap
+          config:
+            authentik_host: http://authentik-server.auth.svc.cluster.local
+          providers:
+            - !KeyOf jellyfin-ldap-provider

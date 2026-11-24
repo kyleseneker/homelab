@@ -9,4 +9,6 @@ resources:
   - blueprints-configmap.yml
   - referencegrant.yml
   - backup.yml
+  - ldap-outpost-external-secret.yml
+  - ldap-outpost.yml
   - networkpolicy.yml

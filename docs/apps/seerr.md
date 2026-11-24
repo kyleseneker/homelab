@@ -37,7 +37,7 @@ Seerr does not require the shared `media-data` volume because it interacts with 
 
 ### Authentication
 
-Seerr authenticates through **Jellyfin** directly. The deployed configuration enables Jellyfin and local login; it does not configure OIDC.
+Seerr authenticates through **Jellyfin** directly. The deployed configuration enables Jellyfin and local login. Jellyfin checks Authentik accounts over LDAP, so people sign in to Seerr with their Authentik username and password, typed into Seerr's own login page. Seerr has no OIDC support, and it is not behind the proxy outpost.
 
 ## Post-Deploy Verification
 

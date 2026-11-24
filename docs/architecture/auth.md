@@ -1,6 +1,6 @@
 # Authentication & SSO
 
-The homelab uses Authentik as the centralized identity provider. Applications authenticate either through native OIDC or by routing their traffic through Authentik's embedded outpost.
+The homelab uses Authentik as the centralized identity provider. Applications authenticate through native OIDC, by routing their traffic through Authentik's embedded outpost, or, for Jellyfin, by checking passwords against Authentik's LDAP outpost.
 
 ## Authentication Flows
 
@@ -10,8 +10,10 @@ flowchart TB
         AuthentikServer["Authentik Server"]
         AuthentikWorker["Authentik Worker"]
         PostgreSQL["PostgreSQL"]
+        LDAPOutpost["LDAP Outpost"]
         AuthentikServer --> PostgreSQL
         AuthentikWorker --> PostgreSQL
+        LDAPOutpost --> AuthentikServer
     end
 
     User["User"] --> Gateway["Cilium Gateway"]
@@ -22,6 +24,8 @@ flowchart TB
 
     Grafana["Grafana"] -->|"OIDC"| AuthentikServer
     ArgoCD["ArgoCD"] -->|"OIDC"| AuthentikServer
+    Gateway --> Jellyfin["Jellyfin<br/>(own login page)"]
+    Jellyfin -->|"LDAP bind"| LDAPOutpost
 ```
 
 Authentik runs its server and worker against a bundled PostgreSQL instance. No Redis is deployed; the task queue lives in PostgreSQL.
@@ -45,9 +49,21 @@ Apps with built-in OAuth2/OIDC support authenticate directly with Authentik. Eac
 
 - **Grafana** -- `auth.generic_oauth` with role mapping (`authentik Admins` group -> Admin role)
 - **ArgoCD** -- native OIDC via `oidc.config` in `argocd-cm` with RBAC group mapping
-- **Seerr** -- the deployed configuration authenticates via Jellyfin
 
 Grafana's token and userinfo URLs use the internal Service over HTTP, with Cilium policies controlling reachability. Its browser authorization URL uses the external hostname. ArgoCD uses the external HTTPS issuer, trusted through its image's system root store; it does not use Grafana's split URL configuration.
+
+### LDAP
+
+Jellyfin's TV and mobile clients send a username and password to Jellyfin, so neither the proxy outpost nor an OIDC redirect can sit in front of them. Jellyfin's LDAP Authentication plugin checks those credentials against the `authentik-ldap` outpost in `auth` instead. People sign in to Jellyfin with their Authentik account, and the plugin creates the Jellyfin user on first sign-in.
+
+The plugin searches the directory with the `jellyfin-ldap-bind` service account, then binds as the person signing in. Binds run Authentik's `default-authentication-flow`; MFA support is off, so an account that requires a WebAuthn or TOTP challenge at login cannot bind. Members of `Jellyfin Users` can sign in, and members of `authentik Admins` among them become Jellyfin administrators.
+
+Seerr signs people in through Jellyfin, so the same Authentik accounts work there.
+
+Jellyfin's local administrator does not go through LDAP. It is Arrchitect's account and the emergency login, and its username must not match any Authentik username.
+
+!!! info "Plaintext inside the cluster"
+    The outpost serves LDAP without TLS on its in-cluster Service, so bind passwords cross pod-to-pod traffic unencrypted, as Vault's internal traffic does. Cilium admits only the Jellyfin pod.
 
 ### Unprotected Services
 
@@ -56,18 +72,20 @@ Grafana's token and userinfo URLs use the internal Service over HTTP, with Ciliu
 | Homepage | No edge auth; exposes service links and operational widget data to the LAN |
 | Vault | Cannot use Authentik -- Authentik's own secrets come from Vault, so this would be circular. Token auth is the control |
 | Uptime Kuma | No edge auth; has its own login |
-| Jellyfin | Has its own user auth; media clients (Roku, Apple TV, mobile) can't do browser-based SSO |
 | Authentik | Circular dependency |
 
 ## Group-Based Access Control
 
-| Group | Grafana Role | ArgoCD Role |
-|-------|-------------|-------------|
-| `authentik Admins` | Admin | `role:admin` |
-| (default) | Viewer | No default role explicitly granted in this repository |
+| Group | Grafana Role | ArgoCD Role | Jellyfin |
+|-------|-------------|-------------|----------|
+| `authentik Admins` | Admin | `role:admin` | Administrator, when also in `Jellyfin Users` |
+| `Jellyfin Users` | -- | -- | User |
+| (default) | Viewer | No default role explicitly granted in this repository | No access |
 
 ## Resilience
 
 An Authentik server, outpost or PostgreSQL outage can make every proxy-protected route unavailable. The outpost is part of the request path even for API paths exempted from login. Grafana and ArgoCD retain local login accounts; direct-route services retain their own authentication. See the [emergency bypass runbook](../runbooks/authentik-emergency-bypass.md) for scoped port-forward access during recovery.
+
+An Authentik server or LDAP outpost outage blocks new Jellyfin sign-ins. Jellyfin issues its own session tokens, so devices already signed in keep playing. The local Jellyfin administrator still signs in.
 
 The `auth` namespace is included in Velero's daily stateful backup and the weekly full-cluster backup.

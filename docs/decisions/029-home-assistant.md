@@ -41,7 +41,7 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 - Add a UniFi rule that blocks Internal to 192.168.20.10, ahead of the Internal-to-IoT allow, so no browser or app ever sends credentials in plaintext over VLAN 20.
 - Set trusted proxies to the pod CIDR, since the gateway reaches the pod from there. Limit ingress on port 8123 to the gateway and the Prometheus pod with CiliumNetworkPolicy, so no other pod can forge a client address.
 - Set the internal and external URLs to `https://ha.home.seneker.io`, so discovery never hands out the VLAN 20 address.
-- Do not place Home Assistant behind the Authentik outpost. Its companion apps cannot complete a proxied browser login, which is the same reason Jellyfin is excluded ([ADR-010](010-authentik-sso.md)).
+- Do not place Home Assistant behind the Authentik outpost. Its companion apps cannot complete a proxied browser login, which is the same reason Jellyfin stays off it ([ADR-010](010-authentik-sso.md)).
 
 ### Onboarding and authentication
 
