@@ -23,6 +23,8 @@ Rotate a credential at its authority and update its consumers in a planned order
     ```
 
 5. Reload/restart consumers through their documented mechanism. Reloader's cluster-wide watch does not mean automatic rollout for every workload: the workload must opt in through annotations. Verify those annotations or perform a deliberate rollout.
+
+    Values an Authentik blueprint reads through `!Env` (the OIDC client secrets and the Jellyfin LDAP bind password) change only when that blueprint is applied. Authentik applies a blueprint only when its file changes, so after Reloader restarts Authentik, apply the blueprint from **Customization → Blueprints**.
 6. Test actual authentication and dependent application requests, then revoke the old credential if supported. A `SecretSynced` condition proves synchronization, not that every consumer accepts the new value.
 
 ## Bootstrap credentials

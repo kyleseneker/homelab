@@ -20,7 +20,7 @@ The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This c
 
 ### Upgrades
 
-Upgrade one minor release at a time (2026.2 → 2026.5 → 2026.8), as upstream requires, with a fresh `authentik-backup` dump before each step. The worker applies migrations and blueprints on startup. Afterwards, check that every blueprint instance is `successful`, that the OIDC issuers still report `https://`, and that the blackbox probes for proxied routes still return their login redirect. Since 2026.8, Authentik honors forwarded headers only from `AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS`; the defaults cover the pod and node networks the Cilium Gateway connects from.
+Upgrade one minor release at a time (2026.2 → 2026.5 → 2026.8), as upstream requires, with a fresh `authentik-backup` dump before each step. The worker applies migrations on startup, along with any blueprint whose file changed. Afterwards, check that every blueprint instance is `successful`, that the OIDC issuers still report `https://`, and that the blackbox probes for proxied routes still return their login redirect. Since 2026.8, Authentik honors forwarded headers only from `AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS`; the defaults cover the pod and node networks the Cilium Gateway connects from.
 
 PostgreSQL stays on the major version the Authentik chart defaults to (17 through chart 2026.8.5), and Renovate holds it there. Change the major as part of the Authentik upgrade whose chart moves to it, by dump and restore: a data directory from an older major does not start on a newer server.
 
@@ -56,7 +56,7 @@ Cross-namespace HTTPRoutes require `referencegrant.yml`. Cilium must permit both
 
 ### Native OIDC and Direct Routes
 
-Grafana and ArgoCD authenticate with dedicated OIDC providers, declared in the `oidc-clients.yaml` blueprint. The blueprint reads each client secret from `authentik-credentials` through `!Env`, so Authentik and the client share one Vault value. Grafana accesses token/userinfo endpoints over the internal Service. ArgoCD uses the external issuer `https://auth.home.seneker.io/application/o/argocd/` and trusts it through the system roots. Both retain local administrator login for recovery.
+Grafana and ArgoCD authenticate with dedicated OIDC providers, declared in the `oidc-clients.yaml` blueprint. The blueprint reads each client secret from `authentik-credentials` through `!Env`, so Authentik and the client share one Vault value. Authentik applies a blueprint only when its file changes, not when a restart brings a new `!Env` value, so apply the blueprint from **Customization → Blueprints** after changing one. Grafana accesses token/userinfo endpoints over the internal Service. ArgoCD uses the external issuer `https://auth.home.seneker.io/application/o/argocd/` and trusts it through the system roots. Both retain local administrator login for recovery.
 
 Each provider allows only its `home.seneker.io` callback. The issuer follows the hostname the client calls, so a client's configured issuer must match the Authentik name it uses. ArgoCD caches the issuer for session checks: after changing `oidc.config`, restart `argocd-server`, or every sign-in loops back to the login page.
 
