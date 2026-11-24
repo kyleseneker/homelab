@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-rules-unifi
+  namespace: monitoring
+  labels:
+    loki_rule: "true"
+data:
+  unifi.yaml: |
+    groups:
+      - name: unifi-events
+        rules:
+          - alert: UniFiSecurityDetection
+            expr: |
+              sum by (event, src) (count_over_time({job="unpoller", application="unifi_system_log", category="SECURITY"}
+                | json event, src="parameters.SRC_CLIENT.name"
+                | event != "BLOCKED_BY_FIREWALL" [10m])) > 0
+            labels:
+              severity: warning
+              namespace: monitoring
+            annotations:
+              summary: UniFi {{ $labels.event }}{{ if $labels.src }} from {{ $labels.src }}{{ end }}
+              description: >-
+                The gateway logged {{ $value }} {{ $labels.event }} event(s) in 10 minutes. The
+                Network dashboard's event log has the message, and the UniFi app's Insights view
+                has the matched signature.
+          - alert: UniFiDeviceEvent
+            expr: |
+              sum by (event, device) (count_over_time({job="unpoller", application="unifi_system_log", category="UNIFI_DEVICES", severity!~"LOW|VERY_LOW"}
+                | json event, device="parameters.DEVICE.name", nearest="parameters.NEAREST_AP.name"
+                | event != "DEVICE_MESHED"
+                | label_format device=`{{ if .device }}{{ .device }}{{ else }}{{ .nearest }}{{ end }}` [10m])) > 0
+            labels:
+              severity: warning
+              namespace: monitoring
+            annotations:
+              summary: UniFi {{ $labels.event }} on {{ $labels.device }}
+              description: >-
+                {{ $labels.device }} logged {{ $labels.event }}, such as a lost mesh link, a rogue
+                AP or a device going offline. A controller update can log one rogue AP for the
+                gateway's own BSSID.
+          - alert: UniFiUnclassifiedEvent
+            expr: |
+              sum by (category, event) (count_over_time({job="unpoller", application="unifi_system_log", category!~"SECURITY|UNIFI_DEVICES|CLIENT_DEVICES|AUDIT|SOFTWARE_UPDATES"}
+                | json event [10m])) > 0
+            labels:
+              severity: warning
+              namespace: monitoring
+            annotations:
+              summary: New UniFi event type {{ $labels.event }} ({{ $labels.category }})
+              description: >-
+                The gateway logged an event in a category these rules do not classify yet. Decide
+                whether it belongs in an alert or in the exclusions in unpoller/loki-rules.yml.
