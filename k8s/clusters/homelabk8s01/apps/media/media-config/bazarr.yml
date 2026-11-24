@@ -20,6 +20,8 @@ spec:
     minimumScoreMovie: 70
     adaptiveSearching: true
     multithreading: true
+    seriesDefaultProfile: English
+    movieDefaultProfile: English
   languages:
     enabled:
       - en
