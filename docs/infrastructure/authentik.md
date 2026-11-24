@@ -1,6 +1,6 @@
 # Authentik
 
-Authentik provides identity for native OIDC clients and authenticates browser traffic through its proxy outpost.
+Authentik provides identity for native OIDC clients, authenticates browser traffic through its proxy outpost, and checks Jellyfin sign-ins through its LDAP outpost.
 
 ## Details
 
@@ -60,13 +60,27 @@ Grafana and ArgoCD authenticate with dedicated OIDC providers, declared in the `
 
 Each provider allows only its `home.seneker.io` callback. The issuer follows the hostname the client calls, so a client's configured issuer must match the Authentik name it uses. ArgoCD caches the issuer for session checks: after changing `oidc.config`, restart `argocd-server`, or every sign-in loops back to the login page.
 
-Jellyfin and Seerr use their media login flow. Homepage, Vault and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
+Jellyfin checks sign-ins against the LDAP outpost below, and Seerr signs people in through Jellyfin. Homepage, Vault and Uptime Kuma have direct routes with the native controls described in [Authentication & SSO](../architecture/auth.md). Grafana's internal Prometheus and Alertmanager data sources use Services directly, so protecting the public web routes does not interrupt metrics queries.
+
+### LDAP Outpost
+
+The `ldap.yaml` blueprint declares the `jellyfin-ldap` provider (base DN `dc=home,dc=seneker,dc=io`, cached bind and search, MFA support off), the `jellyfin` application, the `Jellyfin Users` group and the `jellyfin-ldap-bind` service account. The application admits `Jellyfin Users` and the bind account. The bind account holds the provider's `search_full_directory` permission, and the blueprint sets its password from `JELLYFIN_LDAP_BIND_PASSWORD` on every apply. The blueprint also declares the `ldap` outpost with no integration, so Authentik does not deploy it.
+
+`ldap-outpost.yml` deploys the outpost from Git instead. An Authentik-managed Deployment would sit outside Argo CD and fail the Kyverno label, limit and read-only filesystem policies. The image tag must match the chart version; Renovate groups the two. The outpost reaches the server over `http://authentik-server.auth.svc.cluster.local` and authenticates with the outpost token from `authentik-ldap-outpost`.
+
+| Service port | Pod port | Purpose |
+|--------------|----------|---------|
+| 389 | 3389 | LDAP, plaintext; Cilium admits only the Jellyfin pod |
+| 9300 | 9300 | `/outpost.goauthentik.io/ping` probes and Prometheus metrics |
+
+LDAPS is not served. `AuthentikLdapOutpostDown` fires after five minutes without an available replica.
 
 ## Secrets
 
 | Secret | Namespace | Keys |
 |--------|-----------|------|
-| `authentik-credentials` | `auth` | Authentik environment variables, PostgreSQL credentials and the OIDC client secrets the blueprint reads; see the ExternalSecret manifest |
+| `authentik-credentials` | `auth` | Authentik environment variables, PostgreSQL credentials, and the OIDC client secrets and LDAP bind password the blueprints read; see the ExternalSecret manifest |
+| `authentik-ldap-outpost` | `auth` | `token` (the `ldap` outpost's API token) |
 | `grafana-oidc-secret` | `monitoring` | `GRAFANA_OIDC_CLIENT_SECRET` |
 | `argocd-secret` (merge) | `argocd` | `oidc.authentik.clientSecret` |
 
@@ -76,12 +90,13 @@ External Secrets Operator syncs these from Vault. Bootstrap credentials initiali
 
 Prerequisites: Authentik pods running in `auth`, DNS configured, and credentials populated in Vault.
 
-1. Store each OIDC client secret at its Vault path using `make vault-put-secret` before the first start, because the `oidc-clients.yaml` blueprint reads them when it imports. The ExternalSecret manifests identify the paths and keys.
+1. Store each OIDC client secret and the LDAP bind password at their Vault paths using `make vault-put-secret` before the first start, because the blueprints read them when they import. The ExternalSecret manifests identify the paths and keys. Generate the bind password without `;`.
 2. Sign in to `https://auth.home.seneker.io/if/admin/` with the bootstrapped administrator account. Use the initial setup flow only if the installation has not initialized an account.
-3. Confirm the `edge-auth.yaml` and `oidc-clients.yaml` blueprints apply successfully, all nine providers exist in proxy mode, and the Grafana and ArgoCD providers exist. ConfigMap data keys must end in `.yaml`.
+3. Confirm the `edge-auth.yaml`, `oidc-clients.yaml` and `ldap.yaml` blueprints apply successfully, all nine providers exist in proxy mode, and the Grafana, ArgoCD and `jellyfin-ldap` providers exist. ConfigMap data keys must end in `.yaml`.
 4. Verify the outpost integration and the Service referenced by the routes exist. The repository does not declare the integration setup.
-5. Ensure token claims contain the `authentik Admins` group expected by both OIDC clients.
-6. Test a fresh browser login, native OIDC role mapping, an unauthenticated API request, and backend reachability separately. The [SSO runbook](../runbooks/adding-app-to-sso.md) gives the network checks.
+5. Copy the `ldap` outpost's token from **Applications → Outposts → View Deployment Info** into Vault as `infrastructure/authentik-ldap` `outpost-token`. Until then the `authentik-ldap` pod cannot start. A restored database keeps the token, so this is needed only when the outpost is created.
+6. Ensure token claims contain the `authentik Admins` group expected by both OIDC clients.
+7. Test a fresh browser login, native OIDC role mapping, an unauthenticated API request, and backend reachability separately. The [SSO runbook](../runbooks/adding-app-to-sso.md) gives the network checks.
 
 ## Recovery and Backups
 

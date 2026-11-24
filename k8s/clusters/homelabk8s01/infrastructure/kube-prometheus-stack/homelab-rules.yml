@@ -42,6 +42,18 @@ spec:
             summary: "Authentik SSO server is down"
             description: "Authentik server has had no available replicas for more than 5 minutes. SSO authentication is unavailable."
 
+        - alert: AuthentikLdapOutpostDown
+          expr: |
+            (kube_deployment_spec_replicas{namespace="auth", deployment="authentik-ldap"} > 0)
+            and
+            (kube_deployment_status_replicas_available{namespace="auth", deployment="authentik-ldap"} == 0)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Authentik LDAP outpost is down"
+            description: "The LDAP outpost has had no available replicas for more than 5 minutes. New Jellyfin sign-ins fail; devices already signed in keep working."
+
         - alert: MultusUnavailable
           expr: |
             kube_daemonset_status_number_unavailable{namespace="kube-system", daemonset="kube-multus-ds"} > 0

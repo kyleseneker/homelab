@@ -14,3 +14,12 @@ spec:
         - ports:
             - port: "8096"
               protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: auth
+            app.kubernetes.io/name: authentik-ldap
+      toPorts:
+        - ports:
+            - port: "3389"
+              protocol: TCP

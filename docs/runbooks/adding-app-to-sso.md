@@ -71,6 +71,6 @@ This split is used by Grafana and requires Cilium egress to Authentik and ingres
 
 ## When NOT to Add SSO
 
-- **Media clients** (Jellyfin) -- Roku, Apple TV, and mobile apps can't do browser-based SSO
+- **Media clients** (Jellyfin) -- Roku, Apple TV, and mobile apps can't complete a browser login, so keep the app off the proxy outpost. Check passwords against the LDAP outpost instead, as Jellyfin does.
 - **Internal metrics traffic** -- keep Grafana and scrapers on in-cluster Services; their public Prometheus and Alertmanager web routes are already proxy-protected
 - **Authentik itself** -- circular dependency

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentik-ldap
+  namespace: auth
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-ldap
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik-ldap
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: ldap
+          # Must match the Authentik chart version; Renovate bumps them together.
+          image: ghcr.io/goauthentik/ldap:2026.8.6
+          env:
+            - name: AUTHENTIK_HOST
+              value: http://authentik-server.auth.svc.cluster.local
+            - name: AUTHENTIK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-ldap-outpost
+                  key: token
+          ports:
+            - name: ldap
+              containerPort: 3389
+              protocol: TCP
+            - name: http-metrics
+              containerPort: 9300
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /outpost.goauthentik.io/ping
+              port: http-metrics
+          livenessProbe:
+            httpGet:
+              path: /outpost.goauthentik.io/ping
+              port: http-metrics
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentik-ldap
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: authentik-ldap
+spec:
+  selector:
+    app.kubernetes.io/name: authentik-ldap
+  ports:
+    - name: ldap
+      port: 389
+      targetPort: ldap
+      protocol: TCP
+    - name: http-metrics
+      port: 9300
+      targetPort: http-metrics
+      protocol: TCP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: authentik-ldap
+  namespace: auth
+  labels:
+    app.kubernetes.io/name: authentik-ldap
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-ldap
+  endpoints:
+    - port: http-metrics

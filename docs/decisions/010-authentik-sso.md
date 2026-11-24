@@ -10,7 +10,7 @@ Multiple web applications need authentication. Without centralized SSO, each app
 
 ## Decision
 
-Use Authentik as the centralized identity provider with two authentication mechanisms: a proxy-mode outpost for applications without native SSO support, and OIDC for applications that support it natively.
+Use Authentik as the centralized identity provider with three authentication mechanisms: a proxy-mode outpost for applications without native SSO support, OIDC for applications that support it natively, and an LDAP outpost for applications whose clients cannot complete a browser login.
 
 ## Alternatives Considered
 
@@ -20,7 +20,7 @@ Use Authentik as the centralized identity provider with two authentication mecha
 
 ## Rationale
 
-- **Dual auth modes**: The outpost handles apps without native SSO (the \*arr stack, qBittorrent, Tdarr, Goldilocks, Prometheus, Alertmanager). OIDC handles apps that support it natively (Grafana, ArgoCD). One tool covers both patterns.
+- **One identity source, three integration modes**: The proxy outpost handles apps without native SSO (the \*arr stack, qBittorrent, Tdarr, Goldilocks, Prometheus, Alertmanager). OIDC handles apps that support it natively (Grafana, ArgoCD). LDAP handles Jellyfin, whose TV and mobile clients send a username and password rather than following a browser redirect. Every person has one Authentik account, and disabling it removes access everywhere.
 - **Routing, not annotations**: An HTTPRoute has no equivalent to a subrequest auth hook, so a protected app's route points at the outpost Service and the outpost proxies to the app after authenticating. It dispatches on the `Host` header, so one outpost serves every protected app and no ext_authz filter is required.
 - **Single sign-on through the Authentik session**: No cookie domain is configured, so the embedded outpost sets a per-host cookie for each protected app. Signing in to one app establishes the Authentik session at `auth.home.seneker.io`, which the other apps reuse without re-authentication.
 - **Group-based RBAC**: Authentik groups map to application roles (e.g., ArgoCD `role:admin`), centralizing access control.
@@ -30,6 +30,7 @@ Use Authentik as the centralized identity provider with two authentication mecha
 
 - If Authentik is unavailable, every proxied application becomes inaccessible at the edge because the outpost is in the request path. OIDC-integrated apps need a separately configured and tested local login for emergency access. In-cluster traffic is unaffected, so the operator, Prowlarr's sync and Grafana's datasources keep working.
 - The outpost originates the proxied request, so each protected app needs a network path from the `auth` namespace as well as from the gateway. Missing either direction produces a login redirect followed by a hang rather than a clear error.
-- Vault is deliberately excluded: Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal. Jellyfin is excluded because media clients cannot complete a browser login.
+- Vault is deliberately excluded: Authentik reads its own credentials from Vault through External Secrets, so protecting Vault with Authentik would deadlock an unseal.
+- Jellyfin stays off the proxy outpost, because media clients cannot complete a browser login. Its sign-ins go through the LDAP outpost instead. While Authentik or the LDAP outpost is down, new sign-ins fail; devices already signed in keep their Jellyfin session. Jellyfin's local administrator remains the emergency login and the account Arrchitect uses.
 - Emergency bypass procedure is documented in a dedicated runbook for SSO lockout scenarios.
 - Authentik is a stateful service (PostgreSQL) that must be included in the cluster backup strategy.
