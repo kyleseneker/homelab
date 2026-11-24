@@ -52,10 +52,6 @@ spec:
             secretKeyRef:
               name: opensubtitles-credentials
               key: password
-    - name: podnapisi
-      enabled: true
-    - name: tvsubtitles
-      enabled: true
   sonarrConnection:
     appRef:
       kind: Sonarr
