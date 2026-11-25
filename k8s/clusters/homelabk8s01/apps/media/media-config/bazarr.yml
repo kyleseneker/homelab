@@ -62,3 +62,11 @@ spec:
       kind: Radarr
       name: radarr
     onlyMonitored: false
+  jellyfin:
+    appRef:
+      kind: Jellyfin
+      name: jellyfin
+    movieLibraries:
+      - Movies
+    seriesLibraries:
+      - TV Shows
