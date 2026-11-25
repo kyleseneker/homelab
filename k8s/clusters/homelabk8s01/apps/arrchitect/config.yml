@@ -1,5 +1,5 @@
 appName: arrchitect
-namespace: media
+namespace: arrchitect
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/charts
 chartName: arrchitect
