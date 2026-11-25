@@ -26,6 +26,38 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
+  name: media-allow-arrchitect
+  namespace: media
+spec:
+  description: "Arrchitect configures the media apps through their APIs"
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: arrchitect
+            app.kubernetes.io/part-of: arrchitect
+      toPorts:
+        - ports:
+            - port: "5055"
+              protocol: TCP
+            - port: "6767"
+              protocol: TCP
+            - port: "7878"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+            - port: "8096"
+              protocol: TCP
+            - port: "8265"
+              protocol: TCP
+            - port: "8989"
+              protocol: TCP
+            - port: "9696"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
   name: media-egress
   namespace: media
 spec:
