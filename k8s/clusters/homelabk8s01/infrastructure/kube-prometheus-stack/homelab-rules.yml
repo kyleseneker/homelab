@@ -490,7 +490,7 @@ spec:
             severity: warning
           annotations:
             summary: "{{ $labels.node }} has needed a reboot for 3 days"
-            description: "kured reboots nodes between 01:30 and 03:00 when no other alert is firing. A reboot pending for 3 days means a firing alert is blocking it or the drain keeps failing. Check kubectl -n kube-system logs ds/kured."
+            description: "kured reboots nodes between 01:30 and 03:00 when no warning or critical alert is firing. A reboot pending for 3 days means a firing alert is blocking it or the drain keeps failing. Check kubectl -n kube-system logs ds/kured."
 
         - alert: NodeSecurityUpdatesPending
           expr: sum by (instance) (apt_upgrades_pending{job="node-exporter", origin=~".*-security.*"}) > 0
