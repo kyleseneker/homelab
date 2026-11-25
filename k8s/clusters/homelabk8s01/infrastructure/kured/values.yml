@@ -11,7 +11,8 @@ configuration:
   annotateNodes: true
   preferNoScheduleTaint: weave.works/kured-node-reboot
   prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring:9090
-  alertFilterRegexp: ^(Watchdog|InfoInhibitor)$
+  # Info-severity rules by name, plus NodeRebootPending, which only clears after the reboot it reports.
+  alertFilterRegexp: ^(Watchdog|InfoInhibitor|NodeRebootPending|CPUThrottlingHigh|EndpointProbeSlow|KubeNodeEviction|KubeNodePressure|KubeQuotaAlmostFull|KubeQuotaFullyUsed|KubeletTooManyPods|NodeCPUHighUsage)$
   alertFiringOnly: true
 containerSecurityContext:
   privileged: false

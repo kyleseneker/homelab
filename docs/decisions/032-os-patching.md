@@ -38,7 +38,7 @@ Common references set the bar this ADR adopts:
 ### Kubernetes Nodes
 
 1. **Daily updates.** The `node_unattended_upgrades` role adds Ubuntu's `noble-updates` pocket to the default security origins of `unattended-upgrades`. Packages from the Kubernetes and Docker repositories are not allowed origins, and `kubelet`, `kubeadm`, `kubectl` and `containerd.io` are held, so they change only through their upgrade playbooks. Automatic reboot stays off.
-2. **Coordinated reboots** with [kured](../infrastructure/kured.md). When an update creates `/var/run/reboot-required`, kured drains the node, reboots it and uncordons it, one node at a time, between 01:30 and 03:00. It waits while any alert other than `Watchdog` is firing.
+2. **Coordinated reboots** with [kured](../infrastructure/kured.md). When an update creates `/var/run/reboot-required`, kured drains the node, reboots it and uncordons it, one node at a time, between 01:30 and 03:00. It waits while any warning or critical alert is firing, other than `NodeRebootPending`, which only clears after the reboot it reports.
 
 ### Monitoring
 
@@ -61,7 +61,7 @@ The `homelab-patching` alert group ([Alerting](../infrastructure/alerting.md#pat
 
 - **Planned outage:** the cluster has an unattended outage of about 5 minutes on the first Sunday of most months, at 03:30.
 - **Node reboots:** nodes reboot overnight a day after updates that need it. Rebooting node-1, the control plane, makes the API unavailable for a few minutes.
-- **Firing alerts block node reboots,** so a long-firing alert delays node patching until `NodeRebootPending` reports it.
+- **Firing alerts block node reboots,** so a long-firing warning delays node patching until `NodeRebootPending` reports it. Kured filters alerts by name only, so the info alerts it ignores are listed by name and a chart update that adds one needs it added to the list.
 - **Vendored collector:** `node_apt_metrics/files/apt_info.py` is a copy and does not update with the host's package; refresh it when the upstream script changes.
 - **Node kernels:** regular Ubuntu updates include kernel updates, so kured reboots nodes more often than security updates alone would cause.
 - **Kernel 7.0** needs its own tested change before `pve_patch_window_kernel_series` is cleared.
