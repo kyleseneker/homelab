@@ -36,6 +36,6 @@ spec:
           annotations:
             summary: "{{ $labels.kind }}/{{ $labels.name }} is not syncing"
             description: >-
-              {{ $labels.kind }} {{ $labels.namespace }}/{{ $labels.name }} last
+              {{ $labels.kind }} {{ or $labels.exported_namespace $labels.namespace }}/{{ $labels.name }} last
               reconciled unsuccessfully. Check the CR's Synced condition:
-              kubectl -n {{ $labels.namespace }} describe {{ $labels.kind }} {{ $labels.name }}
+              kubectl -n {{ or $labels.exported_namespace $labels.namespace }} describe {{ $labels.kind }} {{ $labels.name }}
