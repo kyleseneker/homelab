@@ -1,0 +1,88 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-restore-test
+  annotations:
+    policies.kyverno.io/title: Restrict the Restore Test
+    policies.kyverno.io/category: Backups (ADR-034)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      The restore test's ServiceAccount can create Velero Restores, which act
+      with Velero's cluster-admin rights, and can create and delete namespaces
+      and pods. It may touch only the restore-sandbox namespace, and its
+      Restores may bring back only labelled backup-volume pods and claims
+      into that namespace, without overwriting anything.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - namespaces
+          - pods
+      - apiGroups:
+          - velero.io
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - restores
+      - apiGroups:
+          - arrchitect.dev
+        apiVersions:
+          - "*"
+        operations:
+          - CREATE
+          - UPDATE
+          - DELETE
+        resources:
+          - "*"
+  matchConditions:
+    - name: restore-test-service-account
+      expression: request.userInfo.username == 'system:serviceaccount:backups:restore-test'
+  variables:
+    - name: target
+      expression: "request.operation == 'DELETE' ? oldObject : object"
+    - name: mapping
+      expression: object.spec.?namespaceMapping.orValue({})
+  validations:
+    - expression: request.resource.resource != 'namespaces' || variables.target.metadata.name == 'restore-sandbox'
+      message: The restore test may create or delete only the restore-sandbox namespace.
+    - expression: request.resource.resource != 'pods' || request.namespace == 'restore-sandbox'
+      message: The restore test may manage pods only in restore-sandbox.
+    - expression: request.resource.group != 'arrchitect.dev' || request.namespace == 'restore-sandbox'
+      message: The restore test may send Arrchitect resources only to restore-sandbox, where they are refused.
+    - expression: >-
+        request.resource.resource != 'restores' || (
+          request.namespace == 'backups' &&
+          variables.mapping.size() > 0 &&
+          variables.mapping.all(ns, variables.mapping[ns] == 'restore-sandbox') &&
+          object.spec.?includedNamespaces.orValue([]).size() > 0 &&
+          object.spec.includedNamespaces.all(ns, ns in variables.mapping) &&
+          object.spec.?includedResources.orValue([]).size() > 0 &&
+          object.spec.includedResources.all(r, r in ['pods', 'persistentvolumeclaims']) &&
+          object.spec.?includeClusterResources.orValue(true) == false &&
+          object.spec.?existingResourcePolicy.orValue('') == 'none' &&
+          object.spec.?resourceModifier.?name.orValue('') == 'restore-test-modifiers' &&
+          object.spec.?labelSelector.?matchLabels[?'app.kubernetes.io/component'].orValue('') == 'backup-volume' &&
+          !has(object.spec.orLabelSelectors) &&
+          !has(object.spec.hooks))
+      message: >-
+        Restore test Restores must live in backups, map every included namespace
+        to restore-sandbox, include only labelled backup-volume pods and claims,
+        exclude cluster resources, never overwrite existing resources, use the
+        restore-test-modifiers resource modifier and carry no hooks.

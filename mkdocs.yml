@@ -97,9 +97,11 @@ nav:
       - Proxmox Host Metrics: infrastructure/proxmox-host-metrics.md
       - SNMP Exporter: infrastructure/snmp-exporter.md
       - unpoller: infrastructure/unpoller.md
+      - Pushgateway: infrastructure/pushgateway.md
       - Garage: infrastructure/garage.md
       - Velero: infrastructure/velero.md
       - etcd Backup: infrastructure/etcd-backup.md
+      - Restore Test: infrastructure/restore-test.md
       - Metrics Server: infrastructure/metrics-server.md
       - Authentik: infrastructure/authentik.md
       - Reloader: infrastructure/reloader.md

@@ -5,6 +5,7 @@ metadata:
   namespace: media
   labels:
     app.kubernetes.io/name: config-backup
+    app.kubernetes.io/component: backup-volume
 spec:
   accessModes:
     - ReadWriteMany

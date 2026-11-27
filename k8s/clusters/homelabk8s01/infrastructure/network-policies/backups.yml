@@ -43,3 +43,23 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: backups-restore-test-egress
+  namespace: backups
+spec:
+  description: "The restore test pushes its results to the Pushgateway"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: restore-test
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus-pushgateway
+      toPorts:
+        - ports:
+            - port: "9091"
+              protocol: TCP

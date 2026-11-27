@@ -1,0 +1,83 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: restore-test
+  namespace: backups
+  labels:
+    app.kubernetes.io/name: restore-test
+spec:
+  groups:
+    - name: restore-test
+      rules:
+        - alert: RestoreTestFailed
+          expr: |
+            max by (target, source) (restore_test_last_attempt_timestamp_seconds)
+              > max by (target, source) (restore_test_last_success_timestamp_seconds)
+            or
+            max by (target, source) (restore_test_last_attempt_timestamp_seconds)
+              unless max by (target, source) (restore_test_last_success_timestamp_seconds)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Restore test failed for {{ $labels.target }} from the {{ $labels.source }} backup"
+            description: >-
+              The latest restore test of {{ $labels.target }} did not pass. restore_test_tier_passed
+              and restore_test_fence_passed show which check failed, and the restore-test job log in
+              backups has the details.
+        - alert: RestoreTestStale
+          expr: |
+            time() - max by (target, source) (restore_test_last_success_timestamp_seconds{source="local"}) > 54 * 3600
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.target }} has not passed a restore test in over two days"
+            description: >-
+              The nightly restore test of {{ $labels.target }} has not passed for two runs. Check whether
+              the restore-test CronJob still runs and what its last job logged.
+        - alert: RestoreTestMissing
+          expr: |
+            absent(restore_test_last_attempt_timestamp_seconds{target="sonarr", source="local"})
+          for: 30h
+          labels:
+            severity: warning
+          annotations:
+            summary: No restore test results for sonarr
+            description: >-
+              The Pushgateway holds no restore test result for sonarr from the local backup. The
+              restore-test CronJob may not be running, or it cannot reach the Pushgateway.
+        - alert: RestoreTestRowsDropped
+          expr: |
+            max by (target, source, table) (restore_test_rows)
+              < 0.8 * max by (target, source, table) (max_over_time(restore_test_rows[8d]))
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.table }} in the {{ $labels.target }} backup shrank by over 20%"
+            description: >-
+              The restored {{ $labels.target }} database has far fewer {{ $labels.table }} rows than in
+              the past eight days. The backup may be faithful to a database that lost data.
+        - alert: RestoreSandboxLingering
+          expr: |
+            time() - kube_namespace_created{namespace="restore-sandbox"} > 6 * 3600
+          labels:
+            severity: warning
+          annotations:
+            summary: The restore-sandbox namespace has existed for over six hours
+            description: >-
+              A restore test did not clean up. The namespace holds copies of production data; inspect
+              it, then delete it so the next run can start.
+        - alert: RestoreTestVolumesOrphaned
+          expr: |
+            count(kube_persistentvolume_info{storageclass="nfs-restore-test"}) > 0
+              unless on() kube_namespace_created{namespace="restore-sandbox"}
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: Restore test volumes outlived their sandbox
+            description: >-
+              PersistentVolumes of the nfs-restore-test StorageClass exist with no restore-sandbox
+              namespace. Their NAS directories hold copies of production data; delete the volumes.

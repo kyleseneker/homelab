@@ -68,6 +68,7 @@ schedules:
         - kube-public
         - nfs-provisioner
         - backups
+        - restore-sandbox
       defaultVolumesToFsBackup: true
       ttl: 720h0m0s
       storageLocation: local

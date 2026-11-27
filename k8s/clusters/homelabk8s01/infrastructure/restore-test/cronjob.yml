@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restore-test
+  namespace: backups
+  labels:
+    app.kubernetes.io/name: restore-test
+spec:
+  schedule: 30 3 * * *
+  timeZone: Etc/UTC
+  suspend: true
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    metadata:
+      labels:
+        app.kubernetes.io/name: restore-test
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 7200
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: restore-test
+        spec:
+          serviceAccountName: restore-test
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: restore-test
+              image: python:3.15-alpine
+              command:
+                - python3
+                - /scripts/restore_test.py
+              env:
+                - name: SOURCE
+                  value: local
+                - name: SCHEDULE
+                  value: velero-daily-stateful
+                - name: MAX_BACKUP_AGE_SECONDS
+                  value: "100800"
+                - name: PUSHGATEWAY_URL
+                  value: http://pushgateway-prometheus-pushgateway.monitoring.svc:9091
+                - name: CHECK_IMAGE
+                  value: python:3.15-alpine
+                - name: PYTHONDONTWRITEBYTECODE
+                  value: "1"
+              securityContext:
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: restore-test-scripts

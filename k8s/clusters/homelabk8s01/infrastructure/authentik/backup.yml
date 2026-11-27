@@ -3,6 +3,8 @@ kind: PersistentVolumeClaim
 metadata:
   name: authentik-backups
   namespace: auth
+  labels:
+    app.kubernetes.io/component: backup-volume
 spec:
   accessModes:
     - ReadWriteMany

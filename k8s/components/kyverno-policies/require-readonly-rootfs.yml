@@ -49,6 +49,7 @@ spec:
             - auth
             - backups
             - media
+            - restore-sandbox
             - monitoring
             - nfs-provisioner
             - local-path-storage

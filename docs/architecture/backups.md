@@ -31,6 +31,7 @@ flowchart LR
 | Velero AWS Plugin | `backups` | S3 API compatibility layer for both locations |
 | Kopia (File System Backup) | `backups` | PVC data backup via file system copy |
 | etcd-backup CronJob | `backups` | Nightly etcd snapshot + PKI tarball, to NFS and S3 |
+| restore-test CronJob | `backups` | Nightly restore of the backup volumes into a sandbox, checked in tiers ([restore test](../infrastructure/restore-test.md)) |
 
 ### Backup Storage Locations
 

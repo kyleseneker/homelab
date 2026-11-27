@@ -49,6 +49,7 @@ spec:
             - auth
             - backups
             - media
+            - restore-sandbox
             - intel-gpu-operator
             - monitoring
             - nfs-provisioner

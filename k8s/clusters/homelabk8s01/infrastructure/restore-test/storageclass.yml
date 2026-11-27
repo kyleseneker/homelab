@@ -1,0 +1,16 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-restore-test
+  labels:
+    app.kubernetes.io/name: restore-test
+provisioner: cluster.local/nfs-provisioner-nfs-subdir-external-provisioner
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: false
+mountOptions:
+  - vers=3
+  - hard
+  - intr
+parameters:
+  onDelete: delete

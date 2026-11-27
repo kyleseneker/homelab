@@ -1,0 +1,72 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: restore-test
+policies:
+  - ../../../k8s/components/kyverno-policies/restrict-restore-test.yml
+  - ../../../k8s/components/kyverno-policies/deny-arrchitect-in-restore-sandbox.yml
+resources:
+  - resources.yaml
+variables: values.yaml
+userinfo: userinfo.yaml
+results:
+  - policy: restrict-restore-test
+    resources:
+      - valid
+    kind: Restore
+    result: pass
+  - policy: restrict-restore-test
+    resources:
+      - maps-elsewhere
+      - unmapped-namespace
+      - no-mapping
+      - all-namespaces
+      - deployments
+      - all-resources
+      - cluster-resources
+      - cluster-resources-unset
+      - overwrites
+      - no-modifier
+      - other-modifier
+      - no-selector
+      - other-selector
+      - or-selectors
+      - hooks
+      - other-namespace
+    kind: Restore
+    result: fail
+  - policy: restrict-restore-test
+    resources:
+      - sandbox-pod
+    kind: Pod
+    result: pass
+  - policy: restrict-restore-test
+    resources:
+      - media-pod
+    kind: Pod
+    result: fail
+  - policy: restrict-restore-test
+    resources:
+      - restore-sandbox
+    kind: Namespace
+    result: pass
+  - policy: restrict-restore-test
+    resources:
+      - media
+    kind: Namespace
+    result: fail
+  - policy: restrict-restore-test
+    resources:
+      - canary
+    kind: Sonarr
+    result: pass
+  - policy: restrict-restore-test
+    resources:
+      - production
+    kind: Sonarr
+    result: fail
+  - policy: deny-arrchitect-in-restore-sandbox
+    resources:
+      - canary
+    kind: Sonarr
+    result: fail

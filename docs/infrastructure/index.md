@@ -18,6 +18,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Garage | backups | helm | app-template | 5.3.0 |
 | Velero | backups | helm | velero | 12.2.5 |
 | etcd Backup | backups | git | (CronJob) | -- |
+| Restore Test | backups | git | (CronJob) | -- |
 | Kyverno | kyverno | helm | kyverno | 3.9.2 |
 | Kyverno Policies | -- | git | (plain manifests) | -- |
 | Network Policies | (multiple) | git | (plain manifests) | -- |
@@ -30,6 +31,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
 | SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.1 |
 | unpoller | monitoring | helm | app-template | 5.3.0 |
+| Pushgateway | monitoring | helm | prometheus-pushgateway | 3.11.2 |
 | Authentik | auth | helm | authentik | 2026.8.6 |
 | Reloader | kube-system | helm | reloader | 2.2.20 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |

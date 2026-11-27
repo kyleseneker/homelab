@@ -1,0 +1,12 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Values
+namespaceSelector:
+  - name: restore-sandbox
+    labels:
+      kubernetes.io/metadata.name: restore-sandbox
+  - name: media
+    labels:
+      kubernetes.io/metadata.name: media
+  - name: backups
+    labels:
+      kubernetes.io/metadata.name: backups

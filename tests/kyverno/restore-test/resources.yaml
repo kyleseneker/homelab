@@ -1,0 +1,444 @@
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: valid
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: maps-elsewhere
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: media-copy
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: unmapped-namespace
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+    - auth
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: no-mapping
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: all-namespaces
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - '*'
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: deployments
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+    - deployments
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: all-resources
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: cluster-resources
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: true
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: cluster-resources-unset
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: overwrites
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: update
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: no-modifier
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: other-modifier
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: other
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: no-selector
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: other-selector
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/name: sonarr
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: or-selectors
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+  orLabelSelectors:
+    - matchLabels:
+        app: x
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: hooks
+  namespace: backups
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+  hooks:
+    resources:
+      - name: h
+---
+apiVersion: velero.io/v1
+kind: Restore
+metadata:
+  name: other-namespace
+  namespace: media
+spec:
+  scheduleName: velero-daily-stateful
+  includedNamespaces:
+    - media
+  namespaceMapping:
+    media: restore-sandbox
+  includedResources:
+    - pods
+    - persistentvolumeclaims
+  includeClusterResources: false
+  labelSelector:
+    matchLabels:
+      app.kubernetes.io/component: backup-volume
+  existingResourcePolicy: none
+  resourceModifier:
+    kind: ConfigMap
+    name: restore-test-modifiers
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sandbox-pod
+  namespace: restore-sandbox
+  labels:
+    app.kubernetes.io/name: restore-test-check
+spec:
+  containers:
+    - name: check
+      image: python:3.15-alpine
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: media-pod
+  namespace: media
+  labels:
+    app.kubernetes.io/name: restore-test-check
+spec:
+  containers:
+    - name: check
+      image: python:3.15-alpine
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: restore-sandbox
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+---
+apiVersion: arrchitect.dev/v1alpha1
+kind: Sonarr
+metadata:
+  name: canary
+  namespace: restore-sandbox
+spec:
+  connection:
+    url: http://192.0.2.1:8989
+    apiKeySecretRef:
+      name: canary
+      key: api-key
+---
+apiVersion: arrchitect.dev/v1alpha1
+kind: Sonarr
+metadata:
+  name: production
+  namespace: media
+spec:
+  connection:
+    url: http://192.0.2.1:8989
+    apiKeySecretRef:
+      name: canary
+      key: api-key
