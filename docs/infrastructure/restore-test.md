@@ -28,7 +28,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | `restored` | The Restore completed with no errors and the target's volume restored a non-zero size |
 | `intact` | The dump passes its format's own check (below) |
 | `fresh` | The backup started no more than 28 hours before the run, and the dump inside it was written no longer before the backup than its schedule allows |
-| `usable` | The application starts on a copy of the restored database, with the image and security context its live Deployment runs |
+| `usable` | The application starts on a writable copy of the restored database, with the image and security context its live Deployment runs |
 | `answers` | The application's API returns as many objects as the database holds |
 
 The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod.
