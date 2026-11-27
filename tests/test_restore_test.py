@@ -33,7 +33,8 @@ check_zip = load('check_zip')
 check_ha = load('check_ha')
 check_api = load('check_api')
 TARGETS = {t['name']: t for t in harness.TARGETS}
-SCRIPTS = {'check_sqlite': 'S', 'check_zip': 'Z', 'check_ha': 'H', 'check_pgdump': 'P', 'check_api': 'A'}
+SCRIPTS = {'check_sqlite': 'S', 'check_zip': 'Z', 'check_ha': 'H', 'check_pgdump': 'P', 'check_api': 'A',
+           'check_postgres': 'Q'}
 DEPLOYMENT = {'spec': {'template': {'spec': {'containers': [{
     'image': 'lscr.io/linuxserver/sonarr:4.0.20',
     'env': [{'name': 'SONARR__AUTH__METHOD', 'value': 'External'},
@@ -127,9 +128,51 @@ class Pods(unittest.TestCase):
             pods = [harness.integrity_pod(target, 'image', (1, 2), SCRIPTS)]
             if 'app' in target:
                 pods.append(harness.app_pod(target, DEPLOYMENT, 'image', (1, 2), 'key', 'A'))
+            if 'database' in target:
+                pods.append(harness.postgres_pod(target, 'server', 'client', (1, 2), 'Q'))
             for pod in pods:
                 for container in pod['spec'].get('initContainers', []) + pod['spec']['containers']:
                     self.assertIn('limits', container['resources'], (target['name'], container['name']))
+
+
+class Database(unittest.TestCase):
+    def test_the_dump_restores_into_a_scratch_server_running_production_s_image(self):
+        pod = harness.postgres_pod(TARGETS['authentik'], 'postgres:17.11-bookworm', 'postgres:17.11-bookworm',
+                                   (977, 988), 'Q')
+        server = next(c for c in pod['spec']['containers'] if c['name'] == 'server')
+        check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
+        self.assertEqual(server['image'], 'postgres:17.11-bookworm')
+        self.assertEqual(server['securityContext']['runAsUser'], 999)
+        self.assertIn({'name': 'POSTGRES_HOST_AUTH_METHOD', 'value': 'trust'}, server['env'])
+        self.assertEqual(check['securityContext']['runAsUser'], 977)
+        self.assertEqual(check['command'], ['sh', '-c', 'Q', 'check', '/backup/authentik.dump',
+                                            'authentik_core_user', 'authentik_core_group',
+                                            'authentik_core_application', 'authentik_flows_flow'])
+        volumes = {v['name'] for v in pod['spec']['volumes']}
+        self.assertEqual(volumes, {'backup', 'data', 'run', 'server-tmp', 'work'})
+
+    def run_check(self, ran, report):
+        run = harness.Run(None, ENVIRON)
+        run.server_image = lambda target: 'server'
+        run.run_pod = lambda pod, container, timeout: (ran, report)
+        run.check_database(TARGETS['authentik'], (977, 988), 'client')
+        return run.results['authentik']
+
+    def test_a_restored_database_with_rows_in_every_table_passes(self):
+        rows = {t: 3 for t in TARGETS['authentik']['database']['tables']}
+        result = self.run_check(True, {'started': True, 'restored': True, 'rows': rows})
+        self.assertEqual(result['tiers'], {'usable': True, 'answers': True})
+        self.assertEqual(result['rows'], rows)
+
+    def test_an_empty_table_fails_the_answers_tier(self):
+        rows = {t: 3 for t in TARGETS['authentik']['database']['tables']}
+        rows['authentik_core_application'] = 0
+        result = self.run_check(True, {'started': True, 'restored': True, 'rows': rows})
+        self.assertEqual(result['tiers'], {'usable': True, 'answers': False})
+
+    def test_a_failed_restore_fails_both_tiers(self):
+        result = self.run_check(False, {'started': True, 'restored': False})
+        self.assertEqual(result['tiers'], {'usable': False, 'answers': False})
 
 
 class Freshness(unittest.TestCase):

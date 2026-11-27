@@ -66,7 +66,10 @@ TARGETS = [
            inner="DB2/SQL/database.db"),
     target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db"),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
-           stamp="completed-at", image_from={"namespace": "auth", "cronjob": "authentik-backup", "container": "dump"}),
+           stamp="completed-at", image_from={"namespace": "auth", "cronjob": "authentik-backup", "container": "dump"},
+           database={"server_from": {"namespace": "auth", "statefulset": "authentik-postgresql"},
+                     "tables": ["authentik_core_user", "authentik_core_group", "authentik_core_application",
+                                "authentik_flows_flow"]}),
     target("home-assistant", "home-automation", "home-assistant-backups", "hatar", "", max_dump_age=40 * HOUR),
 ]
 
@@ -133,12 +136,9 @@ def restore_body(name, schedule, namespaces):
     }
 
 
-def backup_pod(name, target, containers, init=None, workdir=False):
-    volumes = [
-        {"name": "backup", "persistentVolumeClaim": {"claimName": target["claim"], "readOnly": True}},
-        {"name": "config", "emptyDir": {}},
-        {"name": "work", "emptyDir": {}},
-    ]
+def backup_pod(name, target, containers, init=None, scratch=("config", "work")):
+    volumes = [{"name": "backup", "persistentVolumeClaim": {"claimName": target["claim"], "readOnly": True}}]
+    volumes += [{"name": volume, "emptyDir": {}} for volume in scratch]
     spec = {
         "restartPolicy": "Never",
         "automountServiceAccountToken": False,
@@ -220,6 +220,30 @@ def app_pod(target, deployment, image, user, key, script):
     return backup_pod(f"app-{target['name']}", target, [application, check], init=[copy])
 
 
+POSTGRES_USER = (999, 999)
+SERVER_REQUESTS = {"cpu": "50m", "memory": "256Mi"}
+SERVER_LIMITS = {"cpu": "1", "memory": "1Gi"}
+
+
+def postgres_pod(target, server_image, client_image, user, script):
+    uid, gid = POSTGRES_USER
+    server = {
+        "name": "server",
+        "image": server_image,
+        "env": [{"name": "POSTGRES_HOST_AUTH_METHOD", "value": "trust"},
+                {"name": "PGDATA", "value": "/var/lib/postgresql/data/pgdata"}],
+        "securityContext": {**RESTRICTED, "runAsNonRoot": True, "runAsUser": uid, "runAsGroup": gid},
+        "resources": {"requests": dict(SERVER_REQUESTS), "limits": dict(SERVER_LIMITS)},
+        "volumeMounts": [{"name": "data", "mountPath": "/var/lib/postgresql/data"},
+                         {"name": "run", "mountPath": "/var/run/postgresql"},
+                         {"name": "server-tmp", "mountPath": "/tmp"}],
+    }
+    command = ["sh", "-c", script, "check", "/backup/" + target["path"], *target["database"]["tables"]]
+    check = helper("check", user, client_image, command, [BACKUP_MOUNT, {"name": "work", "mountPath": "/tmp"}])
+    return backup_pod(f"database-{target['name']}", target, [server, check],
+                      scratch=("data", "run", "server-tmp", "work"))
+
+
 def dump_time(report):
     if report.get("mtime") is not None:
         return float(report["mtime"])
@@ -274,7 +298,8 @@ class Run:
         self.keep = environ.get("KEEP_SANDBOX") == "true"
         self.scripts = {name: (SCRIPTS / file).read_text() for name, file in (
             ("check_sqlite", "check_sqlite.py"), ("check_zip", "check_zip.py"), ("check_ha", "check_ha.py"),
-            ("check_api", "check_api.py"), ("check_pgdump", "check_pgdump.sh"))}
+            ("check_api", "check_api.py"), ("check_pgdump", "check_pgdump.sh"),
+            ("check_postgres", "check_postgres.sh"))}
         self.restore = None
         self.restore_started = None
         self.created = False
@@ -414,10 +439,28 @@ class Run:
         containers = spec.get("initContainers", []) + spec["containers"]
         return next(c["image"] for c in containers if c["name"] == source["container"])
 
+    def server_image(self, target):
+        source = target["database"]["server_from"]
+        statefulset = self.api.json("GET", f"/apis/apps/v1/namespaces/{source['namespace']}/statefulsets/{source['statefulset']}")
+        return statefulset["spec"]["template"]["spec"]["containers"][0]["image"]
+
+    def check_database(self, target, user, client_image):
+        result = self.results[target["name"]]
+        tiers = result["tiers"]
+        pod = postgres_pod(target, self.server_image(target), client_image, user, self.scripts["check_postgres"])
+        ran, report = self.run_pod(pod, "check", 900)
+        rows = report.get("rows", {})
+        tiers["usable"] = bool(report.get("restored"))
+        tiers["answers"] = ran and set(rows) == set(target["database"]["tables"]) and all(v > 0 for v in rows.values())
+        result["rows"].update(rows)
+        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} "
+            f"version={report.get('version')} {json.dumps(rows)}")
+
     def check(self, target, user, backup_started):
         result = self.results[target["name"]]
         tiers = result["tiers"]
-        pod = integrity_pod(target, self.check_image(target), user, self.scripts)
+        image = self.check_image(target)
+        pod = integrity_pod(target, image, user, self.scripts)
         intact, report = self.run_pod(pod, "check", 900)
         tiers["intact"] = intact
         result["rows"] = report.get("rows", {})
@@ -428,6 +471,8 @@ class Run:
         result["dump_age"] = None if written is None else backup_started - written
         tiers["fresh"] = fresh(backup_started, written, time.time(), self.max_age, target["max_dump_age"])
         log(f"{target['name']}: intact={intact} fresh={tiers['fresh']} {json.dumps(report)}")
+        if intact and "database" in target:
+            self.check_database(target, user, image)
         if not intact or "app" not in target:
             return
         app = target["app"]
@@ -491,7 +536,7 @@ class Run:
                         log(f"{target['name']}: check failed: {error}")
                         for tier in ("intact", "fresh"):
                             result["tiers"].setdefault(tier, False)
-                        if "app" in target:
+                        if "app" in target or "database" in target:
                             for tier in ("usable", "answers"):
                                 result["tiers"].setdefault(tier, False)
                 result["duration"] = time.time() - self.restore_started

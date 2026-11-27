@@ -175,6 +175,14 @@ rules:
       - authentik-backup
     verbs:
       - get
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    resourceNames:
+      - authentik-postgresql
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

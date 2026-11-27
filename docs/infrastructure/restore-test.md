@@ -31,6 +31,8 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | `usable` | The application starts on a writable copy of the restored database, with the image and security context its live Deployment runs |
 | `answers` | The application's API returns as many objects as the database holds |
 
+Authentik's database check runs a throwaway Postgres server from the image of the production `authentik-postgresql` StatefulSet, with trust authentication that only its own pod can reach, and restores the dump into it with `pg_restore --exit-on-error --single-transaction`, so any failed statement fails the tier.
+
 The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application keeps its production limits but requests only 50m CPU and 256 MiB, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
 
 ## Targets
@@ -45,7 +47,7 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | -- |
 | `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- |
 | `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | -- |
-| `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | -- |
+| `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |
 | `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
 
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
