@@ -159,6 +159,7 @@ nav:
       - NUT Backport: decisions/031-nut-backport.md
       - OS Patching: decisions/032-os-patching.md
       - Network Monitoring: decisions/033-network-monitoring.md
+      - Restore Testing: decisions/034-restore-testing.md
   - Roadmap:
       - roadmap/index.md
       - Assessment: roadmap/assessment.md
