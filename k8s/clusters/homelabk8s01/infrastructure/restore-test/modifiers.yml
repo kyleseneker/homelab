@@ -18,4 +18,4 @@ data:
           groupResource: persistentvolumeclaims
         mergePatches:
           - patchData: |
-              {"spec": {"storageClassName": "nfs-restore-test"}}
+              {"metadata": {"annotations": {"pv.kubernetes.io/bind-completed": null, "pv.kubernetes.io/bound-by-controller": null}}, "spec": {"storageClassName": "nfs-restore-test", "volumeName": null}}
