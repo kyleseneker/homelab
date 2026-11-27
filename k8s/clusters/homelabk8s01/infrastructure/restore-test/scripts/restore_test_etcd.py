@@ -147,6 +147,27 @@ def check(snapshots, binaries, work, now):
     return result
 
 
+def aws(bucket, args):
+    environment = dict(os.environ, AWS_PAGER="", AWS_CLI_AUTO_PROMPT="off", AWS_EC2_METADATA_DISABLED="true")
+    completed = subprocess.run(["aws", "s3api", *args, "--bucket", bucket], capture_output=True, text=True,
+                               env=environment, timeout=600)
+    if completed.returncode:
+        raise RuntimeError(f"S3 {args[0]} failed")
+    return json.loads(completed.stdout) if completed.stdout.strip() else {}
+
+
+def download(bucket, prefix, target):
+    target.mkdir(parents=True, exist_ok=True)
+    listing = aws(bucket, ["list-objects-v2", "--prefix", prefix + "recovery-"])
+    records = sorted(item["Key"] for item in listing.get("Contents", []))
+    if not records:
+        return
+    record = target / records[-1].removeprefix(prefix)
+    aws(bucket, ["get-object", "--key", records[-1], str(record)])
+    for item in json.loads(record.read_text())["files"]:
+        aws(bucket, ["get-object", "--key", prefix + item["name"], str(target / item["name"])])
+
+
 def push(pushgateway, source, result, now):
     url = f"{pushgateway}/metrics/job/restore_test/target/etcd/source/{source}"
     outgoing = urllib.request.Request(url, data=harness.metrics(result, now).encode(), method="POST")
@@ -157,8 +178,10 @@ def push(pushgateway, source, result, now):
 def main(environ):
     started = time.time()
     try:
-        result = check(pathlib.Path(environ["SNAPSHOTS"]), pathlib.Path(environ["ETCD_BIN"]),
-                       pathlib.Path(environ["WORK"]), started)
+        snapshots, work = pathlib.Path(environ["SNAPSHOTS"]), pathlib.Path(environ["WORK"])
+        if environ.get("BUCKET"):
+            download(environ["BUCKET"], environ["PREFIX"], snapshots)
+        result = check(snapshots, pathlib.Path(environ["ETCD_BIN"]), work, started)
     except Exception as error:
         harness.log(f"etcd: check failed: {type(error).__name__}: {error}")
         result = {"tiers": {"restored": False}, "fences": {}, "rows": {}}

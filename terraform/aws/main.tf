@@ -227,6 +227,55 @@ resource "aws_iam_user_policy_attachment" "velero_offsite" {
   policy_arn = aws_iam_policy.velero_offsite.arn
 }
 
+resource "aws_iam_user" "restore_test" {
+  name = "restore-test-${var.environment}"
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_iam_access_key" "restore_test" {
+  user = aws_iam_user.restore_test.name
+}
+
+data "aws_iam_policy_document" "restore_test" {
+  statement {
+    sid       = "ListSnapshotPrefixes"
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.velero_offsite.arn]
+
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["etcd-snapshots/*", "vault-raft-snapshots/*"]
+    }
+  }
+
+  statement {
+    sid     = "ReadSnapshots"
+    effect  = "Allow"
+    actions = ["s3:GetObject"]
+    resources = [
+      "${aws_s3_bucket.velero_offsite.arn}/etcd-snapshots/*",
+      "${aws_s3_bucket.velero_offsite.arn}/vault-raft-snapshots/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "restore_test" {
+  name        = "restore-test-${var.environment}"
+  description = "Read-only access to the etcd and Vault snapshot copies for restore tests"
+  policy      = data.aws_iam_policy_document.restore_test.json
+}
+
+resource "aws_iam_user_policy_attachment" "restore_test" {
+  user       = aws_iam_user.restore_test.name
+  policy_arn = aws_iam_policy.restore_test.arn
+}
+
 # Household domain, registered through the Route 53 console and adopted here.
 # Terraform never registers or deletes it: destroy only removes it from state.
 resource "aws_route53domains_registered_domain" "household" {

@@ -54,7 +54,7 @@ Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034]
 - [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
 - [ ] Add the application tiers for Bazarr, Jellyfin, Seerr, Tdarr and Uptime Kuma, listing known backup gaps in the expected-failure register
 - [ ] Decrypt Home Assistant's newest archive with its key from Vault and list its contents
-- [ ] Add etcd's S3 copy to the weekly offsite run
+- [ ] Add etcd's S3 copy to the weekly offsite run: apply the read-only `restore-test` IAM user (`make aws-apply`), store its key in Vault at `infrastructure/restore-test`, then add the ExternalSecret and the weekly CronJob
 - [ ] Add the monthly Vault restore with a canary-only token
 - [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers
 
