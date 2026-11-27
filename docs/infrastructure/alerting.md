@@ -84,8 +84,8 @@ Rules in `backups/restore-test` read the [restore test](restore-test.md)'s resul
 | Alert | Severity | For | Condition |
 |-------|----------|-----|-----------|
 | `RestoreTestFailed` | warning | 5m | A target's latest run did not pass |
-| `RestoreTestStale` | warning | 10m | A target has not passed from the local backup in 54 hours |
-| `RestoreTestMissing` | warning | 30h | No result exists for an expected target |
+| `RestoreTestStale` | warning | 10m | A target has not passed from the local backup in 54 hours, or from the AWS copy in 15 days |
+| `RestoreTestMissing` | warning | 30h local, 8d offsite | No result exists for an expected target and source |
 | `RestoreTestRowsDropped` | warning | 10m | A restored table has 20% fewer rows than its eight-day maximum |
 | `RestoreSandboxLingering` | warning | -- | `restore-sandbox` has existed for six hours |
 | `RestoreTestVolumesOrphaned` | warning | 1h | `nfs-restore-test` volumes exist without a sandbox |

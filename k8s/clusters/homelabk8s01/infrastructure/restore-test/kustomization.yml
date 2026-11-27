@@ -6,6 +6,7 @@ resources:
   - modifiers.yml
   - cronjob.yml
   - cronjob-etcd.yml
+  - cronjob-offsite.yml
   - prometheusrule.yml
 configMapGenerator:
   - name: restore-test-scripts

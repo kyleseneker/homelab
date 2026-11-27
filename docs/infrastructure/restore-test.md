@@ -8,8 +8,8 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 |-------|-------|
 | Type | CronJob (`sourceType: git`) |
 | Namespace | `backups`; each run works in `restore-sandbox` |
-| Schedule | `30 3 * * *` (03:30 UTC daily); etcd at `30 2 * * *` |
-| Source | Latest completed `velero-daily-stateful` backup on Garage |
+| Schedule | `restore-test` at `30 3 * * *` (03:30 UTC daily); `restore-test-offsite` at `30 5 * * 0` (05:30 UTC Sundays); `restore-test-etcd` at `30 2 * * *` |
+| Source | Latest completed `velero-daily-stateful` backup on Garage nightly; latest completed `velero-weekly-offsite` backup on S3 weekly, which may be 8 days old |
 | Deadline | 2 hours per Job; one Job at a time |
 | Image | `python:3.15-alpine` for the harness and most checkers; the image that wrote a dump for its check (Authentik's `pg_dump`); the application's own image for app checks |
 | Results | Pushgateway, job `restore_test`, grouped by `target` and `source` |
@@ -96,6 +96,10 @@ Both policies are generated as native ValidatingAdmissionPolicies. `tests/kyvern
 | `restore_test_foreign_key_violations` | SQLite `foreign_key_check` findings |
 
 The duration is a restore-test duration, not an RTO: it leaves out detection, importing into the live claim and the Argo CD sync. See [Alerting](alerting.md#restore-tests) for the alerts.
+
+## Offsite
+
+`restore-test-offsite` runs the same harness against the AWS copy each Sunday, half an hour after `velero-weekly-offsite` starts. Velero reads the offsite location with its own credentials, so the harness needs none, and the holder volumes amount to well under 1 GB a month of AWS egress. It reports as `source="offsite"`. Velero can mark a backup `Completed` even when it skipped volumes it could not read. The offsite backup of 2026-11-22 held none of the dumps, and only this test's first tier would have caught it.
 
 ## Running by Hand
 

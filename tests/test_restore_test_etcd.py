@@ -63,8 +63,9 @@ class Manifest(unittest.TestCase):
 
     def test_a_missing_result_alerts(self):
         rules = yaml.safe_load((SCRIPTS.parent / 'prometheusrule.yml').read_text())
-        rule = next(r for g in rules['spec']['groups'] for r in g['rules'] if r.get('alert') == 'RestoreTestMissing')
-        self.assertIn('target="etcd"', rule['expr'])
+        exprs = ' '.join(r['expr'] for g in rules['spec']['groups'] for r in g['rules']
+                         if r.get('alert') == 'RestoreTestMissing')
+        self.assertIn('target="etcd", source="local"', exprs)
 
 
 class RecoverySet(unittest.TestCase):
