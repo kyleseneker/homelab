@@ -9,8 +9,7 @@ defaultPodOptions:
     # Restart when configuration.yaml changes; Home Assistant reads it at start.
     reloader.stakater.com/auto: 'true'
     # The local-path config volume never leaves the node outside Home
-    # Assistant's own encrypted backups. Velero copies those from the NFS volume
-    # through home-assistant-backup-holder, so this pod skips it too.
+    # Assistant's own encrypted backups, which Velero copies from the NFS volume.
     backup.velero.io/backup-volumes-excludes: config,configuration,backups,venv,tmp
   securityContext:
     runAsUser: 1000
