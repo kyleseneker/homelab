@@ -19,6 +19,8 @@ def until(deadline, attempt, interval):
         try:
             return attempt(), None
         except FAILURES as error:
+            if isinstance(error, urllib.error.HTTPError):
+                error.close()
             if time.monotonic() >= deadline:
                 return None, type(error).__name__
             time.sleep(interval)

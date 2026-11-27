@@ -21,7 +21,8 @@ SELECTOR = {"app.kubernetes.io/component": "backup-volume"}
 BACKUP_DONE = {"Completed", "PartiallyFailed", "Failed", "FailedValidation"}
 RESTORE_DONE = {"Completed", "PartiallyFailed", "Failed", "FailedValidation"}
 RESTRICTED = {"readOnlyRootFilesystem": True, "allowPrivilegeEscalation": False, "capabilities": {"drop": ["ALL"]}}
-SMALL = {"requests": {"cpu": "50m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
+SMALL = {"requests": {"cpu": "10m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
+APP_REQUESTS = {"cpu": "50m", "memory": "256Mi"}
 HOUR = 3600
 CANARY = {
     "apiVersion": "arrchitect.dev/v1alpha1",
@@ -208,7 +209,7 @@ def app_pod(target, deployment, image, user, key, script):
         "image": live["image"],
         "env": env,
         "securityContext": live.get("securityContext", {}),
-        "resources": live.get("resources", {}),
+        "resources": {"requests": dict(APP_REQUESTS), "limits": live.get("resources", {}).get("limits", SMALL["limits"])},
         "volumeMounts": [{"name": "config", "mountPath": "/config"}],
     }
     check = helper(
@@ -394,6 +395,8 @@ class Run:
         code = next((s["state"]["terminated"]["exitCode"] for s in current["status"].get("containerStatuses", [])
                      if s["name"] == container and "terminated" in s.get("state", {})), None)
         status, text = self.api.call("GET", f"{path}/log", query={"container": container})
+        if not self.keep:
+            self.api.call("DELETE", path)
         report = {}
         if status == 200 and text.strip():
             try:

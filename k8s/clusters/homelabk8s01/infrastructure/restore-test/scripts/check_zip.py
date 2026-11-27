@@ -1,3 +1,4 @@
+from contextlib import closing
 import json
 import os
 import shutil
@@ -19,9 +20,8 @@ def check(path, inner, workdir):
             extracted = os.path.join(workdir, "inner.db")
             with archive.open(inner) as source, open(extracted, "wb") as target:
                 shutil.copyfileobj(source, target)
-        connection = sqlite3.connect(f"file:{extracted}?mode=ro&immutable=1", uri=True)
-        integrity = [row[0] for row in connection.execute("PRAGMA integrity_check")]
-        connection.close()
+        with closing(sqlite3.connect(f"file:{extracted}?mode=ro&immutable=1", uri=True)) as connection:
+            integrity = [row[0] for row in connection.execute("PRAGMA integrity_check")]
     except (OSError, zipfile.BadZipFile, sqlite3.Error) as error:
         return {"error": type(error).__name__}, False
     passed = integrity == ["ok"]
