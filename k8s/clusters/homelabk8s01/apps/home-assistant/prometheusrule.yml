@@ -50,3 +50,16 @@ spec:
               old, a scheduled one is overdue, or automatic backups are off. Native backups
               are the only copy of the config volume, which is on local-path and excluded
               from Velero.
+        - alert: HomeAssistantBackupVolumeUnmounted
+          expr: |
+            kube_deployment_status_replicas_available{deployment="home-assistant-backup-holder", namespace="home-automation"} < 1
+            or absent(kube_deployment_status_replicas_available{deployment="home-assistant-backup-holder", namespace="home-automation"})
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: Home Assistant backup volume is not mounted by any pod
+            description: >-
+              The holder Deployment is not running, so Velero's file-system backup does not
+              capture Home Assistant's native backups. The holder runs on Home Assistant's
+              node and cannot schedule while Home Assistant is not running there.

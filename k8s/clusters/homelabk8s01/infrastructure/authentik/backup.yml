@@ -112,6 +112,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: authentik-backup-holder
+        app.kubernetes.io/component: backup-volume
       annotations:
         backup.velero.io/backup-volumes: backup
     spec:
