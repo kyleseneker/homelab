@@ -14,11 +14,11 @@ HCP-independent recovery credentials, remaining application/integration restores
 
 ## Physical Layer
 
-The additional drives, 10G equipment and compute hosts are planned purchases. They remain valuable projects but do not block the immediate software work.
+The additional drives, UPS network card, 10G equipment and compute hosts are planned purchases. They remain valuable projects but do not block the immediate software work.
 
 | IDs | Current assessment | Next step |
 |---|---|---|
-| P1, P7 | UPS/NUT configuration and monitoring are implemented. | Verify USB stability, alert delivery and orderly shutdown in [Phase 1](phase-1-foundations.md) |
+| P1, P7 | UPS/NUT configuration and monitoring are implemented over USB, which needs the [NUT backport](../decisions/031-nut-backport.md) and works only while the Proxmox host is up. | Planned hardware: add the [network card](phase-1-foundations.md#15-add-a-ups-network-card); verify alert delivery and orderly shutdown in [Phase 1](phase-1-foundations.md) |
 | P2 | The NAS has one documented data drive. Active NFS data, local backup copies and media share that failure domain. | Planned hardware: add the [two-drive mirror](phase-1-foundations.md#11-add-nas-drive-redundancy) and prove an independent restore |
 | P3 | The MS-01's 10G SFP+ ports are available; its current GbE path limits storage and inter-host transfers. | [Phase 3](phase-3-network.md): 10G switch and DAC links |
 | P4 | All three Kubernetes VMs share one Proxmox host. | [Phase 4](phase-4-compute-and-storage.md): second MS-01 and workload distribution |
