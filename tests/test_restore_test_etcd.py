@@ -66,6 +66,22 @@ class Manifest(unittest.TestCase):
         exprs = ' '.join(r['expr'] for g in rules['spec']['groups'] for r in g['rules']
                          if r.get('alert') == 'RestoreTestMissing')
         self.assertIn('target="etcd", source="local"', exprs)
+        self.assertIn('target="etcd", source="offsite"', exprs)
+
+    def test_the_offsite_run_downloads_with_the_backup_job_s_aws_cli_and_read_only_key(self):
+        backup = pod_spec(ROOT / 'k8s/clusters/homelabk8s01/infrastructure/etcd-backup/cronjob.yml')
+        upload = next(c for c in backup['containers'] if c['name'] == 'upload-offsite')
+        local = pod_spec(ROOT / 'k8s/clusters/homelabk8s01/infrastructure/restore-test/cronjob-etcd.yml')
+        offsite = pod_spec(ROOT / 'k8s/clusters/homelabk8s01/infrastructure/restore-test/cronjob-etcd-offsite.yml')
+        container = offsite['containers'][0]
+        env = {e['name']: e.get('value') or e['valueFrom']['secretKeyRef'] for e in container['env']}
+        self.assertEqual(container['image'], upload['image'])
+        self.assertEqual(env['SOURCE'], 'offsite')
+        self.assertEqual(env['PREFIX'], 'etcd-snapshots/')
+        self.assertEqual(env['AWS_ACCESS_KEY_ID'], {'name': 'restore-test-aws', 'key': 'aws_access_key_id'})
+        self.assertNotIn('snapshots', {v['name'] for v in offsite['volumes']})
+        self.assertEqual(next(v for v in offsite['volumes'] if v['name'] == 'etcd'),
+                         next(v for v in local['volumes'] if v['name'] == 'etcd'))
 
 
 class RecoverySet(unittest.TestCase):

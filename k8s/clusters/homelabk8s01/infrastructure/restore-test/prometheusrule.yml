@@ -59,6 +59,7 @@ spec:
             or absent(restore_test_last_attempt_timestamp_seconds{target="uptime-kuma", source="offsite"})
             or absent(restore_test_last_attempt_timestamp_seconds{target="authentik", source="offsite"})
             or absent(restore_test_last_attempt_timestamp_seconds{target="home-assistant", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="etcd", source="offsite"})
           for: 8d
           labels:
             severity: warning

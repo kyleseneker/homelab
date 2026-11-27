@@ -68,6 +68,8 @@ Velero does not hold the etcd recovery set, so `restore-test-etcd` checks it whe
 
 The key count goes to `restore_test_rows{table="keys"}`, so a shrinking cluster state alerts like a shrinking database.
 
+`restore-test-etcd-offsite` runs the same checks every Sunday at 02:45 UTC on the copy in S3. It downloads the newest set from `etcd-snapshots/` with the backup job's AWS CLI image and the read-only `restore-test` IAM user, whose key ExternalSecrets syncs from Vault `infrastructure/restore-test`, and reports as `source="offsite"`.
+
 ## Safeguards
 
 | Safeguard | What it stops |

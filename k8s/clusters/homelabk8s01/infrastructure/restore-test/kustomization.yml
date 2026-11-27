@@ -5,7 +5,9 @@ resources:
   - rbac.yml
   - modifiers.yml
   - cronjob.yml
+  - external-secret.yml
   - cronjob-etcd.yml
+  - cronjob-etcd-offsite.yml
   - cronjob-offsite.yml
   - prometheusrule.yml
 configMapGenerator:
