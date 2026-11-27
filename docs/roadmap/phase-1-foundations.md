@@ -54,7 +54,6 @@ Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034]
 - [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
 - [ ] Add the application tiers for Bazarr, Jellyfin, Seerr, Tdarr and Uptime Kuma, listing known backup gaps in the expected-failure register
 - [ ] Decrypt Home Assistant's newest archive with its key from Vault and list its contents
-- [ ] Add the etcd target: the complete set, snapshot status, a single-member restore and known keys
 - [ ] Add the weekly S3 run
 - [ ] Add the monthly Vault restore with a canary-only token
 - [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers

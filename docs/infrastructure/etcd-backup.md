@@ -57,7 +57,7 @@ The job is pinned to the control-plane node. If that node is unavailable, the Po
 
 ## Restore
 
-See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). The pinned `registry.k8s.io/etcd:3.6.6-0` image ships both `etcdctl` and `etcdutl`; restores use `etcdutl snapshot restore`, which supports revision bump and compaction; revalidate the image and tooling together during upgrades.
+The [restore test](restore-test.md#etcd) restores the newest set into a single-member etcd every night. See [Disaster Recovery &rarr; etcd Restore](../runbooks/disaster-recovery.md#etcd-restore-control-plane-corruption). The pinned `registry.k8s.io/etcd:3.6.6-0` image ships both `etcdctl` and `etcdutl`; restores use `etcdutl snapshot restore`, which supports revision bump and compaction; revalidate the image and tooling together during upgrades.
 
 For machine-loss recovery, download the completion manifest and all three named
 artifacts into a private directory using independently recovered S3 credentials.
