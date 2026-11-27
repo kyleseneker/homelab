@@ -4,7 +4,7 @@
 
 **Goal:** Protect against the failures that would cause unrecoverable data loss or hardware damage.
 
-UPS/NUT, Garage + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy, recovery drills and automated restore tests remain open.
+UPS/NUT, Garage + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy, the UPS network card, recovery drills and automated restore tests remain open.
 
 **Addresses:** P1, P2, P7, K5, K16, K33, and K41 in the [assessment](assessment.md).
 
@@ -43,7 +43,7 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 - [ ] Test missing-backup and failed-upload alerts through to the external recipient
 - [ ] Test the external Watchdog heartbeat by interrupting delivery in a controlled window
-- [ ] Test UPS USB stability and orderly shutdown; record the result
+- [ ] Test UPS monitoring stability and orderly shutdown; record the result
 - [ ] Rebuild the [restore lab](../runbooks/restore-lab.md) from production's cluster definition, with an overlay for addresses, credentials, storage and VM sizing, and retire the lab's own application definitions
 - [ ] Rehearse recovery quarterly and after storage, backup-format, or major application upgrades on the rebuilt lab: recover from S3 alone, run the [ADR-034](../decisions/034-restore-testing.md) checks against it and restore one application in place by the runbook
 
@@ -58,6 +58,21 @@ Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034]
 - [ ] Add the weekly S3 run
 - [ ] Add the monthly Vault restore with a canary-only token
 - [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers
+
+## 1.5 Add a UPS Network Card
+
+- [ ] Purchase a CyberPower RMCARD205, the card the CP1500PFCRM2U datasheet lists for its expansion slot
+- [ ] Connect it on the Management VLAN with SNMPv3 only, disable HTTP, Telnet and FTP, and update its firmware
+- [ ] Check whether the UPS's USB port still works with the card installed
+- [ ] Move the `pve_ups` role from `usbhid-ups` to `snmp-ups` and back to Debian's NUT packages, in an ADR that supersedes [ADR-031](../decisions/031-nut-backport.md)
+- [ ] Send the card's own power alerts by email or syslog
+- [ ] Optionally add an SNEV001 sensor at the top front of the rack for closet temperature, humidity and a door contact
+- [ ] Update the [hardware inventory](../reference/hardware.md), the [NUT exporter](../infrastructure/nut-exporter.md) page and the [network infrastructure](../architecture/network-infrastructure.md) docs
+
+| | |
+|---|---|
+| **Why** | The UPS fails about 25 USB report reads a minute, which only the NUT backport tolerates. Over SNMP, NUT runs on Debian's packages, and the card can raise power alerts while the Proxmox host or the cluster is down. |
+| **Note** | Prometheus runs on the same host, so UPS metrics still stop during a host outage; the card's own alerts cover that gap. The UPS has no switchable outlet banks, and the USP PDU Pro already switches outlets. |
 
 ---
 
