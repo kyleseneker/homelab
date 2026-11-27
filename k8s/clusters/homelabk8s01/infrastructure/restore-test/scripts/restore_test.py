@@ -246,8 +246,10 @@ class Run:
         for resource in resources:
             if "/" in resource["name"]:
                 continue
-            path = f"/apis/arrchitect.dev/v1alpha1/namespaces/{SANDBOX}/{resource['name']}"
-            if self.api.json("GET", path)["items"]:
+            status, text = self.api.call("GET", f"/apis/arrchitect.dev/v1alpha1/namespaces/{SANDBOX}/{resource['name']}")
+            if status == 403:
+                continue
+            if status != 200 or json.loads(text)["items"]:
                 return False
         return True
 
