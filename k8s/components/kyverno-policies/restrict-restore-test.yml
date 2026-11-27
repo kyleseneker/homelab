@@ -11,7 +11,8 @@ metadata:
       with Velero's cluster-admin rights, and can create and delete namespaces
       and pods. It may touch only the restore-sandbox namespace, and its
       Restores may bring back only labelled backup-volume pods and claims
-      into that namespace, without overwriting anything.
+      into that namespace, never cluster-scoped objects such as volumes,
+      and without overwriting anything.
 spec:
   validationActions:
     - Deny
@@ -74,7 +75,7 @@ spec:
           object.spec.?includedNamespaces.orValue([]).size() > 0 &&
           object.spec.includedNamespaces.all(ns, ns in variables.mapping) &&
           object.spec.?includedResources.orValue([]).size() > 0 &&
-          object.spec.includedResources.all(r, r in ['pods', 'persistentvolumeclaims']) &&
+          object.spec.includedResources.all(r, r in ['pods', 'persistentvolumeclaims', 'persistentvolumes']) &&
           object.spec.?includeClusterResources.orValue(true) == false &&
           object.spec.?existingResourcePolicy.orValue('') == 'none' &&
           object.spec.?resourceModifier.?name.orValue('') == 'restore-test-modifiers' &&
@@ -83,6 +84,6 @@ spec:
           !has(object.spec.hooks))
       message: >-
         Restore test Restores must live in backups, map every included namespace
-        to restore-sandbox, include only labelled backup-volume pods and claims,
-        exclude cluster resources, never overwrite existing resources, use the
-        restore-test-modifiers resource modifier and carry no hooks.
+        to restore-sandbox, include only labelled backup-volume pods, claims and
+        volumes, exclude cluster resources, never overwrite existing resources,
+        use the restore-test-modifiers resource modifier and carry no hooks.

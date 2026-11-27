@@ -101,7 +101,7 @@ def restore_body(name, schedule, namespaces):
             "scheduleName": schedule,
             "includedNamespaces": sorted(namespaces),
             "namespaceMapping": {namespace: SANDBOX for namespace in sorted(namespaces)},
-            "includedResources": ["pods", "persistentvolumeclaims"],
+            "includedResources": ["pods", "persistentvolumeclaims", "persistentvolumes"],
             "includeClusterResources": False,
             "labelSelector": {"matchLabels": dict(SELECTOR)},
             "existingResourcePolicy": "none",

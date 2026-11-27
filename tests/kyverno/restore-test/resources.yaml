@@ -12,6 +12,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -35,6 +36,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -59,6 +61,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -80,6 +83,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -103,6 +107,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -170,6 +175,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: true
   labelSelector:
     matchLabels:
@@ -215,6 +221,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -238,6 +245,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -258,6 +266,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -281,6 +290,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   existingResourcePolicy: none
   resourceModifier:
@@ -301,6 +311,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -324,6 +335,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -350,6 +362,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
@@ -376,6 +389,7 @@ spec:
   includedResources:
     - pods
     - persistentvolumeclaims
+    - persistentvolumes
   includeClusterResources: false
   labelSelector:
     matchLabels:
