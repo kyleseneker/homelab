@@ -227,11 +227,32 @@ class Results(unittest.TestCase):
 
 
 class Alerts(unittest.TestCase):
-    def test_every_target_has_a_missing_result_guard(self):
+    def test_every_target_has_a_missing_result_guard_for_each_source(self):
         rules = yaml.safe_load((APP / 'prometheusrule.yml').read_text())
-        rule = next(r for g in rules['spec']['groups'] for r in g['rules'] if r.get('alert') == 'RestoreTestMissing')
+        exprs = ' '.join(r['expr'] for g in rules['spec']['groups'] for r in g['rules']
+                         if r.get('alert') == 'RestoreTestMissing')
         for target in harness.TARGETS:
-            self.assertIn(f'target="{target["name"]}"', rule['expr'], target['name'])
+            for source in ('local', 'offsite'):
+                self.assertIn(f'target="{target["name"]}", source="{source}"', exprs, (target['name'], source))
+
+
+class Schedules(unittest.TestCase):
+    def cronjob(self, name):
+        return yaml.safe_load((APP / name).read_text())
+
+    def env(self, cronjob):
+        container = cronjob['spec']['jobTemplate']['spec']['template']['spec']['containers'][0]
+        return {item['name']: item['value'] for item in container['env']}
+
+    def test_the_offsite_run_is_the_nightly_run_pointed_at_the_aws_copy(self):
+        nightly, offsite = self.cronjob('cronjob.yml'), self.cronjob('cronjob-offsite.yml')
+        self.assertEqual(offsite['spec']['schedule'], '30 5 * * 0')
+        self.assertEqual({k: v for k, v in self.env(offsite).items() if self.env(nightly)[k] != v},
+                         {'SOURCE': 'offsite', 'SCHEDULE': 'velero-weekly-offsite', 'MAX_BACKUP_AGE_SECONDS': '691200'})
+        for cronjob in (nightly, offsite):
+            cronjob['metadata']['name'] = cronjob['spec']['schedule'] = None
+            cronjob['spec']['jobTemplate']['spec']['template']['spec']['containers'][0]['env'] = None
+        self.assertEqual(nightly, offsite)
 
 
 class FakeApi:

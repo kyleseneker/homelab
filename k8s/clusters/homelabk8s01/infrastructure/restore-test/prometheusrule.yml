@@ -36,6 +36,37 @@ spec:
             description: >-
               The nightly restore test of {{ $labels.target }} has not passed for two runs. Check whether
               the restore-test CronJob still runs and what its last job logged.
+        - alert: RestoreTestStale
+          expr: |
+            time() - max by (target, source) (restore_test_last_success_timestamp_seconds{source="offsite"}) > 15 * 86400
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.target }} has not passed an offsite restore test in over two weeks"
+            description: >-
+              The weekly restore test of {{ $labels.target }} from the AWS copy has not passed for two
+              runs. Check the restore-test-offsite CronJob and what its last job logged.
+        - alert: RestoreTestMissing
+          expr: |
+            absent(restore_test_last_attempt_timestamp_seconds{target="sonarr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="radarr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="prowlarr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="bazarr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="jellyfin", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="seerr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="tdarr", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="uptime-kuma", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="authentik", source="offsite"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="home-assistant", source="offsite"})
+          for: 8d
+          labels:
+            severity: warning
+          annotations:
+            summary: "No offsite restore test results for {{ $labels.target }}"
+            description: >-
+              The Pushgateway holds no restore test result for {{ $labels.target }} from the AWS copy.
+              The restore-test-offsite CronJob may not be running, or it cannot reach the Pushgateway.
         - alert: RestoreTestMissing
           expr: |
             absent(restore_test_last_attempt_timestamp_seconds{target="sonarr", source="local"})
