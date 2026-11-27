@@ -249,7 +249,7 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `backups/garage-data` | Local Velero object store data | Excluded from offsite to avoid recursive copying; recover applications from independent S3 copies |
 | `backups/garage-meta` | Garage SQLite metadata on `local-path`, snapshotted every 6 hours to `backups/garage-snapshots` | Skipped by Velero like other local-path volumes; rebuilding on another node requires restoring the latest snapshot with the data volume |
 | `home-automation/home-assistant-config` | `local-path` `/config` with the recorder database; skipped by Velero like other local-path volumes | Recovered only from Home Assistant's native encrypted backups; restore unverified |
-| `home-automation/home-assistant-backups` | Home Assistant's native encrypted backups on NFS, captured daily and weekly offsite by Velero | Restoring needs the backup encryption key from Vault; restore unverified |
+| `home-automation/home-assistant-backups` | Home Assistant's native encrypted backups on NFS, mounted by `home-assistant-backup-holder` and captured daily and weekly offsite by Velero | Restoring needs the backup encryption key from Vault; restore unverified |
 | `monitoring/kube-prometheus-stack-grafana` | Live NFS volume backup; provisioned dashboards/datasources in Git | SQLite consistency and recovery of non-provisioned settings unverified |
 | `monitoring/prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0` | Local-path TSDB, skipped by Velero | Historical metrics have no independent backup |
 | `monitoring/storage-loki-0` | Live NFS volume backup | Log/index consistency and application restore unverified |

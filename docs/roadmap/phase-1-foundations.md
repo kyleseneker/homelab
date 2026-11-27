@@ -51,7 +51,6 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 Build the harness in [ADR-034](../decisions/034-restore-testing.md): nightly and weekly restores of every target into a sandbox namespace, checked in tiers and reported per target. Build one target end to end, fence and alerts included, before widening.
 
-- [ ] Give Home Assistant's backups volume a holder Deployment, exclude that volume from the Home Assistant pod's file-system backup and label every backup holder for selection
 - [ ] Run Sonarr end to end: the `nfs-restore-test` StorageClass, the sandbox network policies and Pushgateway path, the Kyverno policies (Restore guard, Arrchitect kinds denied, harness namespace rights, sandbox exceptions), the sandbox exclusion in `weekly-full-cluster`, a Pushgateway with persistence, tiers 1 to 5 and the per-target alerts, each triggered once on purpose
 - [ ] Widen to every Velero target with tiers 1, 2 and 5, then tiers 3 and 4 per application, listing known backup gaps in the expected-failure register
 - [ ] Add Authentik's scratch PostgreSQL restore

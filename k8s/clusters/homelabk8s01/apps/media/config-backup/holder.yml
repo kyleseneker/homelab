@@ -14,6 +14,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: config-backup-holder
+        app.kubernetes.io/component: backup-volume
     spec:
       securityContext:
         runAsNonRoot: true

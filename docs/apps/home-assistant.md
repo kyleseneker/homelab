@@ -29,7 +29,7 @@ Home Assistant is the home automation hub: device integrations, automations and 
 | `home-assistant-config` | `local-path`, 5Gi | `/config`, including the recorder's SQLite database, which must not live on NFS |
 | `home-assistant-backups` | `nfs-client`, 10Gi | `/config/backups`, Home Assistant's native encrypted backups |
 
-Velero's daily and weekly offsite schedules include the namespace and copy only the backups volume; the config volume is excluded, so the plaintext `.storage` leaves the node only inside Home Assistant's encrypted backups.
+Velero's daily and weekly offsite schedules include the namespace and copy only the backups volume, through `home-assistant-backup-holder`, a `pause` pod that mounts it read-only on Home Assistant's node. The Home Assistant pod excludes every volume from Velero, so the plaintext `.storage` leaves the node only inside Home Assistant's encrypted backups, and a restore of the backups volume never needs the pod with the IoT attachment.
 
 Native backups are UI state under **Settings** > **System** > **Backups**:
 
