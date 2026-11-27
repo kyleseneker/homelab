@@ -126,6 +126,7 @@ else
       -ignore-filename-pattern '.*config\.yml$' \
       -ignore-filename-pattern '.*values\.yml$' \
       -ignore-filename-pattern '.*slack-app-manifest\.json$' \
+      -ignore-filename-pattern '.*/restore-test/scripts/expected_failures\.json$' \
       -summary k8s/ "$work/"; then
     fail=$((fail+1))
   fi

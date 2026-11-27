@@ -140,6 +140,16 @@ rules:
       - sonarr
       - radarr
       - prowlarr
+      - bazarr
+      - jellyfin
+    verbs:
+      - get
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    resourceNames:
+      - seerr
     verbs:
       - get
 ---
@@ -148,6 +158,39 @@ kind: RoleBinding
 metadata:
   name: restore-test
   namespace: media
+  labels:
+    app.kubernetes.io/name: restore-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: restore-test
+subjects:
+  - kind: ServiceAccount
+    name: restore-test
+    namespace: backups
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restore-test
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: restore-test
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - uptime-kuma
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restore-test
+  namespace: monitoring
   labels:
     app.kubernetes.io/name: restore-test
 roleRef:

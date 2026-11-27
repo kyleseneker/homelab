@@ -1,3 +1,4 @@
+import datetime
 import http.server
 import importlib.util
 import io
@@ -81,8 +82,11 @@ class Pods(unittest.TestCase):
 
     def test_each_kind_runs_its_own_check(self):
         self.assertEqual(self.command('sonarr'), ['python3', '-c', 'S', '/backup/sonarr/sonarr.db',
-                                                  'Series', 'Episodes,EpisodeFiles', '1'])
-        self.assertEqual(self.command('bazarr'), ['python3', '-c', 'S', '/backup/bazarr/db/bazarr.db', '', '', '0'])
+                                                  'Series', 'Episodes,EpisodeFiles', '1', '{}'])
+        self.assertEqual(self.command('jellyfin'), ['python3', '-c', 'S', '/backup/jellyfin/data/data/jellyfin.db',
+                                                    '', '', '0', '{}'])
+        self.assertEqual(json.loads(self.command('uptime-kuma')[-1]),
+                         {'status_page': 'SELECT slug FROM status_page WHERE published = 1 ORDER BY id LIMIT 1'})
         self.assertEqual(self.command('tdarr'), ['python3', '-c', 'Z', '/backup/tdarr/latest.zip',
                                                  'DB2/SQL/database.db', '/work'])
         self.assertEqual(self.command('home-assistant'), ['python3', '-c', 'H', '/backup'])
@@ -108,20 +112,59 @@ class Pods(unittest.TestCase):
         self.assertEqual(app['env'], [{'name': 'SONARR__AUTH__METHOD', 'value': 'External'},
                                       {'name': 'SONARR__AUTH__APIKEY', 'value': 'key'}])
         self.assertIn({'name': 'API_KEY', 'value': 'key'}, check['env'])
-        self.assertEqual(copy['command'][-2:], ['/backup/sonarr/sonarr.db', '/config/sonarr.db'])
+        spec = json.loads(copy['command'][-1])
+        self.assertEqual((spec['source'], spec['database'], spec['mount']),
+                         ('/backup/sonarr/sonarr.db', '/config/sonarr.db', '/config'))
+        self.assertEqual(json.loads(check['command'][-1]),
+                         {'port': 8989, 'status': '/api/v3/system/status',
+                          'probe': {'path': '/api/v3/series', 'count_table': 'Series'}})
 
     def test_the_copied_database_is_writable_by_whatever_user_the_app_runs_as(self):
         with tempfile.TemporaryDirectory() as directory:
-            source, target = Path(directory) / 'source.db', Path(directory) / 'target.db'
+            root = Path(directory)
+            source, mount = root / 'source.db', root / 'config'
             source.write_bytes(b'data')
             source.chmod(0o600)
-            subprocess.run([sys.executable, '-c', harness.COPY, str(source), str(target)], check=True)
-            self.assertEqual(target.read_bytes(), b'data')
-            self.assertEqual(target.stat().st_mode & 0o777, 0o666)
+            mount.mkdir()
+            spec = {'source': str(source), 'database': str(mount / 'db/app.db'), 'mount': str(mount),
+                    'files': {str(mount / 'config/config.yaml'): 'auth:\n  apikey: key\n'}}
+            subprocess.run([sys.executable, '-c', harness.COPY, json.dumps(spec)], check=True)
+            self.assertEqual((mount / 'db/app.db').read_bytes(), b'data')
+            self.assertEqual((mount / 'db/app.db').stat().st_mode & 0o777, 0o666)
+            self.assertEqual((mount / 'config/config.yaml').read_text(), 'auth:\n  apikey: key\n')
+            self.assertEqual((mount / 'db').stat().st_mode & 0o777, 0o777)
 
     def test_pvr_apps_take_their_key_from_the_environment(self):
         self.assertEqual(TARGETS['radarr']['app']['api_key_env'], 'RADARR__AUTH__APIKEY')
-        self.assertEqual(TARGETS['prowlarr']['app']['count_path'], '/api/v1/applications')
+        self.assertEqual(TARGETS['prowlarr']['app']['probe']['path'], '/api/v1/applications')
+
+    def test_uptime_kuma_runs_as_in_production_and_probes_its_own_status_page(self):
+        workload = {'spec': {'template': {'spec': {
+            'securityContext': {'runAsUser': 1000, 'runAsGroup': 1000, 'fsGroup': 1000, 'runAsNonRoot': True},
+            'containers': [{'image': 'louislam/uptime-kuma:2.5.8', 'env': [], 'resources': {'limits': {'cpu': '1'}},
+                            'securityContext': {'readOnlyRootFilesystem': True}}]}}}}
+        pod = harness.app_pod(TARGETS['uptime-kuma'], workload, 'image', (1000, 1000), 'key', 'A', {'status_page': 'home'})
+        app = next(c for c in pod['spec']['containers'] if c['name'] == 'app')
+        check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
+        self.assertEqual(pod['spec']['securityContext']['runAsUser'], 1000)
+        self.assertEqual(pod['spec']['securityContext']['seccompProfile'], {'type': 'RuntimeDefault'})
+        self.assertIn({'name': 'scratch-0', 'mountPath': '/tmp'}, app['volumeMounts'])
+        self.assertIn({'name': 'scratch-0', 'emptyDir': {}}, pod['spec']['volumes'])
+        self.assertEqual(json.loads(check['command'][-1])['probe'],
+                         {'path': '/api/status-page/home', 'field': 'config.slug', 'equals': 'home'})
+        self.assertEqual(check['env'], [{'name': 'PYTHONDONTWRITEBYTECODE', 'value': '1'}])
+
+    def test_bazarr_gets_its_throwaway_key_through_a_seeded_config(self):
+        pod = harness.app_pod(TARGETS['bazarr'], DEPLOYMENT, 'image', (977, 988), 'k3y', 'A')
+        spec = json.loads(pod['spec']['initContainers'][0]['command'][-1])
+        self.assertEqual(spec['files'], {'/config/config/config.yaml': 'auth:\n  apikey: k3y\n'})
+        check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
+        self.assertIn({'name': 'API_KEY', 'value': 'k3y'}, check['env'])
+
+    def test_a_probe_value_the_database_lacks_stays_unresolved(self):
+        self.assertIsNone(harness.resolve('/api/status-page/{status_page}', {'status_page': None}))
+        self.assertIsNone(harness.resolve('/api/status-page/{status_page}', {}))
+        self.assertEqual(harness.resolve(True, {}), True)
 
     def test_every_container_has_limits(self):
         for target in harness.TARGETS:
@@ -226,6 +269,48 @@ class Results(unittest.TestCase):
         self.assertFalse(harness.passed(result))
 
 
+class Register(unittest.TestCase):
+    entries = [{'target': 'jellyfin', 'tier': 'answers', 'reason': 'r', 'expires': '2027-02-27'}]
+
+    def result(self, answers):
+        return {'tiers': {'restored': True, 'intact': True, 'usable': True, 'answers': answers},
+                'fences': {'watch_namespace': True}, 'rows': {}, 'duration': 1}
+
+    def test_a_listed_failure_does_not_fail_the_target(self):
+        result = self.result(False)
+        harness.apply_register('jellyfin', result, self.entries, datetime.date(2026, 11, 27))
+        self.assertEqual(result['expected'], {'answers': True})
+        self.assertTrue(harness.passed(result))
+        result['passed'] = True
+        text = harness.metrics(result, 1.0)
+        self.assertIn('restore_test_expected_failure{tier="answers"} 1\n', text)
+        self.assertIn('restore_test_expected_failure_resolved{tier="none"} 0\n', text)
+
+    def test_a_listed_tier_that_passes_is_flagged_for_removal(self):
+        result = self.result(True)
+        harness.apply_register('jellyfin', result, self.entries, datetime.date(2026, 11, 27))
+        result['passed'] = harness.passed(result)
+        self.assertIn('restore_test_expected_failure_resolved{tier="answers"} 1\n', harness.metrics(result, 1.0))
+
+    def test_an_expired_entry_fails_again(self):
+        result = self.result(False)
+        harness.apply_register('jellyfin', result, self.entries, datetime.date(2027, 3, 1))
+        self.assertFalse(harness.passed(result))
+
+    def test_an_entry_only_covers_its_own_target(self):
+        result = self.result(False)
+        harness.apply_register('seerr-not-listed', result, self.entries, datetime.date(2026, 11, 27))
+        self.assertFalse(harness.passed(result))
+
+    def test_the_shipped_register_names_real_targets_and_tiers(self):
+        register = json.loads((APP / 'scripts/expected_failures.json').read_text())
+        for entry in register:
+            self.assertIn(entry['target'], TARGETS)
+            self.assertIn(entry['tier'], ('restored', 'intact', 'fresh', 'usable', 'answers'))
+            self.assertTrue(entry['reason'])
+            datetime.date.fromisoformat(entry['expires'])
+
+
 class Alerts(unittest.TestCase):
     def test_every_target_has_a_missing_result_guard_for_each_source(self):
         rules = yaml.safe_load((APP / 'prometheusrule.yml').read_text())
@@ -297,12 +382,12 @@ class Execution(unittest.TestCase):
         run.api.json = lambda method, path, *a, **k: (
             {'status': {'startTimestamp': '2026-11-27T03:00:00Z'}} if '/backups/' in path else {'items': []})
         self.assertEqual(run.execute(), 1)
-        sonarr, bazarr = run.results['sonarr']['tiers'], run.results['bazarr']['tiers']
+        sonarr, tdarr = run.results['sonarr']['tiers'], run.results['tdarr']['tiers']
         self.assertTrue(sonarr['intact'])
         self.assertFalse(sonarr['fresh'])
         self.assertFalse(sonarr['usable'])
         self.assertFalse(sonarr['answers'])
-        self.assertNotIn('usable', bazarr)
+        self.assertNotIn('usable', tdarr)
 
 
 class RunPod(unittest.TestCase):
@@ -408,28 +493,51 @@ class Api(unittest.TestCase):
         self.addCleanup(server.shutdown)
         return server.server_address[1]
 
+    def spec(self, port, probe=None):
+        return {'port': port, 'status': '/status', 'probe': probe or {'path': '/items', 'count_table': 'T'}}
+
     def test_a_running_app_reports_its_version_and_count(self):
         port = self.serve()
-        self.assertEqual(check_api.check(port, '/status', '/items', 'key', 5, interval=0.1),
+        self.assertEqual(check_api.check(self.spec(port), 'key', 5, interval=0.1),
                          ({'started': True, 'version': '2.7.0', 'count': 3}, True))
+
+    def test_a_field_probe_reports_whether_the_value_matches(self):
+        port = self.serve()
+        report, passed = check_api.check(self.spec(port, {'path': '/status', 'field': 'version', 'equals': '2.7.0'}),
+                                         'key', 5, interval=0.1)
+        self.assertTrue(passed)
+        self.assertEqual((report['value'], report['matches']), ('2.7.0', True))
+
+    def test_a_probe_without_a_path_is_unresolved(self):
+        port = self.serve()
+        report, passed = check_api.check(self.spec(port, {'path': None, 'field': 'x', 'equals': 1}), 'key', 5, interval=0.1)
+        self.assertEqual((report['probe_error'], passed), ('unresolved', False))
 
     def test_a_count_that_never_answers_is_reported_not_raised(self):
         port = self.serve(count_status=500)
-        report, passed = check_api.check(port, '/status', '/items', 'key', 1, interval=0.1, request_timeout=1)
+        report, passed = check_api.check(self.spec(port), 'key', 1, interval=0.1, request_timeout=1)
         self.assertFalse(passed)
-        self.assertEqual(report['count_error'], 'HTTPError')
+        self.assertEqual(report['probe_error'], 'HTTPError')
 
     def test_a_slow_count_times_out_cleanly(self):
         port = self.serve(count_delay=2)
-        report, passed = check_api.check(port, '/status', '/items', 'key', 1, interval=0.1, request_timeout=0.5)
+        report, passed = check_api.check(self.spec(port), 'key', 1, interval=0.1, request_timeout=0.5)
         self.assertFalse(passed)
         self.assertTrue(report['started'])
-        self.assertIn('count_error', report)
+        self.assertIn('probe_error', report)
 
     def test_an_app_that_never_starts_fails(self):
         port = self.serve()
-        report, passed = check_api.check(port, '/status', '/items', 'wrong', 0.3, interval=0.1, request_timeout=1)
+        report, passed = check_api.check(self.spec(port), 'wrong', 0.3, interval=0.1, request_timeout=1)
         self.assertEqual(report, {'started': False, 'error': 'HTTPError'})
+
+    def test_counts_and_fields_read_the_shapes_apps_return(self):
+        self.assertEqual(check_api.count([1, 2]), 2)
+        self.assertEqual(check_api.count({'data': [1], 'total': 7}), 7)
+        self.assertEqual(check_api.count({'data': [1, 2, 3]}), 3)
+        self.assertEqual(check_api.field({'config': {'slug': 'home'}}, 'config.slug'), 'home')
+        self.assertEqual(check_api.version({'data': {'bazarr_version': '1.6.2'}}), '1.6.2')
+        self.assertEqual(check_api.version({'Version': '10.11.11'}), '10.11.11')
 
 
 class Scratch(unittest.TestCase):
@@ -451,6 +559,12 @@ class Sqlite(Scratch):
             CREATE TABLE "Series" (Id INTEGER PRIMARY KEY);
             CREATE TABLE "Episodes" (Id INTEGER PRIMARY KEY, SeriesId INTEGER REFERENCES "Series"(Id));
             INSERT INTO "Series" VALUES (1), (2); INSERT INTO "Episodes" VALUES (1, 1);''')
+
+    def test_named_queries_return_their_first_value(self):
+        report, passed = check_sqlite.check(self.path, [], [], False, {'first': 'SELECT MIN(Id) FROM "Series"',
+                                                                        'none': 'SELECT Id FROM "Series" WHERE 0'})
+        self.assertTrue(passed)
+        self.assertEqual(report['values'], {'first': 1, 'none': None})
 
     def test_a_sound_database_passes_with_its_counts_and_time(self):
         report, passed = check_sqlite.check(self.path, ['Series'], ['Episodes', 'Absent'], True)
