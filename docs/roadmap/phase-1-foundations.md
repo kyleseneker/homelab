@@ -4,7 +4,7 @@
 
 **Goal:** Protect against the failures that would cause unrecoverable data loss or hardware damage.
 
-UPS/NUT, Garage + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy and recovery drills remain open.
+UPS/NUT, Garage + offsite S3, etcd snapshots, and local SQLite-to-NFS backup bridges are implemented. NAS drive redundancy, recovery drills and automated restore tests remain open.
 
 **Addresses:** P1, P2, P7, K5, K16, K33, and K41 in the [assessment](assessment.md).
 
@@ -44,7 +44,22 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Test missing-backup and failed-upload alerts through to the external recipient
 - [ ] Test the external Watchdog heartbeat by interrupting delivery in a controlled window
 - [ ] Test UPS USB stability and orderly shutdown; record the result
-- [ ] Rehearse recovery quarterly and after storage, backup-format, or major application upgrades
+- [ ] Rebuild the [restore lab](../runbooks/restore-lab.md) from production's cluster definition, with an overlay for addresses, credentials, storage and VM sizing, and retire the lab's own application definitions
+- [ ] Rehearse recovery quarterly and after storage, backup-format, or major application upgrades on the rebuilt lab: recover from S3 alone, run the [ADR-034](../decisions/034-restore-testing.md) checks against it and restore one application in place by the runbook
+
+## 1.4 Automate Restore Tests
+
+Build the harness in [ADR-034](../decisions/034-restore-testing.md): nightly and weekly restores of every target into a sandbox namespace, checked in tiers and reported per target. Build one target end to end, fence and alerts included, before widening.
+
+- [ ] Give Home Assistant's backups volume a holder Deployment, exclude that volume from the Home Assistant pod's file-system backup and label every backup holder for selection
+- [ ] Run Sonarr end to end: the `nfs-restore-test` StorageClass, the sandbox network policies and Pushgateway path, the Kyverno policies (Restore guard, Arrchitect kinds denied, harness namespace rights, sandbox exceptions), the sandbox exclusion in `weekly-full-cluster`, a Pushgateway with persistence, tiers 1 to 5 and the per-target alerts, each triggered once on purpose
+- [ ] Widen to every Velero target with tiers 1, 2 and 5, then tiers 3 and 4 per application, listing known backup gaps in the expected-failure register
+- [ ] Add Authentik's scratch PostgreSQL restore
+- [ ] Add the etcd target: the complete set, snapshot status, a single-member restore and known keys
+- [ ] Add the weekly S3 run
+- [ ] Add the monthly Vault restore with a canary-only token
+- [ ] Take the Arrchitect release that binds namespaced Roles when `watchNamespace` is set
+- [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers
 
 ---
 
@@ -54,3 +69,4 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 - [ ] Independent etcd recovery and an application restore using externally held credentials demonstrated
 - [ ] Offsite recovery demonstrated with the original NAS unavailable
 - [ ] Backup alerts and UPS shutdown verified
+- [ ] Automated restore tests pass nightly from the local copy and weekly from S3 for every [ADR-034](../decisions/034-restore-testing.md) target, apart from listed known gaps
