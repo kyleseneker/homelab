@@ -49,15 +49,14 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 ## 1.4 Automate Restore Tests
 
-Build the harness in [ADR-034](../decisions/034-restore-testing.md): nightly and weekly restores of every target into a sandbox namespace, checked in tiers and reported per target. Build one target end to end, fence and alerts included, before widening.
+Widen the [restore test](../infrastructure/restore-test.md) from Sonarr to every [ADR-034](../decisions/034-restore-testing.md) target: nightly and weekly restores into a sandbox namespace, checked in tiers and reported per target.
 
-- [ ] Run Sonarr end to end: the `nfs-restore-test` StorageClass, the sandbox network policies and Pushgateway path, the Kyverno policies (Restore guard, Arrchitect kinds denied, harness namespace rights, sandbox exceptions), the sandbox exclusion in `weekly-full-cluster`, a Pushgateway with persistence, tiers 1 to 5 and the per-target alerts, each triggered once on purpose
+- [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
 - [ ] Widen to every Velero target with tiers 1, 2 and 5, then tiers 3 and 4 per application, listing known backup gaps in the expected-failure register
 - [ ] Add Authentik's scratch PostgreSQL restore
 - [ ] Add the etcd target: the complete set, snapshot status, a single-member restore and known keys
 - [ ] Add the weekly S3 run
 - [ ] Add the monthly Vault restore with a canary-only token
-- [ ] Take the Arrchitect release that binds namespaced Roles when `watchNamespace` is set
 - [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers
 
 ---

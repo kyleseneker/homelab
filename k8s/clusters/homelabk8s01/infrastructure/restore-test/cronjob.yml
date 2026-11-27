@@ -8,7 +8,6 @@ metadata:
 spec:
   schedule: 30 3 * * *
   timeZone: Etc/UTC
-  suspend: true
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
