@@ -186,6 +186,28 @@ class ArrchitectAbsent(unittest.TestCase):
         self.assertFalse(self.run_with({'sonarrs': (500, ''), 'lidarrs': (403, '')}))
 
 
+class ReleaseVolumes(unittest.TestCase):
+    def test_only_the_sandbox_volumes_are_set_to_be_deleted(self):
+        volume = lambda name, sc, ns, policy: {'metadata': {'name': name}, 'spec': {
+            'storageClassName': sc, 'claimRef': {'namespace': ns}, 'persistentVolumeReclaimPolicy': policy}}
+        patched = []
+
+        class Api:
+            def json(self, method, path, body=None, *args, **kwargs):
+                if method == 'PATCH':
+                    patched.append((path.rsplit('/', 1)[-1], body))
+                    return {}
+                return {'items': [
+                    volume('copied-retain', 'nfs-restore-test', 'restore-sandbox', 'Retain'),
+                    volume('already-delete', 'nfs-restore-test', 'restore-sandbox', 'Delete'),
+                    volume('production', 'nfs-client', 'media', 'Retain'),
+                    volume('other-namespace', 'nfs-restore-test', 'media', 'Retain'),
+                ]}
+
+        self.assertEqual(harness.Run(Api(), ENVIRON).release_volumes(), 1)
+        self.assertEqual(patched, [('copied-retain', {'spec': {'persistentVolumeReclaimPolicy': 'Delete'}})])
+
+
 class Sqlite(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

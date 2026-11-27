@@ -9,7 +9,8 @@ metadata:
     policies.kyverno.io/description: >-
       The restore test's ServiceAccount can create Velero Restores, which act
       with Velero's cluster-admin rights, and can create and delete namespaces
-      and pods. It may touch only the restore-sandbox namespace, and its
+      and pods, and can patch volumes. It may touch only the restore-sandbox
+      namespace and that namespace's nfs-restore-test volumes, and its
       Restores may bring back only labelled backup-volume pods and claims
       into that namespace, never cluster-scoped objects such as volumes,
       and without overwriting anything.
@@ -33,6 +34,14 @@ spec:
         resources:
           - namespaces
           - pods
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - UPDATE
+        resources:
+          - persistentvolumes
       - apiGroups:
           - velero.io
         apiVersions:
@@ -65,6 +74,12 @@ spec:
       message: The restore test may create or delete only the restore-sandbox namespace.
     - expression: request.resource.resource != 'pods' || request.namespace == 'restore-sandbox'
       message: The restore test may manage pods only in restore-sandbox.
+    - expression: >-
+        request.resource.resource != 'persistentvolumes' || (
+          oldObject.spec.?storageClassName.orValue('') == 'nfs-restore-test' &&
+          object.spec.?storageClassName.orValue('') == 'nfs-restore-test' &&
+          oldObject.spec.?claimRef.?namespace.orValue('') == 'restore-sandbox')
+      message: The restore test may change only the restore-sandbox's nfs-restore-test volumes.
     - expression: request.resource.group != 'arrchitect.dev' || request.namespace == 'restore-sandbox'
       message: The restore test may send Arrchitect resources only to restore-sandbox, where they are refused.
     - expression: >-
