@@ -14,10 +14,10 @@ spec:
     deletionPolicy: orphan
   workers:
     - nodeName: InternalNode
-      transcodeGPU: 1
-      transcodeCPU: 1
-      healthcheckGPU: 0
-      healthcheckCPU: 1
+      transcodeGpu: 1
+      transcodeCpu: 1
+      healthcheckGpu: 0
+      healthcheckCpu: 1
   flows:
     - id: htpX8Ypt1
       name: 1 - Input
