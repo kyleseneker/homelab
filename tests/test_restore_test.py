@@ -165,6 +165,27 @@ class Execution(unittest.TestCase):
         self.assertFalse(tiers['answers'])
 
 
+class ArrchitectAbsent(unittest.TestCase):
+    def run_with(self, listings):
+        class Api:
+            def json(self, method, path, *args, **kwargs):
+                return {'resources': [{'name': 'sonarrs'}, {'name': 'sonarrs/status'}, {'name': 'lidarrs'}]}
+
+            def call(self, method, path, *args, **kwargs):
+                return listings[path.rsplit('/', 1)[-1]]
+
+        return harness.Run(Api(), ENVIRON).arrchitect_absent()
+
+    def test_an_empty_sandbox_passes_and_kinds_without_a_controller_are_skipped(self):
+        self.assertTrue(self.run_with({'sonarrs': (200, '{"items": []}'), 'lidarrs': (403, '')}))
+
+    def test_a_restored_resource_fails(self):
+        self.assertFalse(self.run_with({'sonarrs': (200, '{"items": [{}]}'), 'lidarrs': (403, '')}))
+
+    def test_an_unreadable_listing_fails(self):
+        self.assertFalse(self.run_with({'sonarrs': (500, ''), 'lidarrs': (403, '')}))
+
+
 class Sqlite(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

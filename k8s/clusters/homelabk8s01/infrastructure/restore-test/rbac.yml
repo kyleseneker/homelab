@@ -41,9 +41,8 @@ rules:
   - apiGroups:
       - arrchitect.dev
     resources:
-      - "*"
+      - sonarrs
     verbs:
-      - list
       - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -56,6 +55,21 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: restore-test
+subjects:
+  - kind: ServiceAccount
+    name: restore-test
+    namespace: backups
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: restore-test-arrchitect-view
+  labels:
+    app.kubernetes.io/name: restore-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: arrchitect-view
 subjects:
   - kind: ServiceAccount
     name: restore-test
