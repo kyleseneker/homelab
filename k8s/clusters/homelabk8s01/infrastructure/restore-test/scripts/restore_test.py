@@ -169,6 +169,7 @@ def helper(name, user, image, command, mounts, env=None):
 
 
 BACKUP_MOUNT = {"name": "backup", "mountPath": "/backup", "readOnly": True}
+COPY = "import os, shutil, sys; shutil.copyfile(sys.argv[1], sys.argv[2]); os.chmod(sys.argv[2], 0o666)"
 WORK_MOUNT = {"name": "work", "mountPath": "/work"}
 
 
@@ -199,8 +200,7 @@ def app_pod(target, deployment, image, user, key, script):
     env.append({"name": app["api_key_env"], "value": key})
     copy = helper(
         "copy", user, image,
-        ["python3", "-c", "import shutil, sys; shutil.copyfile(sys.argv[1], sys.argv[2])",
-         "/backup/" + target["path"], app["config"]],
+        ["python3", "-c", COPY, "/backup/" + target["path"], app["config"]],
         [BACKUP_MOUNT, {"name": "config", "mountPath": "/config"}],
     )
     application = {

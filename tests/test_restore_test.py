@@ -1,10 +1,14 @@
+import http.server
 import importlib.util
 import io
 import json
 from pathlib import Path
 import sqlite3
+import subprocess
+import sys
 import tarfile
 import tempfile
+import threading
 import time
 import unittest
 import zipfile
@@ -26,6 +30,7 @@ harness = load('restore_test')
 check_sqlite = load('check_sqlite')
 check_zip = load('check_zip')
 check_ha = load('check_ha')
+check_api = load('check_api')
 TARGETS = {t['name']: t for t in harness.TARGETS}
 SCRIPTS = {'check_sqlite': 'S', 'check_zip': 'Z', 'check_ha': 'H', 'check_pgdump': 'P', 'check_api': 'A'}
 DEPLOYMENT = {'spec': {'template': {'spec': {'containers': [{
@@ -100,6 +105,15 @@ class Pods(unittest.TestCase):
                                       {'name': 'SONARR__AUTH__APIKEY', 'value': 'key'}])
         self.assertIn({'name': 'API_KEY', 'value': 'key'}, check['env'])
         self.assertEqual(copy['command'][-2:], ['/backup/sonarr/sonarr.db', '/config/sonarr.db'])
+
+    def test_the_copied_database_is_writable_by_whatever_user_the_app_runs_as(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source, target = Path(directory) / 'source.db', Path(directory) / 'target.db'
+            source.write_bytes(b'data')
+            source.chmod(0o600)
+            subprocess.run([sys.executable, '-c', harness.COPY, str(source), str(target)], check=True)
+            self.assertEqual(target.read_bytes(), b'data')
+            self.assertEqual(target.stat().st_mode & 0o777, 0o666)
 
     def test_pvr_apps_take_their_key_from_the_environment(self):
         self.assertEqual(TARGETS['radarr']['app']['api_key_env'], 'RADARR__AUTH__APIKEY')
@@ -265,6 +279,57 @@ class ReleaseVolumes(unittest.TestCase):
 
         self.assertEqual(harness.Run(Api(), ENVIRON).release_volumes(), 1)
         self.assertEqual(patched, [('copied-retain', {'spec': {'persistentVolumeReclaimPolicy': 'Delete'}})])
+
+
+class Api(unittest.TestCase):
+    def serve(self, count_delay=0.0, count_status=200):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.headers.get('X-Api-Key') != 'key':
+                    self.send_response(401)
+                    self.end_headers()
+                    return
+                if self.path == '/status':
+                    body, status = {'version': '2.7.0'}, 200
+                else:
+                    time.sleep(count_delay)
+                    body, status = [{}, {}, {}], count_status
+                data = json.dumps(body).encode()
+                self.send_response(status)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *args):
+                pass
+
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        return server.server_address[1]
+
+    def test_a_running_app_reports_its_version_and_count(self):
+        port = self.serve()
+        self.assertEqual(check_api.check(port, '/status', '/items', 'key', 5, interval=0.1),
+                         ({'started': True, 'version': '2.7.0', 'count': 3}, True))
+
+    def test_a_count_that_never_answers_is_reported_not_raised(self):
+        port = self.serve(count_status=500)
+        report, passed = check_api.check(port, '/status', '/items', 'key', 1, interval=0.1, request_timeout=1)
+        self.assertFalse(passed)
+        self.assertEqual(report['count_error'], 'HTTPError')
+
+    def test_a_slow_count_times_out_cleanly(self):
+        port = self.serve(count_delay=2)
+        report, passed = check_api.check(port, '/status', '/items', 'key', 1, interval=0.1, request_timeout=0.5)
+        self.assertFalse(passed)
+        self.assertTrue(report['started'])
+        self.assertIn('count_error', report)
+
+    def test_an_app_that_never_starts_fails(self):
+        port = self.serve()
+        report, passed = check_api.check(port, '/status', '/items', 'wrong', 0.3, interval=0.1, request_timeout=1)
+        self.assertEqual(report, {'started': False, 'error': 'HTTPError'})
 
 
 class Scratch(unittest.TestCase):

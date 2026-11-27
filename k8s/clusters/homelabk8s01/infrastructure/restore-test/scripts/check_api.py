@@ -5,26 +5,35 @@ import time
 import urllib.error
 import urllib.request
 
+FAILURES = (OSError, urllib.error.URLError, ValueError)
 
-def get(base, path, key):
+
+def get(base, path, key, timeout):
     request = urllib.request.Request(base + path, headers={"X-Api-Key": key})
-    with urllib.request.urlopen(request, timeout=10) as response:
+    with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
 
-def check(port, status_path, count_path, key, timeout):
-    base = f"http://127.0.0.1:{port}"
-    deadline = time.monotonic() + timeout
+def until(deadline, attempt, interval):
     while True:
         try:
-            status = get(base, status_path, key)
-            break
-        except (OSError, urllib.error.URLError, ValueError):
+            return attempt(), None
+        except FAILURES as error:
             if time.monotonic() >= deadline:
-                return {"started": False}, False
-            time.sleep(5)
-    count = len(get(base, count_path, key))
-    return {"started": True, "version": status.get("version"), "count": count}, True
+                return None, type(error).__name__
+            time.sleep(interval)
+
+
+def check(port, status_path, count_path, key, timeout, interval=5, request_timeout=30):
+    base = f"http://127.0.0.1:{port}"
+    deadline = time.monotonic() + timeout
+    status, error = until(deadline, lambda: get(base, status_path, key, request_timeout), interval)
+    if status is None:
+        return {"started": False, "error": error}, False
+    items, error = until(deadline, lambda: get(base, count_path, key, request_timeout), interval)
+    if items is None:
+        return {"started": True, "version": status.get("version"), "count_error": error}, False
+    return {"started": True, "version": status.get("version"), "count": len(items)}, True
 
 
 if __name__ == "__main__":
