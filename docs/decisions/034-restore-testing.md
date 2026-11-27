@@ -15,7 +15,7 @@ No Kubernetes backup tool verifies arbitrary applications after a restore. Veler
 Restoring into the production cluster carries hazards specific to it:
 
 - The Velero server runs as `cluster-admin`, so whoever can create a Restore can write anything anywhere.
-- Arrchitect writes to the media applications through their APIs. Its cache is limited to `media`, but its ClusterRole covers every `arrchitect.dev` resource in every namespace.
+- Arrchitect writes to the media applications through their APIs. Its cache and its Roles are limited to `media`, so only that limit keeps it from acting on a restored copy.
 - Argo CD, External Secrets and Kyverno act across namespaces through the API server, where network policy does not apply.
 - A restored pod that mounts an NFS claim reaches that data whatever its network policy says.
 - The `nfs-client` StorageClass keeps a deleted claim's directory (`reclaimPolicy: Retain`) and names it after the namespace and claim alone, so a second restore under the same names would reuse the first one's files.
@@ -44,7 +44,7 @@ Home Assistant's `backups` volume gets its own holder Deployment on Home Assista
 
 - **Network**: The cluster-wide `baseline` policy denies all ingress and all egress except DNS for any new namespace, including traffic to the API server. The sandbox gets no allow policy; a checker container in the restored application's own pod queries it over localhost. The monthly Vault run is the one exception, with egress to AWS KMS and S3 only. The harness in `backups` gets a narrow path to the Pushgateway in `monitoring`.
 - **Restores**: A Kyverno ValidatingPolicy admits a Restore from the harness ServiceAccount only if every namespace maps to `restore-sandbox`, it includes only pods, claims and volumes, it excludes cluster resources, its existing-resource policy is `none` and it carries the test resource modifier.
-- **Arrchitect**: Its kinds are never restored, and a Kyverno ValidatingPolicy denies them in the sandbox. Every run fails unless Arrchitect still runs with `--watch-namespace=media`, no Arrchitect resource exists in the sandbox and a canary create of one, pointed at an unroutable address, is rejected. Arrchitect's chart should bind namespaced Roles when `watchNamespace` is set; until it does, the cache scope is the only operator-side fence.
+- **Arrchitect**: Its kinds are never restored, and a Kyverno ValidatingPolicy denies them in the sandbox. Every run fails unless Arrchitect still runs with `--watch-namespace=media`, no Arrchitect resource exists in the sandbox and a canary create of one, pointed at an unroutable address, is rejected.
 - **Admission**: The sandbox takes the same Kyverno exceptions as the namespaces whose applications it tests and enforces Pod Security `baseline`, so tier 3 runs the production images with the security context production gives them.
 - **Backups and GitOps**: `weekly-full-cluster` excludes the sandbox, so copies of production Secrets never enter a backup. Argo CD's annotation tracking ignores copies whose tracking annotation names another namespace, so restored objects neither change sync status nor get pruned.
 - **Harness rights**: The harness ServiceAccount can create and delete namespaces and Restores; Kyverno limits both to the sandbox.
@@ -93,7 +93,6 @@ The measured duration is a restore-test duration, not an RTO: it leaves out dete
 - A Pushgateway joins the monitoring stack, with a network path from `backups`.
 - The harness can create Restores, which act with Velero's `cluster-admin` rights; the Kyverno guard is what keeps that to the sandbox, so a change to the guard deserves the same review as a change to the harness.
 - The sandbox carries the media namespaces' Kyverno exceptions while a run is active.
-- Arrchitect's cluster-wide RBAC remains until its chart binds namespaced Roles for `watchNamespace`.
 - For the length of a run, the sandbox holds copies of production credentials and personal data. It has no network access beyond its own pods, is excluded from backups and is deleted at the end; a sandbox that outlives six hours alerts.
 - Each run creates and removes one directory per restored claim under the NFS provisioner's root.
 - The Vault run needs egress to AWS KMS, a deliberate departure from HashiCorp's advice to test restores fully isolated; the default-deny baseline still keeps it away from the production Vault.
