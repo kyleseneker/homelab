@@ -22,7 +22,7 @@ Restoring into the production cluster carries hazards specific to it:
 
 ## Decision
 
-Velero stays the restore engine. A CronJob in `backups` runs a harness script, rendered by Argo CD from Git, that restores the latest backups into a throwaway `restore-sandbox` namespace, checks them in tiers, pushes per-target results to a Prometheus Pushgateway and deletes the sandbox.
+Velero stays the restore engine. A CronJob in `backups` runs a harness script, rendered by Argo CD from Git, that restores the latest backups into a throwaway `restore-sandbox` namespace, checks them in tiers, pushes per-target results to a Prometheus Pushgateway and deletes the sandbox. Velero does not hold the etcd set, so a second CronJob checks it on the volume the etcd backup writes, with the backup's own etcd image mounted as an image volume.
 
 **Targets.** The six SQLite dumps and the Tdarr archive on `config-backups`, the Uptime Kuma dump, the Authentik `pg_dump` archive, Home Assistant's native backups, the Vault Raft snapshot and the complete etcd set (snapshot, PKI and control-plane archives). Prometheus and Loki hold diagnostic data and are out of scope. Volumes backed up only as live files (qBittorrent, Grafana, Recyclarr state) join once they have a consistent export or holder.
 

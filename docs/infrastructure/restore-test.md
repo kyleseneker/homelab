@@ -8,7 +8,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 |-------|-------|
 | Type | CronJob (`sourceType: git`) |
 | Namespace | `backups`; each run works in `restore-sandbox` |
-| Schedule | `30 3 * * *` (03:30 UTC daily) |
+| Schedule | `30 3 * * *` (03:30 UTC daily); etcd at `30 2 * * *` |
 | Source | Latest completed `velero-daily-stateful` backup on Garage |
 | Deadline | 2 hours per Job; one Job at a time |
 | Image | `python:3.15-alpine` for the harness and most checkers; the image that wrote a dump for its check (Authentik's `pg_dump`); the application's own image for app checks |
@@ -53,6 +53,20 @@ The app check runs in one pod: the application, plus a checker container that qu
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
 
 Prowlarr's check counts its configured applications, not its indexers. Prowlarr builds the indexer list from definitions it downloads at startup and keeps outside its database, so a sandbox with no internet access cannot list indexers, and a real restore needs Prowlarr to reach its definitions server before indexers work.
+
+## etcd
+
+Velero does not hold the etcd recovery set, so `restore-test-etcd` checks it where the [etcd backup](etcd-backup.md) writes it. It runs at 02:30 UTC on the control-plane node, where the backup job runs, and mounts the `etcd-snapshots` volume read-only. The etcd image the backup job snapshots with is mounted as an image volume, so the check runs that image's own `etcdutl` and `etcd`.
+
+| Tier | Passes when |
+|------|-------------|
+| `restored` | A `recovery-*.json` record exists; the newest by its timestamp is checked |
+| `intact` | The snapshot, PKI and control-plane archives are all listed, match the record's sizes and SHA-256 sums, and the archives read |
+| `fresh` | The set is at most 26 hours old |
+| `usable` | `etcdutl snapshot restore` accepts the snapshot, including its integrity hash, and a single-member etcd starts on it on localhost |
+| `answers` | Keys exist under `/registry/`, including the `kube-system`, `media` and `backups` namespaces |
+
+The key count goes to `restore_test_rows{table="keys"}`, so a shrinking cluster state alerts like a shrinking database.
 
 ## Safeguards
 

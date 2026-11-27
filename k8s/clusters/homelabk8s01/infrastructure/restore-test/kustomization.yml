@@ -5,12 +5,14 @@ resources:
   - rbac.yml
   - modifiers.yml
   - cronjob.yml
+  - cronjob-etcd.yml
   - prometheusrule.yml
 configMapGenerator:
   - name: restore-test-scripts
     namespace: backups
     files:
       - restore_test.py=scripts/restore_test.py
+      - restore_test_etcd.py=scripts/restore_test_etcd.py
       - check_sqlite.py=scripts/check_sqlite.py
       - check_zip.py=scripts/check_zip.py
       - check_ha.py=scripts/check_ha.py
