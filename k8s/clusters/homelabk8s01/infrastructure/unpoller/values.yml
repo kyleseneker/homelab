@@ -11,7 +11,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/unpoller/unpoller
-          tag: v5.10.0
+          tag: v5.10.2
         args:
           - --config=/etc/unpoller/up.conf
         envFrom:
