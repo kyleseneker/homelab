@@ -15,4 +15,5 @@ configMapGenerator:
       - check_zip.py=scripts/check_zip.py
       - check_ha.py=scripts/check_ha.py
       - check_pgdump.sh=scripts/check_pgdump.sh
+      - check_postgres.sh=scripts/check_postgres.sh
       - check_api.py=scripts/check_api.py
