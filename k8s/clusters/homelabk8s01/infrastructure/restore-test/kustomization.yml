@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - storageclass.yml
+  - rbac.yml
+  - modifiers.yml
+  - cronjob.yml
+  - prometheusrule.yml
+configMapGenerator:
+  - name: restore-test-scripts
+    namespace: backups
+    files:
+      - restore_test.py=scripts/restore_test.py
+      - check_sqlite.py=scripts/check_sqlite.py
+      - check_api.py=scripts/check_api.py

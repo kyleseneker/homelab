@@ -24,3 +24,23 @@ spec:
             k8s:io.kubernetes.pod.namespace: monitoring
     - toEntities:
         - kube-apiserver
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: monitoring-allow-restore-test
+  namespace: monitoring
+spec:
+  description: "The restore test pushes its results to the Pushgateway"
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-pushgateway
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: backups
+            app.kubernetes.io/name: restore-test
+      toPorts:
+        - ports:
+            - port: "9091"
+              protocol: TCP

@@ -1,0 +1,36 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: deny-arrchitect-in-restore-sandbox
+  annotations:
+    policies.kyverno.io/title: Deny Arrchitect Resources in the Restore Sandbox
+    policies.kyverno.io/category: Backups (ADR-034)
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      A restored Arrchitect resource would point the production operator at
+      production applications. Nobody, Velero included, may create one in
+      restore-sandbox.
+spec:
+  validationActions:
+    - Deny
+  failurePolicy: Fail
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: restore-sandbox
+    resourceRules:
+      - apiGroups:
+          - arrchitect.dev
+        apiVersions:
+          - "*"
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - "*"
+  validations:
+    - expression: "false"
+      message: Arrchitect resources may not exist in restore-sandbox.

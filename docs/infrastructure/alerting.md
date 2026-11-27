@@ -77,6 +77,19 @@ Defined in `kube-prometheus-stack/homelab-rules.yml` as a standalone `Prometheus
 
 Requires Velero metrics to be enabled (`metrics.serviceMonitor.enabled: true` in the Velero Helm values).
 
+### Restore Tests
+
+Rules in `backups/restore-test` read the [restore test](restore-test.md)'s results from the Pushgateway and kube-state-metrics.
+
+| Alert | Severity | For | Condition |
+|-------|----------|-----|-----------|
+| `RestoreTestFailed` | warning | 5m | A target's latest run did not pass |
+| `RestoreTestStale` | warning | 10m | A target has not passed from the local backup in 54 hours |
+| `RestoreTestMissing` | warning | 30h | No result exists for an expected target |
+| `RestoreTestRowsDropped` | warning | 10m | A restored table has 20% fewer rows than its eight-day maximum |
+| `RestoreSandboxLingering` | warning | -- | `restore-sandbox` has existed for six hours |
+| `RestoreTestVolumesOrphaned` | warning | 1h | `nfs-restore-test` volumes exist without a sandbox |
+
 ### Node Health
 
 | Alert | Severity | For | Condition |

@@ -1,0 +1,28 @@
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 64Mi
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  runAsGroup: 65534
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+containerSecurityContext:
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+extraArgs:
+  - --persistence.file=/data/pushgateway.data
+serviceMonitor:
+  enabled: true
+persistentVolume:
+  enabled: true
+  storageClass: nfs-client
+  size: 64Mi

@@ -1,0 +1,6 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: UserInfo
+metadata:
+  name: restore-test
+userInfo:
+  username: system:serviceaccount:backups:restore-test

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: restore-test-modifiers
+  namespace: backups
+  labels:
+    app.kubernetes.io/name: restore-test
+data:
+  rules.yaml: |
+    version: v1
+    resourceModifierRules:
+      - conditions:
+          groupResource: pods
+        mergePatches:
+          - patchData: |
+              {"spec": {"affinity": null, "nodeSelector": null}}
+      - conditions:
+          groupResource: persistentvolumeclaims
+        mergePatches:
+          - patchData: |
+              {"spec": {"storageClassName": "nfs-restore-test"}}
