@@ -39,26 +39,40 @@ spec:
         - alert: RestoreTestMissing
           expr: |
             absent(restore_test_last_attempt_timestamp_seconds{target="sonarr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="radarr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="prowlarr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="bazarr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="jellyfin", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="seerr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="tdarr", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="uptime-kuma", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="authentik", source="local"})
+            or absent(restore_test_last_attempt_timestamp_seconds{target="home-assistant", source="local"})
           for: 30h
           labels:
             severity: warning
           annotations:
-            summary: No restore test results for sonarr
+            summary: "No restore test results for {{ $labels.target }}"
             description: >-
-              The Pushgateway holds no restore test result for sonarr from the local backup. The
-              restore-test CronJob may not be running, or it cannot reach the Pushgateway.
+              The Pushgateway holds no restore test result for {{ $labels.target }} from the local
+              backup. The restore-test CronJob may not be running, the target may be missing from the
+              harness, or the job cannot reach the Pushgateway.
         - alert: RestoreTestRowsDropped
           expr: |
             max by (target, source, table) (restore_test_rows)
               < 0.8 * max by (target, source, table) (max_over_time(restore_test_rows[8d]))
+            or
+            max by (target, source) (restore_test_total_rows)
+              < 0.8 * max by (target, source) (max_over_time(restore_test_total_rows[8d]))
           for: 10m
           labels:
             severity: warning
           annotations:
-            summary: "{{ $labels.table }} in the {{ $labels.target }} backup shrank by over 20%"
+            summary: "The restored {{ $labels.target }} database shrank by over 20%"
             description: >-
-              The restored {{ $labels.target }} database has far fewer {{ $labels.table }} rows than in
-              the past eight days. The backup may be faithful to a database that lost data.
+              The restored {{ $labels.target }} database has far fewer rows{{ if $labels.table }} in
+              {{ $labels.table }}{{ end }} than in the past eight days. The backup may be faithful to a
+              database that lost data.
         - alert: RestoreSandboxLingering
           expr: |
             time() - kube_namespace_created{namespace="restore-sandbox"} > 6 * 3600

@@ -1,6 +1,6 @@
 # Restore Test
 
-Every night a CronJob restores the backup volumes into a throwaway `restore-sandbox` namespace, checks the restored data in tiers and reports the result per target to the [Pushgateway](pushgateway.md) ([ADR-034](../decisions/034-restore-testing.md)). It covers Sonarr so far; [Phase 1.4](../roadmap/phase-1-foundations.md#14-automate-restore-tests) widens it to every backup target.
+Every night a CronJob restores the backup volumes into a throwaway `restore-sandbox` namespace, checks the restored data in tiers and reports the result per target to the [Pushgateway](pushgateway.md) ([ADR-034](../decisions/034-restore-testing.md)). It covers every backup volume Velero holds; [Phase 1.4](../roadmap/phase-1-foundations.md#14-automate-restore-tests) tracks the application checks, Authentik's database restore and the offsite, etcd and Vault runs still to come.
 
 ## Details
 
@@ -11,7 +11,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | Schedule | `30 3 * * *` (03:30 UTC daily) |
 | Source | Latest completed `velero-daily-stateful` backup on Garage |
 | Deadline | 2 hours per Job; one Job at a time |
-| Image | `python:3.15-alpine` for the harness and its checkers; the application's own image for app checks |
+| Image | `python:3.15-alpine` for the harness and most checkers; the image that wrote a dump for its check (Authentik's `pg_dump`); the application's own image for app checks |
 | Results | Pushgateway, job `restore_test`, grouped by `target` and `source` |
 
 ## How a Run Works
@@ -26,8 +26,8 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | Tier | Passes when |
 |------|-------------|
 | `restored` | The Restore completed with no errors and the target's volume restored a non-zero size |
-| `intact` | SQLite `integrity_check` is `ok`, `foreign_key_check` is empty and every listed table has rows |
-| `fresh` | The backup started no more than 28 hours before the run |
+| `intact` | The dump passes its format's own check (below) |
+| `fresh` | The backup started no more than 28 hours before the run, and the dump inside it was written no longer before the backup than its schedule allows |
 | `usable` | The application starts on a copy of the restored database, with the image and security context its live Deployment runs |
 | `answers` | The application's API returns as many objects as the database holds |
 
@@ -35,9 +35,20 @@ The app check runs in one pod: the application, plus a checker container that qu
 
 ## Targets
 
-| Target | Volume | Database | Tables | API |
-|--------|--------|----------|--------|-----|
-| `sonarr` | `media/config-backups` | `sonarr/sonarr.db` | `Series`, `Episodes`, `EpisodeFiles` | `/api/v3/series` |
+| Target | Volume | Dump | `intact` check | Dump age limit | App check |
+|--------|--------|------|----------------|----------------|-----------|
+| `sonarr` | `media/config-backups` | `sonarr/sonarr.db` | SQLite; `Series` has rows; no foreign-key violations | 26 h | `/api/v3/series` |
+| `radarr` | `media/config-backups` | `radarr/radarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v3/movie` |
+| `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/indexer` |
+| `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | -- |
+| `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | -- |
+| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | -- |
+| `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- |
+| `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | -- |
+| `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | -- |
+| `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
+
+A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
 
 ## Safeguards
 
@@ -61,7 +72,10 @@ Both policies are generated as native ValidatingAdmissionPolicies. `tests/kyvern
 | `restore_test_restored_bytes` | Size of the target's restored volume |
 | `restore_test_tier_passed{tier}` | 1 or 0 per tier that ran |
 | `restore_test_fence_passed{fence}` | 1 or 0 per fence |
-| `restore_test_rows{table}` | Row counts in the restored database |
+| `restore_test_dump_age_seconds` | How long before the backup the dump was written |
+| `restore_test_rows{table}` | Row counts of the target's named tables |
+| `restore_test_total_rows` | Rows across every table of a restored SQLite database |
+| `restore_test_foreign_key_violations` | SQLite `foreign_key_check` findings |
 
 The duration is a restore-test duration, not an RTO: it leaves out detection, importing into the live claim and the Argo CD sync. See [Alerting](alerting.md#restore-tests) for the alerts.
 
