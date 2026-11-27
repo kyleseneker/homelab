@@ -227,7 +227,7 @@ A green backup status is not a restore test. Record an isolated application rest
 
 ## Recovery Coverage
 
-The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `media`, `auth`, `monitoring`, `argocd`, `vault` and `external-secrets`. The local object store (Garage) and the NFS provisioner's root export are deliberately outside that schedule.
+The active and retained PVC inventory below separates a captured volume from a demonstrated application recovery. Git recreates deployments and declared configuration; Vault/ESO supply referenced credentials. Neither replaces runtime data omitted from the backup. The weekly offsite schedule includes `media`, `auth`, `monitoring`, `home-automation`, `argocd`, `vault` and `external-secrets`. The local object store (Garage) and the NFS provisioner's root export are deliberately outside that schedule.
 
 | Namespace / PVC | Data and recovery mechanism | Remaining limitation |
 |-----------------|-----------------------------|----------------------|
