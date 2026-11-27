@@ -151,5 +151,44 @@ class Check(unittest.TestCase):
         self.assertEqual(pushed[0]['tiers'], {'restored': False})
 
 
+class Download(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        self.source = self.root / 'bucket'
+        self.source.mkdir()
+        write_set(self.source, '20261126-020000')
+        write_set(self.source, '20261127-020000')
+        saved = etcd_check.aws
+        self.addCleanup(lambda: setattr(etcd_check, 'aws', saved))
+        self.calls = []
+
+        def aws(bucket, args):
+            self.calls.append(args)
+            if args[0] == 'list-objects-v2':
+                return {'Contents': [{'Key': 'etcd-snapshots/' + p.name} for p in self.source.iterdir()
+                                     if p.name.startswith(args[2].removeprefix('etcd-snapshots/'))]}
+            key, destination = args[2], Path(args[3])
+            destination.write_bytes((self.source / key.removeprefix('etcd-snapshots/')).read_bytes())
+            return {}
+
+        etcd_check.aws = aws
+
+    def test_the_newest_set_is_downloaded_whole(self):
+        target = self.root / 'download'
+        etcd_check.download('bucket', 'etcd-snapshots/', target)
+        self.assertEqual(sorted(p.name for p in target.iterdir()), [
+            'control-plane-20261127-020000.tar.gz', 'pki-20261127-020000.tar.gz',
+            'recovery-20261127-020000.json', 'snapshot-20261127-020000.db'])
+        self.assertEqual(etcd_check.verify_set(target / 'recovery-20261127-020000.json')[1], [])
+
+    def test_an_empty_bucket_downloads_nothing(self):
+        etcd_check.aws = lambda bucket, args: {}
+        target = self.root / 'download'
+        etcd_check.download('bucket', 'etcd-snapshots/', target)
+        self.assertEqual(list(target.iterdir()), [])
+
+
 if __name__ == '__main__':
     unittest.main()

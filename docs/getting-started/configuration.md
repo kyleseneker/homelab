@@ -153,7 +153,7 @@ Packer creates template `9000`. The raw cloud-image role is optional (`pve_cloud
 
 **Directory:** `terraform/aws`
 
-Provisions the KMS key that backs Vault's auto-unseal and the IAM user Velero uses for offsite backups. Copy `terraform.tfvars.example` and run `make aws-init && make aws-apply`. The resulting key ID and access keys go into the `vault-aws-kms` Secret and into Vault at `infrastructure/velero-offsite` and `infrastructure/etcd-backup`.
+Provisions the KMS key that backs Vault's auto-unseal, the IAM user Velero uses for offsite backups and a read-only user the [restore test](../infrastructure/restore-test.md) uses to fetch the etcd and Vault snapshot copies. Copy `terraform.tfvars.example` and run `make aws-init && make aws-apply`. The resulting key ID and access keys go into the `vault-aws-kms` Secret and into Vault at `infrastructure/velero-offsite`, `infrastructure/etcd-backup` and `infrastructure/restore-test`.
 
 The KMS key and backup bucket have Terraform `prevent_destroy` guards. Removing their resource blocks or changing state bypasses that guard; it is not a substitute for tested recovery or cloud-side retention. The bucket denies requests over plaintext HTTP. Generated IAM access-key secrets are present in sensitive Terraform state, so protect HCP Terraform access and bootstrap credentials.
 

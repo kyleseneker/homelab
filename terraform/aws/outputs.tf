@@ -70,3 +70,14 @@ output "cert_manager_dns01_secret_access_key" {
   value       = aws_iam_access_key.cert_manager_dns01.secret
   sensitive   = true
 }
+
+output "restore_test_access_key_id" {
+  description = "Access key ID for the read-only restore test user"
+  value       = aws_iam_access_key.restore_test.id
+}
+
+output "restore_test_secret_access_key" {
+  description = "Secret access key for the read-only restore test user"
+  value       = aws_iam_access_key.restore_test.secret
+  sensitive   = true
+}
