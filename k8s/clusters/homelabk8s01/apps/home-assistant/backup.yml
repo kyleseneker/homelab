@@ -1,6 +1,3 @@
-# Velero backs up a shared volume once, from the first pod it reaches. The
-# holder gives the backups volume a pod of its own, without the Home Assistant
-# pod's IoT attachment, so a restore can bring the volume back on its own.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +17,6 @@ spec:
         app.kubernetes.io/component: backup-volume
     spec:
       automountServiceAccountToken: false
-      # The claim is ReadWriteOnce, so the holder shares Home Assistant's node.
       affinity:
         podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
