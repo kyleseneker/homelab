@@ -106,6 +106,17 @@ spec:
               The restored {{ $labels.target }} database has far fewer rows{{ if $labels.table }} in
               {{ $labels.table }}{{ end }} than in the past eight days. The backup may be faithful to a
               database that lost data.
+        - alert: RestoreTestExpectedFailureResolved
+          expr: |
+            max by (target, source, tier) (restore_test_expected_failure_resolved) > 0
+          for: 10m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.target }} now passes {{ $labels.tier }} from the {{ $labels.source }} backup"
+            description: >-
+              A tier listed in the restore test's expected-failure register now passes. Remove its entry
+              from expected_failures.json so a later regression alerts again.
         - alert: RestoreSandboxLingering
           expr: |
             time() - kube_namespace_created{namespace="restore-sandbox"} > 6 * 3600

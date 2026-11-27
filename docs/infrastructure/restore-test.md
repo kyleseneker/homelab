@@ -33,7 +33,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 
 Authentik's database check runs a throwaway Postgres server from the image of the production `authentik-postgresql` StatefulSet, with trust authentication that only its own pod can reach, and restores the dump into it with `pg_restore --exit-on-error --single-transaction`, so any failed statement fails the tier.
 
-The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application keeps its production limits but requests only 50m CPU and 256 MiB, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
+The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application runs with its live pod and container security context and keeps its production limits but requests only 50m CPU and 256 MiB, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
 
 ## Targets
 
@@ -42,11 +42,11 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `sonarr` | `media/config-backups` | `sonarr/sonarr.db` | SQLite; `Series` has rows; no foreign-key violations | 26 h | `/api/v3/series` |
 | `radarr` | `media/config-backups` | `radarr/radarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v3/movie` |
 | `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/applications` |
-| `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | -- |
-| `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | -- |
-| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | -- |
-| `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- |
-| `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | -- |
+| `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | `/api/series` counts `table_shows`, with a throwaway key seeded into `config.yaml` |
+| `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | `/System/Info/Public` reports the setup wizard completed (expected failure) |
+| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | `/api/v1/settings/public` reports `initialized` (expected failure) |
+| `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- (Tdarr restores its archive through its own import) |
+| `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | The first published status page, read from the database, serves its own slug |
 | `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |
 | `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
 
@@ -96,8 +96,19 @@ Both policies are generated as native ValidatingAdmissionPolicies. `tests/kyvern
 | `restore_test_rows{table}` | Row counts of the target's named tables |
 | `restore_test_total_rows` | Rows across every table of a restored SQLite database |
 | `restore_test_foreign_key_violations` | SQLite `foreign_key_check` findings |
+| `restore_test_expected_failure{tier}` | 1 for a listed tier that still fails |
+| `restore_test_expected_failure_resolved{tier}` | 1 for a listed tier that now passes |
 
 The duration is a restore-test duration, not an RTO: it leaves out detection, importing into the live claim and the Argo CD sync. See [Alerting](alerting.md#restore-tests) for the alerts.
+
+## Expected Failures
+
+`expected_failures.json` lists tiers that fail because the backup itself is incomplete, each with a reason and an expiry date. A listed tier that fails does not fail its target, pushes `restore_test_expected_failure{tier}` and leaves `last_success` advancing. A listed tier that passes pushes `restore_test_expected_failure_resolved{tier}` and raises `RestoreTestExpectedFailureResolved`, so the entry gets removed. An entry past its expiry stops counting, and the failure alerts again.
+
+| Target | Tier | Gap |
+|--------|------|-----|
+| `jellyfin` | `answers` | Only `jellyfin.db` is dumped. `system.xml` and the rest of `/config` are not, so a restored Jellyfin opens its setup wizard |
+| `seerr` | `answers` | Only `db.sqlite3` is dumped. `settings.json` is not, so a restored Seerr is uninitialised and has no API key |
 
 ## Offsite
 

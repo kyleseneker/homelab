@@ -5,7 +5,7 @@ import sqlite3
 import sys
 
 
-def check(path, required, reported, strict_foreign_keys):
+def check(path, required, reported, strict_foreign_keys, queries=None):
     try:
         mtime = os.stat(path).st_mtime
         with closing(sqlite3.connect(f"file:{path}?mode=ro&immutable=1", uri=True)) as connection:
@@ -14,6 +14,10 @@ def check(path, required, reported, strict_foreign_keys):
             tables = [row[0] for row in connection.execute(
                 "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")]
             counts = {table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] for table in tables}
+            values = {}
+            for name, sql in (queries or {}).items():
+                row = connection.execute(sql).fetchone()
+                values[name] = row[0] if row else None
     except (OSError, sqlite3.Error) as error:
         return {"error": type(error).__name__}, False
     missing = [table for table in required if table not in counts]
@@ -26,6 +30,8 @@ def check(path, required, reported, strict_foreign_keys):
               "foreign_key_violations": len(foreign), "rows": rows, "total_rows": total, "mtime": mtime}
     if missing:
         report["missing_tables"] = missing
+    if values:
+        report["values"] = values
     return report, passed
 
 
@@ -34,6 +40,7 @@ def names(value):
 
 
 if __name__ == "__main__":
-    report, passed = check(sys.argv[1], names(sys.argv[2]), names(sys.argv[3]), sys.argv[4] == "1")
+    queries = json.loads(sys.argv[5]) if len(sys.argv) > 5 else None
+    report, passed = check(sys.argv[1], names(sys.argv[2]), names(sys.argv[3]), sys.argv[4] == "1", queries)
     print(json.dumps(report))
     sys.exit(0 if passed else 1)

@@ -52,7 +52,8 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034](../decisions/034-restore-testing.md) target. Every Velero-held dump already restores nightly with the integrity and freshness tiers.
 
 - [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
-- [ ] Add the application tiers for Bazarr, Jellyfin, Seerr, Tdarr and Uptime Kuma, listing known backup gaps in the expected-failure register
+- [ ] Back up Jellyfin's configuration beyond `jellyfin.db` and Seerr's `settings.json`, then remove their expected-failure entries
+- [ ] Add Tdarr's application tiers by importing its archive into a scratch Tdarr
 - [ ] Decrypt Home Assistant's newest archive with its key from Vault and list its contents
 - [ ] Add the monthly Vault restore with a canary-only token
 - [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers

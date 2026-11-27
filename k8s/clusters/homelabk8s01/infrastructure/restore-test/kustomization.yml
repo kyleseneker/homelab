@@ -22,3 +22,4 @@ configMapGenerator:
       - check_pgdump.sh=scripts/check_pgdump.sh
       - check_postgres.sh=scripts/check_postgres.sh
       - check_api.py=scripts/check_api.py
+      - expected_failures.json=scripts/expected_failures.json

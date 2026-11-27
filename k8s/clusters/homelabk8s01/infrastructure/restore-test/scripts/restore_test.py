@@ -32,16 +32,17 @@ CANARY = {
 }
 
 
+def app(workload, port, mount, database, status, probe, kind="deployments", api_key_env=None, files=None,
+        scratch=()):
+    return {"workload": workload, "kind": kind, "port": port, "mount": mount, "database": database,
+            "status": status, "probe": probe, "api_key_env": api_key_env, "files": files or {},
+            "scratch": list(scratch)}
+
+
 def pvr_app(name, port, version, collection, table):
-    return {
-        "deployment": name,
-        "port": port,
-        "config": f"/config/{name}.db",
-        "api_key_env": f"{name.upper()}__AUTH__APIKEY",
-        "status_path": f"/api/{version}/system/status",
-        "count_path": f"/api/{version}/{collection}",
-        "count_table": table,
-    }
+    return app(name, port, "/config", f"/config/{name}.db", f"/api/{version}/system/status",
+               {"path": f"/api/{version}/{collection}", "count_table": table},
+               api_key_env=f"{name.upper()}__AUTH__APIKEY")
 
 
 def target(name, namespace, claim, kind, path, max_dump_age=26 * HOUR, **extra):
@@ -59,12 +60,25 @@ TARGETS = [
     target("prowlarr", "media", "config-backups", "sqlite", "prowlarr/prowlarr.db",
            require=["VersionInfo"], report=["Indexers", "Applications"],
            app=pvr_app("prowlarr", 9696, "v1", "applications", "Applications")),
-    target("bazarr", "media", "config-backups", "sqlite", "bazarr/db/bazarr.db"),
-    target("jellyfin", "media", "config-backups", "sqlite", "jellyfin/data/data/jellyfin.db"),
-    target("seerr", "media", "config-backups", "sqlite", "seerr/db/db.sqlite3"),
+    target("bazarr", "media", "config-backups", "sqlite", "bazarr/db/bazarr.db",
+           report=["table_shows", "table_movies"],
+           app=app("bazarr", 6767, "/config", "/config/db/bazarr.db", "/api/system/status",
+                   {"path": "/api/series", "count_table": "table_shows"},
+                   files={"/config/config/config.yaml": "auth:\n  apikey: {key}\n"})),
+    target("jellyfin", "media", "config-backups", "sqlite", "jellyfin/data/data/jellyfin.db",
+           app=app("jellyfin", 8096, "/config", "/config/data/data/jellyfin.db", "/System/Info/Public",
+                   {"path": "/System/Info/Public", "field": "StartupWizardCompleted", "equals": True})),
+    target("seerr", "media", "config-backups", "sqlite", "seerr/db/db.sqlite3",
+           app=app("seerr", 5055, "/app/config", "/app/config/db/db.sqlite3", "/api/v1/status",
+                   {"path": "/api/v1/settings/public", "field": "initialized", "equals": True},
+                   kind="statefulsets")),
     target("tdarr", "media", "config-backups", "zip", "tdarr/latest.zip", max_dump_age=50 * HOUR,
            inner="DB2/SQL/database.db"),
-    target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db"),
+    target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db",
+           queries={"status_page": "SELECT slug FROM status_page WHERE published = 1 ORDER BY id LIMIT 1"},
+           app=app("uptime-kuma", 3001, "/app/data", "/app/data/kuma.db", "/api/entry-page",
+                   {"path": "/api/status-page/{status_page}", "field": "config.slug", "equals": "{status_page}"},
+                   scratch=["/tmp"])),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
            stamp="completed-at", image_from={"namespace": "auth", "cronjob": "authentik-backup", "container": "dump"},
            database={"server_from": {"namespace": "auth", "statefulset": "authentik-postgresql"},
@@ -170,7 +184,21 @@ def helper(name, user, image, command, mounts, env=None):
 
 
 BACKUP_MOUNT = {"name": "backup", "mountPath": "/backup", "readOnly": True}
-COPY = "import os, shutil, sys; shutil.copyfile(sys.argv[1], sys.argv[2]); os.chmod(sys.argv[2], 0o666)"
+COPY = """
+import json, os, shutil, sys
+spec = json.loads(sys.argv[1])
+os.makedirs(os.path.dirname(spec["database"]), exist_ok=True)
+shutil.copyfile(spec["source"], spec["database"])
+os.chmod(spec["database"], 0o666)
+for path, content in spec["files"].items():
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as handle:
+        handle.write(content)
+    os.chmod(path, 0o666)
+for root, directories, _ in os.walk(spec["mount"]):
+    for directory in directories:
+        os.chmod(os.path.join(root, directory), 0o777)
+"""
 WORK_MOUNT = {"name": "work", "mountPath": "/work"}
 
 
@@ -178,7 +206,8 @@ def check_command(target, scripts):
     path = "/backup/" + target["path"]
     if target["kind"] == "sqlite":
         return ["python3", "-c", scripts["check_sqlite"], path, ",".join(target.get("require", [])),
-                ",".join(target.get("report", [])), "1" if target.get("strict_foreign_keys") else "0"]
+                ",".join(target.get("report", [])), "1" if target.get("strict_foreign_keys") else "0",
+                json.dumps(target.get("queries", {}))]
     if target["kind"] == "zip":
         return ["python3", "-c", scripts["check_zip"], path, target["inner"], "/work"]
     if target["kind"] == "hatar":
@@ -194,30 +223,43 @@ def integrity_pod(target, image, user, scripts):
     return backup_pod(f"check-{target['name']}", target, [check])
 
 
-def app_pod(target, deployment, image, user, key, script):
+def resolve(value, values):
+    if not isinstance(value, str):
+        return value
+    try:
+        return value.format(**{name: found for name, found in values.items() if found is not None})
+    except KeyError:
+        return None
+
+
+def app_pod(target, workload, image, user, key, script, values=None):
     app = target["app"]
-    live = deployment["spec"]["template"]["spec"]["containers"][0]
+    template = workload["spec"]["template"]["spec"]
+    live = template["containers"][0]
     env = [item for item in live.get("env", []) if "value" in item and item["name"] != app["api_key_env"]]
-    env.append({"name": app["api_key_env"], "value": key})
-    copy = helper(
-        "copy", user, image,
-        ["python3", "-c", COPY, "/backup/" + target["path"], app["config"]],
-        [BACKUP_MOUNT, {"name": "config", "mountPath": "/config"}],
-    )
+    if app["api_key_env"]:
+        env.append({"name": app["api_key_env"], "value": key})
+    spec = {"source": "/backup/" + target["path"], "database": app["database"], "mount": app["mount"],
+            "files": {path: content.format(key=key) for path, content in app["files"].items()}}
+    config_mount = {"name": "config", "mountPath": app["mount"]}
+    copy = helper("copy", user, image, ["python3", "-c", COPY, json.dumps(spec)], [BACKUP_MOUNT, config_mount])
+    scratch = [f"scratch-{index}" for index in range(len(app["scratch"]))]
     application = {
         "name": "app",
         "image": live["image"],
         "env": env,
         "securityContext": live.get("securityContext", {}),
         "resources": {"requests": dict(APP_REQUESTS), "limits": live.get("resources", {}).get("limits", SMALL["limits"])},
-        "volumeMounts": [{"name": "config", "mountPath": "/config"}],
+        "volumeMounts": [config_mount] + [{"name": name, "mountPath": path} for name, path in zip(scratch, app["scratch"])],
     }
-    check = helper(
-        "check", user, image,
-        ["python3", "-c", script, str(app["port"]), app["status_path"], app["count_path"]],
-        [], [{"name": "API_KEY", "value": key}],
-    )
-    return backup_pod(f"app-{target['name']}", target, [application, check], init=[copy])
+    probe = {name: resolve(value, values or {}) for name, value in app["probe"].items()}
+    check_spec = {"port": app["port"], "status": app["status"], "probe": probe}
+    check = helper("check", user, image, ["python3", "-c", script, json.dumps(check_spec)], [],
+                   [{"name": "API_KEY", "value": key}] if app["api_key_env"] or app["files"] else [])
+    pod = backup_pod(f"app-{target['name']}", target, [application, check], init=[copy],
+                     scratch=("config", "work", *scratch))
+    pod["spec"]["securityContext"] = {"seccompProfile": {"type": "RuntimeDefault"}, **template.get("securityContext", {})}
+    return pod
 
 
 POSTGRES_USER = (999, 999)
@@ -278,13 +320,29 @@ def metrics(result, now):
         lines.append(f'restore_test_fence_passed{{fence="{fence}"}} {int(passed)}')
     for table, count in result.get("rows", {}).items():
         lines.append(f'restore_test_rows{{table="{table}"}} {count}')
+    expected = result.get("expected", {})
+    for name, keep in (("expected_failure", True), ("expected_failure_resolved", False)):
+        series = [f'restore_test_{name}{{tier="{tier}"}} 1' for tier, failing in expected.items() if failing == keep]
+        lines.extend(series or [f'restore_test_{name}{{tier="none"}} 0'])
     if result["passed"]:
         lines.append(f"restore_test_last_success_timestamp_seconds {now:.0f}")
     return "\n".join(lines) + "\n"
 
 
 def passed(result):
-    return bool(result["tiers"]) and all(result["tiers"].values()) and all(result["fences"].values())
+    expected = result.get("expected", {})
+    tiers = [ok for tier, ok in result["tiers"].items() if not expected.get(tier)]
+    return bool(result["tiers"]) and all(tiers) and all(result["fences"].values())
+
+
+def apply_register(name, result, entries, today):
+    result["expected"] = {}
+    for entry in entries:
+        if entry["target"] != name or entry["tier"] not in result["tiers"]:
+            continue
+        if datetime.date.fromisoformat(entry["expires"]) < today:
+            continue
+        result["expected"][entry["tier"]] = not result["tiers"][entry["tier"]]
 
 
 class Run:
@@ -296,6 +354,7 @@ class Run:
         self.pushgateway = environ["PUSHGATEWAY_URL"]
         self.image = environ["CHECK_IMAGE"]
         self.keep = environ.get("KEEP_SANDBOX") == "true"
+        self.register = json.loads((SCRIPTS / "expected_failures.json").read_text())
         self.scripts = {name: (SCRIPTS / file).read_text() for name, file in (
             ("check_sqlite", "check_sqlite.py"), ("check_zip", "check_zip.py"), ("check_ha", "check_ha.py"),
             ("check_api", "check_api.py"), ("check_pgdump", "check_pgdump.sh"),
@@ -476,14 +535,20 @@ class Run:
         if not intact or "app" not in target:
             return
         app = target["app"]
-        deployment = self.api.json("GET", f"/apis/apps/v1/namespaces/{target['namespace']}/deployments/{app['deployment']}")
+        workload = self.api.json("GET", f"/apis/apps/v1/namespaces/{target['namespace']}/{app['kind']}/{app['workload']}")
         key = secrets.token_hex(16)
-        ran, report = self.run_pod(app_pod(target, deployment, self.image, user, key, self.scripts["check_api"]), "check", 900)
+        values = report.get("values", {})
+        pod = app_pod(target, workload, self.image, user, key, self.scripts["check_api"], values)
+        ran, report = self.run_pod(pod, "check", 900)
         tiers["usable"] = bool(report.get("started"))
-        expected = result["rows"].get(app["count_table"])
-        tiers["answers"] = ran and expected is not None and report.get("count") == expected
-        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} "
-            f"count={report.get('count')} expected={expected} version={report.get('version')}")
+        if "count_table" in app["probe"]:
+            expected = result["rows"].get(app["probe"]["count_table"])
+            tiers["answers"] = ran and expected is not None and report.get("count") == expected
+            detail = f"count={report.get('count')} expected={expected}"
+        else:
+            tiers["answers"] = ran and report.get("matches") is True
+            detail = f"value={report.get('value')!r}"
+        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} {detail} version={report.get('version')}")
 
     def push(self, name, result, now):
         url = f"{self.pushgateway}/metrics/job/restore_test/target/{name}/source/{self.source}"
@@ -547,8 +612,10 @@ class Run:
         finally:
             now = time.time()
             failures = 0
+            today = datetime.datetime.now(datetime.timezone.utc).date()
             for name, result in self.results.items():
                 result.setdefault("duration", now - (self.restore_started or now))
+                apply_register(name, result, self.register, today)
                 result["passed"] = passed(result)
                 failures += not result["passed"]
                 try:
@@ -556,7 +623,9 @@ class Run:
                 except OSError as error:
                     log(f"{name}: could not push results: {error}")
                     failures += 1
-                log(f"{name}: {'passed' if result['passed'] else 'FAILED'} {json.dumps(result['tiers'])}")
+                known = [tier for tier, failing in result["expected"].items() if failing]
+                log(f"{name}: {'passed' if result['passed'] else 'FAILED'} {json.dumps(result['tiers'])}"
+                    + (f" expected failures: {', '.join(known)}" if known else ""))
             if self.created:
                 try:
                     self.cleanup()

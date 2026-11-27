@@ -1,0 +1,14 @@
+[
+  {
+    "target": "jellyfin",
+    "tier": "answers",
+    "reason": "The dump holds only jellyfin.db. system.xml and the rest of /config are not backed up, so a restored Jellyfin starts in its setup wizard.",
+    "expires": "2027-02-27"
+  },
+  {
+    "target": "seerr",
+    "tier": "answers",
+    "reason": "The dump holds only db.sqlite3. settings.json is not backed up, so a restored Seerr is uninitialised and has no API key.",
+    "expires": "2027-02-27"
+  }
+]
