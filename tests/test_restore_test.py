@@ -2,6 +2,7 @@ import http.server
 import importlib.util
 import io
 import json
+from contextlib import closing
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -101,6 +102,8 @@ class Pods(unittest.TestCase):
         check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
         (copy,) = pod['spec']['initContainers']
         self.assertEqual(app['image'], 'lscr.io/linuxserver/sonarr:4.0.20')
+        self.assertEqual(app['resources'], {'requests': {'cpu': '50m', 'memory': '256Mi'},
+                                            'limits': {'cpu': '500m', 'memory': '1Gi'}})
         self.assertEqual(app['env'], [{'name': 'SONARR__AUTH__METHOD', 'value': 'External'},
                                       {'name': 'SONARR__AUTH__APIKEY', 'value': 'key'}])
         self.assertIn({'name': 'API_KEY', 'value': 'key'}, check['env'])
@@ -238,6 +241,36 @@ class Execution(unittest.TestCase):
         self.assertNotIn('usable', bazarr)
 
 
+class RunPod(unittest.TestCase):
+    def run_pod(self, keep):
+        calls = []
+
+        class Api:
+            def json(self, method, path, body=None, *args, **kwargs):
+                calls.append((method, path))
+                if method == 'POST':
+                    return {}
+                return {'status': {'phase': 'Running', 'containerStatuses': [
+                    {'name': 'check', 'state': {'terminated': {'exitCode': 0}}}]}}
+
+            def call(self, method, path, *args, **kwargs):
+                calls.append((method, path))
+                return 200, '{"count": 3}\n'
+
+        run = harness.Run(Api(), {**ENVIRON, 'KEEP_SANDBOX': 'true' if keep else 'false'})
+        pod = {'metadata': {'name': 'check-sonarr'}}
+        return run.run_pod(pod, 'check', 5), calls
+
+    def test_a_finished_pod_is_deleted_so_tests_do_not_stack_up(self):
+        result, calls = self.run_pod(keep=False)
+        self.assertEqual(result, (True, {'count': 3}))
+        self.assertIn(('DELETE', '/api/v1/namespaces/restore-sandbox/pods/check-sonarr'), calls)
+
+    def test_a_kept_sandbox_keeps_its_pods(self):
+        result, calls = self.run_pod(keep=True)
+        self.assertNotIn('DELETE', [method for method, _ in calls])
+
+
 class ArrchitectAbsent(unittest.TestCase):
     def run_with(self, listings):
         class Api:
@@ -295,10 +328,13 @@ class Api(unittest.TestCase):
                     time.sleep(count_delay)
                     body, status = [{}, {}, {}], count_status
                 data = json.dumps(body).encode()
-                self.send_response(status)
-                self.send_header('Content-Type', 'application/json')
-                self.end_headers()
-                self.wfile.write(data)
+                try:
+                    self.send_response(status)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(data)
+                except BrokenPipeError:
+                    pass
 
             def log_message(self, *args):
                 pass
@@ -339,9 +375,8 @@ class Scratch(unittest.TestCase):
         self.root = Path(self.temporary.name)
 
     def database(self, path, statements):
-        connection = sqlite3.connect(path)
-        connection.executescript(statements)
-        connection.close()
+        with closing(sqlite3.connect(path)) as connection:
+            connection.executescript(statements)
         return path
 
 
@@ -361,7 +396,7 @@ class Sqlite(Scratch):
         self.assertAlmostEqual(report['mtime'], self.path.stat().st_mtime)
 
     def test_an_empty_required_table_fails(self):
-        sqlite3.connect(self.path).executescript('DELETE FROM "Episodes"; DELETE FROM "Series";')
+        self.database(self.path, 'DELETE FROM "Episodes"; DELETE FROM "Series";')
         self.assertFalse(check_sqlite.check(self.path, ['Series'], [], False)[1])
 
     def test_a_missing_required_table_fails(self):
@@ -370,7 +405,7 @@ class Sqlite(Scratch):
         self.assertEqual(report['missing_tables'], ['History'])
 
     def test_foreign_key_violations_fail_only_when_strict(self):
-        sqlite3.connect(self.path).executescript('INSERT INTO "Episodes" VALUES (2, 99);')
+        self.database(self.path, 'INSERT INTO "Episodes" VALUES (2, 99);')
         self.assertTrue(check_sqlite.check(self.path, [], [], False)[1])
         report, passed = check_sqlite.check(self.path, [], [], True)
         self.assertFalse(passed)

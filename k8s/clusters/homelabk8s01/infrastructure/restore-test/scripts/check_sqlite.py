@@ -1,3 +1,4 @@
+from contextlib import closing
 import json
 import os
 import sqlite3
@@ -7,13 +8,12 @@ import sys
 def check(path, required, reported, strict_foreign_keys):
     try:
         mtime = os.stat(path).st_mtime
-        connection = sqlite3.connect(f"file:{path}?mode=ro&immutable=1", uri=True)
-        integrity = [row[0] for row in connection.execute("PRAGMA integrity_check")]
-        foreign = connection.execute("PRAGMA foreign_key_check").fetchall()
-        tables = [row[0] for row in connection.execute(
-            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")]
-        counts = {table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] for table in tables}
-        connection.close()
+        with closing(sqlite3.connect(f"file:{path}?mode=ro&immutable=1", uri=True)) as connection:
+            integrity = [row[0] for row in connection.execute("PRAGMA integrity_check")]
+            foreign = connection.execute("PRAGMA foreign_key_check").fetchall()
+            tables = [row[0] for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")]
+            counts = {table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] for table in tables}
     except (OSError, sqlite3.Error) as error:
         return {"error": type(error).__name__}, False
     missing = [table for table in required if table not in counts]

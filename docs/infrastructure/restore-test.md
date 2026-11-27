@@ -31,7 +31,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | `usable` | The application starts on a writable copy of the restored database, with the image and security context its live Deployment runs |
 | `answers` | The application's API returns as many objects as the database holds |
 
-The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod.
+The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application keeps its production limits but requests only 50m CPU and 256 MiB, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
 
 ## Targets
 
