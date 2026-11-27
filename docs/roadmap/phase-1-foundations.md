@@ -49,10 +49,11 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 ## 1.4 Automate Restore Tests
 
-Widen the [restore test](../infrastructure/restore-test.md) from Sonarr to every [ADR-034](../decisions/034-restore-testing.md) target: nightly and weekly restores into a sandbox namespace, checked in tiers and reported per target.
+Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034](../decisions/034-restore-testing.md) target. Every Velero-held dump already restores nightly with the integrity and freshness tiers.
 
 - [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
-- [ ] Widen to every Velero target with tiers 1, 2 and 5, then tiers 3 and 4 per application, listing known backup gaps in the expected-failure register
+- [ ] Add the application tiers for Bazarr, Jellyfin, Seerr, Tdarr and Uptime Kuma, listing known backup gaps in the expected-failure register
+- [ ] Decrypt Home Assistant's newest archive with its key from Vault and list its contents
 - [ ] Add Authentik's scratch PostgreSQL restore
 - [ ] Add the etcd target: the complete set, snapshot status, a single-member restore and known keys
 - [ ] Add the weekly S3 run
