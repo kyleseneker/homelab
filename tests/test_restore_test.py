@@ -117,7 +117,7 @@ class Pods(unittest.TestCase):
 
     def test_pvr_apps_take_their_key_from_the_environment(self):
         self.assertEqual(TARGETS['radarr']['app']['api_key_env'], 'RADARR__AUTH__APIKEY')
-        self.assertEqual(TARGETS['prowlarr']['app']['count_path'], '/api/v1/indexer')
+        self.assertEqual(TARGETS['prowlarr']['app']['count_path'], '/api/v1/applications')
 
     def test_every_container_has_limits(self):
         for target in harness.TARGETS:
