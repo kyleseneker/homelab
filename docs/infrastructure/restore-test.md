@@ -39,7 +39,7 @@ The app check runs in one pod: the application, plus a checker container that qu
 |--------|--------|------|----------------|----------------|-----------|
 | `sonarr` | `media/config-backups` | `sonarr/sonarr.db` | SQLite; `Series` has rows; no foreign-key violations | 26 h | `/api/v3/series` |
 | `radarr` | `media/config-backups` | `radarr/radarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v3/movie` |
-| `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/indexer` |
+| `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/applications` |
 | `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | -- |
 | `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | -- |
 | `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | -- |
@@ -49,6 +49,8 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
 
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
+
+Prowlarr's check counts its configured applications, not its indexers. Prowlarr builds the indexer list from definitions it downloads at startup and keeps outside its database, so a sandbox with no internet access cannot list indexers, and a real restore needs Prowlarr to reach its definitions server before indexers work.
 
 ## Safeguards
 

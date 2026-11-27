@@ -57,7 +57,7 @@ TARGETS = [
            app=pvr_app("radarr", 7878, "v3", "movie", "Movies")),
     target("prowlarr", "media", "config-backups", "sqlite", "prowlarr/prowlarr.db",
            require=["VersionInfo"], report=["Indexers", "Applications"],
-           app=pvr_app("prowlarr", 9696, "v1", "indexer", "Indexers")),
+           app=pvr_app("prowlarr", 9696, "v1", "applications", "Applications")),
     target("bazarr", "media", "config-backups", "sqlite", "bazarr/db/bazarr.db"),
     target("jellyfin", "media", "config-backups", "sqlite", "jellyfin/data/data/jellyfin.db"),
     target("seerr", "media", "config-backups", "sqlite", "seerr/db/db.sqlite3"),
