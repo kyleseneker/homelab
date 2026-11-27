@@ -47,6 +47,25 @@ import glob, json, os, sys, yaml
 # Kyverno CRD enums contain a plain '=' scalar, tagged specially by YAML1.1.
 yaml.SafeLoader.add_constructor("tag:yaml.org,2002:value", lambda loader, node: loader.construct_scalar(node))
 work, out = sys.argv[1], sys.argv[2]
+
+
+# kubeconform -strict closes only its own schemas; the API server drops or
+# rejects undeclared CRD fields, so close ours the same way. allOf/anyOf/oneOf
+# branches repeat a subset of the fields and must stay open, as must the root
+# metadata, which a CRD may describe only partially.
+def close(node, root=False):
+    if not isinstance(node, dict):
+        return
+    open_ended = node.get("x-kubernetes-preserve-unknown-fields") or node.get("x-kubernetes-embedded-resource")
+    if "properties" in node and "additionalProperties" not in node and not open_ended:
+        node["additionalProperties"] = False
+    for name, child in node.get("properties", {}).items():
+        if not (root and name == "metadata"):
+            close(child)
+    close(node.get("items"))
+    close(node.get("additionalProperties"))
+
+
 n = 0
 paths = glob.glob(os.path.join(work, "*", "crds", "*.yaml"))
 paths += glob.glob(os.path.join(work, "*", "crds", "*.yml"))
@@ -64,6 +83,7 @@ for path in sorted(paths):
             schema = version.get("schema", {}).get("openAPIV3Schema")
             if not schema:
                 continue
+            close(schema, root=True)
             schema.setdefault("$schema", "http://json-schema.org/draft-07/schema#")
             dest = os.path.join(out, f"{kind.lower()}_{version['name']}.json")
             with open(dest, "w") as fh:
