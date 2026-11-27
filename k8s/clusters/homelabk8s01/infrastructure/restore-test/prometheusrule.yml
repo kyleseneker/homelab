@@ -80,4 +80,5 @@ spec:
             summary: Restore test volumes outlived their sandbox
             description: >-
               PersistentVolumes of the nfs-restore-test StorageClass exist with no restore-sandbox
-              namespace. Their NAS directories hold copies of production data; delete the volumes.
+              namespace. Their NAS directories hold copies of production data. Set their reclaim
+              policy to Delete so the provisioner removes the directories along with the volumes.

@@ -39,6 +39,13 @@ rules:
     verbs:
       - get
   - apiGroups:
+      - ""
+    resources:
+      - persistentvolumes
+    verbs:
+      - list
+      - patch
+  - apiGroups:
       - arrchitect.dev
     resources:
       - sonarrs

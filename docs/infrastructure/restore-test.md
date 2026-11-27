@@ -21,7 +21,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 3. It checks the fences: Arrchitect still runs with `--watch-namespace=media`, and a dry-run Sonarr resource in the sandbox is refused by `deny-arrchitect-in-restore-sandbox`.
 4. It creates a Velero Restore from the schedule's latest completed backup. The Restore brings back only pods and claims labelled `app.kubernetes.io/component: backup-volume`. It lists volumes too, because Velero restores pod volume data only then, but excludes cluster resources, so Velero never creates a volume object. It maps their namespaces to the sandbox, leaves existing resources alone and applies the `restore-test-modifiers` ConfigMap, which strips scheduling constraints from the pods, clears each claim's binding to its production volume and moves the claims to the `nfs-restore-test` StorageClass. Velero keeps that binding when, as here, volume objects are not part of the restore.
 5. It checks each target in tiers. A later tier runs only when the ones it depends on passed.
-6. It pushes each target's results, deletes the sandbox and the Restore and exits non-zero if any target failed. Deleting the sandbox deletes its volumes and their NAS directories.
+6. It pushes each target's results, deletes the sandbox and the Restore and exits non-zero if any target failed. Deleting the sandbox deletes its volumes and their NAS directories. Velero copies production's `Retain` reclaim policy onto the restored volumes, so the run sets them back to `Delete` after the restore and again before cleanup, which also reclaims volumes an interrupted run left behind.
 
 | Tier | Passes when |
 |------|-------------|
@@ -43,7 +43,7 @@ The app check runs in one pod: the application, plus a checker container that qu
 
 | Safeguard | What it stops |
 |-----------|---------------|
-| `restrict-restore-test` | The harness ServiceAccount touching any namespace but the sandbox, or creating a Restore that maps elsewhere, includes kinds beyond pods, claims and volumes, includes cluster resources, overwrites existing resources, skips the resource modifier or carries hooks. Velero acts with `cluster-admin`, so this policy is what limits a Restore |
+| `restrict-restore-test` | The harness ServiceAccount touching any namespace but the sandbox or any volume but the sandbox's `nfs-restore-test` volumes, or creating a Restore that maps elsewhere, includes kinds beyond pods, claims and volumes, includes cluster resources, overwrites existing resources, skips the resource modifier or carries hooks. Velero acts with `cluster-admin`, so this policy is what limits a Restore |
 | `deny-arrchitect-in-restore-sandbox` | Any Arrchitect resource in the sandbox, from anyone, Velero included |
 | Kyverno exceptions | The sandbox shares `media`'s exemption from `require-run-as-nonroot` and `require-readonly-rootfs`, so applications run as they do in production |
 | `weekly-full-cluster` exclusion | Copies of production Secrets entering a backup |

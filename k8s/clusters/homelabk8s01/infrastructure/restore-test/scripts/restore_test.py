@@ -16,6 +16,7 @@ SCRIPTS = pathlib.Path(__file__).resolve().parent
 SANDBOX = "restore-sandbox"
 VELERO = "backups"
 MODIFIERS = "restore-test-modifiers"
+STORAGE_CLASS = "nfs-restore-test"
 SELECTOR = {"app.kubernetes.io/component": "backup-volume"}
 BACKUP_DONE = {"Completed", "PartiallyFailed", "Failed", "FailedValidation"}
 RESTORE_DONE = {"Completed", "PartiallyFailed", "Failed", "FailedValidation"}
@@ -67,7 +68,8 @@ class Api:
         request = urllib.request.Request(url, data=data, method=method)
         request.add_header("Authorization", "Bearer " + (ACCOUNT / "token").read_text().strip())
         if data is not None:
-            request.add_header("Content-Type", "application/json")
+            kind = "application/merge-patch+json" if method == "PATCH" else "application/json"
+            request.add_header("Content-Type", kind)
         try:
             with urllib.request.urlopen(request, context=self.context, timeout=60) as response:
                 return response.status, response.read().decode()
@@ -283,6 +285,18 @@ class Run:
         log(f"restore {name}: {status.get('phase')}, {status.get('errors', 0)} errors, {status.get('warnings', 0)} warnings")
         return restore
 
+    def release_volumes(self):
+        released = 0
+        for volume in self.api.json("GET", "/api/v1/persistentvolumes")["items"]:
+            spec = volume["spec"]
+            if spec.get("storageClassName") != STORAGE_CLASS or spec.get("claimRef", {}).get("namespace") != SANDBOX:
+                continue
+            if spec.get("persistentVolumeReclaimPolicy") != "Delete":
+                self.api.json("PATCH", f"/api/v1/persistentvolumes/{volume['metadata']['name']}",
+                              {"spec": {"persistentVolumeReclaimPolicy": "Delete"}})
+                released += 1
+        return released
+
     def volume_restores(self):
         return self.api.json("GET", f"/apis/velero.io/v1/namespaces/{VELERO}/podvolumerestores",
                              query={"labelSelector": f"velero.io/restore-name={self.restore}"})["items"]
@@ -354,6 +368,7 @@ class Run:
         if self.keep:
             log("keeping the sandbox for inspection")
             return
+        self.release_volumes()
         self.api.call("DELETE", f"/api/v1/namespaces/{SANDBOX}")
         wait_for(lambda: self.api.call("GET", f"/api/v1/namespaces/{SANDBOX}")[0] == 404, 900, "the sandbox to go", 10)
         if self.restore:
@@ -368,6 +383,7 @@ class Run:
             self.create_sandbox()
             fences = self.fences()
             restore = self.run_restore()
+            log(f"set {self.release_volumes()} restored volumes to be deleted with the sandbox")
             backup_name = restore["spec"].get("backupName") or self.newest_completed()
             backup = self.api.json("GET", f"/apis/velero.io/v1/namespaces/{VELERO}/backups/{backup_name}")
             backup_age = time.time() - parse_time(backup["status"]["startTimestamp"])
