@@ -137,6 +137,16 @@ spec:
             summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping"
             description: "Container {{ $labels.container }} in pod {{ $labels.pod }} (namespace {{ $labels.namespace }}) has restarted {{ $value | printf \"%.0f\" }} times in the last hour."
 
+        - alert: CiliumGatewaySecretMissing
+          expr: |
+            absent(kube_secret_info{namespace="cilium-secrets"})
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Cilium has no synced Gateway TLS secret"
+            description: "cilium-secrets is empty, so any Cilium agent that restarts gives its Envoy no certificate and resets HTTPS through the gateway on that node. The operator has probably started without its Gateway API controller: restart deployment/cilium-operator in kube-system."
+
         - alert: ArgoCDVersionDrift
           expr: |
             count by (container) (

@@ -66,6 +66,7 @@ Defined in `kube-prometheus-stack/homelab-rules.yml` as a standalone `Prometheus
 | `NFSStorageLow` | warning | 15m | Any PVC usage above 85% |
 | `CertificateExpiringSoon` | warning | 1h | cert-manager certificate expires within 14 days |
 | `CertificateNotReady` | warning | 15m | Certificate Ready condition is false, including failed initial issuance |
+| `CiliumGatewaySecretMissing` | critical | 5m | No synced Gateway TLS secret in `cilium-secrets` |
 
 ### Backup Health
 

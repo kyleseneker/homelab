@@ -25,6 +25,12 @@ The `homelab-gateway` resource defines four listeners. A wildcard listener does 
 
 The Gateway requests 192.168.10.201 through `spec.addresses`, because the UniFi wildcard record `*.home.seneker.io` and the bare `home.seneker.io` record point at it ([DNS](../architecture/network-infrastructure.md#dns)). Cilium copies the address to the generated `cilium-gateway-homelab-gateway` Service as the `io.cilium/lb-ipam-ips` annotation, so LB-IPAM keeps the same IP when the Gateway or Service is recreated. If the requested address cannot be assigned, Cilium reports `Programmed=False` with reason `AddressNotUsable`.
 
+### TLS Secret Sync
+
+The Cilium operator copies `home-gateway-tls` into the `cilium-secrets` namespace, and each agent serves it to its node's Envoy over SDS. The operator checks for the Gateway API CRDs once at startup. If that check fails, for example because the API server is still warming up after node-1 reboots, the operator runs without its Gateway API controller until it restarts ([cilium#48083](https://github.com/cilium/cilium/issues/48083)). It then stops reconciling Gateway resources and deletes the synced secret. Agents that already loaded the certificate keep serving it, but an agent that restarts afterwards gives its Envoy none, and HTTPS through the gateway on that node is reset.
+
+`CiliumGatewaySecretMissing` fires when `cilium-secrets` is empty, which also stops kured from rebooting further nodes. Restart the operator with `kubectl -n kube-system rollout restart deployment/cilium-operator`. Confirm the secret is back in `cilium-secrets` and that `cilium-dbg envoy admin certs` in each agent lists `*.home.seneker.io`.
+
 ### L2 Announcements
 
 Cilium's L2 announcement policy advertises LoadBalancer IPs via ARP on the local network, replacing MetalLB:
