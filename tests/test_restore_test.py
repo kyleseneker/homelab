@@ -13,6 +13,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import zipfile
 
 import yaml
@@ -580,6 +581,19 @@ class Api(unittest.TestCase):
         port = self.serve()
         self.assertEqual(check_api.check(self.spec(port), 'key', 5, interval=0.1),
                          ({'started': True, 'version': '2.7.0', 'count': 3}, True))
+
+    def test_a_field_missing_while_the_app_starts_is_retried(self):
+        bodies = iter([{'Version': '10.11.11'}, {'Version': '10.11.11', 'StartupWizardCompleted': True}])
+        probe = {'path': '/System/Info/Public', 'field': 'StartupWizardCompleted', 'equals': True}
+        with mock.patch.object(check_api, 'get', lambda *args: next(bodies)):
+            report, passed = check_api.check({'port': 1, 'status': '/status', 'probe': probe}, '', 5, interval=0)
+        self.assertEqual((report['value'], report['matches'], passed), (True, True, True))
+
+    def test_a_field_that_never_appears_fails_at_the_deadline(self):
+        probe = {'path': '/System/Info/Public', 'field': 'StartupWizardCompleted', 'equals': True}
+        with mock.patch.object(check_api, 'get', lambda *args: {'Version': '10.11.11'}):
+            report, passed = check_api.check({'port': 1, 'status': '/status', 'probe': probe}, '', 0, interval=0)
+        self.assertEqual((report['probe_error'], passed), ('ValueError', False))
 
     def test_a_probe_with_a_body_is_posted_as_json(self):
         port = self.serve()
