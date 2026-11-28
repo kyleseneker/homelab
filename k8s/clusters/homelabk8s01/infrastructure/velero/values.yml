@@ -1,3 +1,7 @@
+# The chart's image tag trails Velero releases; pin it so Renovate tracks the server.
+image:
+  repository: velero/velero
+  tag: v1.18.4
 initContainers:
   - name: velero-plugin-for-aws
     image: velero/velero-plugin-for-aws:v1.14.4

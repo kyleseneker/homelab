@@ -134,6 +134,17 @@
       "groupName": "backup stack"
     },
     {
+      "description": "Each AWS plugin minor pairs with one Velero server minor; bump them together",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "velero/velero",
+        "velero/velero-plugin-for-aws"
+      ],
+      "groupName": "velero"
+    },
+    {
       "description": "Group VPA and Goldilocks charts",
       "matchDatasources": [
         "helm"

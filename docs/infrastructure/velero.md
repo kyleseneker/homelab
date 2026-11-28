@@ -9,13 +9,14 @@ Velero provides backup and restore capabilities for Kubernetes resources and per
 | Chart | `velero` |
 | Repository | <https://vmware-tanzu.github.io/helm-charts> |
 | Version | 12.2.5 |
+| Server | `velero/velero:v1.18.4` (pinned in values; the chart's default trails releases) |
 | Namespace | `backups` (CreateNamespace=true) |
 
 ## Key Configuration
 
 ### S3 Backend (Garage)
 
-- **Plugin**: `velero/velero-plugin-for-aws:v1.14.2` (provides S3 compatibility)
+- **Plugin**: `velero/velero-plugin-for-aws:v1.14.4` (provides S3 compatibility)
 - **Location**: `local` (default)
 - **Endpoint**: `http://garage.backups.svc.cluster.local:3900`
 - **Bucket**: `velero`
