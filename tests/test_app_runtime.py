@@ -25,12 +25,10 @@ class RecyclarrRuntimeTests(unittest.TestCase):
     def test_process_identity_matches_nfs_media_identity(self):
         media = configmap_data(APPS / "media/prereqs/env.yml")
         values = yaml.safe_load((APPS / "media/recyclarr/values.yml").read_text())
-        holder = yaml.safe_load((APPS / "media/recyclarr/state-holder.yml").read_text())
-        for security in (values["defaultPodOptions"]["securityContext"],
-                         holder["spec"]["template"]["spec"]["securityContext"]):
-            self.assertEqual(security["runAsUser"], int(media["PUID"]))
-            self.assertEqual(security["runAsGroup"], int(media["PGID"]))
-            self.assertEqual(security["fsGroup"], int(media["PGID"]))
+        security = values["podSecurityContext"]
+        self.assertEqual(security["runAsUser"], int(media["PUID"]))
+        self.assertEqual(security["runAsGroup"], int(media["PGID"]))
+        self.assertEqual(security["fsGroup"], int(media["PGID"]))
 
 
 class BackupRuntimeTests(unittest.TestCase):
