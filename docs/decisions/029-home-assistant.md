@@ -84,7 +84,7 @@ Run Home Assistant Container on homelabk8s01 in a `home-automation` namespace, d
 
 ### Supply chain
 
-- Install no custom integrations or HACS at first. Any later custom integration is reviewed, pinned by commit, and recorded in the app doc. The image installs their Python dependencies from PyPI on every start.
+- Install custom integrations only through Home Assistant's built-in marketplace, where each install needs an administrator to accept a risk notice. Review each integration before installing it and record it in the app doc, since it runs with Home Assistant's full access. The marketplace fetches its catalog from GitHub through the HTTPS egress rule above, and the image installs each integration's Python dependencies from PyPI on every start.
 - Renovate proposes image updates. Read each release's backward-incompatible changes before merging.
 
 ### Radios and companion services
