@@ -98,14 +98,18 @@
       "groupName": "app-template chart"
     },
     {
-      "description": "Group linuxserver container images",
+      "description": "Group linuxserver container image minors and patches; majors get their own PRs",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
         "/^lscr\\.io\\/linuxserver\\//"
       ],
-      "groupName": "linuxserver images"
+      "groupName": "linuxserver images",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     },
     {
       "description": "Group monitoring stack charts",
@@ -152,14 +156,14 @@
       "groupName": "intel gpu"
     },
     {
-      "description": "Ignore linuxserver Ubuntu base image tags for qbittorrent",
+      "description": "Ignore qBittorrent's old Ubuntu (20.04.1) and epoch-prefixed (14.3.9) tags, which sort above real releases",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
         "lscr.io/linuxserver/qbittorrent"
       ],
-      "allowedVersions": "/^[0-9]+\\.[0-9]+\\.[0-9]+$/"
+      "allowedVersions": "/^[0-9]\\.[0-9]+\\.[0-9]+$/"
     },
     {
       "description": "The LDAP outpost must run the Authentik server's version",
