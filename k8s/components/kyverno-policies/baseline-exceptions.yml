@@ -153,8 +153,7 @@ spec:
     - name: restrict-security-profiles
       kind: ValidatingPolicy
   allowedValues:
-    - '/dev/dri'
-    - '/sys/class/drm'
+    - '/dev'
     - '/var/lib/kubelet/device-plugins'
     - '/var/run/cdi'
     - 'container_device_plugin_t'
