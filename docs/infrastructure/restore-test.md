@@ -56,7 +56,7 @@ Home Assistant's check runs in the image its live Deployment runs, whose `secure
 
 Uptime Kuma shows its monitors only to signed-in users or through status pages, and the production database holds neither monitors nor status pages, so its check ends at `usable`. Seerr's `/api/v1/status` and Bazarr's startup both call GitHub, which the sandbox cannot reach: Seerr's check uses its local public-settings endpoint instead, and Bazarr gets 15 minutes to start.
 
-Tdarr's archive is unpacked into the server's `Tdarr/` directory, as its offline restore specifies. The server runs with `internalNode=false`, so no worker starts and nothing touches media, and with scheduled plugin updates off. It also runs without `ffmpegVersion`: production pins ffmpeg 7, which the image downloads from GitHub at every start, and the sandbox cannot reach GitHub. The test transcodes nothing, so the bundled ffmpeg is enough. The intact check also records the archived library, flow, variable and file counts.
+Tdarr's archive is unpacked into the server's `Tdarr/` directory, as its offline restore specifies. The server runs with `internalNode=false`, so no worker starts and nothing touches media, and with scheduled plugin updates off. The intact check also records the archived library, flow, variable and file counts.
 
 Prowlarr's check counts its configured applications, not its indexers. Prowlarr builds the indexer list from definitions it downloads at startup and keeps outside its database, so a sandbox with no internet access cannot list indexers, and a real restore needs Prowlarr to reach its definitions server before indexers work.
 

@@ -81,8 +81,7 @@ TARGETS = [
            app=app("tdarr", 8265, "/app/server", "/api/v2/status",
                    {"path": "/api/v2/cruddb", "count_table": "librarysettingsjsondb",
                     "body": {"data": {"collection": "LibrarySettingsJSONDB", "mode": "getAll"}}},
-                   env={"internalNode": "false", "cronPluginUpdate": "", "ffmpegVersion": None},
-                   extract_to="/app/server/Tdarr")),
+                   env={"internalNode": "false", "cronPluginUpdate": ""}, extract_to="/app/server/Tdarr")),
     target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db",
            app=app("uptime-kuma", 3001, "/app/data", "/api/entry-page", scratch=["/tmp"])),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
@@ -268,7 +267,7 @@ def app_pod(target, workload, image, user, key, script, values=None):
     live = template["containers"][0]
     env = [item for item in live.get("env", [])
            if "value" in item and item["name"] != app["api_key_env"] and item["name"] not in app["env"]]
-    env += [{"name": name, "value": value} for name, value in app["env"].items() if value is not None]
+    env += [{"name": name, "value": value} for name, value in app["env"].items()]
     if app["api_key_env"]:
         env.append({"name": app["api_key_env"], "value": key})
     if app["extract_to"]:

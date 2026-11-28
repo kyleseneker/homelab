@@ -131,8 +131,7 @@ class Pods(unittest.TestCase):
     def test_tdarr_runs_only_its_server_on_its_extracted_archive(self):
         deployment = json.loads(json.dumps(DEPLOYMENT))
         live = deployment['spec']['template']['spec']['containers'][0]
-        live['env'] = [{'name': 'internalNode', 'value': 'true'}, {'name': 'auth', 'value': 'false'},
-                       {'name': 'ffmpegVersion', 'value': '7'}]
+        live['env'] = [{'name': 'internalNode', 'value': 'true'}, {'name': 'auth', 'value': 'false'}]
         live['resources']['limits']['gpu.intel.com/i915'] = 1
         pod = harness.app_pod(TARGETS['tdarr'], deployment, 'python:3.15-alpine', (977, 988), 'key', 'A')
         app = next(c for c in pod['spec']['containers'] if c['name'] == 'app')
