@@ -45,7 +45,7 @@ spec:
           containers:
             - name: dump
               # Match the PostgreSQL major version in the Authentik chart.
-              image: postgres:17.11-bookworm
+              image: postgres:17.12-bookworm
               command: ["/bin/sh", "-c"]
               args:
                 - |
