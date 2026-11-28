@@ -47,7 +47,7 @@ Add [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) as a CNI meta-p
 
 ### Multus
 
-- Run the thick plugin from the v4.3.1 release manifest, pulled as a Kustomize remote resource pinned to the release commit, with patches for this cluster's changes. The manifest references the floating `snapshot-thick` image even at release tags, so pin the `v4.3.1-thick` image by digest. Deploy it through the ApplicationSet as a `git` source in `kube-system`.
+- Run the thick plugin from a release manifest, pulled as a Kustomize remote resource pinned to the release commit, with patches for this cluster's changes. The manifest references the floating `snapshot-thick` image even at release tags, so pin the release's `-thick` image by digest. Deploy it through the ApplicationSet as a `git` source in `kube-system`.
 - Grant the Multus ServiceAccount read access to attachment definitions and pods, and `update` only on `pods/status`, through which it writes the `k8s.v1.cni.cncf.io/network-status` annotation. An admission policy limits those writes to that annotation.
 - Make Cilium's configuration file Multus's readiness indicator, so Multus never serves a pod before Cilium is ready on the node.
 - Enable `namespaceIsolation`, and set `globalNamespaces` to a namespace that does not exist, which removes the `default` exemption. Verify both with a denied cross-namespace reference.

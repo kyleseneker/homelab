@@ -21,8 +21,7 @@ could not pull its image; MinIO now runs only where that image is still cached.
 ## Decision
 
 Replace MinIO with [Garage](https://garagehq.deuxfleurs.fr/), an actively maintained
-AGPL-3.0 S3-compatible object store with official `dxflrs/garage` images (v2.5.0
-when decided). Garage implements the operations Velero and Kopia rely on, including
+AGPL-3.0 S3-compatible object store with official `dxflrs/garage` images. Garage implements the operations Velero and Kopia rely on, including
 path-style requests, ListObjectsV2, DeleteObjects and multipart uploads
 ([S3 compatibility](https://garagehq.deuxfleurs.fr/documentation/reference-manual/s3-compatibility/)).
 

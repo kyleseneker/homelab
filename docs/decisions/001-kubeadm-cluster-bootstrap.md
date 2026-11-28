@@ -12,7 +12,7 @@ The cluster needs a repeatable provisioning pipeline that can build Kubernetes n
 
 Use a three-stage pipeline: Packer builds Ubuntu 24.04 VM templates with cloud-init autoinstall, Terraform clones those templates into Proxmox VMs with per-node resource specs, and Ansible orchestrates kubeadm cluster bootstrap in four phases (base setup + prerequisites, GPU passthrough, control plane init, worker join).
 
-kubeadm initializes the cluster with Kubernetes 1.31.4, skipping the `addon/kube-proxy` phase to allow a CNI plugin to handle proxy duties. Ansible installs the chosen CNI immediately after `kubeadm init` to bring the cluster network online.
+kubeadm initializes the cluster, skipping the `addon/kube-proxy` phase to allow a CNI plugin to handle proxy duties. Ansible installs the chosen CNI immediately after `kubeadm init` to bring the cluster network online.
 
 ## Alternatives Considered
 
