@@ -28,12 +28,12 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | `restored` | The Restore completed with no errors and the target's volume restored a non-zero size |
 | `intact` | The dump passes its format's own check (below) |
 | `fresh` | The backup started no more than 28 hours before the run, and the dump inside it was written no longer before the backup than its schedule allows |
-| `usable` | The application starts on a writable copy of its restored dump directory, with the image and security context its live Deployment runs |
-| `answers` | The application's API returns as many objects as the database holds |
+| `usable` | The application starts on a writable copy of its restored dump directory, or of its unpacked archive, with the image and security context its live Deployment runs |
+| `answers` | The application's API returns as many objects as the restored database holds |
 
 Authentik's database check runs a throwaway Postgres server from the image of the production `authentik-postgresql` StatefulSet, with trust authentication that only its own pod can reach, and restores the dump into it with `pg_restore --exit-on-error --single-transaction`, so any failed statement fails the tier.
 
-The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application runs with its live pod and container security context and keeps its production limits but requests only 50m CPU and 256 MiB, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
+The app check runs in one pod: the application, plus a checker container that queries it over localhost with a throwaway API key. It needs no network policy and reaches nothing outside the pod. The application runs with its live pod and container security context and keeps its production CPU, memory and ephemeral-storage limits but requests only 50m CPU and 256 MiB and no GPU, and each check pod is deleted once its result is read, so a run never stacks applications. The cluster's CPU requests sit close to what it can promise with one node down, and production-sized requests held through a slow check tripped `KubeCPUOvercommit`.
 
 ## Targets
 
@@ -45,7 +45,7 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | `/api/series` counts `table_shows`, with a throwaway key seeded into `config.yaml` |
 | `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | `/System/Info/Public` reports the setup wizard completed |
 | `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | Starts on `/api/v1/settings/public`, which then reports `initialized` |
-| `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- (Tdarr restores its archive through its own import) |
+| `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | `/api/v2/cruddb` lists as many libraries as `librarysettingsjsondb` holds |
 | `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | Starts and serves `/api/entry-page`; no data probe |
 | `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |
 | `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
@@ -53,6 +53,8 @@ The app check runs in one pod: the application, plus a checker container that qu
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
 
 Uptime Kuma shows its monitors only to signed-in users or through status pages, and the production database holds neither monitors nor status pages, so its check ends at `usable`. Seerr's `/api/v1/status` and Bazarr's startup both call GitHub, which the sandbox cannot reach: Seerr's check uses its local public-settings endpoint instead, and Bazarr gets 15 minutes to start.
+
+Tdarr's archive is unpacked into the server's `Tdarr/` directory, as its offline restore specifies. The server runs with `internalNode=false`, so no worker starts and nothing touches media, and with scheduled plugin updates off. The intact check also records the archived library, flow, variable and file counts.
 
 Prowlarr's check counts its configured applications, not its indexers. Prowlarr builds the indexer list from definitions it downloads at startup and keeps outside its database, so a sandbox with no internet access cannot list indexers, and a real restore needs Prowlarr to reach its definitions server before indexers work.
 

@@ -8,9 +8,13 @@ import urllib.request
 FAILURES = (OSError, urllib.error.URLError, ValueError)
 
 
-def get(base, path, key, timeout):
+def get(base, path, key, timeout, body=None):
     headers = {"X-Api-Key": key} if key else {}
-    request = urllib.request.Request(base + path, headers=headers)
+    data = None
+    if body is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(body).encode()
+    request = urllib.request.Request(base + path, data=data, headers=headers)
     with urllib.request.urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
@@ -61,7 +65,8 @@ def check(spec, key, timeout, interval=5, request_timeout=30):
         return report, True
     if not probe.get("path"):
         return {**report, "probe_error": "unresolved"}, False
-    body, error = until(deadline, lambda: get(base, probe["path"], key, request_timeout), interval)
+    body, error = until(deadline, lambda: get(base, probe["path"], key, request_timeout, probe.get("body")),
+                        interval)
     if body is None:
         return {**report, "probe_error": error}, False
     try:

@@ -142,6 +142,7 @@ rules:
       - prowlarr
       - bazarr
       - jellyfin
+      - tdarr
     verbs:
       - get
   - apiGroups:

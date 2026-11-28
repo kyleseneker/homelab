@@ -7,7 +7,7 @@ import sys
 import zipfile
 
 
-def check(path, inner, workdir):
+def check(path, inner, workdir, reported=()):
     try:
         mtime = os.stat(path).st_mtime
         with zipfile.ZipFile(path) as archive:
@@ -22,14 +22,15 @@ def check(path, inner, workdir):
                 shutil.copyfileobj(source, target)
         with closing(sqlite3.connect(f"file:{extracted}?mode=ro&immutable=1", uri=True)) as connection:
             integrity = [row[0] for row in connection.execute("PRAGMA integrity_check")]
+            rows = {table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0] for table in reported}
     except (OSError, zipfile.BadZipFile, sqlite3.Error) as error:
         return {"error": type(error).__name__}, False
     passed = integrity == ["ok"]
     return {"entries": entries, "inner_integrity": "ok" if passed else f"{len(integrity)} problems",
-            "mtime": mtime}, passed
+            "rows": rows, "mtime": mtime}, passed
 
 
 if __name__ == "__main__":
-    report, passed = check(sys.argv[1], sys.argv[2], sys.argv[3])
+    report, passed = check(sys.argv[1], sys.argv[2], sys.argv[3], list(filter(None, sys.argv[4].split(","))))
     print(json.dumps(report))
     sys.exit(0 if passed else 1)

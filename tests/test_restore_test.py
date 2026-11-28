@@ -87,7 +87,8 @@ class Pods(unittest.TestCase):
                                                     '', '', '0', '{}'])
         self.assertEqual(self.command('uptime-kuma')[-1], '{}')
         self.assertEqual(self.command('tdarr'), ['python3', '-c', 'Z', '/backup/tdarr/latest.zip',
-                                                 'DB2/SQL/database.db', '/work'])
+                                                 'DB2/SQL/database.db', '/work',
+                                                 'librarysettingsjsondb,flowsjsondb,variablesjsondb,filejsondb'])
         self.assertEqual(self.command('home-assistant'), ['python3', '-c', 'H', '/backup'])
         self.assertEqual(self.command('authentik'), ['sh', '-c', 'P', 'check', '/backup/authentik.dump',
                                                      '/backup/completed-at'])
@@ -116,6 +117,39 @@ class Pods(unittest.TestCase):
         self.assertEqual(json.loads(check['command'][-1]),
                          {'port': 8989, 'status': '/api/v3/system/status',
                           'probe': {'path': '/api/v3/series', 'count_table': 'Series'}})
+
+    def test_tdarr_runs_only_its_server_on_its_extracted_archive(self):
+        deployment = json.loads(json.dumps(DEPLOYMENT))
+        live = deployment['spec']['template']['spec']['containers'][0]
+        live['env'] = [{'name': 'internalNode', 'value': 'true'}, {'name': 'auth', 'value': 'false'}]
+        live['resources']['limits']['gpu.intel.com/i915'] = 1
+        pod = harness.app_pod(TARGETS['tdarr'], deployment, 'python:3.15-alpine', (977, 988), 'key', 'A')
+        app = next(c for c in pod['spec']['containers'] if c['name'] == 'app')
+        (copy,) = pod['spec']['initContainers']
+        self.assertEqual(app['env'], [{'name': 'auth', 'value': 'false'}, {'name': 'internalNode', 'value': 'false'},
+                                      {'name': 'cronPluginUpdate', 'value': ''}])
+        self.assertEqual(app['resources']['limits'], {'cpu': '500m', 'memory': '1Gi'})
+        self.assertEqual(json.loads(copy['command'][-1]),
+                         {'source': '/backup/tdarr/latest.zip', 'extract_to': '/app/server/Tdarr',
+                          'mount': '/app/server', 'files': {}})
+
+    def test_an_archive_is_unpacked_into_the_app_and_unsafe_members_are_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive, mount = root / 'latest.zip', root / 'server'
+            with zipfile.ZipFile(archive, 'w') as handle:
+                handle.writestr('DB2/SQL/database.db', 'db')
+                handle.writestr('Plugins/x.js', 'plugin')
+            mount.mkdir()
+            spec = {'source': str(archive), 'extract_to': str(mount / 'Tdarr'), 'mount': str(mount), 'files': {}}
+            subprocess.run([sys.executable, '-c', harness.COPY, json.dumps(spec)], check=True)
+            self.assertEqual((mount / 'Tdarr/DB2/SQL/database.db').read_text(), 'db')
+            self.assertEqual((mount / 'Tdarr/Plugins/x.js').stat().st_mode & 0o777, 0o666)
+            with zipfile.ZipFile(archive, 'w') as handle:
+                handle.writestr('../escape', 'x')
+            refused = subprocess.run([sys.executable, '-c', harness.COPY, json.dumps(spec)], capture_output=True)
+            self.assertNotEqual(refused.returncode, 0)
+            self.assertFalse((root / 'escape').exists())
 
     def test_the_app_root_is_rebuilt_from_its_dump_tree(self):
         self.assertEqual(harness.dump_root(TARGETS['jellyfin']), '/backup/jellyfin')
@@ -394,12 +428,12 @@ class Execution(unittest.TestCase):
         run.api.json = lambda method, path, *a, **k: (
             {'status': {'startTimestamp': '2026-11-27T03:00:00Z'}} if '/backups/' in path else {'items': []})
         self.assertEqual(run.execute(), 1)
-        sonarr, tdarr = run.results['sonarr']['tiers'], run.results['tdarr']['tiers']
+        sonarr, home = run.results['sonarr']['tiers'], run.results['home-assistant']['tiers']
         self.assertTrue(sonarr['intact'])
         self.assertFalse(sonarr['fresh'])
         self.assertFalse(sonarr['usable'])
         self.assertFalse(sonarr['answers'])
-        self.assertNotIn('usable', tdarr)
+        self.assertNotIn('usable', home)
 
 
 class RunPod(unittest.TestCase):
@@ -523,6 +557,14 @@ class Api(unittest.TestCase):
                 except BrokenPipeError:
                     pass
 
+            def do_POST(self):
+                request = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                data = json.dumps([request] * 2).encode()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(data)
+
             def log_message(self, *args):
                 pass
 
@@ -538,6 +580,13 @@ class Api(unittest.TestCase):
         port = self.serve()
         self.assertEqual(check_api.check(self.spec(port), 'key', 5, interval=0.1),
                          ({'started': True, 'version': '2.7.0', 'count': 3}, True))
+
+    def test_a_probe_with_a_body_is_posted_as_json(self):
+        port = self.serve()
+        probe = {'path': '/api/v2/cruddb', 'count_table': 'T', 'body': {'data': {'mode': 'getAll'}}}
+        self.assertEqual(check_api.get(f'http://127.0.0.1:{port}', probe['path'], 'key', 5, probe['body']),
+                         [probe['body']] * 2)
+        self.assertEqual(check_api.check(self.spec(port, probe), 'key', 5, interval=0.1)[0]['count'], 2)
 
     def test_a_field_probe_reports_whether_the_value_matches(self):
         port = self.serve()
@@ -654,6 +703,13 @@ class Zip(Scratch):
         report, passed = check_zip.check(self.archive(database.read_bytes()), 'DB2/SQL/database.db', self.temporary.name)
         self.assertTrue(passed)
         self.assertEqual(report['entries'], 2)
+
+    def test_the_archived_database_reports_the_requested_tables(self):
+        database = self.database(self.root / 'inner.db', 'CREATE TABLE t (x INTEGER); INSERT INTO t VALUES (1), (2);')
+        report, passed = check_zip.check(self.archive(database.read_bytes()), 'DB2/SQL/database.db',
+                                         self.temporary.name, ['t'])
+        self.assertTrue(passed)
+        self.assertEqual(report['rows'], {'t': 2})
 
     def test_an_archive_without_its_database_fails(self):
         report, passed = check_zip.check(self.archive(b'x', name='other'), 'DB2/SQL/database.db', self.temporary.name)

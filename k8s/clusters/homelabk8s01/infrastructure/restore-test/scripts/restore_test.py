@@ -23,6 +23,7 @@ RESTORE_DONE = {"Completed", "PartiallyFailed", "Failed", "FailedValidation"}
 RESTRICTED = {"readOnlyRootFilesystem": True, "allowPrivilegeEscalation": False, "capabilities": {"drop": ["ALL"]}}
 SMALL = {"requests": {"cpu": "10m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
 APP_REQUESTS = {"cpu": "50m", "memory": "256Mi"}
+CORE_RESOURCES = ("cpu", "memory", "ephemeral-storage")
 HOUR = 3600
 CANARY = {
     "apiVersion": "arrchitect.dev/v1alpha1",
@@ -33,9 +34,11 @@ CANARY = {
 
 
 def app(workload, port, mount, status, probe=None, kind="deployments", api_key_env=None, files=None,
-        scratch=(), startup_timeout=600):
-    return {"workload": workload, "kind": kind, "port": port, "mount": mount, "status": status, "probe": probe, "api_key_env": api_key_env, "files": files or {},
-            "scratch": list(scratch), "startup_timeout": startup_timeout}
+        scratch=(), startup_timeout=600, env=None, extract_to=None):
+    return {"workload": workload, "kind": kind, "port": port, "mount": mount, "status": status,
+            "probe": probe, "api_key_env": api_key_env, "files": files or {},
+            "scratch": list(scratch), "startup_timeout": startup_timeout, "env": env or {},
+            "extract_to": extract_to}
 
 
 def pvr_app(name, port, version, collection, table):
@@ -72,7 +75,12 @@ TARGETS = [
                    {"path": "/api/v1/settings/public", "field": "initialized", "equals": True},
                    kind="statefulsets")),
     target("tdarr", "media", "config-backups", "zip", "tdarr/latest.zip", max_dump_age=50 * HOUR,
-           inner="DB2/SQL/database.db"),
+           inner="DB2/SQL/database.db",
+           report=["librarysettingsjsondb", "flowsjsondb", "variablesjsondb", "filejsondb"],
+           app=app("tdarr", 8265, "/app/server", "/api/v2/status",
+                   {"path": "/api/v2/cruddb", "count_table": "librarysettingsjsondb",
+                    "body": {"data": {"collection": "LibrarySettingsJSONDB", "mode": "getAll"}}},
+                   env={"internalNode": "false", "cronPluginUpdate": ""}, extract_to="/app/server/Tdarr")),
     target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db",
            app=app("uptime-kuma", 3001, "/app/data", "/api/entry-page", scratch=["/tmp"])),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
@@ -181,22 +189,30 @@ def helper(name, user, image, command, mounts, env=None):
 
 BACKUP_MOUNT = {"name": "backup", "mountPath": "/backup", "readOnly": True}
 COPY = """
-import json, os, shutil, sys
+import json, os, shutil, sys, zipfile
 spec = json.loads(sys.argv[1])
-for root, _, files in os.walk(spec["source"]):
-    folder = os.path.join(spec["mount"], os.path.relpath(root, spec["source"]))
-    os.makedirs(folder, exist_ok=True)
-    for name in files:
-        shutil.copyfile(os.path.join(root, name), os.path.join(folder, name))
-        os.chmod(os.path.join(folder, name), 0o666)
+if spec.get("extract_to"):
+    with zipfile.ZipFile(spec["source"]) as archive:
+        for member in archive.infolist():
+            if (member.filename.startswith("/") or ".." in member.filename.split("/")
+                    or (member.external_attr >> 16) & 0o170000 == 0o120000):
+                sys.exit(f"refusing archive member {member.filename}")
+        archive.extractall(spec["extract_to"])
+else:
+    for root, _, files in os.walk(spec["source"]):
+        folder = os.path.join(spec["mount"], os.path.relpath(root, spec["source"]))
+        os.makedirs(folder, exist_ok=True)
+        for name in files:
+            shutil.copyfile(os.path.join(root, name), os.path.join(folder, name))
 for path, content in spec["files"].items():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as handle:
         handle.write(content)
-    os.chmod(path, 0o666)
-for root, directories, _ in os.walk(spec["mount"]):
-    for directory in directories:
-        os.chmod(os.path.join(root, directory), 0o777)
+for root, directories, files in os.walk(spec["mount"]):
+    for name in files:
+        os.chmod(os.path.join(root, name), 0o666)
+    for name in directories:
+        os.chmod(os.path.join(root, name), 0o777)
 """
 WORK_MOUNT = {"name": "work", "mountPath": "/work"}
 
@@ -208,7 +224,8 @@ def check_command(target, scripts):
                 ",".join(target.get("report", [])), "1" if target.get("strict_foreign_keys") else "0",
                 json.dumps(target.get("queries", {}))]
     if target["kind"] == "zip":
-        return ["python3", "-c", scripts["check_zip"], path, target["inner"], "/work"]
+        return ["python3", "-c", scripts["check_zip"], path, target["inner"], "/work",
+                ",".join(target.get("report", []))]
     if target["kind"] == "hatar":
         return ["python3", "-c", scripts["check_ha"], "/backup"]
     if target["kind"] == "pgdump":
@@ -240,11 +257,17 @@ def app_pod(target, workload, image, user, key, script, values=None):
     app = target["app"]
     template = workload["spec"]["template"]["spec"]
     live = template["containers"][0]
-    env = [item for item in live.get("env", []) if "value" in item and item["name"] != app["api_key_env"]]
+    env = [item for item in live.get("env", [])
+           if "value" in item and item["name"] != app["api_key_env"] and item["name"] not in app["env"]]
+    env += [{"name": name, "value": value} for name, value in app["env"].items()]
     if app["api_key_env"]:
         env.append({"name": app["api_key_env"], "value": key})
-    spec = {"source": dump_root(target), "mount": app["mount"],
-            "files": {path: content.format(key=key) for path, content in app["files"].items()}}
+    if app["extract_to"]:
+        spec = {"source": "/backup/" + target["path"], "extract_to": app["extract_to"]}
+    else:
+        spec = {"source": dump_root(target)}
+    spec.update(mount=app["mount"], files={path: content.format(key=key) for path, content in app["files"].items()})
+    limits = live.get("resources", {}).get("limits", SMALL["limits"])
     config_mount = {"name": "config", "mountPath": app["mount"]}
     copy = helper("copy", user, image, ["python3", "-c", COPY, json.dumps(spec)], [BACKUP_MOUNT, config_mount])
     scratch = [f"scratch-{index}" for index in range(len(app["scratch"]))]
@@ -253,7 +276,8 @@ def app_pod(target, workload, image, user, key, script, values=None):
         "image": live["image"],
         "env": env,
         "securityContext": live.get("securityContext", {}),
-        "resources": {"requests": dict(APP_REQUESTS), "limits": live.get("resources", {}).get("limits", SMALL["limits"])},
+        "resources": {"requests": dict(APP_REQUESTS),
+                      "limits": {name: value for name, value in limits.items() if name in CORE_RESOURCES}},
         "volumeMounts": [config_mount] + [{"name": name, "mountPath": path} for name, path in zip(scratch, app["scratch"])],
     }
     probe = {name: resolve(value, values or {}) for name, value in app["probe"].items()} if app["probe"] else None
