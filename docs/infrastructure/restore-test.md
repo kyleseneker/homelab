@@ -138,3 +138,22 @@ Delete the sandbox and the Restore afterwards; the next run fails while the sand
 kubectl delete namespace restore-sandbox
 kubectl -n backups delete restore -l app.kubernetes.io/name=restore-test
 ```
+
+## Drilling the Alerts
+
+Each alert can be made to fire without breaking a real target. Watch `alertmanager_notifications_total{integration="slack"}` and `alertmanager_notifications_failed_total` on Alertmanager to confirm delivery; every alert should send one firing and one resolved notification.
+
+| Alert | How to trigger it |
+|-------|-------------------|
+| `RestoreTestStale` | Push a `drill` target whose last attempt and last success are both 55 hours old, so `RestoreTestFailed` stays quiet; fires after 10 minutes |
+| `RestoreTestRowsDropped` | Push `restore_test_rows{table="drill"} 100` for that target, wait for a scrape, then push 10; fires after 10 minutes |
+| `RestoreTestVolumesOrphaned` | Create an unbound PersistentVolume with `storageClassName: nfs-restore-test` and an NFS source at `192.0.2.1`; fires after an hour |
+| `RestoreTestMissing`, `RestoreSandboxLingering` | Their windows are 30 and 6 hours, so send the alert to Alertmanager with `amtool alert add` and its real labels and annotations instead |
+
+```bash
+printf 'restore_test_last_attempt_timestamp_seconds %s\nrestore_test_last_success_timestamp_seconds %s\n' "$OLD" "$OLD" \
+  | curl -X PUT --data-binary @- localhost:9091/metrics/job/restore_test/target/drill/source/local
+curl -X DELETE localhost:9091/metrics/job/restore_test/target/drill/source/local
+```
+
+Delete the Pushgateway group and the volume afterwards. The harness leaves the volume alone, since it has no claim in the sandbox, so `RestoreTestVolumesOrphaned` keeps firing until it is gone.
