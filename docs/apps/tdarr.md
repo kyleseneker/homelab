@@ -47,8 +47,9 @@ Environment from ConfigMap `media-env` (TZ, PUID, PGID) plus:
 | `webUIPort` | `8265` | |
 | `internalNode` | `true` | No separate node deployment is needed |
 | `inContainer` | `true` | |
-| `ffmpegVersion` | `7` | |
 | `NODE_OPTIONS` | `--max-old-space-size=3072` | Node caps its own heap near 2 GB and exits below the container limit without this |
+
+`ffmpegVersion` is left unset, so Tdarr runs the ffmpeg its image ships. Naming any other version makes the image's startup script remove the bundled ffmpeg and download that version from GitHub on every start, and the container cannot start without GitHub. The flows only copy streams and run decode health checks, which any recent ffmpeg handles.
 
 ## Configuration as Code
 

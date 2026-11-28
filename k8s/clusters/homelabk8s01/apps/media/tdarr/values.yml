@@ -18,7 +18,6 @@ controllers:
           webUIPort: '8265'
           internalNode: 'true'
           inContainer: 'true'
-          ffmpegVersion: '7'
           nodeName: InternalNode
           NODE_OPTIONS: --max-old-space-size=3072
         securityContext:
