@@ -49,11 +49,10 @@ Use the [isolated restore lab](../runbooks/restore-lab.md) for the remaining che
 
 ## 1.4 Automate Restore Tests
 
-Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034](../decisions/034-restore-testing.md) target. Every Velero-held dump already restores nightly with the integrity and freshness tiers.
+Finish the [restore test](../infrastructure/restore-test.md) for every [ADR-034](../decisions/034-restore-testing.md) target. Every Velero-held target and the etcd set already restore nightly through every tier that applies to them.
 
 - [ ] Trigger `RestoreTestStale`, `RestoreTestMissing`, `RestoreTestRowsDropped`, `RestoreSandboxLingering` and `RestoreTestVolumesOrphaned` once on purpose and confirm each reaches Slack
 - [ ] Add the monthly Vault restore with a canary-only token
-- [ ] Replace "application restore unverified" in the [recovery coverage](../architecture/backups.md#recovery-coverage) with each target's verified tiers
 
 ## 1.5 Add a UPS Network Card
 
