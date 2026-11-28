@@ -1803,18 +1803,59 @@ spec:
             x: 2350.0943207909745
             y: 2521.658059766548
           fpEnabled: true
-        - name: Prep & Clean - Clean Subtitles ⏳
+        - name: Prep & Clean - Clean Subtitles 📼
           sourceRepo: Community
-          pluginName: runClassicTranscodePlugin
-          version: 2.0.0
+          pluginName: customFunction
+          version: 1.0.0
           inputsDB:
-            pluginSourceId: Community:Tdarr_Plugin_MC93_Migz4CleanSubs
-            language: '{{{args.userVariables.library.audio_language}}}'
-            commentary: 'true'
+            code: |-
+              module.exports = async (args) => {
+                const norm = (l) => {
+                  const v = String(l || 'und').trim().toLowerCase();
+                  return { en: 'eng', un: 'und' }[v] || v;
+                };
+                const keep = String(args.userVariables.library.audio_language || '')
+                  .split(',')
+                  .map((l) => l.trim())
+                  .filter(Boolean)
+                  .map(norm);
+                const textCodecs = ['subrip', 'ass', 'ssa', 'webvtt', 'mov_text', 'text'];
+                const imageCodecs = ['hdmv_pgs_subtitle', 'dvd_subtitle', 'dvb_subtitle', 'xsub'];
+                const lang = (s) => norm(s.tags && s.tags.language);
+                const title = (s) => String((s.tags && s.tags.title) || '').toLowerCase();
+                const forced = (s) => Number(s.disposition && s.disposition.forced) === 1 || title(s).includes('forced');
+                const remove = (s, reason) => {
+                  s.removed = true;
+                  args.jobLog(`Removing subtitle stream ${s.index} (${s.codec_name}, ${lang(s)}): ${reason}`);
+                };
+
+                const subs = args.variables.ffmpegCommand.streams.filter((s) => s.codec_type === 'subtitle' && !s.removed);
+                subs.forEach((s) => {
+                  if (keep.length > 0 && !keep.includes(lang(s))) {
+                    remove(s, 'language not in audio_language');
+                  } else if (title(s).includes('commentary') || title(s).includes('description')) {
+                    remove(s, 'commentary or description');
+                  }
+                });
+
+                const kept = subs.filter((s) => !s.removed);
+                kept.forEach((s) => {
+                  if (!imageCodecs.includes(s.codec_name) || forced(s)) return;
+                  const replacement = kept.some((t) => !t.removed && textCodecs.includes(t.codec_name)
+                    && !forced(t) && lang(t) === lang(s));
+                  if (replacement) remove(s, 'image subtitle with a text subtitle in the same language');
+                });
+
+                return {
+                  outputFileObj: args.inputFileObj,
+                  outputNumber: 1,
+                  variables: args.variables,
+                };
+              };
           id: 1KJVm_sn5
           position:
-            x: 679.4906761667997
-            y: 833.6098378569683
+            x: 1380.0
+            y: 1240.0
           fpEnabled: true
         - name: Prep & Clean - Go back to beginning of flow ➡️
           sourceRepo: Community
@@ -2621,9 +2662,14 @@ spec:
           id: Qif-hZi2r
         - source: cX6BSrPmO
           sourceHandle: '1'
-          target: HOn7BNPij
+          target: 1KJVm_sn5
           targetHandle: null
           id: 2K-MnRvoI
+        - source: 1KJVm_sn5
+          sourceHandle: '1'
+          target: HOn7BNPij
+          targetHandle: null
+          id: Cs7uBtRk2
         - source: HOn7BNPij
           sourceHandle: '2'
           target: 1TKIYv9Fd

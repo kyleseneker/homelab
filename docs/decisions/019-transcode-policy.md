@@ -35,9 +35,16 @@ The review branch still moves a copy aside for inspection, which is safe because
 deletes the original.
 
 Both libraries run transcode jobs with `disable_video: 'true'`, so the flow copies the video
-stream through untouched and its work is limited to audio cleanup and container
+stream through untouched and its work is limited to audio and subtitle cleanup and container
 normalisation. Health checks stay enabled, so Tdarr still reports corrupt or unplayable
 files.
+
+The Prep stage's Clean Subtitles step drops subtitle tracks whose language is not in the
+library's `audio_language` list, along with commentary and description tracks. Within a kept
+language it drops an image-based track (PGS, VobSub, DVB) when a non-forced text track in the
+same language exists. Forced tracks always stay, and so does an image track with no text
+equivalent. The step only marks streams in the Prep stage's ffmpeg command, so the cleanup
+rides the same copy pass as container normalisation and adds no extra remux.
 
 The transcode cache lives on the NFS share, not on node-local storage. Cache holds a full
 copy of the file being worked on, and the largest files in the library are several times the
@@ -65,6 +72,10 @@ size of a node's root disk.
   re-encoded in turn.
 - **Playback does not need it.** Jellyfin transcodes on the same Intel GPU on demand, so
   client compatibility is not a reason to re-encode at rest.
+- **Text subtitles play everywhere.** Clients draw text subtitles themselves. A client that
+  cannot draw PGS makes Jellyfin burn the track in, which turns a direct play into a full
+  video transcode. Forced tracks are often image-only on Blu-ray releases and carry dialogue
+  nothing else replaces, so they stay.
 
 ## Consequences
 
@@ -73,7 +84,10 @@ size of a node's root disk.
   `HD Bluray + WEB`.
 - The TRaSH profiles Recyclarr maintains are not in use: every film is on `Any`. Custom format
   scoring therefore influences nothing today, which is worth resolving separately.
-- Tdarr's role narrows to health checking, audio cleanup and container normalisation.
+- Tdarr's role narrows to health checking, audio and subtitle cleanup and container
+  normalisation.
+- A release whose only English subtitle is image-based keeps it. Bazarr counts embedded tracks
+  toward its English profile, so it does not fetch a text subtitle for these files.
 - Cache traffic crosses the network twice per file, read and written over NFS. That is slower
   than local cache and is accepted: no node has the capacity to hold a UHD remux.
 - Reversing this means removing `x265 (HD)` from the unwanted formats in
