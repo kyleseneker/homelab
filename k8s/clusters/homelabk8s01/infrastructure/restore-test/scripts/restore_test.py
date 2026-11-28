@@ -24,6 +24,7 @@ RESTRICTED = {"readOnlyRootFilesystem": True, "allowPrivilegeEscalation": False,
 SMALL = {"requests": {"cpu": "10m", "memory": "64Mi"}, "limits": {"cpu": "500m", "memory": "256Mi"}}
 APP_REQUESTS = {"cpu": "50m", "memory": "256Mi"}
 CORE_RESOURCES = ("cpu", "memory", "ephemeral-storage")
+KEY_TIMEOUT = 180
 HOUR = 3600
 CANARY = {
     "apiVersion": "arrchitect.dev/v1alpha1",
@@ -88,7 +89,9 @@ TARGETS = [
            database={"server_from": {"namespace": "auth", "statefulset": "authentik-postgresql"},
                      "tables": ["authentik_core_user", "authentik_core_group", "authentik_core_application",
                                 "authentik_flows_flow"]}),
-    target("home-assistant", "home-automation", "home-assistant-backups", "hatar", "", max_dump_age=40 * HOUR),
+    target("home-assistant", "home-automation", "home-assistant-backups", "hatar", "", max_dump_age=40 * HOUR,
+           image_from={"namespace": "home-automation", "deployment": "home-assistant", "container": "main"},
+           key={"secret": "restore-test-home-assistant", "key": "backup-encryption-key"}),
 ]
 
 
@@ -215,6 +218,7 @@ for root, directories, files in os.walk(spec["mount"]):
         os.chmod(os.path.join(root, name), 0o777)
 """
 WORK_MOUNT = {"name": "work", "mountPath": "/work"}
+KEY_MOUNT = {"name": "key", "mountPath": "/key", "readOnly": True}
 
 
 def check_command(target, scripts):
@@ -227,7 +231,8 @@ def check_command(target, scripts):
         return ["python3", "-c", scripts["check_zip"], path, target["inner"], "/work",
                 ",".join(target.get("report", []))]
     if target["kind"] == "hatar":
-        return ["python3", "-c", scripts["check_ha"], "/backup"]
+        key = [KEY_MOUNT["mountPath"] + "/" + target["key"]["key"]] if "key" in target else []
+        return ["python3", "-c", scripts["check_ha"], "/backup", *key]
     if target["kind"] == "pgdump":
         return ["sh", "-c", scripts["check_pgdump"], "check", path, "/backup/" + target["stamp"]]
     raise ValueError(f"unknown target kind {target['kind']}")
@@ -235,8 +240,11 @@ def check_command(target, scripts):
 
 def integrity_pod(target, image, user, scripts):
     command = check_command(target, scripts)
-    check = helper("check", user, image, command, [BACKUP_MOUNT, WORK_MOUNT])
-    return backup_pod(f"check-{target['name']}", target, [check])
+    mounts = [BACKUP_MOUNT, WORK_MOUNT] + ([KEY_MOUNT] if "key" in target else [])
+    pod = backup_pod(f"check-{target['name']}", target, [helper("check", user, image, command, mounts)])
+    if "key" in target:
+        pod["spec"]["volumes"].append({"name": "key", "secret": {"secretName": target["key"]["secret"]}})
+    return pod
 
 
 def dump_root(target):
@@ -523,8 +531,14 @@ class Run:
         source = target.get("image_from")
         if not source:
             return self.image
-        cronjob = self.api.json("GET", f"/apis/batch/v1/namespaces/{source['namespace']}/cronjobs/{source['cronjob']}")
-        spec = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]
+        if "deployment" in source:
+            deployment = self.api.json(
+                "GET", f"/apis/apps/v1/namespaces/{source['namespace']}/deployments/{source['deployment']}")
+            spec = deployment["spec"]["template"]["spec"]
+        else:
+            cronjob = self.api.json(
+                "GET", f"/apis/batch/v1/namespaces/{source['namespace']}/cronjobs/{source['cronjob']}")
+            spec = cronjob["spec"]["jobTemplate"]["spec"]["template"]["spec"]
         containers = spec.get("initContainers", []) + spec["containers"]
         return next(c["image"] for c in containers if c["name"] == source["container"])
 
@@ -545,10 +559,32 @@ class Run:
         log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} "
             f"version={report.get('version')} {json.dumps(rows)}")
 
+    def key_synced(self, target):
+        path = f"/apis/external-secrets.io/v1/namespaces/{SANDBOX}/externalsecrets/{target['key']['secret']}"
+        seen = {}
+
+        def ready():
+            status, text = self.api.call("GET", path)
+            if status != 200:
+                seen["message"] = f"HTTP {status}"
+                return False
+            for condition in json.loads(text).get("status", {}).get("conditions", []):
+                if condition.get("type") == "Ready":
+                    seen["message"] = condition.get("message", "")
+                    return condition.get("status") == "True"
+            return False
+
+        try:
+            wait_for(ready, KEY_TIMEOUT, "the backup key", 5)
+        except TimeoutError:
+            raise RuntimeError(f"backup key not synced: {seen.get('message')}") from None
+
     def check(self, target, user, backup_started):
         result = self.results[target["name"]]
         tiers = result["tiers"]
         image = self.check_image(target)
+        if "key" in target:
+            self.key_synced(target)
         pod = integrity_pod(target, image, user, self.scripts)
         intact, report = self.run_pod(pod, "check", 900)
         tiers["intact"] = intact

@@ -12,6 +12,7 @@ import tarfile
 import tempfile
 import threading
 import time
+import types
 import unittest
 from unittest import mock
 import zipfile
@@ -90,9 +91,17 @@ class Pods(unittest.TestCase):
         self.assertEqual(self.command('tdarr'), ['python3', '-c', 'Z', '/backup/tdarr/latest.zip',
                                                  'DB2/SQL/database.db', '/work',
                                                  'librarysettingsjsondb,flowsjsondb,variablesjsondb,filejsondb'])
-        self.assertEqual(self.command('home-assistant'), ['python3', '-c', 'H', '/backup'])
+        self.assertEqual(self.command('home-assistant'), ['python3', '-c', 'H', '/backup', '/key/backup-encryption-key'])
         self.assertEqual(self.command('authentik'), ['sh', '-c', 'P', 'check', '/backup/authentik.dump',
                                                      '/backup/completed-at'])
+
+    def test_the_home_assistant_check_mounts_only_its_synced_key(self):
+        pod = harness.integrity_pod(TARGETS['home-assistant'], 'ha:1', (1000, 1000), SCRIPTS)
+        (check,) = pod['spec']['containers']
+        self.assertIn({'name': 'key', 'mountPath': '/key', 'readOnly': True}, check['volumeMounts'])
+        self.assertIn({'name': 'key', 'secret': {'secretName': 'restore-test-home-assistant'}}, pod['spec']['volumes'])
+        sonarr = harness.integrity_pod(TARGETS['sonarr'], 'image', (1, 2), SCRIPTS)
+        self.assertNotIn('key', [v['name'] for v in sonarr['spec']['volumes']])
 
     def test_checks_read_the_claim_as_the_holder_user(self):
         pod = harness.integrity_pod(TARGETS['uptime-kuma'], 'image', (1000, 1000), SCRIPTS)
@@ -493,6 +502,35 @@ class AppCheck(unittest.TestCase):
         self.assertEqual((tiers['usable'], tiers['answers']), (True, False))
 
 
+class BackupKey(unittest.TestCase):
+    def run_with(self, responses):
+        replies = iter(responses)
+
+        class Api:
+            def call(self, method, path, *args, **kwargs):
+                return next(replies)
+
+            def json(self, method, path, *args, **kwargs):
+                return {'spec': {'template': {'spec': {'containers': [{'name': 'main', 'image': 'ha:2026.11.3'}]}}}}
+
+        return harness.Run(Api(), ENVIRON)
+
+    def test_the_check_waits_for_the_synced_key(self):
+        ready = {'status': {'conditions': [{'type': 'Ready', 'status': 'True', 'message': 'synced'}]}}
+        run = self.run_with([(404, ''), (200, json.dumps(ready))])
+        with mock.patch.object(harness.time, 'sleep'):
+            run.key_synced(TARGETS['home-assistant'])
+
+    def test_a_key_that_never_syncs_fails_with_the_store_message(self):
+        failing = {'status': {'conditions': [{'type': 'Ready', 'status': 'False', 'message': 'key not found'}]}}
+        run = self.run_with([(200, json.dumps(failing))])
+        with mock.patch.object(harness, 'KEY_TIMEOUT', 0), self.assertRaisesRegex(RuntimeError, 'key not found'):
+            run.key_synced(TARGETS['home-assistant'])
+
+    def test_the_check_runs_home_assistants_own_image(self):
+        self.assertEqual(self.run_with([]).check_image(TARGETS['home-assistant']), 'ha:2026.11.3')
+
+
 class ArrchitectAbsent(unittest.TestCase):
     def run_with(self, listings):
         class Api:
@@ -767,6 +805,61 @@ class HomeAssistant(Scratch):
 
     def test_no_backups_fails(self):
         self.assertEqual(check_ha.check(self.root), ({'archives': 0}, False))
+
+    def encrypted(self, names):
+        inner = io.BytesIO()
+        with tarfile.open(fileobj=inner, mode='w:gz') as archive:
+            for name in names:
+                info = tarfile.TarInfo(name)
+                info.size = 1
+                archive.addfile(info, io.BytesIO(b'x'))
+        with tarfile.open(self.root / 'new.tar', 'w') as archive:
+            for name, data in (('./backup.json', json.dumps({'date': 'd', 'protected': True}).encode()),
+                               ('./homeassistant.tar.gz', inner.getvalue())):
+                info = tarfile.TarInfo(name)
+                info.size = len(data)
+                archive.addfile(info, io.BytesIO(data))
+        (self.root / 'key').write_text('right\n')
+
+    def securetar(self):
+        class Archive:
+            def __init__(self, path, mode, password):
+                if password != 'right':
+                    raise ValueError('wrong password')
+                self.path = path
+
+            def __enter__(self):
+                self.tar = tarfile.open(self.path)
+                return self
+
+            def __exit__(self, *args):
+                self.tar.close()
+
+            def extract_tar(self, member):
+                return closing(self.tar.extractfile(member))
+
+        return mock.patch.dict(sys.modules, securetar=types.SimpleNamespace(SecureTarArchive=Archive))
+
+    def test_the_payload_decrypts_with_the_key_and_lists_home_assistants_config(self):
+        self.encrypted(['data/configuration.yaml', 'data/.storage/core.config_entries'])
+        with self.securetar():
+            report, passed = check_ha.check(self.root, self.root / 'key')
+        self.assertTrue(passed)
+        self.assertEqual((report['decrypted'], report['entries'], report['config_entries']), (1, 2, True))
+
+    def test_a_payload_without_config_entries_fails(self):
+        self.encrypted(['data/configuration.yaml'])
+        with self.securetar():
+            self.assertFalse(check_ha.check(self.root, self.root / 'key')[1])
+
+    def test_a_wrong_key_fails_without_printing_it(self):
+        self.encrypted(['data/.storage/core.config_entries'])
+        (self.root / 'key').write_text('wrong')
+        with self.securetar():
+            report, passed = check_ha.check(self.root, self.root / 'key')
+        self.assertFalse(passed)
+        self.assertEqual(report['decrypt_error'], 'ValueError')
+        self.assertNotIn('wrong', json.dumps(report))
 
 
 if __name__ == '__main__':

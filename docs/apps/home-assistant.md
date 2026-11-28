@@ -41,6 +41,8 @@ Native backups are UI state under **Settings** > **System** > **Backups**:
 make vault-put-secret SECRET_PATH=apps/home-assistant KEY=backup-encryption-key
 ```
 
+The nightly [restore test](../infrastructure/restore-test.md) decrypts the newest backup with that key, so a missing or wrong key fails it.
+
 `HomeAssistantBackupFailing` fires when the last automatic backup failed, the newest successful one is more than 36 hours old, a scheduled one is an hour overdue, or automatic backups are off. Until the first backup runs, only the schedule is checked.
 
 ## Network

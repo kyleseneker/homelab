@@ -51,6 +51,12 @@ rules:
       - sonarrs
     verbs:
       - create
+  - apiGroups:
+      - external-secrets.io
+    resources:
+      - externalsecrets
+    verbs:
+      - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -266,6 +272,39 @@ kind: RoleBinding
 metadata:
   name: restore-test
   namespace: arrchitect
+  labels:
+    app.kubernetes.io/name: restore-test
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: restore-test
+subjects:
+  - kind: ServiceAccount
+    name: restore-test
+    namespace: backups
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restore-test
+  namespace: home-automation
+  labels:
+    app.kubernetes.io/name: restore-test
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    resourceNames:
+      - home-assistant
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restore-test
+  namespace: home-automation
   labels:
     app.kubernetes.io/name: restore-test
 roleRef:

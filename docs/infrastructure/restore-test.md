@@ -48,9 +48,11 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | `/api/v2/cruddb` lists as many libraries as `librarysettingsjsondb` holds |
 | `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | Starts and serves `/api/entry-page`; no data probe |
 | `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |
-| `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
+| `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; every payload decrypts with the backup key from Vault, and Home Assistant's holds `.storage/core.config_entries` | 40 h, from `backup.json` | -- |
 
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
+
+Home Assistant's check runs in the image its live Deployment runs, whose `securetar` decrypts the archive the way a restore does. The payload is decrypted and listed in memory and never written to disk. The key reaches the sandbox through the `restore-test-home-assistant` ClusterExternalSecret, which selects only `restore-sandbox`, so External Secrets syncs it from Vault `apps/home-assistant` when a run creates the sandbox, and it goes when the sandbox does. The harness reads no Secrets; it waits up to three minutes for the ExternalSecret to report `Ready` and fails the target with External Secrets' message if it does not.
 
 Uptime Kuma shows its monitors only to signed-in users or through status pages, and the production database holds neither monitors nor status pages, so its check ends at `usable`. Seerr's `/api/v1/status` and Bazarr's startup both call GitHub, which the sandbox cannot reach: Seerr's check uses its local public-settings endpoint instead, and Bazarr gets 15 minutes to start.
 
@@ -81,7 +83,7 @@ The key count goes to `restore_test_rows{table="keys"}`, so a shrinking cluster 
 | `restrict-restore-test` | The harness ServiceAccount touching any namespace but the sandbox or any volume but the sandbox's `nfs-restore-test` volumes, or creating a Restore that maps elsewhere, includes kinds beyond pods, claims and volumes, includes cluster resources, overwrites existing resources, skips the resource modifier or carries hooks. Velero acts with `cluster-admin`, so this policy is what limits a Restore |
 | `deny-arrchitect-in-restore-sandbox` | Any Arrchitect resource in the sandbox, from anyone, Velero included |
 | Kyverno exceptions | The sandbox shares `media`'s exemption from `require-run-as-nonroot` and `require-readonly-rootfs`, so applications run as they do in production |
-| `weekly-full-cluster` exclusion | Copies of production Secrets entering a backup |
+| `weekly-full-cluster` exclusion | Copies of production Secrets, including Home Assistant's backup key, entering a backup |
 
 Both policies are generated as native ValidatingAdmissionPolicies. `tests/kyverno/restore-test` covers them.
 

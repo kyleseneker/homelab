@@ -48,7 +48,7 @@ Home Assistant's `backups` volume gets its own holder Deployment on Home Assista
 - **Admission**: The sandbox takes the same Kyverno exceptions as the namespaces whose applications it tests and enforces Pod Security `baseline`, so tier 3 runs the production images with the security context production gives them.
 - **Backups and GitOps**: `weekly-full-cluster` excludes the sandbox, so copies of production Secrets never enter a backup. Argo CD's annotation tracking ignores copies whose tracking annotation names another namespace, so restored objects neither change sync status nor get pruned.
 - **Harness rights**: The harness ServiceAccount can create and delete namespaces and Restores; Kyverno limits both to the sandbox.
-- **Data handling**: Checkers print counts and verdicts, never data, because Alloy ships every pod's logs to Loki and Loki is backed up. Decrypted Home Assistant archives and scratch PostgreSQL and Vault data live on `emptyDir`, never NFS. The Vault check uses a token whose policy reads only a canary path, because any token valid on the scratch Vault is valid on production.
+- **Data handling**: Checkers print counts and verdicts, never data, because Alloy ships every pod's logs to Loki and Loki is backed up. Home Assistant archives are decrypted in memory, and scratch PostgreSQL and Vault data live on `emptyDir`, never NFS. Home Assistant's backup key reaches the sandbox only through a ClusterExternalSecret that selects `restore-sandbox`; the harness reads no Secrets. The Vault check uses a token whose policy reads only a canary path, because any token valid on the scratch Vault is valid on production.
 
 **Checks.** Tiers run in order and fail closed; a tier that does not apply is recorded as such, never as a pass.
 

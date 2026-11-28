@@ -6,6 +6,7 @@ resources:
   - modifiers.yml
   - cronjob.yml
   - restore-test-external-secret.yml
+  - restore-test-home-assistant-external-secret.yml
   - cronjob-etcd.yml
   - cronjob-etcd-offsite.yml
   - cronjob-offsite.yml
