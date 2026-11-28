@@ -8,6 +8,7 @@ configuration:
   useRebootSentinelHostPath: true
   drainTimeout: 30m
   lockTtl: 2h
+  lockReleaseDelay: 30m
   annotateNodes: true
   preferNoScheduleTaint: weave.works/kured-node-reboot
   prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring:9090

@@ -38,7 +38,7 @@ Common references set the bar this ADR adopts:
 ### Kubernetes Nodes
 
 1. **Daily updates.** The `node_unattended_upgrades` role adds Ubuntu's `noble-updates` pocket to the default security origins of `unattended-upgrades`. Packages from the Kubernetes and Docker repositories are not allowed origins, and `kubelet`, `kubeadm`, `kubectl` and `containerd.io` are held, so they change only through their upgrade playbooks. Automatic reboot stays off.
-2. **Coordinated reboots** with [kured](../infrastructure/kured.md). When an update creates `/var/run/reboot-required`, kured drains the node, reboots it and uncordons it, one node at a time, between 01:30 and 03:00. It waits while any warning or critical alert is firing, other than `NodeRebootPending`, which only clears after the reboot it reports.
+2. **Coordinated reboots** with [kured](../infrastructure/kured.md). When an update creates `/var/run/reboot-required`, kured drains the node, reboots it and uncordons it, one node at a time, between 01:30 and 03:00. Each node gets 30 minutes to settle before the next one reboots, long enough for alerts about the previous reboot to fire. It waits while any warning or critical alert is firing, other than `NodeRebootPending`, which only clears after the reboot it reports.
 
 ### Monitoring
 
