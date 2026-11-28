@@ -97,5 +97,4 @@ The measured duration is a restore-test duration, not an RTO: it leaves out dete
 - Each run creates and removes one directory per restored claim under the NFS provisioner's root.
 - The Vault run needs egress to AWS KMS, a deliberate departure from HashiCorp's advice to test restores fully isolated; the default-deny baseline still keeps it away from the production Vault.
 - Tests run the image production runs, so an application upgrade is tested against the backups the night after it deploys.
-- The Jellyfin and Seerr dumps hold only their databases, so those targets may start in the expected-failure register until their backups capture what the applications need.
 - Everything runs on one Proxmox host. Loss of the host is tested only when a drill restores onto other compute.

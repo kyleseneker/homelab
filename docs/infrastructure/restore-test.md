@@ -107,10 +107,7 @@ The duration is a restore-test duration, not an RTO: it leaves out detection, im
 
 `expected_failures.json` lists tiers that fail because the backup itself is incomplete, each with a reason and an expiry date. A listed tier that fails does not fail its target, pushes `restore_test_expected_failure{tier}` and leaves `last_success` advancing. A listed tier that passes pushes `restore_test_expected_failure_resolved{tier}` and raises `RestoreTestExpectedFailureResolved`, so the entry gets removed. An entry past its expiry stops counting, and the failure alerts again.
 
-| Target | Tier | Gap |
-|--------|------|-----|
-| `jellyfin` | `answers` | Only `jellyfin.db` is dumped. `system.xml` and the rest of `/config` are not, so a restored Jellyfin opens its setup wizard |
-| `seerr` | `answers` | Only `db.sqlite3` is dumped. `settings.json` is not, so a restored Seerr is uninitialised and has no API key |
+The register is empty.
 
 ## Offsite
 
