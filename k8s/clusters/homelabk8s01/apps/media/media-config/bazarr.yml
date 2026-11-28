@@ -22,6 +22,8 @@ spec:
     multithreading: true
     seriesDefaultProfile: English
     movieDefaultProfile: English
+    ignorePgsSubs: true
+    ignoreVobsubSubs: true
   languages:
     enabled:
       - en

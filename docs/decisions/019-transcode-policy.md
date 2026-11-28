@@ -86,8 +86,9 @@ size of a node's root disk.
   scoring therefore influences nothing today, which is worth resolving separately.
 - Tdarr's role narrows to health checking, audio and subtitle cleanup and container
   normalisation.
-- A release whose only English subtitle is image-based keeps it. Bazarr counts embedded tracks
-  toward its English profile, so it does not fetch a text subtitle for these files.
+- A release whose only English subtitle is image-based keeps it embedded. Bazarr ignores
+  embedded PGS and VobSub tracks, so it fetches an English text subtitle for these files and
+  the image track stays as a fallback.
 - Cache traffic crosses the network twice per file, read and written over NFS. That is slower
   than local cache and is accepted: no node has the capacity to hold a UHD remux.
 - Reversing this means removing `x265 (HD)` from the unwanted formats in
