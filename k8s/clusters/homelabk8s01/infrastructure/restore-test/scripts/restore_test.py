@@ -550,7 +550,7 @@ class Run:
             tiers["answers"] = ran and report.get("matches") is True
             detail = f"value={report.get('value')!r}"
         problems = {key: report[key] for key in ("error", "probe_error") if key in report}
-        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} {detail} "
+        log(f"{target['name']}: usable={tiers['usable']} answers={tiers.get('answers', 'n/a')} {detail} "
             f"version={report.get('version')}{' ' + json.dumps(problems) if problems else ''}")
 
     def push(self, name, result, now):

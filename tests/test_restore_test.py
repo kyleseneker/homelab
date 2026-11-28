@@ -424,6 +424,32 @@ class RunPod(unittest.TestCase):
         self.assertNotIn('DELETE', [method for method, _ in calls])
 
 
+class AppCheck(unittest.TestCase):
+    def run_check(self, name, app_report):
+        workload = {'spec': {'template': {'spec': {'containers': [{'image': 'app:1', 'env': []}]}}}}
+        reports = iter([(True, {'integrity': 'ok', 'rows': {}, 'total_rows': 5, 'mtime': 1000.0}),
+                        (True, app_report)])
+
+        class Api:
+            def json(self, method, path, *args, **kwargs):
+                return workload
+
+        run = harness.Run(Api(), ENVIRON)
+        run.check_image = lambda target: 'python:3.15-alpine'
+        run.run_pod = lambda pod, container, timeout: next(reports)
+        run.check(TARGETS[name], (1000, 1000), 1000.0 + 3600)
+        return run.results[name]['tiers']
+
+    def test_an_app_without_a_data_probe_records_only_that_it_started(self):
+        tiers = self.run_check('uptime-kuma', {'started': True})
+        self.assertEqual(tiers['usable'], True)
+        self.assertNotIn('answers', tiers)
+
+    def test_a_field_probe_that_misses_fails_the_answers_tier(self):
+        tiers = self.run_check('seerr', {'started': True, 'value': False, 'matches': False})
+        self.assertEqual((tiers['usable'], tiers['answers']), (True, False))
+
+
 class ArrchitectAbsent(unittest.TestCase):
     def run_with(self, listings):
         class Api:
