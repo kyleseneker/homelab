@@ -49,7 +49,7 @@ postgresql:
   # changes en_US.utf8 collation and would require reindexing the database.
   image:
     repository: library/postgres
-    tag: 17.11-bookworm
+    tag: 17.12-bookworm
   auth:
     existingSecret: authentik-credentials
     secretKeys:
