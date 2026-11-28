@@ -101,7 +101,7 @@ controllers:
       qbittorrent:
         image:
           repository: lscr.io/linuxserver/qbittorrent
-          tag: 5.3.0
+          tag: 5.3.1
         envFrom:
           - configMapRef:
               name: media-env
