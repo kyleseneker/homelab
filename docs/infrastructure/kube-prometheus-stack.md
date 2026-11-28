@@ -80,6 +80,7 @@ Take chart majors one at a time and read each section of the upstream `UPGRADE.m
 
 - **Grafana 13 (chart 84)** migrated folders and dashboards into unified storage on first start. Downgrading needs the pre-upgrade database. The SQLite database lives on NFS, so `grafana.ini` sets `unified_storage.migration_parquet_buffer` to avoid lock contention during that migration.
 - **Distroless images:** Prometheus (chart 85) and Grafana (chart 89) images have no shell or `wget`, and Grafana's root filesystem is read-only. Query Prometheus through the API server instead of `kubectl exec`, as `scripts/check-alert-metrics.sh` does: `kubectl get --raw /api/v1/namespaces/monitoring/services/kube-prometheus-stack-prometheus:http-web/proxy/api/v1/query?query=up`.
+- **node-exporter chart 6 (chart 94)** sets the filesystem excludes in `defaultArgs` and appends `extraArgs` after them. node-exporter refuses a repeated flag and crash-loops, so `extraArgs` carries only the textfile directory. Render the DaemonSet's args after any node-exporter major.
 - Grafana's update checker and plugin installer log timeouts reaching grafana.com, because egress to the internet is blocked. They are harmless.
 
 ## Upstream Documentation
