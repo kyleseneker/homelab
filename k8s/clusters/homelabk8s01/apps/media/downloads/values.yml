@@ -1,8 +1,3 @@
-global:
-  templateEvaluation:
-    excludePaths:
-      - [controllers, main, initContainers, gluetun, env, VPN_PORT_FORWARDING_UP_COMMAND]
-      - [controllers, main, initContainers, gluetun, env, VPN_PORT_FORWARDING_DOWN_COMMAND]
 controllers:
   main:
     initContainers:
@@ -43,15 +38,6 @@ controllers:
           SERVER_REGIONS: CA Montreal
           UPDATER_PERIOD: 24h
           VPN_PORT_FORWARDING: 'on'
-          # Rebinding the listening port leaves qBittorrent's DHT without nodes until DHT restarts.
-          VPN_PORT_FORWARDING_UP_COMMAND: >-
-            /bin/sh -c 'wget -O- -nv --retry-connrefused --post-data
-            "json={\"listen_port\":{{PORT}},\"current_network_interface\":\"{{VPN_INTERFACE}}\",\"random_port\":false,\"upnp\":false}"
-            http://127.0.0.1:8080/api/v2/app/setPreferences
-            && wget -O- -nv --post-data "json={\"dht\":false}" http://127.0.0.1:8080/api/v2/app/setPreferences
-            && sleep 1
-            && wget -O- -nv --post-data "json={\"dht\":true}" http://127.0.0.1:8080/api/v2/app/setPreferences'
-          VPN_PORT_FORWARDING_DOWN_COMMAND: '/bin/sh -c ''wget -O- -nv --retry-connrefused --post-data "json={\"listen_port\":0,\"current_network_interface\":\"lo\"}" http://127.0.0.1:8080/api/v2/app/setPreferences'''
           FIREWALL_INPUT_PORTS: '8080'
           DOT: 'off'
         envFrom:
@@ -149,6 +135,47 @@ controllers:
           limits:
             cpu: 1000m
             memory: 1Gi
+      # Gluetun's port-forwarding hooks fire before qBittorrent starts, so poll the forwarded port instead.
+      # Rebinding the listening port leaves qBittorrent's DHT without nodes until DHT restarts.
+      port-sync:
+        image:
+          repository: busybox
+          tag: '1.38.0'
+        command:
+          - sh
+          - -c
+          - |
+            api=http://127.0.0.1:8080/api/v2/app
+            while true; do
+              port=$(cat /tmp/gluetun/forwarded_port 2>/dev/null)
+              prefs=$(wget -qO- "$api/preferences" 2>/dev/null)
+              current=$(echo "$prefs" | grep -o '"listen_port":[0-9]*' | cut -d: -f2)
+              iface=$(echo "$prefs" | grep -o '"current_network_interface":"[^"]*"' | cut -d'"' -f4)
+              if [ -n "$port" ] && [ -n "$prefs" ] && { [ "$current" != "$port" ] || [ "$iface" != tun0 ]; }; then
+                wget -qO- --post-data "json={\"listen_port\":$port,\"current_network_interface\":\"tun0\",\"random_port\":false,\"upnp\":false}" "$api/setPreferences" &&
+                  wget -qO- --post-data 'json={"dht":false}' "$api/setPreferences" &&
+                  sleep 1 &&
+                  wget -qO- --post-data 'json={"dht":true}' "$api/setPreferences" &&
+                  echo "listen port set to $port on tun0"
+              fi
+              sleep 60
+            done
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 5m
+            memory: 8Mi
+          limits:
+            cpu: 50m
+            memory: 32Mi
 service:
   main:
     controller: main
@@ -184,6 +211,15 @@ persistence:
     size: 256Mi
     globalMounts:
       - path: /gluetun
+  gluetun-tmp:
+    type: emptyDir
+    advancedMounts:
+      main:
+        gluetun:
+          - path: /tmp/gluetun
+        port-sync:
+          - path: /tmp/gluetun
+            readOnly: true
   qbit-config:
     type: persistentVolumeClaim
     storageClass: nfs-client
