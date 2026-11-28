@@ -183,10 +183,12 @@ BACKUP_MOUNT = {"name": "backup", "mountPath": "/backup", "readOnly": True}
 COPY = """
 import json, os, shutil, sys
 spec = json.loads(sys.argv[1])
-shutil.copytree(spec["source"], spec["mount"], dirs_exist_ok=True, copy_function=shutil.copyfile)
-for root, _, files in os.walk(spec["mount"]):
+for root, _, files in os.walk(spec["source"]):
+    folder = os.path.join(spec["mount"], os.path.relpath(root, spec["source"]))
+    os.makedirs(folder, exist_ok=True)
     for name in files:
-        os.chmod(os.path.join(root, name), 0o666)
+        shutil.copyfile(os.path.join(root, name), os.path.join(folder, name))
+        os.chmod(os.path.join(folder, name), 0o666)
 for path, content in spec["files"].items():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as handle:

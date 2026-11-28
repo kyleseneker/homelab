@@ -130,11 +130,13 @@ class Pods(unittest.TestCase):
             (source / 'db/app.db').chmod(0o600)
             (source / 'settings.json').write_text('{}')
             mount.mkdir()
+            mount.chmod(0o770)
             spec = {'source': str(source), 'mount': str(mount),
                     'files': {str(mount / 'config/config.yaml'): 'auth:\n  apikey: key\n'}}
             subprocess.run([sys.executable, '-c', harness.COPY, json.dumps(spec)], check=True)
             self.assertEqual((mount / 'db/app.db').read_bytes(), b'data')
             self.assertEqual((mount / 'settings.json').read_text(), '{}')
+            self.assertEqual(mount.stat().st_mode & 0o777, 0o770)
             self.assertEqual((mount / 'db/app.db').stat().st_mode & 0o777, 0o666)
             self.assertEqual((mount / 'config/config.yaml').read_text(), 'auth:\n  apikey: key\n')
             self.assertEqual((mount / 'db').stat().st_mode & 0o777, 0o777)
