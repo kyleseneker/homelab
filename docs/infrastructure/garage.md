@@ -9,7 +9,7 @@ Garage provides S3-compatible object storage within the cluster, serving as Vele
 | Chart | `app-template` |
 | Repository | <https://bjw-s-labs.github.io/helm-charts> |
 | Version | 5.3.0 |
-| Image | `dxflrs/garage:v2.5.0` |
+| Image | `dxflrs/garage:v2.6.0` |
 | Namespace | `backups` |
 
 ## Key Configuration

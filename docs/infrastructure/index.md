@@ -7,7 +7,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Component | Namespace | Source | Chart / Type | Version |
 |-----------|-----------|--------|--------------|---------|
 | Vault | vault | helm | vault | 0.34.1 |
-| External Secrets | external-secrets | helm | external-secrets | 2.14.0 |
+| External Secrets | external-secrets | helm | external-secrets | 2.15.0 |
 | cert-manager | cert-manager | helm | cert-manager | v1.21.3 |
 | Gateway API CRDs | -- | git | (plain manifests) | -- |
 | Gateway + Cilium L2 | default | git | (plain manifests) | -- |
@@ -24,10 +24,10 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Network Policies | (multiple) | git | (plain manifests) | -- |
 | Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.37.2 |
 | Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.37.2 |
-| kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 92.17.0 |
-| Loki | monitoring | helm | loki | 20.2.1 |
-| Alloy | monitoring | helm | alloy | 1.15.0 |
-| Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 11.20.2 |
+| kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 94.2.0 |
+| Loki | monitoring | helm | loki | 21.6.4 |
+| Alloy | monitoring | helm | alloy | 1.16.0 |
+| Blackbox Exporter | monitoring | helm | prometheus-blackbox-exporter | 12.0.0 |
 | NUT Exporter | monitoring | helm | app-template | 5.3.0 |
 | SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.1 |
 | unpoller | monitoring | helm | app-template | 5.3.0 |
@@ -37,7 +37,7 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |
 | Kured | kube-system | helm | kured | 6.1.0 |
 | VPA | kube-system | helm | vertical-pod-autoscaler | 0.11.0 |
-| Goldilocks | goldilocks | helm | goldilocks | 11.2.1 |
+| Goldilocks | goldilocks | helm | goldilocks | 11.3.1 |
 
 ## Deployment Ordering
 

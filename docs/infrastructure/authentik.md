@@ -16,7 +16,7 @@ Authentik provides identity for native OIDC clients, authenticates browser traff
 
 The server and worker use bundled PostgreSQL with a 5Gi `nfs-client` PVC. This chart deploys no Redis. A single PostgreSQL instance and the outpost are availability dependencies; a PodDisruptionBudget does not make them redundant.
 
-`values.yml` pins the bundled PostgreSQL image to `17.11-bookworm`. Chart 2026.8 defaults to a Debian 13 (trixie) image, whose newer glibc changes the `en_US.utf8` collation the database was created with (version 2.36) and would require a full reindex. Change the base image only as a planned step that refreshes the collation version. The subchart's Bitnami FIPS setting is turned off because the official image does not use it.
+`values.yml` pins the bundled PostgreSQL image to `17.12-bookworm`. Chart 2026.8 defaults to a Debian 13 (trixie) image, whose newer glibc changes the `en_US.utf8` collation the database was created with (version 2.36) and would require a full reindex. Change the base image only as a planned step that refreshes the collation version. The subchart's Bitnami FIPS setting is turned off because the official image does not use it.
 
 ### Upgrades
 
