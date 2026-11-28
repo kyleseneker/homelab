@@ -6,8 +6,34 @@ global:
 controllers:
   main:
     initContainers:
+      # PIA rotates server IPs; the image's built-in list goes stale and Gluetun can only refresh it through a working tunnel.
+      gluetun-servers:
+        image:
+          repository: qmcgaw/gluetun
+          tag: v3.41.3
+        command:
+          - /bin/sh
+          - -c
+          - /gluetun-entrypoint update -enduser -providers "private internet access" || echo "PIA server update failed; using the stored list"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
       # Native sidecar: startup healthcheck gates the torrent client.
       gluetun:
+        dependsOn:
+          - gluetun-servers
         restartPolicy: Always
         image:
           repository: qmcgaw/gluetun
@@ -15,6 +41,7 @@ controllers:
         env:
           VPN_SERVICE_PROVIDER: private internet access
           SERVER_REGIONS: CA Montreal
+          UPDATER_PERIOD: 24h
           VPN_PORT_FORWARDING: 'on'
           # Rebinding the listening port leaves qBittorrent's DHT without nodes until DHT restarts.
           VPN_PORT_FORWARDING_UP_COMMAND: >-
