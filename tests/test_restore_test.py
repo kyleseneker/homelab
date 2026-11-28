@@ -85,8 +85,7 @@ class Pods(unittest.TestCase):
                                                   'Series', 'Episodes,EpisodeFiles', '1', '{}'])
         self.assertEqual(self.command('jellyfin'), ['python3', '-c', 'S', '/backup/jellyfin/data/data/jellyfin.db',
                                                     '', '', '0', '{}'])
-        self.assertEqual(json.loads(self.command('uptime-kuma')[-1]),
-                         {'status_page': 'SELECT slug FROM status_page WHERE published = 1 ORDER BY id LIMIT 1'})
+        self.assertEqual(self.command('uptime-kuma')[-1], '{}')
         self.assertEqual(self.command('tdarr'), ['python3', '-c', 'Z', '/backup/tdarr/latest.zip',
                                                  'DB2/SQL/database.db', '/work'])
         self.assertEqual(self.command('home-assistant'), ['python3', '-c', 'H', '/backup'])
@@ -138,21 +137,26 @@ class Pods(unittest.TestCase):
         self.assertEqual(TARGETS['radarr']['app']['api_key_env'], 'RADARR__AUTH__APIKEY')
         self.assertEqual(TARGETS['prowlarr']['app']['probe']['path'], '/api/v1/applications')
 
-    def test_uptime_kuma_runs_as_in_production_and_probes_its_own_status_page(self):
+    def test_uptime_kuma_runs_as_in_production_and_stops_at_startup(self):
         workload = {'spec': {'template': {'spec': {
             'securityContext': {'runAsUser': 1000, 'runAsGroup': 1000, 'fsGroup': 1000, 'runAsNonRoot': True},
             'containers': [{'image': 'louislam/uptime-kuma:2.5.8', 'env': [], 'resources': {'limits': {'cpu': '1'}},
                             'securityContext': {'readOnlyRootFilesystem': True}}]}}}}
-        pod = harness.app_pod(TARGETS['uptime-kuma'], workload, 'image', (1000, 1000), 'key', 'A', {'status_page': 'home'})
+        pod = harness.app_pod(TARGETS['uptime-kuma'], workload, 'image', (1000, 1000), 'key', 'A')
         app = next(c for c in pod['spec']['containers'] if c['name'] == 'app')
         check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
         self.assertEqual(pod['spec']['securityContext']['runAsUser'], 1000)
         self.assertEqual(pod['spec']['securityContext']['seccompProfile'], {'type': 'RuntimeDefault'})
         self.assertIn({'name': 'scratch-0', 'mountPath': '/tmp'}, app['volumeMounts'])
         self.assertIn({'name': 'scratch-0', 'emptyDir': {}}, pod['spec']['volumes'])
-        self.assertEqual(json.loads(check['command'][-1])['probe'],
-                         {'path': '/api/status-page/home', 'field': 'config.slug', 'equals': 'home'})
-        self.assertEqual(check['env'], [{'name': 'PYTHONDONTWRITEBYTECODE', 'value': '1'}])
+        self.assertEqual(json.loads(check['command'][-1]), {'port': 3001, 'status': '/api/entry-page', 'probe': None})
+        self.assertNotIn('API_KEY', [e['name'] for e in check['env']])
+
+    def test_each_app_gets_its_own_startup_window(self):
+        pod = harness.app_pod(TARGETS['bazarr'], DEPLOYMENT, 'image', (977, 988), 'k3y', 'A')
+        check = next(c for c in pod['spec']['containers'] if c['name'] == 'check')
+        self.assertIn({'name': 'STARTUP_TIMEOUT', 'value': '900'}, check['env'])
+        self.assertEqual(TARGETS['sonarr']['app']['startup_timeout'], 600)
 
     def test_bazarr_gets_its_throwaway_key_through_a_seeded_config(self):
         pod = harness.app_pod(TARGETS['bazarr'], DEPLOYMENT, 'image', (977, 988), 'k3y', 'A')
@@ -420,6 +424,32 @@ class RunPod(unittest.TestCase):
         self.assertNotIn('DELETE', [method for method, _ in calls])
 
 
+class AppCheck(unittest.TestCase):
+    def run_check(self, name, app_report):
+        workload = {'spec': {'template': {'spec': {'containers': [{'image': 'app:1', 'env': []}]}}}}
+        reports = iter([(True, {'integrity': 'ok', 'rows': {}, 'total_rows': 5, 'mtime': 1000.0}),
+                        (True, app_report)])
+
+        class Api:
+            def json(self, method, path, *args, **kwargs):
+                return workload
+
+        run = harness.Run(Api(), ENVIRON)
+        run.check_image = lambda target: 'python:3.15-alpine'
+        run.run_pod = lambda pod, container, timeout: next(reports)
+        run.check(TARGETS[name], (1000, 1000), 1000.0 + 3600)
+        return run.results[name]['tiers']
+
+    def test_an_app_without_a_data_probe_records_only_that_it_started(self):
+        tiers = self.run_check('uptime-kuma', {'started': True})
+        self.assertEqual(tiers['usable'], True)
+        self.assertNotIn('answers', tiers)
+
+    def test_a_field_probe_that_misses_fails_the_answers_tier(self):
+        tiers = self.run_check('seerr', {'started': True, 'value': False, 'matches': False})
+        self.assertEqual((tiers['usable'], tiers['answers']), (True, False))
+
+
 class ArrchitectAbsent(unittest.TestCase):
     def run_with(self, listings):
         class Api:
@@ -507,6 +537,11 @@ class Api(unittest.TestCase):
                                          'key', 5, interval=0.1)
         self.assertTrue(passed)
         self.assertEqual((report['value'], report['matches']), ('2.7.0', True))
+
+    def test_an_app_without_a_data_probe_passes_once_it_answers(self):
+        port = self.serve()
+        self.assertEqual(check_api.check(self.spec(port, None) | {'probe': None}, 'key', 5, interval=0.1),
+                         ({'started': True, 'version': '2.7.0'}, True))
 
     def test_a_probe_without_a_path_is_unresolved(self):
         port = self.serve()

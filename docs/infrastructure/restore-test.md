@@ -44,13 +44,15 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/applications` |
 | `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | `/api/series` counts `table_shows`, with a throwaway key seeded into `config.yaml` |
 | `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | `/System/Info/Public` reports the setup wizard completed (expected failure) |
-| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | `/api/v1/settings/public` reports `initialized` (expected failure) |
+| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | Starts on `/api/v1/settings/public`, which then reports `initialized` (expected failure) |
 | `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- (Tdarr restores its archive through its own import) |
-| `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | The first published status page, read from the database, serves its own slug |
+| `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | Starts and serves `/api/entry-page`; no data probe |
 | `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |
 | `home-assistant` | `home-automation/home-assistant-backups` | newest `*.tar` | Every member reads; `backup.json` says the backup is encrypted; the payload archive is present | 40 h, from `backup.json` | -- |
 
 A SQLite check passes when `integrity_check` is `ok`, the database holds rows and every required table has rows. Foreign-key violations are reported for every database but fail only Sonarr, whose schema is known to have none. A dump's age comes from its modification time, which Velero's restore keeps, unless the target names a timestamp. Checkers run as the user of the holder that mounts the volume.
+
+Uptime Kuma shows its monitors only to signed-in users or through status pages, and the production database holds neither monitors nor status pages, so its check ends at `usable`. Seerr's `/api/v1/status` and Bazarr's startup both call GitHub, which the sandbox cannot reach: Seerr's check uses its local public-settings endpoint instead, and Bazarr gets 15 minutes to start.
 
 Prowlarr's check counts its configured applications, not its indexers. Prowlarr builds the indexer list from definitions it downloads at startup and keeps outside its database, so a sandbox with no internet access cannot list indexers, and a real restore needs Prowlarr to reach its definitions server before indexers work.
 
