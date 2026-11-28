@@ -8,7 +8,7 @@ Authentik provides identity for native OIDC clients, authenticates browser traff
 |-------|-------|
 | Chart | `authentik` |
 | Repository | <https://charts.goauthentik.io> |
-| Version | 2026.8.6 |
+| Version | 2026.8.7 |
 | Namespace | `auth` |
 | Metrics | Server and worker on 9300, scraped through the chart's ServiceMonitors |
 

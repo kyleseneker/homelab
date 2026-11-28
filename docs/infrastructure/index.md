@@ -22,8 +22,8 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | Kyverno | kyverno | helm | kyverno | 3.9.2 |
 | Kyverno Policies | -- | git | (plain manifests) | -- |
 | Network Policies | (multiple) | git | (plain manifests) | -- |
-| Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.37.1 |
-| Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.37.1 |
+| Intel GPU Operator | intel-gpu-operator | helm | intel-device-plugins-operator | 0.37.2 |
+| Intel GPU Plugin | intel-gpu-operator | helm | intel-device-plugins-gpu | 0.37.2 |
 | kube-prometheus-stack | monitoring | helm | kube-prometheus-stack | 92.17.0 |
 | Loki | monitoring | helm | loki | 20.2.1 |
 | Alloy | monitoring | helm | alloy | 1.15.0 |
@@ -32,8 +32,8 @@ This section documents the infrastructure layer of the homelab Kubernetes cluste
 | SNMP Exporter | monitoring | helm | prometheus-snmp-exporter | 9.21.1 |
 | unpoller | monitoring | helm | app-template | 5.3.0 |
 | Pushgateway | monitoring | helm | prometheus-pushgateway | 3.11.2 |
-| Authentik | auth | helm | authentik | 2026.8.6 |
-| Reloader | kube-system | helm | reloader | 2.2.20 |
+| Authentik | auth | helm | authentik | 2026.8.7 |
+| Reloader | kube-system | helm | reloader | 2.2.21 |
 | Descheduler | kube-system | helm | descheduler | 0.36.0 |
 | Kured | kube-system | helm | kured | 6.1.0 |
 | VPA | kube-system | helm | vertical-pod-autoscaler | 0.11.0 |
