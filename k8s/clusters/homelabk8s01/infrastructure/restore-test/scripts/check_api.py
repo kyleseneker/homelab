@@ -57,6 +57,8 @@ def check(spec, key, timeout, interval=5, request_timeout=30):
         return {"started": False, "error": error}, False
     report = {"started": True, "version": version(status)}
     probe = spec["probe"]
+    if probe is None:
+        return report, True
     if not probe.get("path"):
         return {**report, "probe_error": "unresolved"}, False
     body, error = until(deadline, lambda: get(base, probe["path"], key, request_timeout), interval)

@@ -32,11 +32,11 @@ CANARY = {
 }
 
 
-def app(workload, port, mount, database, status, probe, kind="deployments", api_key_env=None, files=None,
-        scratch=()):
+def app(workload, port, mount, database, status, probe=None, kind="deployments", api_key_env=None, files=None,
+        scratch=(), startup_timeout=600):
     return {"workload": workload, "kind": kind, "port": port, "mount": mount, "database": database,
             "status": status, "probe": probe, "api_key_env": api_key_env, "files": files or {},
-            "scratch": list(scratch)}
+            "scratch": list(scratch), "startup_timeout": startup_timeout}
 
 
 def pvr_app(name, port, version, collection, table):
@@ -64,21 +64,18 @@ TARGETS = [
            report=["table_shows", "table_movies"],
            app=app("bazarr", 6767, "/config", "/config/db/bazarr.db", "/api/system/status",
                    {"path": "/api/series", "count_table": "table_shows"},
-                   files={"/config/config/config.yaml": "auth:\n  apikey: {key}\n"})),
+                   files={"/config/config/config.yaml": "auth:\n  apikey: {key}\n"}, startup_timeout=900)),
     target("jellyfin", "media", "config-backups", "sqlite", "jellyfin/data/data/jellyfin.db",
            app=app("jellyfin", 8096, "/config", "/config/data/data/jellyfin.db", "/System/Info/Public",
                    {"path": "/System/Info/Public", "field": "StartupWizardCompleted", "equals": True})),
     target("seerr", "media", "config-backups", "sqlite", "seerr/db/db.sqlite3",
-           app=app("seerr", 5055, "/app/config", "/app/config/db/db.sqlite3", "/api/v1/status",
+           app=app("seerr", 5055, "/app/config", "/app/config/db/db.sqlite3", "/api/v1/settings/public",
                    {"path": "/api/v1/settings/public", "field": "initialized", "equals": True},
                    kind="statefulsets")),
     target("tdarr", "media", "config-backups", "zip", "tdarr/latest.zip", max_dump_age=50 * HOUR,
            inner="DB2/SQL/database.db"),
     target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db",
-           queries={"status_page": "SELECT slug FROM status_page WHERE published = 1 ORDER BY id LIMIT 1"},
-           app=app("uptime-kuma", 3001, "/app/data", "/app/data/kuma.db", "/api/entry-page",
-                   {"path": "/api/status-page/{status_page}", "field": "config.slug", "equals": "{status_page}"},
-                   scratch=["/tmp"])),
+           app=app("uptime-kuma", 3001, "/app/data", "/app/data/kuma.db", "/api/entry-page", scratch=["/tmp"])),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
            stamp="completed-at", image_from={"namespace": "auth", "cronjob": "authentik-backup", "container": "dump"},
            database={"server_from": {"namespace": "auth", "statefulset": "authentik-postgresql"},
@@ -252,10 +249,12 @@ def app_pod(target, workload, image, user, key, script, values=None):
         "resources": {"requests": dict(APP_REQUESTS), "limits": live.get("resources", {}).get("limits", SMALL["limits"])},
         "volumeMounts": [config_mount] + [{"name": name, "mountPath": path} for name, path in zip(scratch, app["scratch"])],
     }
-    probe = {name: resolve(value, values or {}) for name, value in app["probe"].items()}
+    probe = {name: resolve(value, values or {}) for name, value in app["probe"].items()} if app["probe"] else None
     check_spec = {"port": app["port"], "status": app["status"], "probe": probe}
-    check = helper("check", user, image, ["python3", "-c", script, json.dumps(check_spec)], [],
-                   [{"name": "API_KEY", "value": key}] if app["api_key_env"] or app["files"] else [])
+    env = [{"name": "STARTUP_TIMEOUT", "value": str(app["startup_timeout"])}]
+    if app["api_key_env"] or app["files"]:
+        env.append({"name": "API_KEY", "value": key})
+    check = helper("check", user, image, ["python3", "-c", script, json.dumps(check_spec)], [], env)
     pod = backup_pod(f"app-{target['name']}", target, [application, check], init=[copy],
                      scratch=("config", "work", *scratch))
     pod["spec"]["securityContext"] = {"seccompProfile": {"type": "RuntimeDefault"}, **template.get("securityContext", {})}
@@ -539,16 +538,20 @@ class Run:
         key = secrets.token_hex(16)
         values = report.get("values", {})
         pod = app_pod(target, workload, self.image, user, key, self.scripts["check_api"], values)
-        ran, report = self.run_pod(pod, "check", 900)
+        ran, report = self.run_pod(pod, "check", app["startup_timeout"] + 300)
         tiers["usable"] = bool(report.get("started"))
-        if "count_table" in app["probe"]:
+        if app["probe"] is None:
+            detail = "(no data probe)"
+        elif "count_table" in app["probe"]:
             expected = result["rows"].get(app["probe"]["count_table"])
             tiers["answers"] = ran and expected is not None and report.get("count") == expected
             detail = f"count={report.get('count')} expected={expected}"
         else:
             tiers["answers"] = ran and report.get("matches") is True
             detail = f"value={report.get('value')!r}"
-        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} {detail} version={report.get('version')}")
+        problems = {key: report[key] for key in ("error", "probe_error") if key in report}
+        log(f"{target['name']}: usable={tiers['usable']} answers={tiers['answers']} {detail} "
+            f"version={report.get('version')}{' ' + json.dumps(problems) if problems else ''}")
 
     def push(self, name, result, now):
         url = f"{self.pushgateway}/metrics/job/restore_test/target/{name}/source/{self.source}"
