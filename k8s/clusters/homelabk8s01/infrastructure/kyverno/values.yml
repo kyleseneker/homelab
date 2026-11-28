@@ -71,6 +71,26 @@ cleanupController:
     limits:
       memory: 128Mi
 reportsController:
+  # Policies report Ready only once Kyverno can read what they match; it cannot grant that itself.
+  rbac:
+    clusterRole:
+      extraResources:
+        - apiGroups:
+            - ""
+          resources:
+            - persistentvolumes
+        - apiGroups:
+            - arrchitect.dev
+          resources:
+            - "*"
+        - apiGroups:
+            - k8s.cni.cncf.io
+          resources:
+            - network-attachment-definitions
+        - apiGroups:
+            - velero.io
+          resources:
+            - restores
   resources:
     requests:
       cpu: 50m

@@ -122,6 +122,8 @@ Kyverno deploys four controllers:
 | Cleanup Controller | Runs `DeletingPolicy` schedules and cleanup TTLs |
 | Reports Controller | Generates and manages policy reports |
 
+The reports controller needs read access to every resource a policy matches, and Kyverno can't grant that to itself. Cluster-scoped resources and CRDs a policy matches go in `reportsController.rbac.clusterRole.extraResources`. A policy missing one shows `RBACPermissionsGranted=False` and never reports Ready, which ArgoCD treats as Degraded.
+
 ## Upstream Documentation
 
 <https://kyverno.io/docs/>
