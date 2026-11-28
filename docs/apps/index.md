@@ -53,7 +53,7 @@ Image tags are Renovate-managed and change weekly. The manifests under `k8s/clus
 | [Bazarr](bazarr.md) | `media` | `bazarr.home.seneker.io` | Automated subtitle downloading | `lscr.io/linuxserver/bazarr` |
 | [Seerr](seerr.md) | `media` | `seerr.home.seneker.io` | Media request management | `seerr-chart` (own chart) |
 | [Downloads](downloads.md) | `media` | `qbit.home.seneker.io` | VPN-routed torrent client (qBittorrent) | `qmcgaw/gluetun`, `lscr.io/linuxserver/qbittorrent` |
-| [Recyclarr](recyclarr.md) | `media` | -- | Quality profile sync (CronJob) | `ghcr.io/recyclarr/recyclarr` |
+| [Recyclarr](recyclarr.md) | `media` | -- | Quality profile sync (scheduled server) | `ghcr.io/recyclarr/recyclarr` |
 | [Tdarr](tdarr.md) | `media` | `tdarr.home.seneker.io` | Automated media transcoding | `ghcr.io/haveagitgat/tdarr` |
 | [Unpackerr](unpackerr.md) | `media` | -- | Automatic extraction of compressed downloads | `ghcr.io/unpackerr/unpackerr` |
 | [Exportarr](exportarr.md) | `media` | -- | Prometheus metrics exporter for *arr apps | `ghcr.io/onedr0p/exportarr` |

@@ -1,16 +1,17 @@
 # Recyclarr
 
-Recyclarr automatically syncs quality profiles and custom formats from TRaSH Guides to Sonarr and Radarr. It runs as a Kubernetes CronJob every 6 hours, ensuring your quality settings stay consistent and up to date.
+Recyclarr syncs quality profiles and custom formats from the TRaSH Guides to Sonarr and Radarr. It runs as a long-lived server that syncs on its own schedule every 6 hours, exposes an HTTP API for its CLI and publishes Prometheus metrics.
 
 ## Details
 
 | Property | Value |
 |----------|-------|
-| Helm chart | `app-template` v5.3.0 ([bjw-s](https://bjw-s-labs.github.io/helm-charts)) |
-| Image | `ghcr.io/recyclarr/recyclarr` |
-| Controller type | CronJob |
-| Schedule | `0 */6 * * *` (every 6 hours) |
-| HTTPRoute | -- (headless CronJob, no web UI) |
+| Helm chart | `recyclarr` 9.0.0 (official, `oci://ghcr.io/recyclarr/charts/recyclarr`) |
+| Image | `ghcr.io/recyclarr/recyclarr` (follows the chart version) |
+| Controller type | Deployment (1 replica, `Recreate`) |
+| Schedule | `0 */6 * * *` in `server.schedule.cron` |
+| Ports | `7982` HTTP API, `7983` probes and `/metrics` |
+| HTTPRoute | -- (in-cluster API only, no web UI) |
 | Namespace | `media` |
 | ArgoCD app | `recyclarr` |
 
@@ -18,33 +19,34 @@ Recyclarr automatically syncs quality profiles and custom formats from TRaSH Gui
 
 | Volume | Type | Mount Path | Notes |
 |--------|------|------------|-------|
-| `state` | PVC (`nfs-client`, 256Mi) | `/config` | Writable state and downloaded resources; holder keeps it mounted for Velero |
-| `tmp` | emptyDir | `/tmp` | Required with read-only root filesystem |
-| `config` | ConfigMap (`recyclarr-config`) | `/config/recyclarr.yml` | Quality profile and custom format definitions |
-| `secrets` | Secret (`recyclarr-secrets`) | `/config/secrets.yml` | Sonarr and Radarr API keys |
+| `state` | PVC `recyclarr-state` (`nfs-client`, 256Mi) | `/state` | Sync state and job history; backed up by Velero |
+| `data` | emptyDir | `/data` | Downloaded guides and caches; refetched at startup and excluded from backups |
+| `tmp` | emptyDir | `/tmp` | Required with read-only root filesystem; excluded from backups |
+| `configs` | ConfigMap (`recyclarr-config`) | `/config/configs/` | Quality profile and custom format definitions |
+| `settings` | ConfigMap (`recyclarr-settings`, from values) | `/config/settings.yml` | Server schedule and logging |
+| `secrets` | Secret (`recyclarr-secrets`, `secrets.yml` entry) | `/config/secrets.yml` | Sonarr and Radarr API keys |
+| `api-key` | Secret (`recyclarr-secrets`, `api-key` entry) | `/secrets/api-key` | Server API key |
 
 ### Resources
 
 | | CPU | Memory |
 |---|-----|--------|
-| Requests | 50m | 64Mi |
-| Limits | -- | 128Mi |
+| Requests | 50m | 256Mi |
+| Limits | 1 | 512Mi |
 
-### Job History
-
-| | Retained |
-|---|----------|
-| Successful jobs | 1 |
-| Failed jobs | 3 |
+The CPU limit is set high because the first guide download runs under a 5-minute startup probe.
 
 ## Key Configuration
 
-- Container args: `sync` -- runs a one-shot sync of all configured profiles.
 - Environment variables from ConfigMap `media-env` (TZ, PUID, PGID).
-- The Job and state holder run as UID 977/GID 988, matching the NAS media identity. Recyclarr's process identity is set by the pod security context; `PUID`/`PGID` alone do not change it. Matching ownership lets Git use the NFS cache without disabling its ownership check.
-- Configuration is split into two files:
-    - `recyclarr.yml` (shared ConfigMap from `k8s/components/recyclarr-config`) -- defines which quality profiles and custom formats to sync. `SONARR_URL` and `RADARR_URL` can override the production defaults for isolated recovery.
-    - `secrets.yml` (Secret) -- contains Sonarr and Radarr API keys referenced by the config.
+- The pod runs as UID 977/GID 988, the NAS media identity that owns NFS-provisioned directories.
+- Configuration is split across files:
+    - `recyclarr.yml` (shared ConfigMap from `k8s/components/recyclarr-config`) defines which quality profiles and custom formats to sync. `SONARR_URL` and `RADARR_URL` can override the production defaults for isolated recovery.
+    - `secrets.yml` (Secret) holds the Sonarr and Radarr API keys referenced by the config.
+    - `settings.yml` (chart values) sets the schedule and turns off log files, since console output already goes to Loki.
+- The server reloads `recyclarr.yml` edits within a minute. Changes to `settings.yml`, `media-env` or the mounted secrets need a restart, which Reloader does through the Deployment's `reloader.stakater.com/auto` annotation.
+- A configuration error stops the server at startup, and it stays in CrashLoopBackOff until the error is fixed. An invalid edit made while it runs is logged, and the last valid configuration stays in use.
+- Sync is self-healing: a configured custom format or profile that already exists in Sonarr or Radarr by name is adopted automatically.
 
 ### Quality Profiles
 
@@ -70,16 +72,17 @@ Radarr also receives:
 
 1. Run `make media-keys-adopt` after Sonarr/Radarr initialization or restore. ESO reads `sonarr-api-key` and `radarr-api-key` from `homelab/apps/media` and templates `recyclarr-secrets`; do not create an unrelated Vault `apps/recyclarr` secret.
 
-2. Trigger a manual sync to verify the configuration:
+2. The server key lives at `homelab/apps/media` as `recyclarr-api-key` (at least 32 characters), and ESO renders it as the `api-key` entry of `recyclarr-secrets`. The server does not start without it. Create it once:
 
     ```bash
-    kubectl create job --from=cronjob/recyclarr -n media recyclarr-manual
+    VAL="$(openssl rand -hex 32)" make vault-put-secret SECRET_PATH=apps/media KEY=recyclarr-api-key
     ```
 
-3. Check the job logs to confirm profiles and custom formats were applied:
+3. Run a sync and check the result. The CLI in the pod talks to the server in the same pod:
 
     ```bash
-    kubectl logs -n media job/recyclarr-manual
+    kubectl -n media exec deploy/recyclarr -- recyclarr sync
+    kubectl -n media exec deploy/recyclarr -- recyclarr sync --preview
     ```
 
 ## Dependencies
@@ -92,5 +95,4 @@ Radarr also receives:
 ## Upstream
 
 - [https://recyclarr.dev](https://recyclarr.dev)
-
-The writable volumes follow [Recyclarr's read-only container requirements](https://recyclarr.dev/guide/installation/docker/). CronJobs use `Forbid` concurrency so scheduled runs cannot race over the state volume. Avoid launching a manual sync while a scheduled one is active. The `recyclarr-state-holder` must stay running for file-system backups between jobs.
+- [Kubernetes (Helm) guide](https://recyclarr.dev/guide/installation/kubernetes/)

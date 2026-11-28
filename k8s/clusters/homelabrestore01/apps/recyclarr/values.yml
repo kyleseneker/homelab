@@ -1,66 +1,43 @@
-defaultPodOptions:
-  securityContext:
-    runAsUser: 977
-    runAsGroup: 988
-    fsGroup: 988
-    runAsNonRoot: true
-  automountServiceAccountToken: false
-controllers:
-  main:
-    type: cronjob
-    cronjob:
-      schedule: 0 */6 * * *
-      concurrencyPolicy: Forbid
-      successfulJobsHistory: 1
-      failedJobsHistory: 3
-      suspend: true
-    containers:
-      main:
-        image:
-          repository: ghcr.io/recyclarr/recyclarr
-          tag: 8.8.1
-        args:
-          - sync
-          - sonarr
-        securityContext:
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-              - ALL
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
-        env:
-          TZ: America/Chicago
-          SONARR_URL: http://restore-sonarr.restore-sonarr.svc.cluster.local:8989
+nameOverride: restore-recyclarr
+apiKey:
+  existingSecret: restore-recyclarr-secrets
+configs:
+  existingConfigMap: recyclarr-config
+settings:
+  content: |
+    server:
+      schedule:
+        enabled: false
+      logging:
+        files: false
+env:
+  - name: TZ
+    value: America/Chicago
+  - name: SONARR_URL
+    value: http://restore-sonarr.restore-sonarr.svc.cluster.local:8989
+extraVolumes:
+  - name: secrets
+    secret:
+      secretName: restore-recyclarr-secrets
+extraVolumeMounts:
+  - name: secrets
+    mountPath: /config/secrets.yml
+    subPath: secrets.yml
+    readOnly: true
 persistence:
   state:
-    type: persistentVolumeClaim
     storageClass: local-path
-    accessMode: ReadWriteOnce
     size: 1Gi
-    globalMounts:
-      - path: /config
-  tmp:
-    type: emptyDir
-    globalMounts:
-      - path: /tmp
-  config:
-    type: configMap
-    name: recyclarr-config
-    globalMounts:
-      - path: /config/recyclarr.yml
-        subPath: recyclarr.yml
-        readOnly: true
-  secrets:
-    type: secret
-    name: restore-recyclarr-secrets
-    globalMounts:
-      - path: /config/secrets.yml
-        subPath: secrets.yml
-        readOnly: true
+serviceMonitor:
+  enabled: false
+podSecurityContext:
+  runAsUser: 977
+  runAsGroup: 988
+  fsGroup: 988
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 512Mi

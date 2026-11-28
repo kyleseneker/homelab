@@ -241,7 +241,7 @@ The active and retained PVC inventory below separates a captured volume from a d
 | `media/tdarr-config` | Daily copy of the latest native archive, with age/CRC checks | Native restore verified: exact flow/library/variable/file records and plugin hashes; worker execution and media recovery remain unverified |
 | `media/config-backups` | NFS staging volume mounted by `config-backup-holder`; daily Garage and weekly S3 | A successful copy job alone does not demonstrate upload or application recovery |
 | `media/media-data` | Shared media/downloads on NFS; deliberately excluded from Velero volume backups | No independent media copy demonstrated; NAS redundancy does not replace a backup |
-| `media/recyclarr` | NFS state/cache mounted by its holder, captured by Velero; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |
+| `media/recyclarr` | NFS state mounted by the running server, captured by Velero; guide cache refetched at startup; profiles in shared Git configuration | Sonarr profile recreation verified; Radarr recovery remains open |
 | `media/downloads-gluetun-config` | Live NFS file backup; VPN settings/credentials also come from Git/Vault | Fresh VPN bootstrap not demonstrated |
 | `media/downloads-qbit-config` | Live NFS file backup including qBittorrent configuration/resume state | Offsite configuration/resume state restored to fresh storage using HCP/offsite-etcd credentials; login/history/restart verified; payload recovery and VPN bootstrap remain unverified |
 | `auth/data-authentik-postgresql-0` | Native `pg_dump` to `authentik-backups`; raw volume is also captured | Raw live PostgreSQL files are not the database recovery method; preserve Authentik's secret key separately |

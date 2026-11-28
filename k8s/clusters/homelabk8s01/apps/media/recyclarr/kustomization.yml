@@ -3,4 +3,3 @@ kind: Kustomization
 resources:
   - ../../../../../components/recyclarr-config
   - recyclarr-external-secret.yml
-  - state-holder.yml

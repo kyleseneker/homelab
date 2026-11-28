@@ -79,7 +79,7 @@ flowchart LR
 | Bazarr | Subtitle management | `media` |
 | Seerr | Media request management | `media` |
 | qBittorrent | Torrent client (via Gluetun VPN sidecar) | `media` |
-| Recyclarr | Quality profile sync (CronJob) | `media` |
+| Recyclarr | Quality profile sync (scheduled server) | `media` |
 | Tdarr | Media transcoding | `media` |
 | Unpackerr | Extraction of compressed downloads | `media` |
 | FlareSolverr | Captcha-solving proxy for Prowlarr | `media` |
