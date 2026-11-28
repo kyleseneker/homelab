@@ -3,7 +3,7 @@ namespace: arrchitect
 sourceType: helm
 chartRepo: ghcr.io/kyleseneker/charts
 chartName: arrchitect
-chartVersion: "0.10.0"
+chartVersion: "0.11.1"
 createNamespace: false
 hasResources: true
 syncOptions:

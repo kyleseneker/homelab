@@ -68,7 +68,7 @@ These APIs accept a payload containing keys they do not recognise, ignore them, 
   one never settles.
 
 Alongside `app_api_request_duration_seconds`, `app_api_errors_total`, `resources_pruned_total`,
-`managed_resources` and `config_synced`, this makes reconciliation observable rather than
+`managed_resources` and `resource_ready`, this makes reconciliation observable rather than
 assumed.
 
 ## Alternatives Considered
