@@ -3,7 +3,7 @@ namespace: monitoring
 sourceType: helm
 chartRepo: https://prometheus-community.github.io/helm-charts
 chartName: prometheus-blackbox-exporter
-chartVersion: 11.26.2
+chartVersion: 12.0.0
 createNamespace: false
 hasResources: true
 syncOptions:
