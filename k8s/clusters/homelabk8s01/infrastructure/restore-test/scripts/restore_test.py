@@ -32,15 +32,14 @@ CANARY = {
 }
 
 
-def app(workload, port, mount, database, status, probe=None, kind="deployments", api_key_env=None, files=None,
+def app(workload, port, mount, status, probe=None, kind="deployments", api_key_env=None, files=None,
         scratch=(), startup_timeout=600):
-    return {"workload": workload, "kind": kind, "port": port, "mount": mount, "database": database,
-            "status": status, "probe": probe, "api_key_env": api_key_env, "files": files or {},
+    return {"workload": workload, "kind": kind, "port": port, "mount": mount, "status": status, "probe": probe, "api_key_env": api_key_env, "files": files or {},
             "scratch": list(scratch), "startup_timeout": startup_timeout}
 
 
 def pvr_app(name, port, version, collection, table):
-    return app(name, port, "/config", f"/config/{name}.db", f"/api/{version}/system/status",
+    return app(name, port, "/config", f"/api/{version}/system/status",
                {"path": f"/api/{version}/{collection}", "count_table": table},
                api_key_env=f"{name.upper()}__AUTH__APIKEY")
 
@@ -62,20 +61,20 @@ TARGETS = [
            app=pvr_app("prowlarr", 9696, "v1", "applications", "Applications")),
     target("bazarr", "media", "config-backups", "sqlite", "bazarr/db/bazarr.db",
            report=["table_shows", "table_movies"],
-           app=app("bazarr", 6767, "/config", "/config/db/bazarr.db", "/api/system/status",
+           app=app("bazarr", 6767, "/config", "/api/system/status",
                    {"path": "/api/series", "count_table": "table_shows"},
                    files={"/config/config/config.yaml": "auth:\n  apikey: {key}\n"}, startup_timeout=900)),
     target("jellyfin", "media", "config-backups", "sqlite", "jellyfin/data/data/jellyfin.db",
-           app=app("jellyfin", 8096, "/config", "/config/data/data/jellyfin.db", "/System/Info/Public",
+           app=app("jellyfin", 8096, "/config", "/System/Info/Public",
                    {"path": "/System/Info/Public", "field": "StartupWizardCompleted", "equals": True})),
     target("seerr", "media", "config-backups", "sqlite", "seerr/db/db.sqlite3",
-           app=app("seerr", 5055, "/app/config", "/app/config/db/db.sqlite3", "/api/v1/settings/public",
+           app=app("seerr", 5055, "/app/config", "/api/v1/settings/public",
                    {"path": "/api/v1/settings/public", "field": "initialized", "equals": True},
                    kind="statefulsets")),
     target("tdarr", "media", "config-backups", "zip", "tdarr/latest.zip", max_dump_age=50 * HOUR,
            inner="DB2/SQL/database.db"),
     target("uptime-kuma", "monitoring", "uptime-kuma-backups", "sqlite", "kuma.db",
-           app=app("uptime-kuma", 3001, "/app/data", "/app/data/kuma.db", "/api/entry-page", scratch=["/tmp"])),
+           app=app("uptime-kuma", 3001, "/app/data", "/api/entry-page", scratch=["/tmp"])),
     target("authentik", "auth", "authentik-backups", "pgdump", "authentik.dump",
            stamp="completed-at", image_from={"namespace": "auth", "cronjob": "authentik-backup", "container": "dump"},
            database={"server_from": {"namespace": "auth", "statefulset": "authentik-postgresql"},
@@ -184,9 +183,10 @@ BACKUP_MOUNT = {"name": "backup", "mountPath": "/backup", "readOnly": True}
 COPY = """
 import json, os, shutil, sys
 spec = json.loads(sys.argv[1])
-os.makedirs(os.path.dirname(spec["database"]), exist_ok=True)
-shutil.copyfile(spec["source"], spec["database"])
-os.chmod(spec["database"], 0o666)
+shutil.copytree(spec["source"], spec["mount"], dirs_exist_ok=True, copy_function=shutil.copyfile)
+for root, _, files in os.walk(spec["mount"]):
+    for name in files:
+        os.chmod(os.path.join(root, name), 0o666)
 for path, content in spec["files"].items():
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as handle:
@@ -220,6 +220,11 @@ def integrity_pod(target, image, user, scripts):
     return backup_pod(f"check-{target['name']}", target, [check])
 
 
+def dump_root(target):
+    head, _, rest = target["path"].partition("/")
+    return "/backup/" + head if rest else "/backup"
+
+
 def resolve(value, values):
     if not isinstance(value, str):
         return value
@@ -236,7 +241,7 @@ def app_pod(target, workload, image, user, key, script, values=None):
     env = [item for item in live.get("env", []) if "value" in item and item["name"] != app["api_key_env"]]
     if app["api_key_env"]:
         env.append({"name": app["api_key_env"], "value": key})
-    spec = {"source": "/backup/" + target["path"], "database": app["database"], "mount": app["mount"],
+    spec = {"source": dump_root(target), "mount": app["mount"],
             "files": {path: content.format(key=key) for path, content in app["files"].items()}}
     config_mount = {"name": "config", "mountPath": app["mount"]}
     copy = helper("copy", user, image, ["python3", "-c", COPY, json.dumps(spec)], [BACKUP_MOUNT, config_mount])

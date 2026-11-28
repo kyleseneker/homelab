@@ -28,7 +28,7 @@ Every night a CronJob restores the backup volumes into a throwaway `restore-sand
 | `restored` | The Restore completed with no errors and the target's volume restored a non-zero size |
 | `intact` | The dump passes its format's own check (below) |
 | `fresh` | The backup started no more than 28 hours before the run, and the dump inside it was written no longer before the backup than its schedule allows |
-| `usable` | The application starts on a writable copy of the restored database, with the image and security context its live Deployment runs |
+| `usable` | The application starts on a writable copy of its restored dump directory, with the image and security context its live Deployment runs |
 | `answers` | The application's API returns as many objects as the database holds |
 
 Authentik's database check runs a throwaway Postgres server from the image of the production `authentik-postgresql` StatefulSet, with trust authentication that only its own pod can reach, and restores the dump into it with `pg_restore --exit-on-error --single-transaction`, so any failed statement fails the tier.
@@ -43,8 +43,8 @@ The app check runs in one pod: the application, plus a checker container that qu
 | `radarr` | `media/config-backups` | `radarr/radarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v3/movie` |
 | `prowlarr` | `media/config-backups` | `prowlarr/prowlarr.db` | SQLite; `VersionInfo` has rows | 26 h | `/api/v1/applications` |
 | `bazarr` | `media/config-backups` | `bazarr/db/bazarr.db` | SQLite | 26 h | `/api/series` counts `table_shows`, with a throwaway key seeded into `config.yaml` |
-| `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | `/System/Info/Public` reports the setup wizard completed (expected failure) |
-| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | Starts on `/api/v1/settings/public`, which then reports `initialized` (expected failure) |
+| `jellyfin` | `media/config-backups` | `jellyfin/data/data/jellyfin.db` | SQLite | 26 h | `/System/Info/Public` reports the setup wizard completed |
+| `seerr` | `media/config-backups` | `seerr/db/db.sqlite3` | SQLite | 26 h | Starts on `/api/v1/settings/public`, which then reports `initialized` |
 | `tdarr` | `media/config-backups` | `tdarr/latest.zip` | ZIP CRCs; `DB2/SQL/database.db` present and sound | 50 h | -- (Tdarr restores its archive through its own import) |
 | `uptime-kuma` | `monitoring/uptime-kuma-backups` | `kuma.db` | SQLite | 26 h | Starts and serves `/api/entry-page`; no data probe |
 | `authentik` | `auth/authentik-backups` | `authentik.dump` | `pg_restore --list`, then a full read, with the image that wrote it | 26 h, from `completed-at` | Restore into a scratch Postgres running production's image; users, groups, applications and flows have rows |

@@ -1,6 +1,6 @@
 # Config Backup
 
-Nightly SQLite dumps for six applications and a native Tdarr archive are staged onto NFS for Velero. These are database backups, not copies of every application file.
+Nightly SQLite dumps for six applications, the Jellyfin and Seerr settings files, and a native Tdarr archive are staged onto NFS for Velero. They are not copies of every application file.
 
 ## Details
 
@@ -24,12 +24,24 @@ Copying the raw SQLite file is not a fix either: a live WAL-mode database copied
 | App | Schedule | Method |
 |-----|----------|--------|
 | Bazarr | `30 1 * * *` | SQLite online backup |
-| Jellyfin | `31 1 * * *` | SQLite online backup |
+| Jellyfin | `31 1 * * *` | SQLite online backup and settings files |
 | Prowlarr | `32 1 * * *` | SQLite online backup |
 | Radarr | `33 1 * * *` | SQLite online backup |
-| Seerr | `34 1 * * *` | SQLite online backup |
+| Seerr | `34 1 * * *` | SQLite online backup and `settings.json` |
 | Sonarr | `35 1 * * *` | SQLite online backup |
 | Tdarr | `36 1 * * *` | Tdarr's own native archive |
+
+`EXTRA_FILES` on a job lists glob patterns, relative to the config volume, of files copied next to the dumps. A pattern that matches nothing fails the job.
+
+| App | Files | Holds |
+|-----|-------|-------|
+| Jellyfin | `*.xml`, `*.json` | Server, network, encoding and database settings |
+| Jellyfin | `data/root/default/*/*` | Library definitions and their paths |
+| Jellyfin | `data/plugins/*/*` | Installed plugins and their configuration, including LDAP |
+| Jellyfin | `data/data/device.txt`, `data/data/ScheduledTasks/*` | Server identity and task schedules |
+| Seerr | `settings.json` | All settings, including its API key and the Jellyfin, Sonarr and Radarr connections |
+
+Jellyfin's ASP.NET data-protection keys are readable only by its own user, so the job cannot copy them. Jellyfin creates new keys when none exist.
 
 Tdarr uses its native ZIP archive. The copy job verifies ZIP integrity and rejects an archive older than 48 hours so a stale source cannot report a successful fresh backup. Native backup scheduling must therefore produce an archive at least daily; confirm its restore behavior in a drill.
 
@@ -54,4 +66,4 @@ The third alert covers the failure mode that would otherwise be silent: everythi
 
 ## Restoring
 
-The dumps are plain SQLite files on the `config-backups` volume. Follow [Backup & Restore](../runbooks/backup-and-restore.md#restoring-local-path-application-databases), including stopping writers, preserving/removing old WAL sidecars, restoring ownership, and validating data. Settings XML/JSON, plugins, artwork, and other non-database files are not captured by the SQLite dump. qBittorrent config uses NFS and follows the ordinary Velero path.
+The dumps are plain SQLite files on the `config-backups` volume. Follow [Backup & Restore](../runbooks/backup-and-restore.md#restoring-local-path-application-databases), including stopping writers, preserving/removing old WAL sidecars, restoring ownership, and validating data. Other applications' settings files, artwork and caches are not captured. qBittorrent config uses NFS and follows the ordinary Velero path.

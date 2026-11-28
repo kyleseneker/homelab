@@ -112,23 +112,29 @@ class Pods(unittest.TestCase):
                                       {'name': 'SONARR__AUTH__APIKEY', 'value': 'key'}])
         self.assertIn({'name': 'API_KEY', 'value': 'key'}, check['env'])
         spec = json.loads(copy['command'][-1])
-        self.assertEqual((spec['source'], spec['database'], spec['mount']),
-                         ('/backup/sonarr/sonarr.db', '/config/sonarr.db', '/config'))
+        self.assertEqual((spec['source'], spec['mount']), ('/backup/sonarr', '/config'))
         self.assertEqual(json.loads(check['command'][-1]),
                          {'port': 8989, 'status': '/api/v3/system/status',
                           'probe': {'path': '/api/v3/series', 'count_table': 'Series'}})
 
-    def test_the_copied_database_is_writable_by_whatever_user_the_app_runs_as(self):
+    def test_the_app_root_is_rebuilt_from_its_dump_tree(self):
+        self.assertEqual(harness.dump_root(TARGETS['jellyfin']), '/backup/jellyfin')
+        self.assertEqual(harness.dump_root(TARGETS['uptime-kuma']), '/backup')
+
+    def test_the_copied_files_are_writable_by_whatever_user_the_app_runs_as(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source, mount = root / 'source.db', root / 'config'
-            source.write_bytes(b'data')
-            source.chmod(0o600)
+            source, mount = root / 'source', root / 'config'
+            (source / 'db').mkdir(parents=True)
+            (source / 'db/app.db').write_bytes(b'data')
+            (source / 'db/app.db').chmod(0o600)
+            (source / 'settings.json').write_text('{}')
             mount.mkdir()
-            spec = {'source': str(source), 'database': str(mount / 'db/app.db'), 'mount': str(mount),
+            spec = {'source': str(source), 'mount': str(mount),
                     'files': {str(mount / 'config/config.yaml'): 'auth:\n  apikey: key\n'}}
             subprocess.run([sys.executable, '-c', harness.COPY, json.dumps(spec)], check=True)
             self.assertEqual((mount / 'db/app.db').read_bytes(), b'data')
+            self.assertEqual((mount / 'settings.json').read_text(), '{}')
             self.assertEqual((mount / 'db/app.db').stat().st_mode & 0o777, 0o666)
             self.assertEqual((mount / 'config/config.yaml').read_text(), 'auth:\n  apikey: key\n')
             self.assertEqual((mount / 'db').stat().st_mode & 0o777, 0o777)

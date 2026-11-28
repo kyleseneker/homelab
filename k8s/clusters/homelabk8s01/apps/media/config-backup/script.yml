@@ -45,6 +45,7 @@ data:
   dump.py: |
     import os
     import pathlib
+    import shutil
     import sqlite3
     import sys
 
@@ -83,5 +84,24 @@ data:
             failures += 1
             print(f"{app}: FAILED {relative}: {exc}", file=sys.stderr)
             staged.unlink(missing_ok=True)
+
+    for pattern in filter(None, os.environ.get("EXTRA_FILES", "").split(",")):
+        matches = sorted(p for p in source.glob(pattern) if p.is_file() and not p.is_symlink())
+        if not matches:
+            failures += 1
+            print(f"{app}: FAILED {pattern}: no files match", file=sys.stderr)
+        for path in matches:
+            relative = path.relative_to(source)
+            destination = target / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            staged = destination.with_name(destination.name + ".tmp")
+            try:
+                shutil.copy2(path, staged)
+                staged.replace(destination)
+            except OSError as exc:
+                failures += 1
+                print(f"{app}: FAILED {relative}: {exc}", file=sys.stderr)
+                staged.unlink(missing_ok=True)
+        print(f"{app}: {pattern}: {len(matches)} files")
 
     sys.exit(1 if failures else 0)

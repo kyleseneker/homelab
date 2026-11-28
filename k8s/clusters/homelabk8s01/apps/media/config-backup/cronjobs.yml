@@ -109,6 +109,8 @@ spec:
               env:
                 - name: APP_NAME
                   value: jellyfin
+                - name: EXTRA_FILES
+                  value: "*.xml,*.json,data/data/device.txt,data/data/ScheduledTasks/*,data/plugins/*/*,data/root/default/*/*"
                 - name: HOME
                   value: /tmp
               securityContext:
@@ -331,6 +333,8 @@ spec:
               env:
                 - name: APP_NAME
                   value: seerr
+                - name: EXTRA_FILES
+                  value: "settings.json"
                 - name: HOME
                   value: /tmp
               securityContext:
